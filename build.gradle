@@ -1,0 +1,116 @@
+import net.fabricmc.loom.task.RemapJarTask
+
+plugins {
+    id "architectury-plugin" version "3.4-SNAPSHOT"
+    id "dev.architectury.loom" version "1.5-SNAPSHOT" apply false
+}
+
+def is_root_project = project == rootProject
+
+architectury {
+    minecraft = libs.versions.minecraft
+}
+
+subprojects {
+    apply plugin: "dev.architectury.loom"
+
+    loom {
+        silentMojangMappingsLicense()
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url = "https://api.modrinth.com/maven" } // LazyDFU, Jade
+        maven { url = "https://maven.terraformersmc.com/releases/" } // Mod Menu, EMI
+        maven { url = "https://maven.shedaniel.me/" } // Cloth Config, REI
+        maven {
+            url "https://cursemaven.com"
+            content {
+                includeGroup "curse.maven"
+            }
+        } // Curse Forge File
+        maven {
+            name = "Jared's maven"
+            url = "https://maven.blamejared.com/"
+        } // JEI
+        maven {
+            // location of a maven mirror for JEI files, as a fallback
+            name = "ModMaven"
+            url = "https://modmaven.dev"
+        } // JEI mirror, AE2
+        maven { url = "https://maven.parchmentmc.org" } // Parchment mappings
+        maven { url = "https://maven.quiltmc.org/repository/release" } // Quilt Mappings
+        maven { url = "https://maven.firstdarkdev.xyz/snapshots" } // LDLib
+        maven { // Flywheel
+            url = "https://maven.tterrag.com/"
+            content {
+                // need to be specific here due to version overlaps
+                includeGroup("com.jozufozu.flywheel")
+                includeGroup("com.tterrag.registrate")
+                includeGroup("com.simibubi.create")
+            }
+        }
+        maven { // TOP-Fabric
+            url "https://maven.wispforest.io"
+        }
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${libs.versions.minecraft.get()}"
+        // The following line declares the mojmap mappings, you may use other mappings as well
+        if (is_root_project) {
+            // layered mappings - Mojmap names, parchment and QM docs and parameters
+            mappings loom.layered {
+                it.mappings("org.quiltmc:quilt-mappings:${libs.versions.minecraft.get()}+build.${libs.versions.quiltMappings.get()}:intermediary-v2")
+                it.parchment("org.parchmentmc.data:parchment-1.20.1:${libs.versions.parchment.get()}@zip")
+                it.officialMojangMappings { nameSyntheticMembers = false }
+            }
+        }
+
+        // lombok
+        compileOnly 'org.projectlombok:lombok:1.18.24'
+        annotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+        implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    }
+
+    tasks.register('remapSlimJar', RemapJarTask) {
+        dependsOn(jar)
+        inputFile.set(jar.archiveFile)
+        addNestedDependencies = false
+        archiveClassifier.set("slim")
+    }
+
+    tasks.remapJar.dependsOn('remapSlimJar')
+}
+
+allprojects {
+    apply plugin: "java"
+    apply plugin: "architectury-plugin"
+    apply plugin: "maven-publish"
+
+    archivesBaseName = "${project.name}-${libs.versions.minecraft.get()}"
+    group = rootProject.maven_group
+
+    // Formats the mod version to include the loader, Minecraft version, and build number (if present)
+    String buildNumber = System.getenv("GITHUB_RUN_NUMBER")
+    version = "${mod_version}" + (buildNumber != null ? "+build.${System.getenv("GITHUB_RUN_NUMBER")}" : "")
+
+    repositories {
+        // Add repositories to retrieve artifacts from in here.
+        // You should only use this when depending on other mods because
+        // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+        // See https://docs.gradle.org/current/userguide/declaring_repositories.html
+        // for more information about repositories.
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+        options.release.set(17)
+    }
+
+    java {
+        withSourcesJar()
+    }
+}
