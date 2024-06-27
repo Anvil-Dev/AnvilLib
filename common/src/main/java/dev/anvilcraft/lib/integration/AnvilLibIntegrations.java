@@ -1,7 +1,6 @@
 package dev.anvilcraft.lib.integration;
 
 import dev.anvilcraft.lib.AnvilLib;
-import dev.dubhe.anvilcraft.AnvilCraft;
 
 import java.util.Collections;
 import java.util.HashMap;
