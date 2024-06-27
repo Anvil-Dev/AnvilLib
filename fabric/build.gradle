@@ -65,7 +65,6 @@ configurations {
     apiElements {
         outgoing {
             capability("net.fabricmc.fabric-api:fabric-api-${this.libs.versions.minecraft.get()}:${this.fabric.versions.fabricApi.get()}")
-            capability("com.tterrag.registrate_fabric:Registrate:${this.fabric.versions.registrate.get()}")
             capability("io.github.llamalad7:mixinextras-fabric:${this.fabric.versions.mixinextras.get()}")
         }
     }
@@ -88,9 +87,6 @@ dependencies {
 
     common(project(path: ":${mod_id}-common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":${mod_id}-common", configuration: "transformProductionFabric")) { transitive false }
-
-    // Registrate
-    modImplementation(include("com.tterrag.registrate_fabric:Registrate:${fabric.versions.registrate.get()}"))
 
     // Development QOL
     modCompileOnly(fabric.lazydfu)

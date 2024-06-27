@@ -9,7 +9,8 @@ String getConfig(String key) {
 def mod_id = getConfig("mod_id")
 
 repositories {
-    maven { url = "https://mvn.devos.one/snapshots/" } // Create Fabric, Porting Lib, Forge Tags, Milk Lib, Registrate Fabric
+    maven { url = "https://mvn.devos.one/snapshots/" }
+    // Create Fabric, Porting Lib, Forge Tags, Milk Lib, Registrate Fabric
     //maven { url = "https://maven.cafeteria.dev/releases" } // Fake Player API
     maven { url = "https://maven.jamieswhiteshirt.com/libs-release" } // Reach Entity Attributes
     maven { url = "https://jitpack.io/" } // Mixin Extras, Fabric ASM
@@ -30,8 +31,6 @@ dependencies {
     // Do NOT use other classes from fabric loader
     modImplementation(fabric.fabricLoader)
     modCompileOnly(fabric.fabricApi)
-
-    modCompileOnly(fabric.registrate)
 
     // JEI
     modCompileOnly(fabric.jei.common.api)

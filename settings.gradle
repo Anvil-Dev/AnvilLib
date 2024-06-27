@@ -29,11 +29,9 @@ dependencyResolutionManagement {
         def lazyDfuFabricVersion = "${lazy_dfu_fabric_version}"
         def modMenuFabricVersion = "${mod_menu_fabric_version}"
         def jadeFabricVersion = "${jade_fabric_version}"
-        def registrateFabricVersion = "${registrate_fabric_version}"
 
         // Forge
         def forgeVersion = "${forge_version}"
-        def registrateForgeVersion = "${registrate_forge_version}"
         def createForgeVersion = "${create_forge_version}"
         def flywheelForgeVersion = "${flywheel_forge_version}"
         def jadeForgeVersion = "${jade_forge_version}"
@@ -53,9 +51,6 @@ dependencyResolutionManagement {
 
             def fabricApi = version("fabricApi", "${fabricApiVersion}+${minecraftVersion}")
             library("fabricApi", "net.fabricmc.fabric-api", "fabric-api").versionRef(fabricApi)
-
-            def registrate = version("registrate", registrateFabricVersion)
-            library("registrate", "com.tterrag.registrate_fabric", "Registrate").versionRef(registrate)
 
             def createFabric = version("create-fabric", "${createFabricVersion}+mc${minecraftVersion}")
             library("createFabric", "com.simibubi.create", "create-fabric-${minecraftVersion}").versionRef(createFabric)
@@ -98,9 +93,6 @@ dependencyResolutionManagement {
             version("forgeShortVersion", forgeVersion)
             def minecraftForge = version("minecratfForge", "${minecraftVersion}-${forgeVersion}")
             library("minecraftForge", "net.minecraftforge", "forge").versionRef(minecraftForge)
-
-            def registrate = version("registrate", registrateForgeVersion)
-            library("registrate", "com.tterrag.registrate", "Registrate").versionRef(registrate)
 
             def createForge = version("createForge", createForgeVersion)
             library("createForge", "com.simibubi.create", "create-${minecraftVersion}").versionRef(createForge)

@@ -88,7 +88,6 @@ configurations {
     apiElements {
         outgoing {
             capability("net.minecraftforge:forge:${this.forge.versions.minecratfForge.get()}")
-            capability("com.tterrag.registrate:Registrate:${this.forge.versions.registrate.get()}")
             capability("io.github.llamalad7:mixinextras-forge:${this.forge.versions.mixinextras.get()}")
         }
     }
@@ -117,9 +116,6 @@ dependencies {
 
     common(project(path: ":${mod_id}-common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":${mod_id}-common", configuration: "transformProductionForge")) { transitive = false }
-
-    // Registrate
-    modImplementation(include("com.tterrag.registrate:Registrate:${forge.versions.registrate.get()}"))
 
     // JEI
     modCompileOnly(forge.jei.common.api) { transitive = false }
