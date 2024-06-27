@@ -64,10 +64,10 @@ jobs:
             fabric/build/libs/${{ steps.properties.outputs.mod_id }}-fabric-${{ steps.version.outputs.version }}.jar
             forge/build/libs/${{ steps.properties.outputs.mod_id }}-forge-${{ steps.version.outputs.version }}.jar
 
-#      - name: Publish to maven
-#        run: ./gradlew publish
-#        env:
-#          MAVEN_URL: ${{ secrets.MAVEN_URL }}
-#          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-#          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
-#        continue-on-error: true
+      - name: Publish to maven
+        run: ./gradlew publish
+        env:
+          MAVEN_URL: ${{ secrets.MAVEN_URL }}
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USER }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASS }}
+        continue-on-error: true
