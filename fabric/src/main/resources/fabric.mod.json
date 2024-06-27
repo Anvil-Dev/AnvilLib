@@ -2,27 +2,22 @@
   "schemaVersion": 1,
   "id": "${mod_id}",
   "version": "${version}",
-
   "name": "${mod_name}",
   "description": "${mod_description}",
   "authors": [],
   "contact": {},
-
   "license": "${mod_license}",
   "icon": "icon.png",
-
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.example.examplemod.fabric.AnvilCraftFabric"
+      "dev.anvilcraft.lib.fabric.AnvilLibFabric"
     ],
-    "fabric-datagen": [
-      "com.example.examplemod.data.fabric.AnvilCraftDatagen"
-    ]
+    "fabric-datagen": []
   },
   "mixins": [
-    "examplemod.mixins.json",
-    "examplemod-common.mixins.json"
+    "anvillib.mixins.json",
+    "anvillib-common.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${fabric_loader_version}",
