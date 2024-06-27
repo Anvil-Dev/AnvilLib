@@ -4,6 +4,7 @@
   "package": "dev.anvilcraft.lib.mixin.fabric",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "GameTestServerMixin"
   ],
   "client": [
   ],
