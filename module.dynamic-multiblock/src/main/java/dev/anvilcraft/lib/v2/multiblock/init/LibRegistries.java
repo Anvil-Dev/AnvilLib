@@ -2,7 +2,7 @@ package dev.anvilcraft.lib.v2.multiblock.init;
 
 import com.mojang.serialization.MapCodec;
 import dev.anvilcraft.lib.v2.multiblock.AnvilLibDynamicMultiblock;
-import dev.anvilcraft.lib.v2.multiblock.MultiblockDefinition;
+import dev.anvilcraft.lib.v2.multiblock.definition.MultiblockDefinition;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.bus.api.SubscribeEvent;

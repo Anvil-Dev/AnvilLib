@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.multiblock;
 
 import dev.anvilcraft.lib.v2.multiblock.controller.IMultiblockController;
+import dev.anvilcraft.lib.v2.multiblock.definition.MultiblockDefinition;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
