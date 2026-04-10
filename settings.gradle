@@ -11,6 +11,7 @@ plugins {
 }
 
 include 'module.config'
+include 'module.codec'
 include 'module.integration'
 include 'module.moveable-entity-block'
 include 'module.network'
@@ -19,6 +20,7 @@ include 'module.registrum'
 include 'module.main'
 
 project(':module.config').name = 'anvillib-config-neoforge-1.21.1'
+project(':module.codec').name = 'anvillib-codec-neoforge-1.21.1'
 project(':module.integration').name = 'anvillib-integration-neoforge-1.21.1'
 project(':module.moveable-entity-block').name = 'anvillib-moveable-entity-block-neoforge-1.21.1'
 project(':module.network').name = 'anvillib-network-neoforge-1.21.1'

@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.recipe.predicate.item;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.AnvilLibRecipe;
 import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheInput;
@@ -10,7 +11,6 @@ import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.IPredicateFunction;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeData;
-import dev.anvilcraft.lib.v2.recipe.util.CodecUtil;
 import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -124,13 +124,13 @@ public abstract class HasItemBase<T extends HasItemBase<T, P>, P extends IItemSt
          * 流编解码器
          */
         private final StreamCodec<RegistryFriendlyByteBuf, T> streamCodec = StreamCodec.composite(
-            CodecUtil.VEC3_STREAM_CODEC,
+            StreamCodecUtil.VEC3,
             T::getOffset,
-            CodecUtil.VEC3_STREAM_CODEC,
+            StreamCodecUtil.VEC3,
             T::getRange,
             StreamCodec.of(this::encodeItem, this::decodeItem),
             T::getItem,
-            CodecUtil.codec2Stream(IPredicateFunction.CODEC).apply(ByteBufCodecs.list()),
+            StreamCodecUtil.codec2Stream(IPredicateFunction.CODEC).apply(ByteBufCodecs.list()),
             T::getFunctions,
             this::create
         );

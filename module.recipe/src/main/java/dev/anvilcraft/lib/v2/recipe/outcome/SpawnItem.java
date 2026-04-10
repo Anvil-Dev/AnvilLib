@@ -2,15 +2,16 @@ package dev.anvilcraft.lib.v2.recipe.outcome;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeOutcomeTypes;
+import dev.anvilcraft.lib.v2.codec.CodecUtil;
+import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.cache.BlockCache;
 import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheOutput;
+import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeOutcomeTypes;
 import dev.anvilcraft.lib.v2.recipe.outcome.function.ApplyTagToComponent;
 import dev.anvilcraft.lib.v2.recipe.outcome.function.IOutcomeFunction;
 import dev.anvilcraft.lib.v2.recipe.util.IRecipeResultOffsetBlock;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
-import dev.anvilcraft.lib.v2.recipe.util.CodecUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPatch;
@@ -127,7 +128,7 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
                 Vec3.CODEC
                     .fieldOf("offset")
                     .forGetter(SpawnItem::offset),
-                CodecUtil.NUMBER_PROVIDER_CODEC
+                CodecUtil.NUMBER_PROVIDER
                     .optionalFieldOf("count", ConstantValue.exactly(1.0f))
                     .forGetter(SpawnItem::count),
                 IOutcomeFunction.CODEC
@@ -143,11 +144,11 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
         public static final StreamCodec<RegistryFriendlyByteBuf, SpawnItem> STREAM_CODEC = StreamCodec.composite(
             ItemStack.STREAM_CODEC,
             SpawnItem::item,
-            CodecUtil.VEC3_STREAM_CODEC,
+            StreamCodecUtil.VEC3,
             SpawnItem::offset,
-            CodecUtil.NUMBER_PROVIDER_STREAM_CODEC,
+            StreamCodecUtil.NUMBER_PROVIDER,
             SpawnItem::count,
-            CodecUtil.codec2Stream(IOutcomeFunction.CODEC).apply(ByteBufCodecs.list()),
+            StreamCodecUtil.codec2Stream(IOutcomeFunction.CODEC).apply(ByteBufCodecs.list()),
             SpawnItem::functions,
             SpawnItem::new
         );

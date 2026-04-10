@@ -2,10 +2,11 @@ package dev.anvilcraft.lib.v2.recipe.outcome;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeOutcomeTypes;
+import dev.anvilcraft.lib.v2.codec.CodecUtil;
+import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.cache.BlockCache;
+import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeOutcomeTypes;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
-import dev.anvilcraft.lib.v2.recipe.util.CodecUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -96,7 +97,7 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
                 Vec3.CODEC
                     .fieldOf("offset")
                     .forGetter(SetBlock::offset),
-                CodecUtil.NUMBER_PROVIDER_CODEC
+                CodecUtil.NUMBER_PROVIDER
                     .optionalFieldOf("chance", ConstantValue.exactly(1.0f))
                     .forGetter(SetBlock::chance)
             ).apply(instance, SetBlock::new));
@@ -105,13 +106,13 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
          * 流编解码器
          */
         private static final StreamCodec<RegistryFriendlyByteBuf, SetBlock> STREAM_CODEC = StreamCodec.composite(
-            CodecUtil.BLOCK_STATE_STREAM_CODEC,
+            StreamCodecUtil.BLOCK_STATE,
             SetBlock::state,
             ByteBufCodecs.COMPOUND_TAG,
             SetBlock::nbt,
-            CodecUtil.VEC3_STREAM_CODEC,
+            StreamCodecUtil.VEC3,
             SetBlock::offset,
-            CodecUtil.NUMBER_PROVIDER_STREAM_CODEC,
+            StreamCodecUtil.NUMBER_PROVIDER,
             SetBlock::chance,
             SetBlock::new
         );

@@ -2,8 +2,9 @@ package dev.anvilcraft.lib.v2.recipe.component;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.v2.codec.CodecUtil;
+import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.outcome.SetBlock;
-import dev.anvilcraft.lib.v2.recipe.util.CodecUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -81,7 +82,7 @@ public record ChanceBlockState(BlockState state, CompoundTag nbt, NumberProvider
             CompoundTag.CODEC
                 .optionalFieldOf("nbt", new CompoundTag())
                 .forGetter(ChanceBlockState::nbt),
-            CodecUtil.NUMBER_PROVIDER_CODEC
+            CodecUtil.NUMBER_PROVIDER
                 .optionalFieldOf("chance", ConstantValue.exactly(1.0f))
                 .forGetter(ChanceBlockState::chance)
         ).apply(instance, ChanceBlockState::new));
@@ -90,11 +91,11 @@ public record ChanceBlockState(BlockState state, CompoundTag nbt, NumberProvider
      * ChanceBlockState的网络流编解码器
      */
     public static final StreamCodec<RegistryFriendlyByteBuf, ChanceBlockState> STREAM_CODEC = StreamCodec.composite(
-        CodecUtil.BLOCK_STATE_STREAM_CODEC,
+        StreamCodecUtil.BLOCK_STATE,
         ChanceBlockState::state,
         ByteBufCodecs.COMPOUND_TAG,
         ChanceBlockState::nbt,
-        CodecUtil.NUMBER_PROVIDER_STREAM_CODEC,
+        StreamCodecUtil.NUMBER_PROVIDER,
         ChanceBlockState::chance,
         ChanceBlockState::new
     );

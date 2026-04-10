@@ -14,6 +14,7 @@ AnvilLib 采用模块化设计，包含以下功能模块：
 | 模块                        | 说明             |
 |---------------------------|----------------|
 | **Config**                | 基于注解的配置系统      |
+| **Codec**                 | 数据编解码与网络序列化工具  |
 | **Integration**           | 模组兼容性集成框架      |
 | **Network**               | 网络通信与数据包自动注册框架 |
 | **Recipe**                | 世界内配方系统        |
@@ -51,6 +52,32 @@ public class MyModConfig {
 
 // 注册配置
 MyModConfig config = ConfigManager.register("my_mod", MyModConfig::new);
+```
+
+### Codec 模块
+
+提供围绕 Mojang `Codec` 与 `StreamCodec` 的实用工具，减少网络包、配方数据与注册表对象序列化时的样板代码。
+
+**主要特性：**
+
+- 常用对象编解码：`Item` / `Block` / `BlockState` / `EntityType` / `Vec3` / `Vec3i`
+- `Codec` 与 `StreamCodec` 互转（支持注册表上下文 + NBT 中间格式）
+- `NumberProvider` 的紧凑网络编码
+- `composite(...)` 高阶重载（支持 `Function7` 到 `Function16`）
+
+**使用示例：**
+
+```java
+public record ExamplePayload(Item item, int count) {
+    public static final StreamCodec<RegistryFriendlyByteBuf, ExamplePayload> STREAM_CODEC =
+        StreamCodec.composite(
+            StreamCodecUtil.ITEM_STREAM_CODEC,
+            ExamplePayload::item,
+            ByteBufCodecs.VAR_INT,
+            ExamplePayload::count,
+            ExamplePayload::new
+        );
+}
 ```
 
 ### Integration 模块
@@ -167,6 +194,7 @@ public static final RegistryEntry<Item> MY_ITEM = REGISTRUM
 `anvillib-neoforge-1.21.1` 为聚合发行模块，默认打包并重导出以下子模块：
 
 - `config`
+- `codec`
 - `integration`
 - `network`
 - `recipe`
@@ -188,6 +216,7 @@ dependencies {
 
     // 或按需引入单独模块
     implementation "dev.anvilcraft.lib:anvillib-config-neoforge-1.21.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.1:2.0.0"
@@ -208,6 +237,7 @@ dependencies {
 
     // 按需引入示例
     implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:2.0.0")
 }
 ```
 
