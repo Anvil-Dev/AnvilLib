@@ -57,15 +57,23 @@ public abstract class StreamCodecUtil {
      * {@link Item} 的编解码器，按注册表 key 字符串编码。
      */
     public static final StreamCodec<RegistryFriendlyByteBuf, Item> ITEM = StreamCodec.of(
-        (buf, item) -> buf.writeUtf(BuiltInRegistries.ITEM.getKey(item).toString()),
-        buf -> BuiltInRegistries.ITEM.get(ResourceLocation.parse(buf.readUtf()))
+        (buf, item) ->  buf.writeResourceLocation(BuiltInRegistries.ITEM.getKey(item)),
+        buf -> {
+            ResourceLocation id = buf.readResourceLocation();
+            return BuiltInRegistries.ITEM.getOptional(id)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown item id: " + id));
+        }
     );
     /**
      * {@link Block} 的编解码器，按注册表 key 字符串编码。
      */
     public static final StreamCodec<RegistryFriendlyByteBuf, Block> BLOCK = StreamCodec.of(
-        (buf, block) -> buf.writeUtf(BuiltInRegistries.BLOCK.getKey(block).toString()),
-        buf -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse(buf.readUtf()))
+        (buf, block) -> buf.writeResourceLocation(BuiltInRegistries.BLOCK.getKey(block)),
+        buf -> {
+            ResourceLocation id = buf.readResourceLocation();
+            return BuiltInRegistries.BLOCK.getOptional(id)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown block id: " + id));
+        }
     );
     /**
      * {@link BlockState} 的编解码器，按全局运行时 state id 编码。
@@ -83,7 +91,8 @@ public abstract class StreamCodecUtil {
      * 单个 {@link Character} 的编解码器，使用单字符 UTF 字符串表示。
      */
     public static final StreamCodec<RegistryFriendlyByteBuf, Character> CHAR = StreamCodec.of(
-        (buf, character) -> buf.writeUtf(character.toString()), buf -> buf.readUtf().charAt(0)
+        (buf, character) -> buf.writeUtf(character.toString()),
+        buf -> buf.readUtf().charAt(0)
     );
     /**
      * 对原生 Vec3 读写方法的轻量封装。
