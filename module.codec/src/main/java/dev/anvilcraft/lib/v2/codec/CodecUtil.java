@@ -138,7 +138,12 @@ public abstract class CodecUtil {
      * 字符编解码器，使用单字符字符串进行表示。
      */
     public static final Codec<Character> CHAR = Codec.STRING.flatXmap(
-        s -> DataResult.success(s.charAt(0)),
+        s -> {
+            if (s.length() != 1) {
+                return DataResult.error(() -> "Expected single character string, got length " + s.length() + ": \"" + s + "\"");
+            }
+            return DataResult.success(s.charAt(0));
+        },
         c -> DataResult.success(c.toString())
     );
     /**
@@ -213,7 +218,18 @@ public abstract class CodecUtil {
      * @return 基于 ordinal 的枚举编解码器
      */
     public static <T extends Enum<T>> Codec<T> enumCodecInInt(Class<T> clazz) {
-        return Codec.INT.xmap(index -> clazz.getEnumConstants()[index], Enum::ordinal);
+        T[] constants = clazz.getEnumConstants();
+        return Codec.INT.comapFlatMap(
+            index -> {
+                if (index < 0 || index >= constants.length) {
+                    return DataResult.error(() ->
+                        "Invalid ordinal " + index + " for enum " + clazz.getName()
+                        + ", expected value in range [0, " + constants.length + ")"
+                    );
+                }
+                return DataResult.success(constants[index]);
+            }, Enum::ordinal
+        );
     }
 
     /**

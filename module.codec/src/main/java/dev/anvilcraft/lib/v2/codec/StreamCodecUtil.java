@@ -57,7 +57,7 @@ public abstract class StreamCodecUtil {
      * {@link Item} 的编解码器，按注册表 key 字符串编码。
      */
     public static final StreamCodec<RegistryFriendlyByteBuf, Item> ITEM = StreamCodec.of(
-        (buf, item) ->  buf.writeResourceLocation(BuiltInRegistries.ITEM.getKey(item)),
+        (buf, item) -> buf.writeResourceLocation(BuiltInRegistries.ITEM.getKey(item)),
         buf -> {
             ResourceLocation id = buf.readResourceLocation();
             return BuiltInRegistries.ITEM.getOptional(id)
@@ -92,7 +92,13 @@ public abstract class StreamCodecUtil {
      */
     public static final StreamCodec<RegistryFriendlyByteBuf, Character> CHAR = StreamCodec.of(
         (buf, character) -> buf.writeUtf(character.toString()),
-        buf -> buf.readUtf().charAt(0)
+        buf -> {
+            String value = buf.readUtf(1);
+            if (value.length() != 1) {
+                throw new IllegalArgumentException("Expected exactly one character but got length " + value.length());
+            }
+            return value.charAt(0);
+        }
     );
     /**
      * 对原生 Vec3 读写方法的轻量封装。
