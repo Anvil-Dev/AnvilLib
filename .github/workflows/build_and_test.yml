@@ -122,7 +122,7 @@ jobs:
             module.${{ inputs.module }}/build/libs/${{ inputs.mod_id }}-neoforge-${{ steps.version.outputs.version }}.jar
 
       - name: Upload MCMOD
-        if: ${{ inputs.module == 'main' }}
+        if: ${{ inputs.module == 'main' && !inputs.pr_build }}
         run: ./gradlew :${{ inputs.module_id }}-neoforge-1.21.1:publishMods
         env:
           CURSEFORGE_TOKEN: ${{ secrets.curseforge_token }}
