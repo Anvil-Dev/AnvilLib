@@ -73,7 +73,7 @@ packet payloads, registry object serialization, and data-driven systems.
 public record ExamplePayload(Item item, int count) {
     public static final StreamCodec<RegistryFriendlyByteBuf, ExamplePayload> STREAM_CODEC =
         StreamCodec.composite(
-            StreamCodecUtil.ITEM_STREAM_CODEC,
+            StreamCodecUtil.ITEM,
             ExamplePayload::item,
             ByteBufCodecs.VAR_INT,
             ExamplePayload::count,

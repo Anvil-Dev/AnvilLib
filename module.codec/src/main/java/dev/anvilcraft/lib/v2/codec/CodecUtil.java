@@ -106,10 +106,7 @@ public abstract class CodecUtil {
      */
     public static final Codec<NumberProvider> NUMBER_PROVIDER = Codec.either(
         NumberProviders.CODEC,
-        Codec.INT.xmap(
-            ConstantValue::new,
-            value -> Math.round(value.value())
-        )
+        Codec.INT.xmap(ConstantValue::new, value -> Math.round(value.value()))
     ).xmap(
         Either::unwrap, provider -> {
             if (!(provider instanceof ConstantValue(float value)) || value - Math.floor(value) >= 1E-5) {
@@ -172,13 +169,15 @@ public abstract class CodecUtil {
         Function<T, V> valueGetter,
         BiFunction<K, V, T> factory
     ) {
-        return mapCodec.xmap(
+        return mapCodec.flatXmap(
             map -> {
-                for (Map.Entry<K, V> entry : map.entrySet()) {
-                    return factory.apply(entry.getKey(), entry.getValue());
+                if (map.size() != 1) {
+                    return DataResult.error(() -> "Expected exactly one entry in map, got " + map.size());
                 }
-                return null;
-            }, value -> Map.of(keyGetter.apply(value), valueGetter.apply(value))
+                Map.Entry<K, V> entry = map.entrySet().iterator().next();
+                return DataResult.success(factory.apply(entry.getKey(), entry.getValue()));
+            },
+            value -> DataResult.success(Map.of(keyGetter.apply(value), valueGetter.apply(value)))
         );
     }
 

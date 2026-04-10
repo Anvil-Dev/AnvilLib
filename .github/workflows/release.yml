@@ -142,6 +142,7 @@ jobs:
   recipe:
     needs:
       - config
+      - codec
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: recipe
