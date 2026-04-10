@@ -94,7 +94,7 @@ jobs:
           path: module.${{ inputs.module }}/build/libs/${{ inputs.mod_id }}-neoforge-${{ steps.version.outputs.version }}.jar
 
       - name: Publish to maven
-        if: ${{ !inputs.pr_build && env.NOT_DEV }}
+        if: ${{ !inputs.pr_build && env.NOT_DEV == 'true' }}
         run: ./gradlew :${{ inputs.module_id }}-neoforge-1.21.1:publish
         env:
           MAVEN_URL: ${{ secrets.maven_url }}
