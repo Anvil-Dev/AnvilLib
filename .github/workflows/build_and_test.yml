@@ -48,7 +48,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      NOT_DEV: ${{ maven_url != '' && maven_user != '' && maven_pass != '' }}
+      NOT_DEV: ${{ secrets.maven_url != '' && secrets.maven_user != '' && secrets.maven_pass != '' }}
       CI_BUILD: ${{ inputs.ci_build }}
       PR_BUILD: ${{ inputs.pr_build }}
     steps:
