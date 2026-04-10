@@ -2,8 +2,9 @@ package dev.anvilcraft.lib.v2.recipe.component;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.v2.codec.CodecUtil;
+import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.outcome.SpawnItem;
-import dev.anvilcraft.lib.v2.recipe.util.CodecUtil;
 import dev.anvilcraft.lib.v2.recipe.util.NumberProviderUtil;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentMap;
@@ -138,7 +139,7 @@ public record ChanceItemStack(ItemStack stack, NumberProvider count) {
     public static final Codec<ChanceItemStack> CODEC = RecordCodecBuilder.create(instance -> instance.group(
         ItemStack.ITEM_NON_AIR_CODEC.fieldOf("id").forGetter(ChanceItemStack::getItemHolder),
         DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter(ChanceItemStack::getComponentsPatch),
-        CodecUtil.NUMBER_PROVIDER_CODEC.optionalFieldOf("count", ConstantValue.exactly(1.0f)).forGetter(ChanceItemStack::count)
+        CodecUtil.NUMBER_PROVIDER.optionalFieldOf("count", ConstantValue.exactly(1.0f)).forGetter(ChanceItemStack::count)
     ).apply(instance, ChanceItemStack::new));
 
     /**
@@ -147,7 +148,7 @@ public record ChanceItemStack(ItemStack stack, NumberProvider count) {
     public static final StreamCodec<RegistryFriendlyByteBuf, ChanceItemStack> STREAM_CODEC = StreamCodec.composite(
         ItemStack.STREAM_CODEC,
         ChanceItemStack::stack,
-        CodecUtil.NUMBER_PROVIDER_STREAM_CODEC,
+        StreamCodecUtil.NUMBER_PROVIDER,
         ChanceItemStack::count,
         ChanceItemStack::new
     );

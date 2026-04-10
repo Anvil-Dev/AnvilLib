@@ -3,8 +3,8 @@ package dev.anvilcraft.lib.v2.recipe.component;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.predicate.item.HasItemIngredient;
-import dev.anvilcraft.lib.v2.recipe.util.CodecUtil;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.advancements.critereon.ItemSubPredicate;
@@ -59,7 +59,7 @@ public record ItemIngredientPredicate(
     /**
      * ItemIngredientPredicate流编解码器
      */
-    public static final StreamCodec<RegistryFriendlyByteBuf, ItemIngredientPredicate> STREAM_CODEC = CodecUtil.codec2Stream(
+    public static final StreamCodec<RegistryFriendlyByteBuf, ItemIngredientPredicate> STREAM_CODEC = StreamCodecUtil.codec2Stream(
         ItemIngredientPredicate.CODEC
     );
 

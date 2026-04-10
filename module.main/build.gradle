@@ -117,6 +117,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 dependencies {
     if (System.getenv("NOT_DEV") == 'true') {
         jarJar(implementation("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.1:latest.release"))
+        jarJar(implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:latest.release"))
         jarJar(implementation("dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.1:latest.release"))
         jarJar(implementation("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.1:latest.release"))
         jarJar(implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:latest.release"))
@@ -124,6 +125,7 @@ dependencies {
         jarJar(implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:latest.release"))
     } else {
         jarJar(implementation project(":anvillib-config-neoforge-1.21.1"))
+        jarJar(implementation project(":anvillib-codec-neoforge-1.21.1"))
         jarJar(implementation project(":anvillib-integration-neoforge-1.21.1"))
         jarJar(implementation project(":anvillib-moveable-entity-block-neoforge-1.21.1"))
         jarJar(implementation project(":anvillib-network-neoforge-1.21.1"))

@@ -2,11 +2,11 @@ package dev.anvilcraft.lib.v2.recipe.predicate.block;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.cache.BlockCache;
 import dev.anvilcraft.lib.v2.recipe.component.BlockStatePredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
-import dev.anvilcraft.lib.v2.recipe.util.CodecUtil;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -73,7 +73,7 @@ public abstract class HasBlockBase<T extends HasBlockBase<T>> implements IRecipe
          * 流编解码器
          */
         public final StreamCodec<RegistryFriendlyByteBuf, T> mapCodec = StreamCodec.composite(
-            CodecUtil.VEC3_STREAM_CODEC,
+            StreamCodecUtil.VEC3,
             T::getOffset,
             BlockStatePredicate.STREAM_CODEC,
             T::getPredicate,

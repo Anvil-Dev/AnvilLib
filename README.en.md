@@ -15,6 +15,7 @@ AnvilLib adopts a modular design and includes the following functional modules:
 | Module                    | Description                                       |
 |---------------------------|---------------------------------------------------|
 | **Config**                | Annotation-based configuration system             |
+| **Codec**                 | Data codecs and network serialization helpers     |
 | **Integration**           | Mod compatibility integration framework           |
 | **Network**               | Networking API with automatic packet registration |
 | **Recipe**                | In-world recipe system                            |
@@ -52,6 +53,33 @@ public class MyModConfig {
 
 // Register configuration
 MyModConfig config = ConfigManager.register("my_mod", MyModConfig::new);
+```
+
+### Codec Module
+
+Provides practical helpers around Mojang `Codec` and `StreamCodec` to reduce boilerplate in
+packet payloads, registry object serialization, and data-driven systems.
+
+**Key Features:**
+
+- Common game-domain codecs: `Item` / `Block` / `BlockState` / `EntityType` / `Vec3` / `Vec3i`
+- `Codec` <-> `StreamCodec` bridges (registry-aware, NBT intermediate form)
+- Compact network encoding for `NumberProvider`
+- High-arity `composite(...)` overloads (`Function7` through `Function16`)
+
+**Usage Example:**
+
+```java
+public record ExamplePayload(Item item, int count) {
+    public static final StreamCodec<RegistryFriendlyByteBuf, ExamplePayload> STREAM_CODEC =
+        StreamCodec.composite(
+            StreamCodecUtil.ITEM_STREAM_CODEC,
+            ExamplePayload::item,
+            ByteBufCodecs.VAR_INT,
+            ExamplePayload::count,
+            ExamplePayload::new
+        );
+}
 ```
 
 ### Integration Module
@@ -169,6 +197,7 @@ public static final RegistryEntry<Item> MY_ITEM = REGISTRUM
 `anvillib-neoforge-1.21.1` is the aggregate artifact. It bundles and re-exports:
 
 - `config`
+- `codec`
 - `integration`
 - `network`
 - `recipe`
@@ -190,6 +219,7 @@ dependencies {
 
     // Or import individual modules as needed
     implementation "dev.anvilcraft.lib:anvillib-config-neoforge-1.21.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.1:2.0.0"
@@ -210,6 +240,7 @@ dependencies {
 
     // Optional single-module example
     implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:2.0.0")
 }
 ```
 
