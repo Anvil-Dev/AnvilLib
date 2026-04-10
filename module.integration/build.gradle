@@ -161,7 +161,7 @@ jar {
     from(rootProject.file("LICENSE"))
     from(rootProject.file("ASSETS_LICENSE"))
     from(rootProject.file("README.md"))
-    from(rootProject.file("README_en.md"))
+    from(rootProject.file("README.en.md"))
 }
 
 artifacts {

@@ -36,7 +36,7 @@ jobs:
     with:
       module: codec
       module_id: anvillib-codec
-      mod_id: codec
+      mod_id: anvillib_codec
       ci_build: true
       pr_build: true
     secrets:
