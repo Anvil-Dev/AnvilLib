@@ -1,0 +1,7 @@
+{
+  "anvillib.configuration.in_world_recipe_max_efficiency": "In World Recipe Max Efficiency",
+  "anvillib.configuration.in_world_recipe_max_efficiency.tooltip": "Maximum efficiency of in world recipes",
+  "anvillib.configuration.section.anvillib.common.toml": "Anvillib Common Configuration",
+  "anvillib.configuration.section.anvillib.common.toml.title": "Anvillib Common Configuration",
+  "anvillib.configuration.title": "Anvillib Configuration"
+}

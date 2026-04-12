@@ -192,6 +192,31 @@ jobs:
       signing_key: ${{ secrets.SIGNING_KEY }}
       signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
+  wheel:
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: wheel
+      module_id: anvillib-wheel
+      mod_id: anvillib_wheel
+      ci_build: true
+      pr_build: false
+    secrets:
+      maven_url: ${{ secrets.MAVEN_URL }}
+      maven_user: ${{ secrets.MAVEN_USER }}
+      maven_pass: ${{ secrets.MAVEN_PASS }}
+  wheel-maven-central-deploy:
+    uses: ./.github/workflows/publish_maven_central.yml
+    needs:
+      - wheel
+    with:
+      module: wheel
+      module_id: anvillib-wheel
+    secrets:
+      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      signing_key: ${{ secrets.SIGNING_KEY }}
+      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
+      signing_password: ${{ secrets.SIGNING_PASSWORD }}
   main:
     needs:
       - config
@@ -201,6 +226,7 @@ jobs:
       - network
       - recipe
       - registrum
+      - wheel
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: main

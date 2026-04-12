@@ -30,16 +30,11 @@ repositories {
     mavenCentral()
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 neoForge {
     // Specify the version of NeoForge to use.
     version = libs.versions.neoForge.get()
-
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
 
     // This line is optional. Access Transformers are automatically detected
     // accessTransformers.add('src/main/resources/META-INF/accesstransformer.cfg')
@@ -123,7 +118,6 @@ dependencies {
         jarJar(implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:latest.release"))
         jarJar(implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.1:latest.release"))
         jarJar(implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:latest.release"))
-        jarJar(implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:latest.release"))
     } else {
         jarJar(implementation project(":anvillib-config-neoforge-1.21.1"))
         jarJar(implementation project(":anvillib-codec-neoforge-1.21.1"))
@@ -132,7 +126,6 @@ dependencies {
         jarJar(implementation project(":anvillib-network-neoforge-1.21.1"))
         jarJar(implementation project(":anvillib-recipe-neoforge-1.21.1"))
         jarJar(implementation project(":anvillib-registrum-neoforge-1.21.1"))
-        jarJar(implementation project(":anvillib-wheel-neoforge-1.21.1"))
     }
 }
 
@@ -285,7 +278,7 @@ machete {
 }
 
 lombok {
-    version = "1.18.34"
+    version = "1.18.44"
 }
 
 publishMods {

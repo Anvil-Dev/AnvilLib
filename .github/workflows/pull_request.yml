@@ -73,6 +73,14 @@ jobs:
       mod_id: anvillib_registrum
       ci_build: true
       pr_build: true
+  wheel:
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: wheel
+      module_id: anvillib-wheel
+      mod_id: anvillib_wheel
+      ci_build: true
+      pr_build: true
   main:
     needs:
       - config
@@ -82,6 +90,7 @@ jobs:
       - network
       - recipe
       - registrum
+      - wheel
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: main
