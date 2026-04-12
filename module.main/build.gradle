@@ -25,9 +25,19 @@ base {
 }
 
 repositories {
-    maven { url = "https://server.cjsah.net:1002/maven/" }
     mavenLocal()
-    mavenCentral()
+    exclusiveContent {
+        forRepositories(
+                mavenCentral(),
+                maven { // Anvil Lib
+                    name = "Cjsah Maven"
+                    url = "https://server.cjsah.net:1002/maven/"
+                }
+        )
+        filter {
+            includeGroup "dev.anvilcraft.lib"
+        }
+    }
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -120,8 +130,10 @@ dependencies {
         jarJar(implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:latest.release"))
         jarJar(implementation("dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.1:latest.release"))
         jarJar(implementation("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.1:latest.release"))
+        interfaceInjectionData("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.1:latest.release")
         jarJar(implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:latest.release"))
         jarJar(implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.1:latest.release"))
+        interfaceInjectionData("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.1:latest.release")
         jarJar(implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:latest.release"))
         jarJar(implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:latest.release"))
     } else {
@@ -129,8 +141,10 @@ dependencies {
         jarJar(implementation project(":anvillib-codec-neoforge-1.21.1"))
         jarJar(implementation project(":anvillib-integration-neoforge-1.21.1"))
         jarJar(implementation project(":anvillib-moveable-entity-block-neoforge-1.21.1"))
+        interfaceInjectionData project(":anvillib-moveable-entity-block-neoforge-1.21.1")
         jarJar(implementation project(":anvillib-network-neoforge-1.21.1"))
         jarJar(implementation project(":anvillib-recipe-neoforge-1.21.1"))
+        interfaceInjectionData project(":anvillib-recipe-neoforge-1.21.1")
         jarJar(implementation project(":anvillib-registrum-neoforge-1.21.1"))
         jarJar(implementation project(":anvillib-wheel-neoforge-1.21.1"))
     }

@@ -115,8 +115,10 @@ dependencies {
     implementation project(":anvillib-codec-neoforge-1.21.1")
     implementation project(":anvillib-integration-neoforge-1.21.1")
     implementation project(":anvillib-moveable-entity-block-neoforge-1.21.1")
+    interfaceInjectionData project(":anvillib-moveable-entity-block-neoforge-1.21.1")
     implementation project(":anvillib-network-neoforge-1.21.1")
     implementation project(":anvillib-recipe-neoforge-1.21.1")
+    interfaceInjectionData project(":anvillib-recipe-neoforge-1.21.1")
     implementation project(":anvillib-registrum-neoforge-1.21.1")
 }
 
