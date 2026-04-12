@@ -110,7 +110,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.12.2"))
+    testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
@@ -268,26 +268,4 @@ machete {
 
 lombok {
     version = "1.18.44"
-}
-
-publishMods {
-    file = jar.archiveFile
-    changelog = "Update"
-    type = BETA
-    modLoaders.add("neoforge")
-
-    additionalFiles.from(sourcesJar.archiveFile)
-    additionalFiles.from(javadocJar.archiveFile)
-
-    curseforge {
-        accessToken = System.getenv("CURSEFORGE_TOKEN")
-        projectId = "1484302"
-        minecraftVersions.add(project.minecraft_version)
-    }
-
-    modrinth {
-        accessToken = System.getenv("MODRINTH_TOKEN")
-        projectId = "nKAcAL9b"
-        minecraftVersions.add(project.minecraft_version)
-    }
 }

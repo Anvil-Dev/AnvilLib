@@ -120,6 +120,14 @@ dependencies {
     implementation project(":anvillib-recipe-neoforge-1.21.1")
     interfaceInjectionData project(":anvillib-recipe-neoforge-1.21.1")
     implementation project(":anvillib-registrum-neoforge-1.21.1")
+    implementation project(":anvillib-wheel-neoforge-1.21.1")
+
+    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -272,26 +280,4 @@ machete {
 
 lombok {
     version = "1.18.44"
-}
-
-publishMods {
-    file = jar.archiveFile
-    changelog = "Update"
-    type = BETA
-    modLoaders.add("neoforge")
-
-    additionalFiles.from(sourcesJar.archiveFile)
-    additionalFiles.from(javadocJar.archiveFile)
-
-    curseforge {
-        accessToken = System.getenv("CURSEFORGE_TOKEN")
-        projectId = "1484302"
-        minecraftVersions.add(project.minecraft_version)
-    }
-
-    modrinth {
-        accessToken = System.getenv("MODRINTH_TOKEN")
-        projectId = "nKAcAL9b"
-        minecraftVersions.add(project.minecraft_version)
-    }
 }
