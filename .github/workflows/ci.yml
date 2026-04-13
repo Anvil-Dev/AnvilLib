@@ -64,6 +64,36 @@ jobs:
       signing_key: ${{ secrets.SIGNING_KEY }}
       signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
+  multiblock:
+    uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - config
+      - codec
+      - network
+      - util
+    with:
+      module: multiblock
+      module_id: anvillib-multiblock
+      mod_id: anvillib_multiblock
+      ci_build: true
+      pr_build: false
+    secrets:
+      maven_url: ${{ secrets.MAVEN_URL }}
+      maven_user: ${{ secrets.MAVEN_USER }}
+      maven_pass: ${{ secrets.MAVEN_PASS }}
+  multiblock-maven-central-deploy:
+    uses: ./.github/workflows/publish_maven_central.yml
+    needs:
+      - multiblock
+    with:
+      module: multiblock
+      module_id: anvillib-multiblock
+    secrets:
+      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      signing_key: ${{ secrets.SIGNING_KEY }}
+      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
+      signing_password: ${{ secrets.SIGNING_PASSWORD }}
   integration:
     uses: ./.github/workflows/build_and_test.yml
     with:
@@ -143,6 +173,7 @@ jobs:
     needs:
       - config
       - codec
+      - util
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: recipe
@@ -192,6 +223,31 @@ jobs:
       signing_key: ${{ secrets.SIGNING_KEY }}
       signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
+  util:
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: util
+      module_id: anvillib-util
+      mod_id: anvillib_util
+      ci_build: true
+      pr_build: false
+    secrets:
+      maven_url: ${{ secrets.MAVEN_URL }}
+      maven_user: ${{ secrets.MAVEN_USER }}
+      maven_pass: ${{ secrets.MAVEN_PASS }}
+  util-maven-central-deploy:
+    uses: ./.github/workflows/publish_maven_central.yml
+    needs:
+      - util
+    with:
+      module: util
+      module_id: anvillib-util
+    secrets:
+      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      signing_key: ${{ secrets.SIGNING_KEY }}
+      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
+      signing_password: ${{ secrets.SIGNING_PASSWORD }}
   wheel:
     uses: ./.github/workflows/build_and_test.yml
     with:
@@ -223,9 +279,11 @@ jobs:
       - codec
       - integration
       - moveable-entity-block
+      - multiblock
       - network
       - recipe
       - registrum
+      - util
       - wheel
     uses: ./.github/workflows/build_and_test.yml
     with:

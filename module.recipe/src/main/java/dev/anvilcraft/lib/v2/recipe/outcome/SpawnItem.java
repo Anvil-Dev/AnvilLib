@@ -12,6 +12,7 @@ import dev.anvilcraft.lib.v2.recipe.outcome.function.ApplyTagToComponent;
 import dev.anvilcraft.lib.v2.recipe.outcome.function.IOutcomeFunction;
 import dev.anvilcraft.lib.v2.recipe.util.IRecipeResultOffsetBlock;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
+import dev.anvilcraft.lib.v2.util.predicate.ChanceItemStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPatch;
@@ -72,6 +73,16 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * 将此ChanceItemStack转换为SpawnItem结果
+     *
+     * @param offset 偏移量
+     * @return SpawnItem结果
+     */
+    public SpawnItem fromChance(ChanceItemStack stack, Vec3 offset) {
+        return SpawnItem.builder().item(stack.stack()).count(stack.count()).offset(offset).build();
     }
 
     /**

@@ -2,7 +2,7 @@ package dev.anvilcraft.lib.v2.recipe.predicate.block;
 
 import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipePredicateTypes;
 import dev.anvilcraft.lib.v2.recipe.cache.BlockCache;
-import dev.anvilcraft.lib.v2.recipe.component.BlockStatePredicate;
+import dev.anvilcraft.lib.v2.util.predicate.BlockStatePredicate;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;

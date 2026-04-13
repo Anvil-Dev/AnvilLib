@@ -76,6 +76,18 @@ public abstract class StreamCodecUtil {
         }
     );
     /**
+     * {@link BlockPos} 的编解码器，使用 {@link net.minecraft.network.VarInt} 打包。
+     */
+    public static final StreamCodec<FriendlyByteBuf, BlockPos> VAR_INT_BLOCK_POS = StreamCodec.composite(
+        ByteBufCodecs.VAR_INT,
+        BlockPos::getX,
+        ByteBufCodecs.VAR_INT,
+        BlockPos::getY,
+        ByteBufCodecs.VAR_INT,
+        BlockPos::getZ,
+        BlockPos::new
+    );
+    /**
      * {@link BlockState} 的编解码器，按全局运行时 state id 编码。
      */
     public static final StreamCodec<? super ByteBuf, BlockState> BLOCK_STATE = StreamCodec.of(

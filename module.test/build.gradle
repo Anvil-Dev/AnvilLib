@@ -111,18 +111,20 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 dependencies {
     implementation project(":anvillib-config-neoforge-1.21.1")
     implementation project(":anvillib-codec-neoforge-1.21.1")
+    implementation project(":anvillib-multiblock-neoforge-1.21.1")
     implementation project(":anvillib-integration-neoforge-1.21.1")
     interfaceInjectionData(implementation project(":anvillib-moveable-entity-block-neoforge-1.21.1"))
     implementation project(":anvillib-network-neoforge-1.21.1")
     interfaceInjectionData(implementation project(":anvillib-recipe-neoforge-1.21.1"))
     implementation project(":anvillib-registrum-neoforge-1.21.1")
+    implementation project(":anvillib-util-neoforge-1.21.1")
     implementation project(":anvillib-wheel-neoforge-1.21.1")
 }
 
 tasks.withType(JavaExec).configureEach {
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+//    javaLauncher = javaToolchains.launcherFor {
+//        languageVersion = JavaLanguageVersion.of(21)
+//    }
     // Keep JVM crash artifacts inside the module for easier debugging.
     jvmArgs '-XX:ErrorFile=' + project.layout.buildDirectory.file('hs_err_pid%p.log').get().asFile.absolutePath
     jvmArgs '-XX:ReplayDataFile=' + project.layout.buildDirectory.file('replay_pid%p.log').get().asFile.absolutePath

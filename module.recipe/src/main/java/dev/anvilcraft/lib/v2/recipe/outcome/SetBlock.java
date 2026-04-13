@@ -7,6 +7,7 @@ import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.cache.BlockCache;
 import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeOutcomeTypes;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
+import dev.anvilcraft.lib.v2.util.predicate.ChanceBlockState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -48,6 +49,10 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static SetBlock fromState(ChanceBlockState state, Vec3 offset) {
+        return SetBlock.builder().block(state.state()).offset(offset).nbt(state.nbt()).chance(state.chance()).build();
     }
 
     /**

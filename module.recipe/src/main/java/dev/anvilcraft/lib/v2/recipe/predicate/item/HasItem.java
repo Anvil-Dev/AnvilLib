@@ -2,7 +2,7 @@ package dev.anvilcraft.lib.v2.recipe.predicate.item;
 
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipePredicateTypes;
-import dev.anvilcraft.lib.v2.recipe.component.ItemPredicate;
+import dev.anvilcraft.lib.v2.util.predicate.ItemPredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.IPredicateFunction;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.SaveComponentToTag;

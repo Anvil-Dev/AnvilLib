@@ -19,7 +19,9 @@ AnvilLib 采用模块化设计，包含以下功能模块：
 | **Network**               | 网络通信与数据包自动注册框架 |
 | **Recipe**                | 世界内配方系统        |
 | **Moveable Entity Block** | 可被活塞推动的方块实体支持  |
+| **Multiblock**            | 动态多方块系统        |
 | **Registrum**             | 简化的注册系统        |
+| **Util**                  | 可共享的工具方法       |
 | **Wheel**                 | 轮盘菜单客户端 API    |
 | **Main**                  | 聚合模块（包含全部子模块）  |
 
@@ -103,6 +105,64 @@ public class JEIIntegration {
 }
 ```
 
+### Moveable Entity Block 模块
+
+允许带有方块实体的方块被活塞推动，同时保留其数据。
+
+**使用示例：**
+
+```java
+public class MyBlock extends Block implements IMoveableEntityBlock {
+    @Override
+    public CompoundTag clearData(Level level, BlockPos pos) {
+        // 返回需要保留的方块实体数据
+        BlockEntity be = level.getBlockEntity(pos);
+        return be != null ? be.saveWithoutMetadata(level.registryAccess()) : new CompoundTag();
+    }
+
+    @Override
+    public void setData(Level level, BlockPos pos, CompoundTag nbt) {
+        // 在新位置恢复方块实体数据
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be != null) {
+            be.loadAdditional(nbt, level.registryAccess());
+        }
+    }
+}
+```
+
+### Multiblock 模块
+
+提供用于创建与管理动态多方块结构的灵活系统——将多个方块组合为一个逻辑单元，并支持在运行时改变形态。
+
+**主要特性：**
+
+- 使用声明式构建器或数据驱动（JSON）定义多方块结构
+- 支持动态重配置（在运行时添加/移除构件）
+- 与方块实体与自定义渲染的集成
+- 提供放置、校验与激活等事件钩子
+
+**使用示例：**
+
+```java
+// 使用构建器定义一个简单的多方块
+MultiblockDefinition furnaceArray = MultiblockBuilder.create("furnace_array")
+    .layer( // 底层
+        "###",
+        "#D#",
+        "###"
+    )
+    .marker('D', Blocks.DISPENSER)
+    .marker('#', Blocks.STONE)
+    .onActivate((world, pos, state) -> {
+        // 自定义激活逻辑
+    })
+    .build();
+
+// 注册以便游戏或数据包可以使用
+MultiblockRegistry.register(furnaceArray);
+```
+
 ### Network 模块
 
 提供面向 NeoForge 的网络通信抽象，支持按包扫描并自动注册数据包。
@@ -142,32 +202,6 @@ public static void onRegisterPayload(RegisterPayloadHandlersEvent event) {
 - **Predicate**: 配方匹配条件
 - **Outcome**: 配方执行结果（如生成物品、设置方块等）
 
-### Moveable Entity Block 模块
-
-允许带有方块实体的方块被活塞推动，同时保留其数据。
-
-**使用示例：**
-
-```java
-public class MyBlock extends Block implements IMoveableEntityBlock {
-    @Override
-    public CompoundTag clearData(Level level, BlockPos pos) {
-        // 返回需要保留的方块实体数据
-        BlockEntity be = level.getBlockEntity(pos);
-        return be != null ? be.saveWithoutMetadata(level.registryAccess()) : new CompoundTag();
-    }
-
-    @Override
-    public void setData(Level level, BlockPos pos, CompoundTag nbt) {
-        // 在新位置恢复方块实体数据
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be != null) {
-            be.loadAdditional(nbt, level.registryAccess());
-        }
-    }
-}
-```
-
 ### Registrum 模块
 
 基于 [Registrate](https://github.com/IThundxr/Registrate) 的注册系统，简化物品、方块、实体等的注册流程。
@@ -188,6 +222,28 @@ public static final RegistryEntry<Item> MY_ITEM = REGISTRUM
     .item("my_item", Item::new)
     .properties(p -> p.stacksTo(16))
     .register();
+```
+
+### Util 模块
+
+`util` 模块包含一组小巧且经过良好测试的实用工具，这些工具在不同模组间通用，旨在减少样板代码并提供可靠的原语。
+
+**主要特性：**
+
+- 集合与迭代辅助（空安全操作、带索引的转换）
+- NBT 与 Tag 工具（安全读写、迁移助手）
+- 常用数学与几何助手（向量工具、角度/数学工具）
+- 物品 / 仓位辅助（常见的物品搬运、合并逻辑）
+
+**使用示例：**
+
+```java
+// 示例：安全地合并 NBT
+CompoundTag existing = level.getBlockEntity(pos) != null ? level.getBlockEntity(pos).saveWithoutMetadata(level.registryAccess()) : new CompoundTag();
+NbtUtil.putStringIfAbsent(existing, "owner", player.getName().getString());
+
+// 示例：在两个容器间移动物品的辅助方法
+InventoryUtil.transfer(stack, sourceInventory, destInventory, slotPredicate);
 ```
 
 ### Wheel 模块
@@ -229,7 +285,9 @@ controller.onHoldKeyReleased();
 - `network`
 - `recipe`
 - `moveable-entity-block`
+- `multiblock`
 - `registrum`
+- `util`
 - `wheel`
 
 `anvillib-test-neoforge-1.21.1` 为开发/测试模块，不包含在聚合运行时产物中。
@@ -254,7 +312,9 @@ dependencies {
     implementation "dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-multiblock-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-util-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:2.0.0"
 }
 ```
@@ -267,11 +327,19 @@ repositories {
 }
 
 dependencies {
+    // 完整库
     implementation("dev.anvilcraft.lib:anvillib-neoforge-1.21.1:2.0.0")
 
-    // 按需引入示例
-    implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0")
+    // 或按需引入单独模块
+    implementation("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-multiblock-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:2.0.0")
 }
 ```
@@ -307,6 +375,9 @@ Registrum 模块部分代码基于 [Registrate](https://github.com/IThundxr/Regi
 ## 作者
 
 - **Gugle** - 主要开发者
+- **Abslb** - 贡献者
+- **QiuShui1012** - 贡献者
+- **ZhuRuoLing** - 贡献者
 
 ## 相关链接
 
