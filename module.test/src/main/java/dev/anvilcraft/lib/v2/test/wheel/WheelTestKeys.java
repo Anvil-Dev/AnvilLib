@@ -38,4 +38,3 @@ public final class WheelTestKeys {
         event.register(HOLD_KEY);
     }
 }
-

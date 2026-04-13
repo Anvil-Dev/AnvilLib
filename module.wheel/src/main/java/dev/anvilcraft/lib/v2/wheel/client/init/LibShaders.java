@@ -5,6 +5,7 @@ import dev.anvilcraft.lib.v2.wheel.AnvilLibWheel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 
 @Slf4j
-@EventBusSubscriber(modid = AnvilLibWheel.MOD_ID)
+@EventBusSubscriber(modid = AnvilLibWheel.MOD_ID, value = Dist.CLIENT)
 public class LibShaders {
     @Getter
     static @Nullable ShaderInstance ringShader;
