@@ -21,6 +21,7 @@ AnvilLib adopts a modular design and includes the following functional modules:
 | **Recipe**                | In-world recipe system                            |
 | **Moveable Entity Block** | Support for block entities movable by pistons     |
 | **Registrum**             | Simplified registration system                    |
+| **Wheel**                 | Radial wheel menu client API                      |
 | **Main**                  | Aggregated module that bundles all submodules     |
 
 ## Module Introduction
@@ -192,6 +193,32 @@ public static final RegistryEntry<Item> MY_ITEM = REGISTRUM
     .register();
 ```
 
+### Wheel Module
+
+Provides a client-side radial menu API for quick action selection.
+
+**Key Features:**
+
+- Two open modes: `TAP` and `HOLD` (trigger on release)
+- Built-in pagination (`slotsPerPage`, default `8`)
+- Optional submenu support for TAP mode
+- Entry renderer + callback model via `WheelMenuBuilder`
+
+**Usage Example:**
+
+```java
+WheelMenuModel model = WheelMenuBuilder.create()
+    .slotsPerPage(8)
+    .action("heal", Component.literal("Heal"), iconRenderer, ctx -> {})
+    .build();
+
+WheelScreenController controller = new WheelScreenController();
+controller.openTap(model);
+// HOLD mode: call on key press/release edges
+controller.onHoldKeyPressed(model);
+controller.onHoldKeyReleased();
+```
+
 ### Main Module
 
 `anvillib-neoforge-1.21.1` is the aggregate artifact. It bundles and re-exports:
@@ -203,6 +230,9 @@ public static final RegistryEntry<Item> MY_ITEM = REGISTRUM
 - `recipe`
 - `moveable-entity-block`
 - `registrum`
+- `wheel`
+
+`anvillib-test-neoforge-1.21.1` is a development/testing module and is not part of the aggregate runtime artifact.
 
 ## Dependency Integration
 
@@ -225,6 +255,7 @@ dependencies {
     implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:2.0.0"
 }
 ```
 
@@ -241,6 +272,7 @@ dependencies {
     // Optional single-module example
     implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:2.0.0")
 }
 ```
 
