@@ -1,6 +1,6 @@
 {
   "vertex": "position_color",
-  "fragment": "anvilcraft:ring",
+  "fragment": "anvillib:ring",
   "samplers": [
   ],
   "uniforms": [

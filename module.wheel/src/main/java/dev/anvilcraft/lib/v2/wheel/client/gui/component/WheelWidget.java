@@ -195,6 +195,8 @@ public class WheelWidget extends AbstractWidget {
     }
 
     public WheelWidget setCurrentIndex(int index) {
+        if (index < 0 || index >= this.sections.size()) return this;
+        if (!this.sections.get(index).selectable()) return this;
         this.currentSectionIndex = index;
         this.currentAngle = this.sections.get(index).angle;
         this.selectionEffectPos = MathUtil.rotate(
@@ -202,6 +204,11 @@ public class WheelWidget extends AbstractWidget {
                 .mul(this.getSectionCircleDiameter()),
             this.currentAngle
         );
+        return this;
+    }
+
+    public WheelWidget clearSelection() {
+        this.currentSectionIndex = -1;
         return this;
     }
 
@@ -215,19 +222,21 @@ public class WheelWidget extends AbstractWidget {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (scrollY > 0) {
-            if (this.currentSectionIndex == this.getSectionSize() - 1) {
-                this.currentSectionIndex = 0;
-            } else {
-                this.currentSectionIndex++;
-            }
-        } else if (scrollY < 0) {
-            if (this.currentSectionIndex == 0) {
-                this.currentSectionIndex = this.getSectionSize() - 1;
-            } else {
-                this.currentSectionIndex--;
-            }
+        if (this.sections.stream().noneMatch(WheelSection::selectable)) {
+            return true;
         }
+
+        int index = this.currentSectionIndex;
+        if (index < 0 || index >= this.sections.size()) {
+            index = scrollY > 0 ? -1 : 0;
+        }
+
+        if (scrollY > 0) {
+            this.currentSectionIndex = this.findNextSelectableIndex(index, 1);
+        } else if (scrollY < 0) {
+            this.currentSectionIndex = this.findNextSelectableIndex(index, -1);
+        }
+
         for (WheelSection section : this.sections) {
             if (this.sections.indexOf(section) == this.currentSectionIndex) {
                 this.currentAngle = section.angle;
@@ -248,14 +257,29 @@ public class WheelWidget extends AbstractWidget {
         double rot = Math.acos(rotationStart.dot(cursorPos) / (rotationStart.length() * cursorPos.length()));
         double rotation = cursorPos.x < 0 ? Math.PI - rot : Math.PI + rot;
         for (WheelSection section : this.sections) {
-            if (section.angleStart > section.angleEnd && rotation >= section.angleStart
-                || rotation >= section.angleStart && rotation <= section.angleEnd
+            if ((section.angleStart > section.angleEnd && rotation >= section.angleStart
+                || rotation >= section.angleStart && rotation <= section.angleEnd)
+                && section.selectable
             ) {
                 this.currentAngle = section.angle;
                 this.currentSectionIndex = this.sections.indexOf(section);
                 break;
             }
         }
+    }
+
+    private int findNextSelectableIndex(int start, int direction) {
+        if (this.sections.isEmpty()) {
+            return -1;
+        }
+        int idx = start;
+        for (int i = 0; i < this.sections.size(); i++) {
+            idx = (idx + direction + this.sections.size()) % this.sections.size();
+            if (this.sections.get(idx).selectable) {
+                return idx;
+            }
+        }
+        return -1;
     }
 
     public boolean shouldRender() {
@@ -454,7 +478,8 @@ public class WheelWidget extends AbstractWidget {
         float angleStart,
         float angleEnd,
         Component subTitle,
-        SectionRenderer renderer
+        SectionRenderer renderer,
+        boolean selectable
     ) {
         public WheelSection(
             Vector2f center,
@@ -463,11 +488,14 @@ public class WheelWidget extends AbstractWidget {
             float angleEnd,
             RawSection section
         ) {
-            this(center, angle, angleStart, angleEnd, section.name(), section.renderer());
+            this(center, angle, angleStart, angleEnd, section.name(), section.renderer(), section.selectable());
         }
     }
 
-    public record RawSection(Component name, SectionRenderer renderer) {
+    public record RawSection(Component name, SectionRenderer renderer, boolean selectable) {
+        public RawSection(Component name, SectionRenderer renderer) {
+            this(name, renderer, true);
+        }
     }
 
     @FunctionalInterface

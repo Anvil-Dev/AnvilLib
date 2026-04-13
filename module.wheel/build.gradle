@@ -110,12 +110,6 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.2"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-}
-
-tasks.withType(Test).configureEach {
-    useJUnitPlatform()
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -264,8 +258,4 @@ idea {
 machete {
     // disable machete locally for faster builds
     enabled = false
-}
-
-lombok {
-    version = "1.18.44"
 }
