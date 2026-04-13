@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 
@@ -15,9 +16,9 @@ import java.io.IOException;
 @EventBusSubscriber(modid = AnvilLibWheel.MOD_ID)
 public class LibShaders {
     @Getter
-    static ShaderInstance ringShader;
+    static @Nullable ShaderInstance ringShader;
     @Getter
-    static ShaderInstance selectionShader;
+    static @Nullable ShaderInstance selectionShader;
 
     @SubscribeEvent
     public static void register(RegisterShadersEvent event) {

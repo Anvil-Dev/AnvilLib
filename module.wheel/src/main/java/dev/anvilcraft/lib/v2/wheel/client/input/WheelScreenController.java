@@ -14,16 +14,25 @@ public final class WheelScreenController {
     }
 
     public void onHoldKeyPressed(WheelMenuModel menuModel) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (this.currentHoldScreen != null && minecraft.screen != this.currentHoldScreen) {
+            this.currentHoldScreen = null;
+        }
         if (this.currentHoldScreen != null) {
             return;
         }
         WheelScreen screen = WheelScreen.hold(menuModel);
         this.currentHoldScreen = screen;
-        Minecraft.getInstance().setScreen(screen);
+        minecraft.setScreen(screen);
     }
 
     public void onHoldKeyReleased() {
         if (this.currentHoldScreen == null) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen != this.currentHoldScreen) {
+            this.currentHoldScreen = null;
             return;
         }
         WheelScreen screen = this.currentHoldScreen;

@@ -16,6 +16,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.network.chat.Component;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -26,6 +28,8 @@ import java.util.Objects;
 
 public class WheelWidget extends AbstractWidget {
     public static final int IGNORE_CURSOR_MOVE_LENGTH = 15;
+    private static final float RING_Z = 60f;
+    private static final float SELECTION_Z = 80f;
     private static final Vector2f ROTATION_START = new Vector2f(0, 1);
 
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -522,27 +526,35 @@ public class WheelWidget extends AbstractWidget {
         float y1 = centerY - outerDiameter - 5;
         float x2 = centerX + outerDiameter + 5;
         float y2 = centerY + outerDiameter + 5;
-        bufferBuilder.addVertex(matrix4f, x1, y1, -300).setColor(color);
-        bufferBuilder.addVertex(matrix4f, x1, y2, -300).setColor(color);
-        bufferBuilder.addVertex(matrix4f, x2, y2, -300).setColor(color);
-        bufferBuilder.addVertex(matrix4f, x2, y1, -300).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x1, y1, RING_Z).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x1, y2, RING_Z).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x2, y2, RING_Z).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x2, y1, RING_Z).setColor(color);
 
         Window window = Minecraft.getInstance().getWindow();
         float guiScale = (float) window.getGuiScale();
-        RenderSystem.setShader(LibShaders::getRingShader);
+        RenderSystem.disableDepthTest();
+        ShaderInstance ringShader = LibShaders.getRingShader();
+        if (ringShader == null) {
+            renderRingFallback(guiGraphics, centerX, centerY, color, innerDiameter, outerDiameter);
+            RenderSystem.enableDepthTest();
+            return;
+        }
+        RenderSystem.setShader(() -> ringShader);
 
-        LibShaders.getRingShader()
+        ringShader
             .safeGetUniform("Center")
             .set(centerX * guiScale, centerY * guiScale);
-        LibShaders.getRingShader()
+        ringShader
             .safeGetUniform("InnerDiameter")
             .set(innerDiameter * guiScale);
-        LibShaders.getRingShader()
+        ringShader
             .safeGetUniform("OuterDiameter")
             .set(outerDiameter * guiScale);
 
         RenderSystem.setShaderColor(1, 1, 1, 1);
         BufferUploader.drawWithShader(Objects.requireNonNull(bufferBuilder.build()));
+        RenderSystem.enableDepthTest();
     }
 
     public static void renderSelectionEffect(
@@ -563,25 +575,101 @@ public class WheelWidget extends AbstractWidget {
         float y1 = centerY - radius - 5;
         float x2 = centerX + radius + 5;
         float y2 = centerY + radius + 5;
-        bufferBuilder.addVertex(matrix4f, x1, y1, -200).setColor(color);
-        bufferBuilder.addVertex(matrix4f, x1, y2, -200).setColor(color);
-        bufferBuilder.addVertex(matrix4f, x2, y2, -200).setColor(color);
-        bufferBuilder.addVertex(matrix4f, x2, y1, -200).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x1, y1, SELECTION_Z).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x1, y2, SELECTION_Z).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x2, y2, SELECTION_Z).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x2, y1, SELECTION_Z).setColor(color);
 
         Window window = Minecraft.getInstance().getWindow();
         float guiScale = (float) window.getGuiScale();
-        RenderSystem.setShader(LibShaders::getSelectionShader);
+        RenderSystem.disableDepthTest();
+        ShaderInstance selectionShader = LibShaders.getSelectionShader();
+        if (selectionShader == null) {
+            renderSelectionFallback(guiGraphics, centerX, centerY, color, radius);
+            RenderSystem.enableDepthTest();
+            return;
+        }
+        RenderSystem.setShader(() -> selectionShader);
 
-        LibShaders.getSelectionShader()
+        selectionShader
             .safeGetUniform("Center")
             .set(centerX * guiScale, centerY * guiScale);
-        LibShaders.getSelectionShader()
+        selectionShader
             .safeGetUniform("FramebufferSize")
             .set((float) window.getWidth(), (float) window.getHeight());
-        LibShaders.getSelectionShader()
+        selectionShader
             .safeGetUniform("Radius")
             .set(radius * guiScale);
 
+        RenderSystem.setShaderColor(1, 1, 1, 1);
+        BufferUploader.drawWithShader(Objects.requireNonNull(bufferBuilder.build()));
+        RenderSystem.enableDepthTest();
+    }
+
+    private static void renderRingFallback(
+        GuiGraphics guiGraphics,
+        float centerX,
+        float centerY,
+        int color,
+        float innerDiameter,
+        float outerDiameter
+    ) {
+        PoseStack poseStack = guiGraphics.pose();
+        Matrix4f matrix4f = poseStack.last().pose();
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder bufferBuilder = tesselator.begin(
+            VertexFormat.Mode.TRIANGLE_STRIP,
+            DefaultVertexFormat.POSITION_COLOR
+        );
+        float innerRadius = innerDiameter / 2f;
+        float outerRadius = outerDiameter / 2f;
+        int segments = 96;
+        for (int i = 0; i <= segments; i++) {
+            float angle = (float) (Math.PI * 2 * i / segments);
+            float sin = (float) Math.sin(angle);
+            float cos = (float) Math.cos(angle);
+            bufferBuilder.addVertex(matrix4f, centerX + cos * outerRadius, centerY + sin * outerRadius, RING_Z).setColor(color);
+            bufferBuilder.addVertex(matrix4f, centerX + cos * innerRadius, centerY + sin * innerRadius, RING_Z).setColor(color);
+        }
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShaderColor(1, 1, 1, 1);
+        BufferUploader.drawWithShader(Objects.requireNonNull(bufferBuilder.build()));
+    }
+
+    private static void renderSelectionFallback(
+        GuiGraphics guiGraphics,
+        float centerX,
+        float centerY,
+        int color,
+        float radius
+    ) {
+        renderDisc(guiGraphics, centerX, centerY, radius, color);
+    }
+
+    private static void renderDisc(
+        GuiGraphics guiGraphics,
+        float centerX,
+        float centerY,
+        float radius,
+        int centerColor
+    ) {
+        PoseStack poseStack = guiGraphics.pose();
+        Matrix4f matrix4f = poseStack.last().pose();
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder bufferBuilder = tesselator.begin(
+            VertexFormat.Mode.TRIANGLE_FAN,
+            DefaultVertexFormat.POSITION_COLOR
+        );
+        int edgeColor = centerColor & 0x00FFFFFF;
+        int segments = 48;
+        bufferBuilder.addVertex(matrix4f, centerX, centerY, SELECTION_Z).setColor(centerColor);
+        for (int i = 0; i <= segments; i++) {
+            float angle = (float) (Math.PI * 2 * i / segments);
+            float sin = (float) Math.sin(angle);
+            float cos = (float) Math.cos(angle);
+            bufferBuilder.addVertex(matrix4f, centerX + cos * radius, centerY + sin * radius, SELECTION_Z).setColor(edgeColor);
+        }
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.setShaderColor(1, 1, 1, 1);
         BufferUploader.drawWithShader(Objects.requireNonNull(bufferBuilder.build()));
     }

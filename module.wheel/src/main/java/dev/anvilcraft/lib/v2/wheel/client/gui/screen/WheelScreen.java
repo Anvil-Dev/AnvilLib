@@ -15,6 +15,9 @@ import java.util.Deque;
 import java.util.List;
 
 public class WheelScreen extends Screen {
+    private static final float WHEEL_INNER_RADIUS_SCALE = 0.12f;
+    private static final float WHEEL_OUTER_RADIUS_SCALE = 0.22f;
+
     private final WheelMenuModel model;
     private final WheelOpenMode openMode;
     private final Deque<List<WheelEntry>> menuStack = new ArrayDeque<>();
@@ -159,8 +162,8 @@ public class WheelScreen extends Screen {
             0,
             this.width,
             this.height,
-            Math.min(this.width, this.height) * 0.16f,
-            Math.min(this.width, this.height) * 0.28f,
+            Math.min(this.width, this.height) * WHEEL_INNER_RADIUS_SCALE,
+            Math.min(this.width, this.height) * WHEEL_OUTER_RADIUS_SCALE,
             sections
         );
         this.wheelWidget.clearSelection();

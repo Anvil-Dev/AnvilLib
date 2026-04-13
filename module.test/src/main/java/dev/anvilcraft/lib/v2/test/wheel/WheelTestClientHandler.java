@@ -19,18 +19,12 @@ public final class WheelTestClientHandler {
     }
 
     /**
-     * Tick 检测 TAP 按键（consumeClick 确保每次按下只触发一次）
-     * 以及 HOLD 按键的按下/松开边沿。
+     * Tick 只处理 TAP，避免在 Screen 打开时通过 isDown 误判 HOLD 状态导致闪烁。
      */
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Pre event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.screen != null) {
-            // 有 Screen 时不处理 TAP，但 HOLD 松开要继续检测
-            if (holdKeyWasDown && !WheelTestKeys.HOLD_KEY.isDown()) {
-                CONTROLLER.onHoldKeyReleased();
-                holdKeyWasDown = false;
-            }
             return;
         }
 
@@ -38,28 +32,27 @@ public final class WheelTestClientHandler {
         while (WheelTestKeys.TAP_KEY.consumeClick()) {
             CONTROLLER.openTap(WheelDemoMenus.buildTapDemo(8));
         }
-
-        // --- HOLD ---
-        boolean holdKeyDown = WheelTestKeys.HOLD_KEY.isDown();
-        if (holdKeyDown && !holdKeyWasDown) {
-            CONTROLLER.onHoldKeyPressed(WheelDemoMenus.buildHoldDemo(8));
-        } else if (!holdKeyDown && holdKeyWasDown) {
-            CONTROLLER.onHoldKeyReleased();
-        }
-        holdKeyWasDown = holdKeyDown;
     }
 
     /**
-     * 通过 InputEvent.Key 处理 HOLD 松开（Screen 已经开着时也能捕获）
+     * 通过按键事件处理 HOLD 的按下/松开边沿，避免 tick 轮询造成开关抖动。
      */
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
-        if (event.getAction() == GLFW.GLFW_RELEASE
-            && WheelTestKeys.HOLD_KEY.matches(event.getKey(), event.getScanCode())) {
-            if (holdKeyWasDown) {
-                CONTROLLER.onHoldKeyReleased();
-                holdKeyWasDown = false;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || !WheelTestKeys.HOLD_KEY.matches(event.getKey(), event.getScanCode())) {
+            return;
+        }
+        if (event.getAction() == GLFW.GLFW_PRESS) {
+            if (!holdKeyWasDown) {
+                CONTROLLER.onHoldKeyPressed(WheelDemoMenus.buildHoldDemo(8));
+                holdKeyWasDown = true;
             }
+            return;
+        }
+        if (event.getAction() == GLFW.GLFW_RELEASE && holdKeyWasDown) {
+            CONTROLLER.onHoldKeyReleased();
+            holdKeyWasDown = false;
         }
     }
 }
