@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 
 import com.google.common.collect.ObjectArrays;
 import dev.anvilcraft.lib.v2.registrum.providers.RegistrumRecipeProvider;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 
 import lombok.Getter;
 import lombok.experimental.Delegate;

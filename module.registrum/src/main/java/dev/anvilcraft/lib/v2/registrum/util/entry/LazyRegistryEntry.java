@@ -14,7 +14,7 @@ package dev.anvilcraft.lib.v2.registrum.util.entry;
 
 import javax.annotation.Nullable;
 
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 
 public class LazyRegistryEntry<R, T extends R> implements NonNullSupplier<T> {
     

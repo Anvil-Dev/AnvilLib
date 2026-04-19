@@ -10,7 +10,7 @@
  * Original File: https://github.com/IThundxr/Registrate/blob/1.21/dev/src/main/java/com/tterrag/registrate/util/nullness/NullableType.java
  */
 
-package dev.anvilcraft.lib.v2.registrum.util.nullness;
+package dev.anvilcraft.lib.v2.util.nullness;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

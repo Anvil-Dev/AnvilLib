@@ -35,7 +35,13 @@ public class MultiblockState {
     private boolean formed;
 
     public MultiblockState(BlockPos controllerPos, Holder<MultiblockDefinition> definition) {
-        this(controllerPos, Util.cast(definition), false);
+        this(
+            controllerPos,
+            definition instanceof Holder.Reference<MultiblockDefinition> ref
+            ? ref
+            : Util.throwE(new IllegalArgumentException("Non Reference Holder '" + definition + "' found")),
+            false
+        );
     }
 
     public MultiblockState(BlockPos controllerPos, Holder.Reference<MultiblockDefinition> definition, boolean formed) {

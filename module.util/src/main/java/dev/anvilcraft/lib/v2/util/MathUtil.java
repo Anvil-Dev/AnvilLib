@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.util;
 
-public class MathUtil {
+public abstract class MathUtil {
     public static float safeDiv(float a, float b) {
         if (b == 0F) return 0F;
         return a / b;

@@ -32,11 +32,11 @@ import dev.anvilcraft.lib.v2.registrum.util.OneTimeEventReceiver;
 import dev.anvilcraft.lib.v2.registrum.util.RegistrumDistExecutor;
 import dev.anvilcraft.lib.v2.registrum.util.entry.FluidEntry;
 import dev.anvilcraft.lib.v2.registrum.util.entry.RegistryEntry;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiConsumer;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullConsumer;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 
 import net.minecraft.Util;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;

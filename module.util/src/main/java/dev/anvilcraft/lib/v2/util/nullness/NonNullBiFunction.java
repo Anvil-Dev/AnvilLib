@@ -7,20 +7,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Original File: https://github.com/IThundxr/Registrate/blob/1.21/dev/src/main/java/com/tterrag/registrate/util/nullness/NonNullBiConsumer.java
+ * Original File: https://github.com/IThundxr/Registrate/blob/1.21/dev/src/main/java/com/tterrag/registrate/util/nullness/NonNullBiFunction.java
  */
 
-package dev.anvilcraft.lib.v2.registrum.util.nullness;
+package dev.anvilcraft.lib.v2.util.nullness;
 
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 @FunctionalInterface
-public interface NonNullBiConsumer<@NonnullType T, @NonnullType U> extends BiConsumer<T, U> {
+public interface NonNullBiFunction<@NonnullType T, @NonnullType U, @NonnullType R> extends BiFunction<T, U, R> {
     
     @Override
-    void accept(T t, U u);
-
-    static <T, U> NonNullBiConsumer<T, U> noop() {
-        return (t, u) -> {};
-    }
+    R apply(T t, U u);
 }

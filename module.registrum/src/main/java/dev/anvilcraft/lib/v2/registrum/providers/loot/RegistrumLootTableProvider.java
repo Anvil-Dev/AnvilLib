@@ -19,7 +19,7 @@ import com.google.common.collect.Multimap;
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
 import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
 import dev.anvilcraft.lib.v2.registrum.providers.RegistrumProvider;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullConsumer;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;

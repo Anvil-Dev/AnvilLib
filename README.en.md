@@ -147,22 +147,41 @@ Provides a flexible system for creating and managing dynamic multiblock structur
 **Usage Example:**
 
 ```java
-// Define a simple multiblock from a builder
-MultiblockDefinition furnaceArray = MultiblockBuilder.create("furnace_array")
-    .layer( // bottom layer
-        "###",
-        "#D#",
-        "###"
-    )
-    .marker('D', Blocks.DISPENSER)
-    .marker('#', Blocks.STONE)
-    .onActivate((world, pos, state) -> {
-        // custom activation logic
-    })
-    .build();
+// Register definition when datapack bootstrapping
+public static void bootstrap(BootstrapContext<MultiblockDefinition> ctx) {
+    // Define a simple multiblock from a builder
+    MultiblockDefinition furnaceArray = MultiblockDefinition.seriaBuilder()
+        .layer( // bottom layer
+            "###",
+            "#0#",
+            "###"
+        )
+        .mapController(Blocks.DISPENSER)
+        .map('#', Blocks.STONE)
+        .build();
+    ctx.register(
+        RESOURCE_KEY, // The resource key of this multiblock
+        furnaceArray
+    );
+}
 
-// Register so it can be found by the game / datapacks
-MultiblockRegistry.register(furnaceArray);
+// Register controller when initializing
+public static void init() {
+    ControllerRecord.register(new SimpleController(
+        Blocks.DISPENSER,
+        RESOURCE_KEY // The resource key of this multiblock
+    ) {
+        @Override
+        public void onFormed(Level level, MultiblockState state) {
+            // when formed...
+        }
+
+        @Override
+        public void onUnformed(Level level, MultiblockState state) {
+            // when unformed...
+        }
+    });
+}
 ```
 
 ### Network Module
@@ -241,12 +260,16 @@ The `util` module contains a set of small, well-tested helper utilities that are
 **Usage Example:**
 
 ```java
-// Example: safely merge NBT into an existing tag
-CompoundTag existing = level.getBlockEntity(pos) != null ? level.getBlockEntity(pos).saveWithoutMetadata(level.registryAccess()) : new CompoundTag();
-NbtUtil.putStringIfAbsent(existing, "owner", player.getName().getString());
+// Example: safely casting object
+public AClass(Level level, BlockPos pos) {
+    this(Util.castSafely(level.getBlockEntity(pos), ChestBlockEntity.class).orElse(null));
+}
 
-// Example: move items between inventories with a helper
-InventoryUtil.transfer(stack, sourceInventory, destInventory, slotPredicate);
+// Example: use ShapeUtil to construct VoxelShape
+VoxelShape shape = ShapeUtil.merge(
+    new AABB(0, 0, 0, 10, 10, 10),
+    new AABB(1, 10, 1, 9, 16, 9)
+);
 ```
 
 ### Wheel Module

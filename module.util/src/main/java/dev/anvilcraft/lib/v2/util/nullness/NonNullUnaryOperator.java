@@ -7,21 +7,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Original File: https://github.com/IThundxr/Registrate/blob/1.21/dev/src/main/java/com/tterrag/registrate/util/nullness/NonNullFunction.java
+ * Original File: https://github.com/IThundxr/Registrate/blob/1.21/dev/src/main/java/com/tterrag/registrate/util/nullness/NonNullUnaryOperator.java
  */
 
-package dev.anvilcraft.lib.v2.registrum.util.nullness;
+package dev.anvilcraft.lib.v2.util.nullness;
 
 import java.util.Objects;
-import java.util.function.Function;
 
 @FunctionalInterface
-public interface NonNullFunction<@NonnullType T, @NonnullType R> extends Function<T, R> {
+public interface NonNullUnaryOperator<T> extends NonNullFunction<T, T> {
 
-    @Override
-    R apply(T t);
+    static <T> NonNullUnaryOperator<T> identity() {
+        return t -> t;
+    }
 
-    default <V> NonNullFunction<T, V> andThen(NonNullFunction<? super R, ? extends V> after) {
+    default <V> NonNullUnaryOperator<T> andThen(NonNullUnaryOperator<T> after) {
         Objects.requireNonNull(after);
         return t -> after.apply(apply(t));
     }

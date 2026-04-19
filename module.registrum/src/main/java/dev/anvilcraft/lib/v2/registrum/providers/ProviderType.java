@@ -14,9 +14,9 @@ package dev.anvilcraft.lib.v2.registrum.providers;
 
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
 import dev.anvilcraft.lib.v2.registrum.providers.loot.RegistrumLootTableProvider;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullUnaryOperator;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullUnaryOperator;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;

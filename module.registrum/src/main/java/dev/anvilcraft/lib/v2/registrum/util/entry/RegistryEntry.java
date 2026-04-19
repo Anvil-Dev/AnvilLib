@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;

@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 import com.google.common.collect.ImmutableMap;
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
 import dev.anvilcraft.lib.v2.registrum.util.DataIngredient;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 
 import lombok.Getter;
 import net.minecraft.advancements.Advancement;

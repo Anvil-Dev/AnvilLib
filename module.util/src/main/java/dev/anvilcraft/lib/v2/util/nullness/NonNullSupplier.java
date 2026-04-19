@@ -10,7 +10,7 @@
  * Original File: https://github.com/IThundxr/Registrate/blob/1.21/dev/src/main/java/com/tterrag/registrate/util/nullness/NonNullSupplier.java
  */
 
-package dev.anvilcraft.lib.v2.registrum.util.nullness;
+package dev.anvilcraft.lib.v2.util.nullness;
 
 import net.neoforged.neoforge.common.util.Lazy;
 

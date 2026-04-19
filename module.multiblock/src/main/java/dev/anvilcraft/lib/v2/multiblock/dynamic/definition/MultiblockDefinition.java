@@ -3,6 +3,8 @@ package dev.anvilcraft.lib.v2.multiblock.dynamic.definition;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.serialization.MapCodec;
 import dev.anvilcraft.lib.v2.util.predicate.BlockStatePredicate;
+import it.unimi.dsi.fastutil.chars.Char2ObjectMap;
+import it.unimi.dsi.fastutil.chars.Char2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
@@ -14,6 +16,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Unmodifiable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -33,6 +37,10 @@ public record MultiblockDefinition(@Unmodifiable Map<Vec3i, BlockStatePredicate>
     
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static SeriaBuilder seriaBuilder() {
+        return new SeriaBuilder();
     }
 
     public @Unmodifiable Map<BlockPos, BlockStatePredicate> toGlobal(BlockPos centerPos) {
@@ -121,6 +129,93 @@ public record MultiblockDefinition(@Unmodifiable Map<Vec3i, BlockStatePredicate>
 
         public MultiblockDefinition build() {
             return new MultiblockDefinition(this.definition.build());
+        }
+    }
+    
+    public static class SeriaBuilder {
+        private final List<String[]> grid = new ArrayList<>();
+        private final Char2ObjectMap<BlockStatePredicate> mapping = new Char2ObjectOpenHashMap<>();
+        
+        public SeriaBuilder() {
+        }
+        
+        public SeriaBuilder layer(String... layer) {
+            this.grid.add(layer);
+            return this;
+        }
+
+        public SeriaBuilder map(char key, BlockStatePredicate.Builder predicate) {
+            this.mapping.put(key, predicate.build());
+            return this;
+        }
+
+        public SeriaBuilder map(char key, Block block) {
+            return this.map(key, BlockStatePredicate.builder().of(block));
+        }
+
+        public SeriaBuilder map(char key, BlockState state) {
+            return this.map(key, BlockStatePredicate.builder().with(state));
+        }
+
+        public SeriaBuilder map(char key, Block block, BlockState state) {
+            return this.map(key, BlockStatePredicate.builder().of(block).with(state));
+        }
+
+        public SeriaBuilder map(char key, CompoundTag tag) {
+            return this.map(key, BlockStatePredicate.builder().nbt(tag));
+        }
+
+        public SeriaBuilder map(char key, Block block, CompoundTag tag) {
+            return this.map(key, BlockStatePredicate.builder().of(block).nbt(tag));
+        }
+
+        public SeriaBuilder map(char key, BlockState state, CompoundTag tag) {
+            return this.map(key, BlockStatePredicate.builder().with(state).nbt(tag));
+        }
+
+        public SeriaBuilder map(char key, Block block, BlockState state, CompoundTag tag) {
+            return this.map(key, BlockStatePredicate.builder().of(block).with(state).nbt(tag));
+        }
+
+        public SeriaBuilder mapController(BlockStatePredicate.Builder predicate) {
+            return this.map('0', predicate);
+        }
+
+        public SeriaBuilder mapController(Block block) {
+            return this.mapController(BlockStatePredicate.builder().of(block));
+        }
+
+        public SeriaBuilder mapController(BlockState state) {
+            return this.mapController(BlockStatePredicate.builder().with(state));
+        }
+
+        public SeriaBuilder mapController(Block block, BlockState state) {
+            return this.mapController(BlockStatePredicate.builder().of(block).with(state));
+        }
+
+        public SeriaBuilder mapController(CompoundTag tag) {
+            return this.mapController(BlockStatePredicate.builder().nbt(tag));
+        }
+
+        public SeriaBuilder mapController(Block block, CompoundTag tag) {
+            return this.mapController(BlockStatePredicate.builder().of(block).nbt(tag));
+        }
+
+        public SeriaBuilder mapController(BlockState state, CompoundTag tag) {
+            return this.mapController(BlockStatePredicate.builder().with(state).nbt(tag));
+        }
+
+        public SeriaBuilder mapController(Block block, BlockState state, CompoundTag tag) {
+            return this.mapController(BlockStatePredicate.builder().of(block).with(state).nbt(tag));
+        }
+
+        public MultiblockDefinition build() {
+            int size = this.grid.size();
+            String[][] result = new String[size][this.grid.getFirst().length];
+            for (int i = 0; i < size; i++) {
+                result[i] = this.grid.get(i);
+            }
+            return new DefinitionSerialization(result, this.mapping).toDefinition();
         }
     }
 }

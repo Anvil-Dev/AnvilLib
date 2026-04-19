@@ -19,7 +19,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 @Slf4j(topic = "ShapeUtil")
-public class ShapeUtil {
+public abstract class ShapeUtil {
     public static Future<VoxelShape> threadedJoin(
         List<VoxelShape> shapes,
         BooleanOp function,

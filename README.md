@@ -145,22 +145,41 @@ public class MyBlock extends Block implements IMoveableEntityBlock {
 **使用示例：**
 
 ```java
-// 使用构建器定义一个简单的多方块
-MultiblockDefinition furnaceArray = MultiblockBuilder.create("furnace_array")
-    .layer( // 底层
-        "###",
-        "#D#",
-        "###"
-    )
-    .marker('D', Blocks.DISPENSER)
-    .marker('#', Blocks.STONE)
-    .onActivate((world, pos, state) -> {
-        // 自定义激活逻辑
-    })
-    .build();
+// 数据包初始化时注册定义
+public static void bootstrap(BootstrapContext<MultiblockDefinition> ctx) {
+    // 从构建器构建一个简单的多方块
+    MultiblockDefinition furnaceArray = MultiblockDefinition.seriaBuilder()
+        .layer( // 底层
+            "###",
+            "#0#",
+            "###"
+        )
+        .mapController(Blocks.DISPENSER)
+        .map('#', Blocks.STONE)
+        .build();
+    ctx.register(
+        RESOURCE_KEY, // 多方块的资源键
+        furnaceArray
+    );
+}
 
-// 注册以便游戏或数据包可以使用
-MultiblockRegistry.register(furnaceArray);
+// 初始化时注册控制器
+public static void init() {
+    ControllerRecord.register(new SimpleController(
+        Blocks.DISPENSER,
+        RESOURCE_KEY // 多方块的资源键
+    ) {
+        @Override
+        public void onFormed(Level level, MultiblockState state) {
+            // 成形时……
+        }
+
+        @Override
+        public void onUnformed(Level level, MultiblockState state) {
+            // 未成形时……
+        }
+    });
+}
 ```
 
 ### Network 模块
@@ -238,12 +257,16 @@ public static final RegistryEntry<Item> MY_ITEM = REGISTRUM
 **使用示例：**
 
 ```java
-// 示例：安全地合并 NBT
-CompoundTag existing = level.getBlockEntity(pos) != null ? level.getBlockEntity(pos).saveWithoutMetadata(level.registryAccess()) : new CompoundTag();
-NbtUtil.putStringIfAbsent(existing, "owner", player.getName().getString());
+// 示例：安全地进行类型转换
+public AClass(Level level, BlockPos pos) {
+    this(Util.castSafely(level.getBlockEntity(pos), ChestBlockEntity.class).orElse(null));
+}
 
-// 示例：在两个容器间移动物品的辅助方法
-InventoryUtil.transfer(stack, sourceInventory, destInventory, slotPredicate);
+// 示例：使用 ShapeUtil 构造体素形状
+VoxelShape shape = ShapeUtil.merge(
+    new AABB(0, 0, 0, 10, 10, 10),
+    new AABB(1, 10, 1, 9, 16, 9)
+);
 ```
 
 ### Wheel 模块

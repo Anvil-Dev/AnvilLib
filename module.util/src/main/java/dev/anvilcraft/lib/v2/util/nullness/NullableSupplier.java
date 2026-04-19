@@ -10,7 +10,7 @@
  * Original File: https://github.com/IThundxr/Registrate/blob/1.21/dev/src/main/java/com/tterrag/registrate/util/nullness/NullableSupplier.java
  */
 
-package dev.anvilcraft.lib.v2.registrum.util.nullness;
+package dev.anvilcraft.lib.v2.util.nullness;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -32,7 +32,7 @@ public interface NullableSupplier<@NullableType T> extends Supplier<T> {
     }
     
     default NonNullSupplier<T> asNonNull() {
-        return () -> getNonNull();
+        return this::getNonNull;
     }
     
     default NonNullSupplier<T> asNonNull(NonNullSupplier<String> errorMsg) {

@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-public class Util {
+public abstract class Util {
     /**
      * 当前环境是否为客户端
      *
@@ -86,5 +86,18 @@ public class Util {
     public static <T> T run(T value, Consumer<T> consumer) {
         consumer.accept(value);
         return value;
+    }
+
+    /**
+     * 抛出一个异常
+     *
+     * @param throwable 需要抛出的异常
+     * @return 无，用于欺骗 IDE
+     * @param <T> （并不会）返回的值的类型，用于欺骗 IDE
+     * @param <E> 抛出的异常的类型
+     * @throws E 抛出的异常的类型
+     */
+    public static <T, E extends Throwable> T throwE(E throwable) throws E {
+        throw throwable;
     }
 }
