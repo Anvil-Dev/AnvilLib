@@ -29,7 +29,7 @@ public class NetworkUtil {
         CustomPacketPayload payload,
         CustomPacketPayload... payloads
     ) {
-        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer player : level.players()) {
             if (player.equals(excluded)) continue;
             PacketDistributor.sendToPlayer(player, payload, payloads);
         }

@@ -15,7 +15,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 @EventBusSubscriber(modid = AnvilLibMultiblock.MOD_ID)
 public class AnvilLibMultiblock {
     public static final String MAIN_ID = "anvillib";
-    public static final String MOD_ID = "anvillib_dynamic_multiblock";
+    public static final String MOD_ID = "anvillib_multiblock";
     public static final AnvilLibMultiblockConfig CONFIG = ConfigManager.register(
         AnvilLibMultiblock.MOD_ID,
         AnvilLibMultiblockConfig::new

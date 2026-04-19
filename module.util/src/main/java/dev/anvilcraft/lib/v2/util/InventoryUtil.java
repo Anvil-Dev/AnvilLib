@@ -20,7 +20,7 @@ public abstract class InventoryUtil {
 
     public static ItemStack getFirstItem(Inventory inventory, ItemLike item) {
         for (ItemStack stack : getItems(inventory)) {
-            if (stack.getItem().equals(item)) {
+            if (stack.getItem().equals(item.asItem())) {
                 return stack;
             }
         }
@@ -30,7 +30,7 @@ public abstract class InventoryUtil {
 
     public static ItemStack getFirstItem(Inventory inventory, Supplier<ItemLike> item) {
         for (ItemStack stack : getItems(inventory)) {
-            if (stack.getItem().equals(item.get())) {
+            if (stack.getItem().equals(item.get().asItem())) {
                 return stack;
             }
         }
