@@ -50,7 +50,7 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
      * @param range  范围
      * @return HasItemIngredient谓词
      */
-    public HasItemIngredient fromPredicate(ItemIngredientPredicate predicate, Vec3 offset, Vec3 range) {
+    public static HasItemIngredient fromPredicate(ItemIngredientPredicate predicate, Vec3 offset, Vec3 range) {
         return new HasItemIngredient(offset, range, predicate, List.of());
     }
 

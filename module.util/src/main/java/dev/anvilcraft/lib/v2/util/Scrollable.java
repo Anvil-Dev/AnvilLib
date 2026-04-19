@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.util;
 
 import lombok.Getter;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.Range;
 
 @Getter
 public abstract class Scrollable {
@@ -17,11 +18,11 @@ public abstract class Scrollable {
     }
 
     public void calculateScroll(int rowIndex) {
-        this.scrollOffs = Mth.clamp((float) rowIndex / (float) this.calculateRowCount(), 0.0F, 1.0F);
+        this.scrollOffs = Mth.clamp(MathUtil.safeDiv(rowIndex, this.calculateRowCount()), 0.0F, 1.0F);
     }
 
     public void subtractInputFromScroll(double input) {
-        this.scrollOffs = Mth.clamp(this.scrollOffs - (float) (input / (double) this.calculateRowCount()), 0.0F, 1.0F);
+        this.scrollOffs = Mth.clamp(this.scrollOffs - (float) MathUtil.safeDiv(input, this.calculateRowCount()), 0.0F, 1.0F);
     }
 
     public void scrollTo() {
@@ -52,11 +53,11 @@ public abstract class Scrollable {
         this.scrollTo();
     }
 
-    public abstract int row();
+    public abstract @Range(from = 0, to = Integer.MAX_VALUE) int row();
 
-    public abstract int column();
+    public abstract @Range(from = 0, to = Integer.MAX_VALUE) int column();
 
-    public abstract int size();
+    public abstract @Range(from = 0, to = Integer.MAX_VALUE) int size();
 
     public boolean canScroll() {
         return this.size() > this.row() * this.column();

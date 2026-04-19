@@ -81,7 +81,7 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
      * @param offset 偏移量
      * @return SpawnItem结果
      */
-    public SpawnItem fromChance(ChanceItemStack stack, Vec3 offset) {
+    public static SpawnItem fromChance(ChanceItemStack stack, Vec3 offset) {
         return SpawnItem.builder().item(stack.stack()).count(stack.count()).offset(offset).build();
     }
 

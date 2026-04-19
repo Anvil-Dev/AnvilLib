@@ -76,8 +76,11 @@ record DefinitionSerialization(String[][] grid, Char2ObjectMap<BlockStatePredica
             for (int z = 0; z < layer.length; z++) {
                 String xs = layer[z];
                 for (int x = 0; x < xs.length(); x++) {
+                    char key = xs.charAt(x);
+                    if (key == ' ') continue;
+                    BlockStatePredicate predicate = this.mapping.get(key);
+                    if (predicate == null) throw new IllegalArgumentException("Undefined key '" + key + "' found");
                     Vec3i localPos = new Vec3i(x, y, z).subtract(offset);
-                    BlockStatePredicate predicate = this.mapping.get(xs.charAt(x));
                     definition.put(localPos, predicate);
                 }
             }
@@ -105,7 +108,7 @@ record DefinitionSerialization(String[][] grid, Char2ObjectMap<BlockStatePredica
             if (localPos.getZ() > maxZ) maxZ = localPos.getZ();
 
             BlockStatePredicate predicate = entry.getValue();
-            if (localPos == Vec3i.ZERO) {
+            if (localPos.equals(Vec3i.ZERO)) {
                 mapping.put('0', predicate);
             }
             if (!mapping.containsValue(predicate)) {

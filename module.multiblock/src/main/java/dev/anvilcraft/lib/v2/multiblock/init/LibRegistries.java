@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.multiblock.init;
 
-import dev.anvilcraft.lib.v2.multiblock.AnvilLibDynamicMultiblock;
+import dev.anvilcraft.lib.v2.multiblock.AnvilLibMultiblock;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.definition.MultiblockDefinition;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
@@ -8,10 +8,10 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
-@EventBusSubscriber(modid = AnvilLibDynamicMultiblock.MOD_ID)
+@EventBusSubscriber(modid = AnvilLibMultiblock.MOD_ID)
 public class LibRegistries {
     public static final ResourceKey<Registry<MultiblockDefinition>> DEFINITIONS_KEY = ResourceKey.createRegistryKey(
-        AnvilLibDynamicMultiblock.of("definitions")
+        AnvilLibMultiblock.of("definitions")
     );
 
     @SubscribeEvent

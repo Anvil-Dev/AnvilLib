@@ -1,9 +1,7 @@
 package dev.anvilcraft.lib.v2.util;
 
-import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nullable;
 
@@ -18,20 +16,6 @@ public class Util {
      */
     public static boolean isClient() {
         return FMLEnvironment.dist == Dist.CLIENT;
-    }
-
-    /**
-     * 检查 {@link net.minecraft.server.level.ServerLevel ServerLevel} 是否可用
-     *
-     * @return 不安全则返回 {@code true}，否则返回 {@code false}
-     */
-    public static boolean isServerNotSafe() {
-        if (Util.isClient()) {
-            return Minecraft.getInstance().getConnection() == null;
-        } else {
-            var server = ServerLifecycleHooks.getCurrentServer();
-            return server == null || server.isStopped() || server.isShutdown() || !server.isRunning() || server.isCurrentlySaving();
-        }
     }
 
     /**

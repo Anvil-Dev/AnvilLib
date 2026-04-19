@@ -122,9 +122,9 @@ dependencies {
 }
 
 tasks.withType(JavaExec).configureEach {
-//    javaLauncher = javaToolchains.launcherFor {
-//        languageVersion = JavaLanguageVersion.of(21)
-//    }
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
     // Keep JVM crash artifacts inside the module for easier debugging.
     jvmArgs '-XX:ErrorFile=' + project.layout.buildDirectory.file('hs_err_pid%p.log').get().asFile.absolutePath
     jvmArgs '-XX:ReplayDataFile=' + project.layout.buildDirectory.file('replay_pid%p.log').get().asFile.absolutePath

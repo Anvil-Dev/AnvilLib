@@ -11,17 +11,17 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-@Mod(AnvilLibDynamicMultiblock.MOD_ID)
-@EventBusSubscriber(modid = AnvilLibDynamicMultiblock.MOD_ID)
-public class AnvilLibDynamicMultiblock {
+@Mod(AnvilLibMultiblock.MOD_ID)
+@EventBusSubscriber(modid = AnvilLibMultiblock.MOD_ID)
+public class AnvilLibMultiblock {
     public static final String MAIN_ID = "anvillib";
     public static final String MOD_ID = "anvillib_dynamic_multiblock";
-    public static final AnvilLibDynamicMultiblockConfig CONFIG = ConfigManager.register(
-        AnvilLibDynamicMultiblock.MOD_ID,
-        AnvilLibDynamicMultiblockConfig::new
+    public static final AnvilLibMultiblockConfig CONFIG = ConfigManager.register(
+        AnvilLibMultiblock.MOD_ID,
+        AnvilLibMultiblockConfig::new
     );
 
-    public AnvilLibDynamicMultiblock(IEventBus modEventBus, ModContainer modContainer) {
+    public AnvilLibMultiblock(IEventBus modEventBus, ModContainer modContainer) {
     }
 
     public static ResourceLocation of(String path) {
@@ -31,6 +31,6 @@ public class AnvilLibDynamicMultiblock {
     @SubscribeEvent
     public static void onNetwork(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
-        NetworkRegistrar.register(registrar, AnvilLibDynamicMultiblock.MOD_ID);
+        NetworkRegistrar.register(registrar, AnvilLibMultiblock.MOD_ID);
     }
 }

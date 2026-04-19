@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.multiblock.dynamic;
 
-import dev.anvilcraft.lib.v2.multiblock.AnvilLibDynamicMultiblock;
+import dev.anvilcraft.lib.v2.multiblock.AnvilLibMultiblock;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.controller.ControllerRecord;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.controller.IController;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.definition.MultiblockDefinition;
@@ -16,13 +16,16 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import javax.annotation.Nullable;
 
 /**
@@ -39,14 +42,14 @@ import javax.annotation.Nullable;
  */
 public class DynamicMultiblockManager extends SavedData {
     private static final String TAG_LIST = "multiblocks";
-    private static final String SAVED_DATA_NAME = AnvilLibDynamicMultiblock.of("multiblocks")
+    private static final String SAVED_DATA_NAME = AnvilLibMultiblock.of("multiblocks")
         .toString()
         .replace(':', '_');
-    private static final Map<Level, DynamicMultiblockManager> CLIENT_SIDE = new HashMap<>();
-    private static int tickCounterUnformed = 0;
-    private static int tickCounterFormed = 0;
+    private static final Map<Level, DynamicMultiblockManager> CLIENT_SIDE = new WeakHashMap<>();
 
     private final Map<Long, MultiblockState> multiblocks = new HashMap<>();
+    private int tickCounterUnformed = 0;
+    private int tickCounterFormed = 0;
 
     /**
      * 获取指定世界的 DynamicMultiblockManager 实例。
@@ -137,10 +140,15 @@ public class DynamicMultiblockManager extends SavedData {
             }
         }
 
+        List<ServerPlayer> players = ((ServerLevel) level).players();
         if (formed) {
-            PacketDistributor.sendToAllPlayers(new MultiblockFormPacket(cur));
+            for (ServerPlayer player : players) {
+                PacketDistributor.sendToPlayer(player, new MultiblockFormPacket(cur));
+            }
         } else {
-            PacketDistributor.sendToAllPlayers(new MultiblockUnformPacket(cur));
+            for (ServerPlayer player : players) {
+                PacketDistributor.sendToPlayer(player, new MultiblockUnformPacket(cur));
+            }
         }
 
         this.setDirty();
@@ -208,15 +216,16 @@ public class DynamicMultiblockManager extends SavedData {
      * @param level 服务器世界实例或 {@code null}
      */
     public static void checkMultiblockFormed(@Nullable ServerLevel level) {
-        boolean checkUnformed = ++DynamicMultiblockManager.tickCounterUnformed
-                                % AnvilLibDynamicMultiblock.CONFIG.unformedMultiblockCheckInterval == 0;
-        boolean checkFormed = ++DynamicMultiblockManager.tickCounterFormed
-                              % AnvilLibDynamicMultiblock.CONFIG.formedMultiblockCheckInterval == 0;
+        if (level == null) return;
+        DynamicMultiblockManager manager = DynamicMultiblockManager.get(level);
+
+        boolean checkUnformed = ++manager.tickCounterUnformed
+                                % AnvilLibMultiblock.CONFIG.unformedMultiblockCheckInterval == 0;
+        boolean checkFormed = ++manager.tickCounterFormed
+                              % AnvilLibMultiblock.CONFIG.formedMultiblockCheckInterval == 0;
 
         if (!checkUnformed && !checkFormed) return;
-        if (level == null) return;
 
-        DynamicMultiblockManager manager = DynamicMultiblockManager.get(level);
         if (checkUnformed) {
             for (MultiblockState state : manager.multiblocks.values()) {
                 if (!checkFormed && state.isFormed()) continue;

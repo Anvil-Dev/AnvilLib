@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.multiblock.event;
 
-import dev.anvilcraft.lib.v2.multiblock.AnvilLibDynamicMultiblock;
+import dev.anvilcraft.lib.v2.multiblock.AnvilLibMultiblock;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.DynamicMultiblockManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -9,7 +9,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
-@EventBusSubscriber(modid = AnvilLibDynamicMultiblock.MOD_ID)
+@EventBusSubscriber(modid = AnvilLibMultiblock.MOD_ID)
 public class BlockEventListener {
     @SubscribeEvent
     public static void onPlace(BlockEvent.EntityPlaceEvent event) {

@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.multiblock.network;
 
-import dev.anvilcraft.lib.v2.multiblock.AnvilLibDynamicMultiblock;
+import dev.anvilcraft.lib.v2.multiblock.AnvilLibMultiblock;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.DynamicMultiblockManager;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.MultiblockState;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.controller.ControllerRecord;
@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 @SuppressWarnings("unused")
 public record MultiblockUnformPacket(MultiblockState state) implements IClientboundPacket {
-    public static final Type<MultiblockUnformPacket> TYPE = IPacket.type(AnvilLibDynamicMultiblock.of("multiblock_unform"));
+    public static final Type<MultiblockUnformPacket> TYPE = IPacket.type(AnvilLibMultiblock.of("multiblock_unform"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MultiblockUnformPacket> STREAM_CODEC = StreamCodec.composite(
         MultiblockState.STREAM_CODEC,
         MultiblockUnformPacket::state,
