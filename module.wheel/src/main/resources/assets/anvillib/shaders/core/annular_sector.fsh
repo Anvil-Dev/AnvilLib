@@ -36,8 +36,9 @@ float normalizeAnglePN(float angle) {
 float calcAngleAlpha(float posAngle, float centerAngle, float rangeAngle, float aa) {
     float center = normalizeAngleP(centerAngle);
     float dist = abs(normalizeAnglePN(normalizeAngleP(posAngle) - center));
+    float angleAa = max(min(aa, fwidth(dist) * 1.5), 0.0001);
 
-    return smoothstep(rangeAngle + aa, rangeAngle - aa, dist);
+    return 1.0 - smoothstep(rangeAngle - angleAa, rangeAngle + angleAa, dist);
 }
 
 void main() {
@@ -45,9 +46,10 @@ void main() {
     vec4 color = vertexColor;
     float distance = distance(fragPos, Center);
     float angle = atan(fragPos.y - Center.y, fragPos.x - Center.x);
+    float radialAa = max(min(AntiAliasingRadius, fwidth(distance) * 1.5), 0.0001);
 
-    color.a *= smoothstep(InnerDiameter - AntiAliasingRadius, InnerDiameter + AntiAliasingRadius, distance)
-             * smoothstep(OuterDiameter + AntiAliasingRadius, OuterDiameter - AntiAliasingRadius, distance)
+    color.a *= smoothstep(InnerDiameter - radialAa, InnerDiameter + radialAa, distance)
+             * (1.0 - smoothstep(OuterDiameter - radialAa, OuterDiameter + radialAa, distance))
              * calcAngleAlpha(angle, CenterAngleRad, RangeAngleRad, AngleAntiAliasingRad);
 
     fragColor = color;
