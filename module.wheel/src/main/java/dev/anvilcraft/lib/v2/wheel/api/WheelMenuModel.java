@@ -6,13 +6,21 @@ import java.util.Objects;
 
 public final class WheelMenuModel {
     public static final int DEFAULT_SLOTS_PER_PAGE = 8;
+    public static final int DEFAULT_SELECTION_EFFECT_COLOR = 0xFFFABC02;
 
     private final List<WheelEntry> rootEntries;
     private final int slotsPerPage;
     private final int deadZone;
     private final WheelSelectionEffect selectionEffect;
+    private final int selectionEffectColor;
 
-    private WheelMenuModel(List<WheelEntry> rootEntries, int slotsPerPage, int deadZone, WheelSelectionEffect selectionEffect) {
+    private WheelMenuModel(
+        List<WheelEntry> rootEntries,
+        int slotsPerPage,
+        int deadZone,
+        WheelSelectionEffect selectionEffect,
+        int selectionEffectColor
+    ) {
         if (slotsPerPage < 1) {
             throw new IllegalArgumentException("slotsPerPage must be >= 1");
         }
@@ -20,14 +28,15 @@ public final class WheelMenuModel {
         this.slotsPerPage = slotsPerPage;
         this.deadZone = deadZone;
         this.selectionEffect = Objects.requireNonNull(selectionEffect, "selectionEffect");
+        this.selectionEffectColor = selectionEffectColor;
     }
 
     public static WheelMenuModel of(List<WheelEntry> rootEntries) {
-        return new WheelMenuModel(rootEntries, DEFAULT_SLOTS_PER_PAGE, 30, WheelSelectionEffect.DOT);
+        return new WheelMenuModel(rootEntries, DEFAULT_SLOTS_PER_PAGE, 30, WheelSelectionEffect.DOT, DEFAULT_SELECTION_EFFECT_COLOR);
     }
 
     public static WheelMenuModel of(List<WheelEntry> rootEntries, int slotsPerPage, int deadZone) {
-        return new WheelMenuModel(rootEntries, slotsPerPage, deadZone, WheelSelectionEffect.DOT);
+        return new WheelMenuModel(rootEntries, slotsPerPage, deadZone, WheelSelectionEffect.DOT, DEFAULT_SELECTION_EFFECT_COLOR);
     }
 
     public static WheelMenuModel of(
@@ -36,7 +45,17 @@ public final class WheelMenuModel {
         int deadZone,
         WheelSelectionEffect selectionEffect
     ) {
-        return new WheelMenuModel(rootEntries, slotsPerPage, deadZone, selectionEffect);
+        return new WheelMenuModel(rootEntries, slotsPerPage, deadZone, selectionEffect, DEFAULT_SELECTION_EFFECT_COLOR);
+    }
+
+    public static WheelMenuModel of(
+        List<WheelEntry> rootEntries,
+        int slotsPerPage,
+        int deadZone,
+        WheelSelectionEffect selectionEffect,
+        int selectionEffectColor
+    ) {
+        return new WheelMenuModel(rootEntries, slotsPerPage, deadZone, selectionEffect, selectionEffectColor);
     }
 
     public List<WheelEntry> rootEntries() {
@@ -53,6 +72,10 @@ public final class WheelMenuModel {
 
     public WheelSelectionEffect selectionEffect() {
         return this.selectionEffect;
+    }
+
+    public int selectionEffectColor() {
+        return this.selectionEffectColor;
     }
 
     public int pageCount(List<WheelEntry> entries) {

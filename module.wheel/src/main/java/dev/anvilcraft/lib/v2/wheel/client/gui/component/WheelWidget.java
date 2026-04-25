@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 )
 public class WheelWidget extends AbstractWidget {
     public static final int IGNORE_CURSOR_MOVE_LENGTH = 15;
+    public static final int DEFAULT_SELECTION_EFFECT_COLOR = 0xFFFABC02;
     private static final float SELECTION_DOT_DIAMETER_RATIO = 0.9f;
     private static final float TAU = (float) (Math.PI * 2.0);
     private static final float ANGLE_AA_RAD = 0.06f;
@@ -46,7 +47,7 @@ public class WheelWidget extends AbstractWidget {
     private final int animationMs; // ms
     private final int closingAnimationMs; // ms
     private final int ringColor;
-    private final int selectionEffectColor;
+    private int selectionEffectColor;
     private final float selectionAnimationSpeedFactor;
     private final int textColor;
     private final float textScale;
@@ -122,7 +123,7 @@ public class WheelWidget extends AbstractWidget {
             300,
             150,
             0x88000000,
-            0xddffff00,
+            DEFAULT_SELECTION_EFFECT_COLOR,
             5f,
             0xfdfdfd,
             textScale,
@@ -155,7 +156,7 @@ public class WheelWidget extends AbstractWidget {
             300,
             150,
             0x88000000,
-            0xddffff00,
+            DEFAULT_SELECTION_EFFECT_COLOR,
             5f,
             0xfdfdfd,
             1f,
@@ -189,7 +190,7 @@ public class WheelWidget extends AbstractWidget {
             300,
             150,
             0x88000000,
-            0xddffff00,
+            DEFAULT_SELECTION_EFFECT_COLOR,
             5f,
             0xfdfdfd,
             1f,
@@ -396,6 +397,11 @@ public class WheelWidget extends AbstractWidget {
 
     public WheelWidget setSelectionEffect(WheelSelectionEffect selectionEffect) {
         this.selectionEffect = Objects.requireNonNull(selectionEffect, "selectionEffect");
+        return this;
+    }
+
+    public WheelWidget setSelectionEffectColor(int selectionEffectColor) {
+        this.selectionEffectColor = selectionEffectColor;
         return this;
     }
 
