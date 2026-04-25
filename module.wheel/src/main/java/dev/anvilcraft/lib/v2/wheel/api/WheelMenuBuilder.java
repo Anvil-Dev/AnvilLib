@@ -11,6 +11,7 @@ public final class WheelMenuBuilder {
     private final List<WheelEntry> entries = new ArrayList<>();
     private int slotsPerPage = WheelMenuModel.DEFAULT_SLOTS_PER_PAGE;
     private int deadZone = 15;
+    private WheelSelectionEffect selectionEffect = WheelSelectionEffect.ANNULAR_SECTOR;
 
     private WheelMenuBuilder() {
     }
@@ -29,6 +30,11 @@ public final class WheelMenuBuilder {
 
     public WheelMenuBuilder deadZone(int deadZone){
         this.deadZone = deadZone;
+        return this;
+    }
+
+    public WheelMenuBuilder selectionEffect(WheelSelectionEffect selectionEffect) {
+        this.selectionEffect = Objects.requireNonNull(selectionEffect, "selectionEffect");
         return this;
     }
 
@@ -75,7 +81,7 @@ public final class WheelMenuBuilder {
     }
 
     public WheelMenuModel build() {
-        return WheelMenuModel.of(List.copyOf(this.entries), this.slotsPerPage, this.deadZone);
+        return WheelMenuModel.of(List.copyOf(this.entries), this.slotsPerPage, this.deadZone, this.selectionEffect);
     }
 
     public static final class WheelSubmenuBuilder {

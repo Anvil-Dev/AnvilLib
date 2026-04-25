@@ -11,9 +11,11 @@ import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = AnvilLibTest.MOD_ID, value = Dist.CLIENT)
 public final class WheelTestKeys {
-    public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(AnvilLibTest.of("wheel"));
+    public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(AnvilLibTest.of("wheel"));
 
-    /** 点按模式：按一下打开，鼠标选择后点击触发 */
+    /**
+     * 点按模式：按一下打开，鼠标选择后点击触发
+     */
     public static final KeyMapping TAP_KEY = new KeyMapping(
         "key.anvillib_test.wheel_tap",
         InputConstants.Type.KEYSYM,
@@ -21,11 +23,33 @@ public final class WheelTestKeys {
         CATEGORY
     );
 
-    /** 长按模式：按住显示，松开触发当前选中项 */
+    /**
+     * 长按模式：按住显示，松开触发当前选中项
+     */
     public static final KeyMapping HOLD_KEY = new KeyMapping(
         "key.anvillib_test.wheel_hold",
         InputConstants.Type.KEYSYM,
         GLFW.GLFW_KEY_V,
+        CATEGORY
+    );
+
+    /**
+     * 点按模式（扇形选中效果）
+     */
+    public static final KeyMapping TAP_ANNULAR_KEY = new KeyMapping(
+        "key.anvillib_test.wheel_tap_annular",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_B,
+        CATEGORY
+    );
+
+    /**
+     * 长按模式（扇形选中效果）
+     */
+    public static final KeyMapping HOLD_ANNULAR_KEY = new KeyMapping(
+        "key.anvillib_test.wheel_hold_annular",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_N,
         CATEGORY
     );
 
@@ -34,7 +58,10 @@ public final class WheelTestKeys {
 
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+        event.registerCategory(CATEGORY);
         event.register(TAP_KEY);
         event.register(HOLD_KEY);
+        event.register(TAP_ANNULAR_KEY);
+        event.register(HOLD_ANNULAR_KEY);
     }
 }

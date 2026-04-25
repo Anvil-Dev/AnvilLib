@@ -28,6 +28,12 @@ public class LibDynamicUniforms {
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST
     );
 
+    private final DynamicUniformStorage<AnnularSectorUniform> annularSectorUbo = new DynamicUniformStorage<>(
+        "AnnularSectorUniform UBO",
+        AnnularSectorUniform.size(),
+        GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST
+    );
+
     public GpuBufferSlice writeRing(Vector2fc center, float innerDiameter, float outerDiameter, float antiAliasingRadius) {
         return this.ringUbo.writeUniform(new RingUniform(
             center,
@@ -46,9 +52,30 @@ public class LibDynamicUniforms {
         ));
     }
 
+    public GpuBufferSlice writeAnnularSector(
+        Vector2fc center,
+        float innerDiameter,
+        float outerDiameter,
+        float antiAliasingRadius,
+        float angleAntiAliasingRad,
+        float centerAngleRad,
+        float rangeAngleRad
+    ) {
+        return this.annularSectorUbo.writeUniform(new AnnularSectorUniform(
+            center,
+            innerDiameter,
+            outerDiameter,
+            antiAliasingRadius,
+            angleAntiAliasingRad,
+            centerAngleRad,
+            rangeAngleRad
+        ));
+    }
+
     public void reset() {
         this.ringUbo.endFrame();
         this.selectionUbo.endFrame();
+        this.annularSectorUbo.endFrame();
     }
 
     @SubscribeEvent
@@ -105,6 +132,48 @@ public class LibDynamicUniforms {
                 .putVec2(this.center)
                 .putFloat(this.radius)
                 .putFloat(this.antiAliasingRadius);
+        }
+    }
+
+    public record AnnularSectorUniform(
+        Vector2fc center,
+        float innerDiameter,
+        float outerDiameter,
+        float antiAliasingRadius,
+        float angleAntiAliasingRad,
+        float centerAngleRad,
+        float rangeAngleRad
+    ) implements DynamicUniformStorage.DynamicUniform {
+
+        public static int size() {
+            return new Std140SizeCalculator()
+                // Center
+                .putVec2()
+                // InnerDiameter
+                .putFloat()
+                // OuterDiameter
+                .putFloat()
+                // AntiAliasingRadius
+                .putFloat()
+                // AngleAntiAliasingRad
+                .putFloat()
+                // CenterAngleRad
+                .putFloat()
+                // RangeAngleRad
+                .putFloat()
+                .get();
+        }
+
+        @Override
+        public void write(ByteBuffer buffer) {
+            Std140Builder.intoBuffer(buffer)
+                .putVec2(this.center)
+                .putFloat(this.innerDiameter)
+                .putFloat(this.outerDiameter)
+                .putFloat(this.antiAliasingRadius)
+                .putFloat(this.angleAntiAliasingRad)
+                .putFloat(this.centerAngleRad)
+                .putFloat(this.rangeAngleRad);
         }
     }
 }

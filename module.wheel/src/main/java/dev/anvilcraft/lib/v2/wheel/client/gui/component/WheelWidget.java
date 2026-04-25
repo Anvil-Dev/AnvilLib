@@ -3,6 +3,8 @@ package dev.anvilcraft.lib.v2.wheel.client.gui.component;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.platform.Window;
 import dev.anvilcraft.lib.v2.wheel.AnvilLibWheel;
+import dev.anvilcraft.lib.v2.wheel.api.WheelSelectionEffect;
+import dev.anvilcraft.lib.v2.wheel.client.gui.render.state.AnnularSectorRenderState;
 import dev.anvilcraft.lib.v2.wheel.client.gui.render.state.RingRenderState;
 import dev.anvilcraft.lib.v2.wheel.client.gui.render.state.SelectionRenderState;
 import dev.anvilcraft.lib.v2.wheel.util.MathUtil;
@@ -29,6 +31,8 @@ import javax.annotation.Nullable;
 )
 public class WheelWidget extends AbstractWidget {
     public static final int IGNORE_CURSOR_MOVE_LENGTH = 15;
+    private static final float TAU = (float) (Math.PI * 2.0);
+    private static final float ANGLE_AA_RAD = 0.06f;
     private static final float RING_Z = 60f;
     private static final float SELECTION_Z = 80f;
     private static final Vector2f ROTATION_START = new Vector2f(0, 1);
@@ -58,6 +62,7 @@ public class WheelWidget extends AbstractWidget {
     @Setter
     private boolean closingAnimationStarted = false;
     private final int deadZone;
+    private WheelSelectionEffect selectionEffect = WheelSelectionEffect.DOT;
 
     public WheelWidget(
         int x,
@@ -354,6 +359,51 @@ public class WheelWidget extends AbstractWidget {
         ));
     }
 
+    public void renderAnnularSectorSelection(
+        GuiGraphicsExtractor guiGraphics,
+        float centerX,
+        float centerY,
+        int color,
+        float innerDiameter,
+        float outerDiameter,
+        float centerAngleRad,
+        float rangeAngleRad
+    ) {
+        float outerRadius = outerDiameter + 5;
+        float x1 = centerX - outerRadius;
+        float y1 = centerY - outerRadius;
+        float x2 = centerX + outerRadius;
+        float y2 = centerY + outerRadius;
+        Window window = this.minecraft.getWindow();
+        float guiScale = (float) window.getGuiScale();
+        // Wheel section angle uses "up" as zero; shader atan uses +X as zero.
+        float shaderCenterAngle = centerAngleRad + TAU / 4.0f;
+        GpuBufferSlice writeUniform = AnvilLibWheel.getLibDynamicUniforms().writeAnnularSector(
+            new Vector2f(centerX * guiScale, centerY * guiScale),
+            innerDiameter * guiScale,
+            outerDiameter * guiScale,
+            1.25f,
+            ANGLE_AA_RAD,
+            shaderCenterAngle,
+            rangeAngleRad
+        );
+        guiGraphics.guiRenderState.addGuiElement(new AnnularSectorRenderState(
+            guiGraphics.pose(),
+            x1,
+            y1,
+            x2,
+            y2,
+            color,
+            writeUniform,
+            guiGraphics.scissorStack.peek()
+        ));
+    }
+
+    public WheelWidget setSelectionEffect(WheelSelectionEffect selectionEffect) {
+        this.selectionEffect = Objects.requireNonNull(selectionEffect, "selectionEffect");
+        return this;
+    }
+
     public WheelWidget setCurrentIndex(int index) {
         if (index < 0 || index >= this.sections.size()) return this;
         if (!this.sections.get(index).selectable()) return this;
@@ -540,12 +590,27 @@ public class WheelWidget extends AbstractWidget {
         );
         poseStack.popMatrix();
         if (this.currentSectionIndex != -1) {
-            WheelSection section = this.sections.get(this.currentSectionIndex);
-            Vector2f center = new Vector2f(
-                (section.center.x - this.centerPos.x) / this.getSectionCircleDiameter(),
-                (section.center.y - this.centerPos.y) / this.getSectionCircleDiameter()
-            ).mul(this.getSectionCircleDiameter() * progress).add(this.centerPos.x, this.centerPos.y);
-            this.renderSelectionEffect(guiGraphics, center.x, center.y, this.selectionEffectColor, this.selectionEffectRadius);
+            if (this.selectionEffect == WheelSelectionEffect.ANNULAR_SECTOR) {
+                WheelSection section = this.sections.get(this.currentSectionIndex);
+                float rangeAngle = this.normalizePositiveAngle(section.angleEnd - section.angleStart) / 2.0f;
+                this.renderAnnularSectorSelection(
+                    guiGraphics,
+                    this.centerPos.x,
+                    this.centerPos.y,
+                    this.selectionEffectColor,
+                    this.ringInnerRadius * 2 * progress,
+                    this.ringOuterRadius * 2 * progress,
+                    section.angle,
+                    rangeAngle
+                );
+            } else {
+                WheelSection section = this.sections.get(this.currentSectionIndex);
+                Vector2f center = new Vector2f(
+                    (section.center.x - this.centerPos.x) / this.getSectionCircleDiameter(),
+                    (section.center.y - this.centerPos.y) / this.getSectionCircleDiameter()
+                ).mul(this.getSectionCircleDiameter() * progress).add(this.centerPos.x, this.centerPos.y);
+                this.renderSelectionEffect(guiGraphics, center.x, center.y, this.selectionEffectColor, this.selectionEffectRadius);
+            }
         }
         for (WheelSection value : this.sections) {
             Vector2f center = new Vector2f(
@@ -582,6 +647,10 @@ public class WheelWidget extends AbstractWidget {
     }
 
     private void renderSelection(GuiGraphicsExtractor guiGraphics) {
+        if (this.selectionEffect == WheelSelectionEffect.ANNULAR_SECTOR) {
+            this.renderSelectionAnnularSector(guiGraphics);
+            return;
+        }
         float selectionEffectAngle = MathUtil.angle(MathUtil.copy(ROTATION_START), this.selectionEffectPos);
 
         float diffAngle = this.currentAngle - selectionEffectAngle;
@@ -597,6 +666,26 @@ public class WheelWidget extends AbstractWidget {
         Vector2f pos = MathUtil.copy(this.selectionEffectPos).mul(1, -1).add(this.centerPos);
 
         this.renderSelectionEffect(guiGraphics, pos.x, pos.y, this.selectionEffectColor, this.selectionEffectRadius);
+    }
+
+    private void renderSelectionAnnularSector(GuiGraphicsExtractor guiGraphics) {
+        WheelSection currentSection = this.sections.get(this.currentSectionIndex);
+        float rangeAngle = this.normalizePositiveAngle(currentSection.angleEnd - currentSection.angleStart) / 2.0f;
+        this.renderAnnularSectorSelection(
+            guiGraphics,
+            this.centerPos.x,
+            this.centerPos.y,
+            this.selectionEffectColor,
+            this.ringInnerRadius * 2,
+            this.ringOuterRadius * 2,
+            currentSection.angle,
+            rangeAngle
+        );
+    }
+
+    private float normalizePositiveAngle(float angle) {
+        float normalized = angle % TAU;
+        return normalized < 0 ? normalized + TAU : normalized;
     }
 
     public void onClosing() {

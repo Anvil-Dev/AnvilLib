@@ -10,22 +10,33 @@ public final class WheelMenuModel {
     private final List<WheelEntry> rootEntries;
     private final int slotsPerPage;
     private final int deadZone;
+    private final WheelSelectionEffect selectionEffect;
 
-    private WheelMenuModel(List<WheelEntry> rootEntries, int slotsPerPage, int deadZone) {
+    private WheelMenuModel(List<WheelEntry> rootEntries, int slotsPerPage, int deadZone, WheelSelectionEffect selectionEffect) {
         if (slotsPerPage < 1) {
             throw new IllegalArgumentException("slotsPerPage must be >= 1");
         }
         this.rootEntries = List.copyOf(Objects.requireNonNull(rootEntries, "rootEntries"));
         this.slotsPerPage = slotsPerPage;
         this.deadZone = deadZone;
+        this.selectionEffect = Objects.requireNonNull(selectionEffect, "selectionEffect");
     }
 
     public static WheelMenuModel of(List<WheelEntry> rootEntries) {
-        return new WheelMenuModel(rootEntries, DEFAULT_SLOTS_PER_PAGE, 30);
+        return new WheelMenuModel(rootEntries, DEFAULT_SLOTS_PER_PAGE, 30, WheelSelectionEffect.DOT);
     }
 
     public static WheelMenuModel of(List<WheelEntry> rootEntries, int slotsPerPage, int deadZone) {
-        return new WheelMenuModel(rootEntries, slotsPerPage, deadZone);
+        return new WheelMenuModel(rootEntries, slotsPerPage, deadZone, WheelSelectionEffect.DOT);
+    }
+
+    public static WheelMenuModel of(
+        List<WheelEntry> rootEntries,
+        int slotsPerPage,
+        int deadZone,
+        WheelSelectionEffect selectionEffect
+    ) {
+        return new WheelMenuModel(rootEntries, slotsPerPage, deadZone, selectionEffect);
     }
 
     public List<WheelEntry> rootEntries() {
@@ -38,6 +49,10 @@ public final class WheelMenuModel {
 
     public int deadZone() {
         return this.deadZone;
+    }
+
+    public WheelSelectionEffect selectionEffect() {
+        return this.selectionEffect;
     }
 
     public int pageCount(List<WheelEntry> entries) {

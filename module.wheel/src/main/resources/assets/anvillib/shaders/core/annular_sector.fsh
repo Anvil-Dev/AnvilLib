@@ -2,14 +2,15 @@
 
 in vec4 vertexColor;
 
-uniform vec4 ColorModulator;
-uniform vec2 Center;
-uniform float InnerDiameter;
-uniform float OuterDiameter;
-uniform float AntiAliasingRadius;
-uniform float AngleAntiAliasingRad;
-uniform float CenterAngleRad;
-uniform float RangeAngleRad;
+layout (std140) uniform AnnularSectorUniform {
+    vec2 Center;
+    float InnerDiameter;
+    float OuterDiameter;
+    float AntiAliasingRadius;
+    float AngleAntiAliasingRad;
+    float CenterAngleRad;
+    float RangeAngleRad;
+};
 
 out vec4 fragColor;
 
@@ -33,11 +34,10 @@ float normalizeAnglePN(float angle) {
 }
 
 float calcAngleAlpha(float posAngle, float centerAngle, float rangeAngle, float aa) {
-    float range = normalizeAngleP(rangeAngle / 2);
     float center = normalizeAngleP(centerAngle);
-    float dist = normalizeAnglePN(normalizeAngleP(posAngle) - center);
+    float dist = abs(normalizeAnglePN(normalizeAngleP(posAngle) - center));
 
-    return smoothstep(rangeAngle + aa, rangeAngle - aa, dist) * smoothstep(-rangeAngle - aa, -rangeAngle + aa, dist);
+    return smoothstep(rangeAngle + aa, rangeAngle - aa, dist);
 }
 
 void main() {
@@ -50,5 +50,5 @@ void main() {
              * smoothstep(OuterDiameter + AntiAliasingRadius, OuterDiameter - AntiAliasingRadius, distance)
              * calcAngleAlpha(angle, CenterAngleRad, RangeAngleRad, AngleAntiAliasingRad);
 
-    fragColor = color * ColorModulator;
+    fragColor = color;
 }

@@ -183,6 +183,7 @@ public class WheelScreen extends Screen {
             sections,
             this.model.deadZone()
         );
+        this.wheelWidget.setSelectionEffect(this.model.selectionEffect());
         this.wheelWidget.clearSelection();
     }
 
