@@ -32,10 +32,27 @@ public class ALRPipelines {
         .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
         .build();
 
+    public static final RenderPipeline DOWNSAMPLE = RenderPipeline.builder(POST_PASS)
+            .withLocation(ALRendering.location("down_sample"))
+            .withFragmentShader(ALRendering.location("core/down_sample"))
+            .withSampler("DiffuseSampler")
+            .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
+            .build();
+
+    public static final RenderPipeline UPSAMPLE = RenderPipeline.builder(POST_PASS)
+            .withLocation(ALRendering.location("up_sample"))
+            .withFragmentShader(ALRendering.location("core/up_sample"))
+            .withSampler("DiffuseSampler")
+            .withSampler("PreviousSampler")
+            .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
+            .build();
+
 
     @SubscribeEvent
     public static void on(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(BLUR);
         event.registerPipeline(APPLY_BLOOM);
+        event.registerPipeline(DOWNSAMPLE);
+        event.registerPipeline(UPSAMPLE);
     }
 }
