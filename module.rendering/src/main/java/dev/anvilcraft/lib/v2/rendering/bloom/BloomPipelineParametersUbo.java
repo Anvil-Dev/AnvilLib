@@ -20,7 +20,10 @@ public class BloomPipelineParametersUbo extends UboObject<BloomPipelineParameter
     private             int     frameIndex;
 
     public void setResolution(int width, int height) {
-        this.resolution.set(1.0f / width, 1.0f / height);
+        this.resolution.set(
+                1.0f / Math.max(width, 1.0f),
+                1.0f / Math.max(height, 1.0f)
+        );
     }
 
     @Override

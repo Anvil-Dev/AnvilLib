@@ -1,4 +1,4 @@
-#version 150
+#version 330
 
 uniform sampler2D   DiffuseSampler;
 uniform sampler2D   PreviousSampler;
@@ -50,7 +50,7 @@ vec4 samplerGaussian(
 }
 
 void main() {
-    vec2 noiseUV    = mod(texCoord.xy + vec2(uFrameIndex * 17), 128.0) * 0.0078125;
+//    vec2 noiseUV    = mod(texCoord.xy + vec2(uFrameIndex * 17), 128.0) * 0.0078125;
 
     vec2 curStride  = uResolution;
     vec2 lstStride  = curStride * 0.5;

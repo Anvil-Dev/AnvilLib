@@ -54,8 +54,8 @@ public class BloomPostEffect {
     private final RenderTarget bloomInputTarget = new MainTarget(854, 480, false);
     private final RenderTarget bloomTempTarget = new TextureTarget("BloomTemp", 854, 480, false);
 
-    private final RenderTarget[] downsampleTargets  = arrayInit("UpSample", BLOOM_STEPS);
-    private final RenderTarget[] upsampleTargets    = arrayInit("DownSample", BLOOM_STEPS - 1);
+    private final RenderTarget[] downsampleTargets  = arrayInit("DownSample", BLOOM_STEPS);
+    private final RenderTarget[] upsampleTargets    = arrayInit("UpSample", BLOOM_STEPS - 1);
 
     private final GpuDevice device = RenderSystem.getDevice();
 
