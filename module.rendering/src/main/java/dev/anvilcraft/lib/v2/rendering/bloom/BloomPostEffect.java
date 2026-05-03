@@ -98,15 +98,6 @@ public class BloomPostEffect {
         OptionalDouble.empty()
     );
 
-    private final GpuSampler prevSampler = device.createSampler(
-            AddressMode.CLAMP_TO_EDGE,
-            AddressMode.CLAMP_TO_EDGE,
-            FilterMode.LINEAR,
-            FilterMode.LINEAR,
-            1,
-            OptionalDouble.empty()
-    );
-
     private final GpuSampler mainSampler = device.createSampler(
         AddressMode.CLAMP_TO_EDGE,
         AddressMode.CLAMP_TO_EDGE,
@@ -229,7 +220,7 @@ public class BloomPostEffect {
         // backup depth texture
         bloomInputTarget.copyDepthFrom(Minecraft.getInstance().getMainRenderTarget());
 
-//        clearColorAndDepth(bloomTempTarget, 0);
+        clearColorAndDepth(bloomTempTarget, 0);
         applyBloom(commandEncoder, this.upsampleTargets[0], Minecraft.getInstance().getMainRenderTarget().getColorTextureView(), bloomTempTarget);
         commandEncoder.copyTextureToTexture(
             bloomTempTarget.getColorTexture(),
