@@ -16,7 +16,7 @@ package dev.anvilcraft.lib.v2.registrum.providers.generators;
 import com.google.common.collect.ImmutableMap;
 import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
 import dev.anvilcraft.lib.v2.registrum.util.DataIngredient;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import lombok.experimental.Delegate;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.criterion.BredAnimalsTrigger;

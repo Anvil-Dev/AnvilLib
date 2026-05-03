@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.test.wheel;
 
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
+import dev.anvilcraft.lib.v2.wheel.api.WheelSelectionEffect;
 import dev.anvilcraft.lib.v2.wheel.client.input.WheelScreenController;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -13,7 +14,8 @@ import org.lwjgl.glfw.GLFW;
 @EventBusSubscriber(modid = AnvilLibTest.MOD_ID, value = Dist.CLIENT)
 public final class WheelTestClientHandler {
     private static final WheelScreenController CONTROLLER = new WheelScreenController();
-    private static boolean holdKeyWasDown = false;
+    private static boolean holdDotKeyWasDown = false;
+    private static boolean holdAnnularKeyWasDown = false;
 
     private WheelTestClientHandler() {
     }
@@ -30,7 +32,10 @@ public final class WheelTestClientHandler {
 
         // --- TAP ---
         while (WheelTestKeys.TAP_KEY.consumeClick()) {
-            CONTROLLER.openTap(WheelDemoMenus.buildTapDemo(8));
+            CONTROLLER.openTap(WheelDemoMenus.buildTapDemo(8, WheelSelectionEffect.DOT));
+        }
+        while (WheelTestKeys.TAP_ANNULAR_KEY.consumeClick()) {
+            CONTROLLER.openTap(WheelDemoMenus.buildTapDemo(8, WheelSelectionEffect.ANNULAR_SECTOR));
         }
     }
 
@@ -40,19 +45,34 @@ public final class WheelTestClientHandler {
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || !WheelTestKeys.HOLD_KEY.matches(event.getKeyEvent())) {
+        if (mc.player == null) {
+            return;
+        }
+        boolean holdDotKey = WheelTestKeys.HOLD_KEY.matches(event.getKeyEvent());
+        boolean holdAnnularKey = WheelTestKeys.HOLD_ANNULAR_KEY.matches(event.getKeyEvent());
+        if (!holdDotKey && !holdAnnularKey) {
             return;
         }
         if (event.getAction() == GLFW.GLFW_PRESS) {
-            if (!holdKeyWasDown) {
-                CONTROLLER.onHoldKeyPressed(WheelDemoMenus.buildHoldDemo(8));
-                holdKeyWasDown = true;
+            if (holdDotKey && !holdDotKeyWasDown) {
+                CONTROLLER.onHoldKeyPressed(WheelDemoMenus.buildHoldDemo(8, WheelSelectionEffect.DOT));
+                holdDotKeyWasDown = true;
+            }
+            if (holdAnnularKey && !holdAnnularKeyWasDown) {
+                CONTROLLER.onHoldKeyPressed(WheelDemoMenus.buildHoldDemo(8, WheelSelectionEffect.ANNULAR_SECTOR));
+                holdAnnularKeyWasDown = true;
             }
             return;
         }
-        if (event.getAction() == GLFW.GLFW_RELEASE && holdKeyWasDown) {
-            CONTROLLER.onHoldKeyReleased();
-            holdKeyWasDown = false;
+        if (event.getAction() == GLFW.GLFW_RELEASE) {
+            if (holdDotKey && holdDotKeyWasDown) {
+                CONTROLLER.onHoldKeyReleased();
+                holdDotKeyWasDown = false;
+            }
+            if (holdAnnularKey && holdAnnularKeyWasDown) {
+                CONTROLLER.onHoldKeyReleased();
+                holdAnnularKeyWasDown = false;
+            }
         }
     }
 }

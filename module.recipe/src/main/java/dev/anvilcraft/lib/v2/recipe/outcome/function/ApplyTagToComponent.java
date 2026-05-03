@@ -5,7 +5,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.recipe.cache.TagCache;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibOutcomeFunctionTypes;
+import dev.anvilcraft.lib.v2.recipe.init.recipe.LibOutcomeFunctionTypes;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.Tag;

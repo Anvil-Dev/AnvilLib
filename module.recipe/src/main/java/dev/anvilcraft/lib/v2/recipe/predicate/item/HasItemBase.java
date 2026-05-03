@@ -6,7 +6,7 @@ import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.AnvilLibRecipe;
 import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheInput;
-import dev.anvilcraft.lib.v2.recipe.component.IItemStackPredicate;
+import dev.anvilcraft.lib.v2.util.predicate.IItemStackPredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.IPredicateFunction;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;

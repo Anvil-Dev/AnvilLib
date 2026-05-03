@@ -46,6 +46,19 @@ jobs:
       mod_id: anvillib_moveable_entity_block
       ci_build: true
       pr_build: true
+  multiblock:
+    uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - config
+      - codec
+      - network
+      - util
+    with:
+      module: multiblock
+      module_id: anvillib-multiblock
+      mod_id: anvillib_multiblock
+      ci_build: true
+      pr_build: true
   network:
     uses: ./.github/workflows/build_and_test.yml
     with:
@@ -58,6 +71,7 @@ jobs:
     needs:
       - config
       - codec
+      - util
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: recipe
@@ -65,15 +79,6 @@ jobs:
       mod_id: anvillib_recipe
       ci_build: true
       pr_build: true
-  registrum:
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: registrum
-      module_id: anvillib-registrum
-      mod_id: anvillib_registrum
-      ci_build: true
-      pr_build: true
-
   rendering:
     uses: ./.github/workflows/build_and_test.yml
     with:
@@ -82,9 +87,31 @@ jobs:
       mod_id: anvillib_rendering
       ci_build: true
       pr_build: true
-
+  registrum:
+    uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - util
+    with:
+      module: registrum
+      module_id: anvillib-registrum
+      mod_id: anvillib_registrum
+      ci_build: true
+      pr_build: true
+  util:
+    uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - codec
+    with:
+      module: util
+      module_id: anvillib-util
+      mod_id: anvillib_util
+      ci_build: true
+      pr_build: true
   wheel:
     uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - util
+      - rendering
     with:
       module: wheel
       module_id: anvillib-wheel
@@ -97,11 +124,13 @@ jobs:
       - codec
       - integration
       - moveable-entity-block
+      - multiblock
       - network
       - recipe
-      - registrum
-      - wheel
       - rendering
+      - registrum
+      - util
+      - wheel
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: main

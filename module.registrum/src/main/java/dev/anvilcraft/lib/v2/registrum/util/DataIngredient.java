@@ -15,7 +15,7 @@ package dev.anvilcraft.lib.v2.registrum.util;
 
 import com.google.common.collect.ObjectArrays;
 import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumRecipeProvider;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import lombok.Getter;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.criterion.InventoryChangeTrigger;

@@ -110,6 +110,11 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
+    if (System.getenv("NOT_DEV") == 'true') {
+        jarJar(api("dev.anvilcraft.lib:anvillib-util-neoforge-26.1:latest.release"))
+    } else {
+        jarJar(implementation project(":anvillib-util-neoforge-26.1"))
+    }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

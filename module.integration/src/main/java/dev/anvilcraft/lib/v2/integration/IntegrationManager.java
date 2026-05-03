@@ -4,7 +4,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import lombok.extern.slf4j.Slf4j;
 import net.neoforged.fml.loading.FMLLoader;
-import net.neoforged.fml.loading.LoadingModList;
 import net.neoforged.fml.loading.moddiscovery.ModFileInfo;
 import net.neoforged.fml.loading.moddiscovery.ModInfo;
 import net.neoforged.fml.loading.modscan.ModAnnotation;
@@ -51,7 +50,8 @@ public class IntegrationManager {
                     type = typeHolders.stream().map(holder -> switch (holder.value()) {
                         case "DEDICATED_SERVER" -> IntegrationType.DEDICATED_SERVER;
                         case "CLIENT" -> IntegrationType.CLIENT;
-                        case "DATA" -> IntegrationType.DATA;
+                        case "CLIENT_DATA" -> IntegrationType.CLIENT_DATA;
+                        case "SERVER_DATA" -> IntegrationType.SERVER_DATA;
                         default -> throw new IllegalArgumentException("Unknown integration type: " + holder.value());
                     }).toList();
                 }
@@ -63,7 +63,6 @@ public class IntegrationManager {
         StartupNotificationManager.popBar(meter);
     }
 
-    @SuppressWarnings("DataFlowIssue")
     public void load(String modid, ModInfo info) {
         for (IntegrationInstance instance : instances.get(modid)) {
             if (FMLLoader.getCurrent().getDist().isDedicatedServer() && !instance.containsType(IntegrationType.DEDICATED_SERVER)) return;
@@ -74,7 +73,6 @@ public class IntegrationManager {
         }
     }
 
-    @SuppressWarnings("DataFlowIssue")
     public void loadClient(String modid, ModInfo info) {
         for (IntegrationInstance instance : instances.get(modid)) {
             if (!instance.is(info)) continue;
@@ -84,13 +82,21 @@ public class IntegrationManager {
         }
     }
 
-    @SuppressWarnings("DataFlowIssue")
-    public void loadData(String modid, ModInfo info) {
+    public void loadClientData(String modid, ModInfo info) {
         for (IntegrationInstance instance : instances.get(modid)) {
             if (!instance.is(info)) continue;
             instance.newInstance();
-            log.info("Loading data integration {} for {}.", instance.getInstance(), modid);
-            instance.invokeData();
+            log.info("Loading client data integration {} for {}.", instance.getInstance(), modid);
+            instance.invokeClientData();
+        }
+    }
+
+    public void loadServerData(String modid, ModInfo info) {
+        for (IntegrationInstance instance : instances.get(modid)) {
+            if (!instance.is(info)) continue;
+            instance.newInstance();
+            log.info("Loading server data integration {} for {}.", instance.getInstance(), modid);
+            instance.invokeServerData();
         }
     }
 
@@ -108,10 +114,17 @@ public class IntegrationManager {
         }
     }
 
-    public void loadAllDataIntegrations() {
+    public void loadAllClientDataIntegrations() {
         for (String key : instances.keySet()) {
             Optional<ModInfo> info = FMLLoader.getCurrent().getLoadingModList().getMods().stream().filter(it -> it.getModId().equals(key)).findFirst();
-            info.ifPresent(modInfo -> loadData(key, modInfo));
+            info.ifPresent(modInfo -> loadClientData(key, modInfo));
+        }
+    }
+
+    public void loadAllServerDataIntegrations() {
+        for (String key : instances.keySet()) {
+            Optional<ModInfo> info = FMLLoader.getCurrent().getLoadingModList().getMods().stream().filter(it -> it.getModId().equals(key)).findFirst();
+            info.ifPresent(modInfo -> loadServerData(key, modInfo));
         }
     }
 }

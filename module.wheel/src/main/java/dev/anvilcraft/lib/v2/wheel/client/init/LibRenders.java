@@ -30,4 +30,12 @@ public class LibRenders {
         .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
         .withUniform("SelectionUniform", UniformType.UNIFORM_BUFFER)
         .build();
+
+    public static final RenderPipeline ANNULAR_SECTOR_PIPELINE = RenderPipeline.builder(SNIPPET_COMMON)
+        .withLocation(AnvilLibWheel.of("pipeline/annular_sector"))
+        .withVertexShader("core/position_color")
+        .withFragmentShader(AnvilLibWheel.of("core/annular_sector"))
+        .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+        .withUniform("AnnularSectorUniform", UniformType.UNIFORM_BUFFER)
+        .build();
 }

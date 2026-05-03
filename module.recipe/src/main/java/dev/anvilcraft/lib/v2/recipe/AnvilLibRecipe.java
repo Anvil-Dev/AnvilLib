@@ -2,7 +2,7 @@ package dev.anvilcraft.lib.v2.recipe;
 
 import dev.anvilcraft.lib.v2.config.ConfigManager;
 import dev.anvilcraft.lib.v2.recipe.init.LibDataComponentPredicates;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeInits;
+import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipeInits;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;

@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.recipe.init.LibRegistries;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeTypes;
+import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipeTypes;
 import dev.anvilcraft.lib.v2.recipe.outcome.IRecipeOutcome;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.trigger.IRecipeTrigger;

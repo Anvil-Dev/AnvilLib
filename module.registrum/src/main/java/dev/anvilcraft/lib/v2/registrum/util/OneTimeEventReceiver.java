@@ -16,7 +16,7 @@ package dev.anvilcraft.lib.v2.registrum.util;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.neoforged.bus.api.Event;

@@ -2,7 +2,7 @@ package dev.anvilcraft.lib.v2.recipe.event.listener;
 
 import dev.anvilcraft.lib.v2.recipe.AnvilLibRecipe;
 import dev.anvilcraft.lib.v2.recipe.event.ItemEntityEvent;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeTriggers;
+import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipeTriggers;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeManager;
 import net.minecraft.server.level.ServerLevel;
