@@ -48,14 +48,16 @@ public class BloomPostEffect {
     public static final int UNIFORM_BLOOM_SIZE = BloomParametersUbo.DEFINITION.size();
     public static final int UNIFORM_ENHANCED_BLOOM_SIZE = BloomPipelineParametersUbo.DEFINITION.size();
 
-    private static final int BLOOM_STEPS        = 5;
+    // todo: uses config or options
+    private static final int PASSES_AMOUNT = 5;
+    private static final int PASS_STEP = 1;
 
     @Getter
     private final RenderTarget bloomInputTarget = new MainTarget(854, 480, false);
     private final RenderTarget bloomTempTarget = new TextureTarget("BloomTemp", 854, 480, false);
 
-    private final RenderTarget[] downsampleTargets  = arrayInit("DownSample", BLOOM_STEPS);
-    private final RenderTarget[] upsampleTargets    = arrayInit("UpSample", BLOOM_STEPS - 1);
+    private final RenderTarget[] downsampleTargets  = arrayInit("DownSample", PASSES_AMOUNT);
+    private final RenderTarget[] upsampleTargets    = arrayInit("UpSample", PASSES_AMOUNT - 1);
 
     private final GpuDevice device = RenderSystem.getDevice();
 
@@ -120,6 +122,9 @@ public class BloomPostEffect {
     private int height;
     private int indexCount;
     private boolean dirty = false;
+
+    private int passes  = PASSES_AMOUNT;
+    private int step    = PASS_STEP;
 
     public BloomPostEffect() {
         this(1.25f, 1.943f, 1.105f, 0.08f, 0.8f);
@@ -310,7 +315,7 @@ public class BloomPostEffect {
                 0
         );
 
-        for (int i = 1; i < BLOOM_STEPS; i++) {
+        for (int i = 1; i < this.passes; i++) {
             this.downSample(
                     commandEncoder,
                     this.downsampleTargets[i - 1],
@@ -351,15 +356,17 @@ public class BloomPostEffect {
     }
 
     private void doUpSample(CommandEncoder commandEncoder) {
+        var steps   = this.passes;
+
         this.upSample(
                 commandEncoder,
-                this.downsampleTargets[BLOOM_STEPS - 2],
-                this.downsampleTargets[BLOOM_STEPS - 1],
-                this.upsampleTargets[BLOOM_STEPS - 2],
-                BLOOM_STEPS - 1
+                this.downsampleTargets[steps - 2],
+                this.downsampleTargets[steps - 1],
+                this.upsampleTargets[steps - 2],
+                steps - 1
         );
 
-        for (int i = BLOOM_STEPS - 2; i > 0; i--) {
+        for (int i = steps - 2; i > 0; i--) {
             this.upSample(
                     commandEncoder,
                     this.downsampleTargets[i - 1],
@@ -424,17 +431,24 @@ public class BloomPostEffect {
         this.indexCount = data.drawState().indexCount();
         data.close();
 
+        this.passes                     = PASSES_AMOUNT;
 
         int pWidth                      = width;
         int pHeight                     = height;
+        int step                        = this.step;
 
-        for (int i = 0; i < BLOOM_STEPS; i++) {
-            pWidth                      >>= 1;
-            pHeight                     >>= 1;
+        for (int i = 0; i < PASSES_AMOUNT; i++) {
+            pWidth                      >>= step;
+            pHeight                     >>= step;
+
+            if (pWidth == 0 || pHeight == 0) {
+                this.passes = i;
+                break;
+            }
 
             this.downsampleTargets[i]   .resize(pWidth, pHeight);
 
-            if (i                       < BLOOM_STEPS - 1) {
+            if (i                       < PASSES_AMOUNT - 1) {
                 this.upsampleTargets[i] .resize(pWidth, pHeight);
             }
         }
