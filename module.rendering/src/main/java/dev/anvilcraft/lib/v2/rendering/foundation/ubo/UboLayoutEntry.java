@@ -2,10 +2,7 @@ package dev.anvilcraft.lib.v2.rendering.foundation.ubo;
 
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.buffers.Std140SizeCalculator;
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.joml.*;
 
 import java.util.function.Function;
 
@@ -41,6 +38,18 @@ public record UboLayoutEntry<T, I>(UboLayoutEntryType<T> type, Function<I, T> ge
 
     public static <I1> Builder<Vector4f, I1> ofVec4f() {
         return builder(UboLayoutEntryType.VEC4);
+    }
+
+    public static <I1> Builder<Vector2i, I1> ofVec2i() {
+        return builder(UboLayoutEntryType.IVEC2);
+    }
+
+    public static <I1> Builder<Vector3i, I1> ofVec3i() {
+        return builder(UboLayoutEntryType.IVEC3);
+    }
+
+    public static <I1> Builder<Vector4i, I1> ofVec4i() {
+        return builder(UboLayoutEntryType.IVEC4);
     }
 
     public static <I1> Builder<Matrix4f, I1> ofMat4f() {
