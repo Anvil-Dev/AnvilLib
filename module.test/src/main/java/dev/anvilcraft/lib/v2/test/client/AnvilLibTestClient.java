@@ -17,6 +17,6 @@ public class AnvilLibTestClient {
 
     @SubscribeEvent
     public static void onRegisterGuiLayers(RegisterGuiLayersEvent e) {
-//        e.registerAboveAll(SdfGraphicsLayer.LOCATION, new SdfGraphicsLayer());
+        e.registerAboveAll(SdfGraphicsLayer.LOCATION, new SdfGraphicsLayer());
     }
 }

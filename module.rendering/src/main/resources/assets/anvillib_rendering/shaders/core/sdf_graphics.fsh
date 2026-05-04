@@ -21,8 +21,7 @@ layout(std140) uniform SDFParameters {
 #define RT_EGG          5
 
 #define PASS_FILL       0
-#define PASS_STROKE     1
-#define PASS_LIGHT      2
+#define PASS_LIGHT      1
 
 in      vec2            vPosition;
 in      vec4            vColor;
@@ -35,9 +34,9 @@ out     vec4            fragColor;
 #define uStrokeWidth    (params.Shared.y)
 #define uCornerRadius   (params.Shared.z)
 
-// wdf? why it is different to the cpu side??
-#define uRenderType     (params.Types.y)
 #define uPassType       (params.Types.x)
+#define uRenderType     (params.Types.y)
+#define uOnion          (params.Types.z)
 
 // from https://iquilezles.org/articles/distfunctions2d/
 float sdRect( in vec2 p, in vec2 b ) {
@@ -106,18 +105,15 @@ void main() {
     }
 
     float   aa              = max(fwidth(d) * 0.5, uSmoothRadius);
+    float   halfWidth       = uStrokeWidth * 0.5;
+    float   useOnion        = float(uOnion);    // int to float
+    d                       = mix(d, abs(d) - halfWidth, useOnion);
 
-    if (uPassType == PASS_FILL) {
-        alpha               = smoothstep(0.0 + aa, 0.0 - aa, d);
-    }
-    else if (uPassType == PASS_STROKE) {
-        alpha               = smoothstep(0.0 + aa, 0.0 - aa, d) *
-                              smoothstep(0.0 - aa, 0.0 + aa, d + uStrokeWidth);
-    }
-    else if (uPassType == PASS_LIGHT) {
-        float k             = uLightDecay;
-        alpha               = exp(-abs(d) * k);
-    }
+    float   useLight        = float(uPassType); // now only have two passes, so just directly int to float
+    float   fillAlpha       = smoothstep(0.0 + aa, 0.0 - aa, d);
+    float   lightAlpha      = useLight * exp(-d * uLightDecay);
+
+    alpha                   = mix(fillAlpha, lightAlpha, useLight);
 
     vec4    color           = vColor;
     color.a                 *= alpha;

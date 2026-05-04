@@ -66,6 +66,10 @@ public class SdfParametersUbo extends UboObject<SdfParametersUbo> {
         this                    ._smooth(smooth);
     }
 
+    public void stroke(float width) {
+        this                    ._width(width);
+    }
+
     public void round(float radius) {
         this                    ._cornerRadius(radius);
     }
@@ -74,19 +78,20 @@ public class SdfParametersUbo extends UboObject<SdfParametersUbo> {
         this                    ._pass(SdfPassType.FILL);
     }
 
-    public void stroke(float width) {
-        this                    ._width(width);
-
-        this                    ._pass(SdfPassType.STROKE);
+    public void onion(boolean enable) {
+        this.typeParams.z       = enable ? 1 : 0;
     }
 
     public void light() {
         this                    ._pass(SdfPassType.LIGHT);
     }
 
-    public void shared(float smooth, float round) {
-        this.sharedParams.x     = smooth;
-        this.sharedParams.z     = round;
+    public void shared(float smooth, float stroke, float round) {
+        this.sharedParams.set(
+                smooth,
+                stroke,
+                round
+        );
     }
 
     public SdfParametersUbo duplicate() {
@@ -123,5 +128,12 @@ public class SdfParametersUbo extends UboObject<SdfParametersUbo> {
     @Override
     protected UboLayoutDefinition<SdfParametersUbo> getDefinition() {
         return                  DEFINITION;
+    }
+
+    public void reset() {
+        this.sharedParams       .set(0.0f, 0.0f, 0.0f, 0.0f);
+        this.shapeParams        .set(0.0f, 0.0f, 0.0f, 0.0f);
+        this.rect               .set(0.0f, 0.0f, 0.0f, 0.0f);
+        this.typeParams         .set(0, 0, 0, 4);
     }
 }

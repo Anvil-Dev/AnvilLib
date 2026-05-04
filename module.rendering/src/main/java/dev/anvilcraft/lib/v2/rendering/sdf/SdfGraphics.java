@@ -58,6 +58,7 @@ public final class SdfGraphics {
     private float               x, y, w, h;
     private int                 color;
 
+    private float               stroke;
     private float               smooth;
     private float               round;
     private float               rotation;
@@ -141,12 +142,24 @@ public final class SdfGraphics {
     }
 
     public SdfGraphics smooth(float radius) {
-        this.smooth     = Math.max(0.0f, radius);
+        var v           = Math.max(0.0f, radius);
+        this.smooth     = v;
+        this.parameters .smooth(v);
         return          this;
     }
 
     public SdfGraphics round(float radius) {
-        this.round      = Math.max(0.0f, radius);
+        var v           = Math.max(0.0f, radius);
+        this.round      = v;
+        this.parameters .round(v);
+        return          this;
+    }
+
+    public SdfGraphics stroke(float width) {
+        var v           = Math.max(0.0f, width * 0.5f);
+        this.stroke     = v;
+        this.parameters .stroke(v);
+        this.parameters .onion(width > 0.0f);
         return          this;
     }
 
@@ -160,17 +173,18 @@ public final class SdfGraphics {
         return          this;
     }
 
-    public SdfGraphics fill(@NotNull GuiGraphicsExtractor graphics) {
-        this.parameters .shared(this.smooth, this.round);
-        this.parameters .fill();
-
-        this            ._draw(graphics);
+    public SdfGraphics onion(boolean onion) {
+        this.parameters .onion(onion);
         return          this;
     }
 
-    public SdfGraphics stroke(@NotNull GuiGraphicsExtractor graphics, float width) {
-        this.parameters .shared(this.smooth, this.round);
-        this.parameters .stroke(width);
+    public SdfGraphics fill(@NotNull GuiGraphicsExtractor graphics) {
+        this.parameters .shared(
+                                this.smooth,
+                                this.stroke,
+                                this.round
+                        );
+        this.parameters .fill();
 
         this            ._draw(graphics);
         return          this;
@@ -180,7 +194,11 @@ public final class SdfGraphics {
         var last        = this.smooth;
         this.smooth     = radius;
 
-        this.parameters .shared(4.605f / this.smooth, this.round);
+        this.parameters .shared(
+                            4.605f / this.smooth,
+                            this.stroke,
+                            this.round
+                        );
         this.parameters .light();
 
         this            ._draw(graphics);
@@ -194,24 +212,30 @@ public final class SdfGraphics {
         this.w          = 0;
         this.h          = 0;
         this.color      = 0;
+        this.stroke     = 0;
         this.smooth     = 0;
         this.round      = 0;
         this.rotation   = 0;
-        this.center     = false;
         this.index      = 0;
+        this.center     = false;
+
+        this.parameters .reset();
         return          this;
     }
 
     private void _draw(@NotNull GuiGraphicsExtractor graphics) {
         var pose        = new Matrix3x2f(graphics.pose());
-        var ex          = (this.round + this.smooth) * 2.0f;
+        var ex          = (this.round + this.smooth + this.stroke) * 2.0f;
         var width       = this.w + ex;
         var height      = this.h + ex;
 
         if (this.center) {
             pose    .translate(this.x, this.y);
         } else {
-            pose    .translate(this.x + this.w * 0.5f, this.y + this.h * 0.5f);
+            pose    .translate(
+                    this.x + width * 0.5f,
+                    this.y + height * 0.5f
+            );
         }
 
         var x0          = -0.5f;
