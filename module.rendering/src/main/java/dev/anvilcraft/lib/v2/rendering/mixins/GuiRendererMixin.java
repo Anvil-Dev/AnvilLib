@@ -5,13 +5,18 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
+import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.rendering.state.LibGuiElementRenderState;
 import net.minecraft.client.gui.render.GuiRenderer;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -23,6 +28,8 @@ import java.util.Map;
 
 @Mixin(GuiRenderer.class)
 public class GuiRendererMixin {
+    @Shadow
+    private @Nullable RenderPipeline previousPipeline;
     @Unique
     private GuiElementRenderState anvillib$renderState = null;
     @Unique
@@ -49,6 +56,20 @@ public class GuiRendererMixin {
     )
     private void addElementToMesh(GuiElementRenderState renderState, CallbackInfo ci) {
         this.anvillib$renderState = renderState;
+    }
+
+    @Inject(
+            method = "addElementToMesh",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/render/GuiRenderer;getBufferBuilder(Lcom/mojang/blaze3d/pipeline/RenderPipeline;)Lcom/mojang/blaze3d/vertex/BufferBuilder;"
+            )
+    )
+    private void flushSdfGraphics(GuiElementRenderState renderState, CallbackInfo ci) {
+        if (this.previousPipeline == ALRPipelines.SDF_GRAPHICS) {
+            SdfGraphics .getInstance()
+                        .flush();
+        }
     }
 
 

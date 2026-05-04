@@ -7,6 +7,7 @@
   "mixins": [
   ],
   "client": [
+    "GuiRendererMixin",
     "MinecraftMixin"
   ],
   "injectors": {
