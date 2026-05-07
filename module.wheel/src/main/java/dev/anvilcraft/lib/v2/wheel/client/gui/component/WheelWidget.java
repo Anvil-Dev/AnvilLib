@@ -318,7 +318,7 @@ public class WheelWidget extends AbstractWidget {
                 )
                 .stroke(width * 2f);
 
-        if (!ring.collide(mouseX, mouseY)) {
+        if (!ring.collide(mouseX, mouseY, 0.5f)) {
             ring.color(color);
         }
 
