@@ -8,7 +8,6 @@ import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
 import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.rendering.state.LibGuiElementRenderState;
 import net.minecraft.client.gui.render.GuiRenderer;
@@ -28,8 +27,6 @@ import java.util.Map;
 
 @Mixin(GuiRenderer.class)
 public class GuiRendererMixin {
-    @Shadow
-    private @Nullable RenderPipeline previousPipeline;
     @Unique
     private GuiElementRenderState anvillib$renderState = null;
     @Unique

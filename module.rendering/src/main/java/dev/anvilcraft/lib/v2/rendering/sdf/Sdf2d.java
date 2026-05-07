@@ -259,11 +259,4 @@ public class Sdf2d {
                         ) - (ce + ra);
     }
 
-    public static float dot(
-            float ax, float ay,
-            float bx, float by
-    ) {
-        return ax * bx + ay * by;
-    }
-
 }

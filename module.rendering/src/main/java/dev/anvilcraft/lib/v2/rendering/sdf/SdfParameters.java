@@ -4,7 +4,6 @@ import dev.anvilcraft.lib.v2.rendering.foundation.ubo.UboLayoutDefinition;
 import dev.anvilcraft.lib.v2.rendering.foundation.ubo.UboLayoutEntry;
 import dev.anvilcraft.lib.v2.rendering.foundation.ubo.UboObject;
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.util.Mth;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
