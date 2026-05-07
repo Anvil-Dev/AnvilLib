@@ -32,6 +32,7 @@ import java.util.Map;
 @EventBusSubscriber(modid = ALRendering.MODID, value = Dist.CLIENT)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SdfGraphics {
+    private static final int            MAX_SDF_AMOUNT          = 256;
     private static final long           SDF_PARAMETER_SIZE      = SdfParameters.DEFINITION.size();
     @Getter
     public static final SdfGraphics     instance                = new SdfGraphics(new SdfParameters());
@@ -202,7 +203,7 @@ public final class SdfGraphics {
         ubo                 = device.createBuffer(
                 () -> "SDF Parameters",
                 GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
-                SDF_PARAMETER_SIZE * 128L
+                SDF_PARAMETER_SIZE * MAX_SDF_AMOUNT
         );
     }
 

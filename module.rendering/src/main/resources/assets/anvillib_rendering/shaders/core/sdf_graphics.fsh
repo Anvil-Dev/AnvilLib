@@ -1,6 +1,6 @@
 #version                330
 
-#define MAX_SDFS 128
+#define MAX_SDFS        256
 
 struct Sdf {
     vec4                Shared;
