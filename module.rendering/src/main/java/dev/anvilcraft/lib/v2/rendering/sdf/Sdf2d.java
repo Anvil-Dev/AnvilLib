@@ -11,119 +11,82 @@ public class Sdf2d {
             @NotNull SdfParameters params,
             float x, float y
     ) {
-        var rect    = params.getRect();
-        var round   = params.getRound();
-        var smooth  = params.getSmooth();
-        var stroke  = params.getStroke();
+        var rect        = params.getRect();
+        var round       = params.getRound();
+        var smooth      = params.getSmooth();
+        var stroke      = params.getStroke();
 
-        var center  = params.isCenter();
-        var rotate  = params.getRotation();
+        var ex          = (round + smooth + stroke) * 2.0f;
 
-        var rx      = rect.x;
-        var ry      = rect.y;
-        var rw      = rect.z;
-        var rh      = rect.w;
+        var width       = rect.z + ex;
+        var height      = rect.w + ex;
 
         float cx;
         float cy;
 
-        if (center) {
-            cx = rx;
-            cy = ry;
+        if (params.isCenter()) {
+
+            cx          = rect.x;
+            cy          = rect.y;
+
         } else {
-            // 左上角 -> 中心
-            cx = rx + rw * 0.5f;
-            cy = ry + rh * 0.5f;
+
+            cx          = rect.x + width * 0.5f;
+            cy          = rect.y + height * 0.5f;
         }
 
-        // ----------------------------
-        // 2. world -> local
-        // ----------------------------
+        var px          = x - cx;
+        var py          = y - cy;
 
-        float px = x - cx;
-        float py = y - cy;
+        var rotation    = params.getRotation();
+        if (rotation    != 0f) {
 
-        // ----------------------------
-        // 3. 逆旋转
-        // ----------------------------
+            var r       = -rotation * Mth.DEG_TO_RAD;
 
-        if (rotate != 0f) {
+            var s       = (float)Math.sin(r);
+            var c       = (float)Math.cos(r);
 
-            float s = (float)Math.sin(-rotate);
-            float c = (float)Math.cos(-rotate);
+            var tx      = px * c - py * s;
+            var ty      = px * s + py * c;
 
-            float tx = px * c - py * s;
-            float ty = px * s + py * c;
-
-            px = tx;
-            py = ty;
-        }
-
-        // ----------------------------
-        // 4. 如果不是center
-        //    修正局部坐标
-        // ----------------------------
-
-        // SDF 默认认为：
-        // 图形中心在 (0,0)
-
-        // 但非center模式下：
-        // 图形实际是从左上角开始绘制
-
-        // 因此需要偏移回去
-
-        if (!center) {
-            px -= rw * 0.5f;
-            py -= rh * 0.5f;
+            px          = tx;
+            py          = ty;
         }
 
 
-        var type    = params.getRenderType();
+        var type        = params.getRenderType();
+        var shape       = params.getShapeParams();
 
-        var shape   = params.getShapeParams();
+        var d           = switch (type) {
+            case BOX -> sdRect(
+                    px, py,
+                    shape.x - round,
+                    shape.y - round
+            ) - round;
 
-        var d       = 1e5f;
-        switch (type) {
-            case BOX:
-                d = sdRect(
-                        x, y,
-                        shape.x - round,
-                        shape.y - round
-                ) - round;
-                break;
+            case CIRCLE -> sdCircle(
+                    px, py,
+                    shape.x
+            );
 
-            case CIRCLE:
-                d = sdCircle(
-                        px, py,
-                        shape.x
-                );
-                break;
+            case ARC -> sdArc(
+                    px, py,
+                    shape.x, shape.y,
+                    shape.z, shape.w
+            ) - round;
 
-            case ARC:
-                d = sdArc(
-                        px, py,
-                        shape.x, shape.y,
-                        shape.z, shape.w
-                ) - round;
-                break;
+            case SECTOR -> sdRing(
+                    px, py,
+                    shape.x, shape.y,
+                    shape.z, shape.w
+            ) - round;
 
-            case SECTOR:
-                d = sdRing(
-                        px, py,
-                        shape.x, shape.y,
-                        shape.z, shape.w
-                ) - round;
-                break;
-
-            case PIE:
-                d = sdPie(
-                        px, py,
-                        shape.x, shape.y,
-                        shape.z
-                ) - round;
-                break;
-
-        }
+            case PIE -> sdPie(
+                    px, py,
+                    shape.x, shape.y,
+                    shape.z
+            ) - round;
+        };
 
         if (params.isOnion()) {
             var half    = stroke * 0.5f;
@@ -138,21 +101,21 @@ public class Sdf2d {
             float bx, float by
     ) {
 
-        float dx = Math.abs(px) - bx;
-        float dy = Math.abs(py) - by;
+        float dx        = Math.abs(px) - bx;
+        float dy        = Math.abs(py) - by;
 
-        float mx = Math.max(dx, 0.0f);
-        float my = Math.max(dy, 0.0f);
+        float mx        = Math.max(dx, 0.0f);
+        float my        = Math.max(dy, 0.0f);
 
-        return Mth.length(mx, my)
-                + Math.min(Math.max(dx, dy), 0.0f);
+        return          Mth.length(mx, my) +
+                        Math.min(Math.max(dx, dy), 0.0f);
     }
 
     public static float sdCircle(
             float px, float py,
             float r
     ) {
-        return Mth.length(px, py) - r;
+        return          Mth.length(px, py) - r;
     }
 
     public static float sdArc(
@@ -161,19 +124,19 @@ public class Sdf2d {
             float ra, float rb
     ) {
 
-        px = Math.abs(px);
+        px              = Math.abs(px);
 
         float result;
 
         if (scy * px > scx * py) {
-            float dx = px - scx * ra;
-            float dy = py - scy * ra;
-            result = Mth.length(dx, dy);
+            var dx      = px - scx * ra;
+            var dy      = py - scy * ra;
+            result      = Mth.length(dx, dy);
         } else {
-            result = Math.abs(Mth.length(px, py) - ra);
+            result      = Math.abs(Mth.length(px, py) - ra);
         }
 
-        return result - rb;
+        return          result - rb;
     }
 
     public static float sdRing(
@@ -182,21 +145,20 @@ public class Sdf2d {
             float r, float th
     ) {
 
-        px = Math.abs(px);
+        px              = Math.abs(px);
 
-        // mat2(n.x,n.y,-n.y,n.x) * p
-        float rx = nx * px + ny * py;
-        float ry = -ny * px + nx * py;
+        float rx        = nx * px + (-ny) * py;
+        float ry        = ny * px +  nx  * py;
 
-        float a = Math.abs(Mth.length(rx, ry) - r) - th * 0.5f;
+        float a         = Math.abs(Mth.length(rx, ry) - r) - th * 0.5f;
 
-        float bx = rx;
-        float by = Math.max(0.0f,
-                Math.abs(r - ry) - th * 0.5f);
+        float by        = Math.max(0.0f,
+                        Math.abs(r - ry) - th * 0.5f);
 
-        float b = Mth.length(bx, by) * Mth.sign(rx);
+        float b         = Mth.length(rx, by) *
+                        Mth.sign(rx);
 
-        return Math.max(a, b);
+        return          Math.max(a, b);
     }
 
     public static float sdPie(
@@ -205,22 +167,22 @@ public class Sdf2d {
             float r
     ) {
 
-        px = Math.abs(px);
+        px =            Math.abs(px);
 
-        float l = Mth.length(px, py) - r;
+        float l =       Mth.length(px, py) - r;
 
-        float dot = px * cx + py * cy;
-        float clamped = Mth.clamp(dot, 0.0f, r);
+        float dot       = px * cx + py * cy;
+        float clamped   = Mth.clamp(dot, 0.0f, r);
 
-        float mx = px - cx * clamped;
-        float my = py - cy * clamped;
+        float mx        = px - cx * clamped;
+        float my        = py - cy * clamped;
 
-        float m = Mth.length(mx, my);
+        float m         = Mth.length(mx, my);
 
-        return Math.max(
-                l,
-                m * Mth.sign(cy * px - cx * py)
-        );
+        return          Math.max(
+                            l,
+                            m * Mth.sign(cy * px - cx * py)
+                        );
     }
 
 }
