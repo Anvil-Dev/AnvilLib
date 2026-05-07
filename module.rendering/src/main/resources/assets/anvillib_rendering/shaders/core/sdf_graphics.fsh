@@ -18,7 +18,8 @@ layout(std140) uniform SDFParameters {
 #define RT_ARC          2
 #define RT_SECTOR       3
 #define RT_PIE          4
-#define RT_EGG          5
+#define RT_UCAPSULE     5
+#define RT_EGG          6
 
 #define PASS_FILL       0
 #define PASS_LIGHT      1
@@ -73,6 +74,38 @@ float sdPie(in vec2 p, in vec2 c, in float r) {
     return max(l,m*sign(c.y*p.x-c.x*p.y));
 }
 
+// from https://iquilezles.org/articles/distfunctions2d/
+float sdSegment( in vec2 p, in vec2 a, in vec2 b ) {
+    vec2 pa = p-a, ba = b-a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+    return length( pa - ba*h );
+}
+
+// from https://iquilezles.org/articles/distfunctions2d/
+float sdUnevenCapsule( vec2 p, float r1, float r2, float h )
+{
+    p.x = abs(p.x);
+    float b = (r1-r2)/h;
+    float a = sqrt(1.0-b*b);
+    float k = dot(p,vec2(-b,a));
+    if( k < 0.0 ) return length(p) - r1;
+    if( k > a*h ) return length(p-vec2(0.0,h)) - r2;
+    return dot(p, vec2(a,b) ) - r1;
+}
+
+// from https://iquilezles.org/articles/distfunctions2d/
+float sdEgg( in vec2 p, in float he, in float ra, in float rb )
+{
+    // all this can be precomputed for any given shape
+    float ce = 0.5*(he*he-(ra-rb)*(ra-rb))/(ra-rb);
+
+    // only this needs to be run per pixel
+    p.x = abs(p.x);
+    if( p.y<0.0 )             return length(p)-ra;
+    if( p.y*ce-p.x*he>he*ce ) return length(vec2(p.x,p.y-he))-rb;
+    return length(vec2(p.x+ce,p.y))-(ce+ra);
+}
+
 void main() {
     Sdf     params          = SDFs[vIndex];
     vec4    shape           = params.Shape;
@@ -95,6 +128,12 @@ void main() {
             break;
         case    RT_PIE:
             d   = sdPie(p, shape.xy, shape.z);
+            break;
+        case    RT_UCAPSULE:
+            d   = sdUnevenCapsule(p, shape.x, shape.y, shape.z);
+            break;
+        case    RT_EGG:
+            d   = sdEgg(p, shape.x, shape.y, shape.z);
             break;
     }
 

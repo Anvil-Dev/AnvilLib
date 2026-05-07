@@ -66,7 +66,7 @@ public final class SdfGraphics {
 
     public SdfGraphics sector(float x, float y, float sweep, float radius, float width) {
         this.parameters .getRect()
-                .set(x, y, radius * 2, radius * 2);
+                        .set(x, y, radius * 2, radius * 2);
         this.parameters .sector(sweep, radius, width);
 
         return          this;
@@ -76,6 +76,34 @@ public final class SdfGraphics {
         this.parameters .getRect()
                         .set(x, y, radius * 2, radius * 2);
         this.parameters .pie(sweep, radius);
+
+        return          this;
+    }
+
+    public SdfGraphics capsule(
+            float x, float y,
+            float topRadius, float bottomRadius,
+            float height
+    ) {
+        var width       = Math.max(topRadius, bottomRadius) * 2;
+
+        this.parameters .getRect()
+                        .set(x, y, width, height + (topRadius + bottomRadius) * 3);
+        this.parameters .capsule(topRadius, bottomRadius, height);
+
+        return          this;
+    }
+
+    public SdfGraphics egg(
+            float x, float y,
+            float topRadius, float bottomRadius,
+            float height
+    ) {
+        var width       = Math.max(topRadius, bottomRadius) * 2;
+
+        this.parameters .getRect()
+                        .set(x, y, width, height + (topRadius + bottomRadius) * 2);
+        this.parameters .egg(topRadius, bottomRadius, height);
 
         return          this;
     }
@@ -149,9 +177,8 @@ public final class SdfGraphics {
         return          this;
     }
 
-    // todo: fix bugs
-    public boolean collide(float x, float y) {
-        return Sdf2d.sd(this.parameters, x, y) < 0.0f;
+    public boolean collide(float x, float y, float threshold) {
+        return Sdf2d    .sd(this.parameters, x, y) < threshold;
     }
 
     public SdfGraphics cache() {
@@ -170,9 +197,9 @@ public final class SdfGraphics {
 
     @SubscribeEvent
     public static void init(ConfigureMainRenderTargetEvent event) {
-        GpuDevice device = RenderSystem.getDevice();
-        encoder         = device.createCommandEncoder();
-        ubo             = device.createBuffer(
+        GpuDevice device    = RenderSystem.getDevice();
+        encoder             = device.createCommandEncoder();
+        ubo                 = device.createBuffer(
                 () -> "SDF Parameters",
                 GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
                 SDF_PARAMETER_SIZE * 128L
@@ -197,11 +224,11 @@ public final class SdfGraphics {
         var height      = rect.w + ex;
 
         if (parameters.isCenter()) {
-            pose    .translate(rect.x, rect.y);
+            pose        .translate(rect.x, rect.y);
         } else {
-            pose    .translate(
-                    rect.x + width * 0.5f,
-                    rect.y + height * 0.5f
+            pose        .translate(
+                        rect.x + width * 0.5f,
+                        rect.y + height * 0.5f
             );
         }
 

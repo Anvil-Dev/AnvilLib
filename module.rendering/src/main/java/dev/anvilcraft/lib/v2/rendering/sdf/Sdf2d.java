@@ -86,6 +86,18 @@ public class Sdf2d {
                     shape.x, shape.y,
                     shape.z
             ) - round;
+
+            case CAPSULE -> sdUnevenCapsule(
+                    px, py,
+                    shape.x, shape.y,
+                    shape.z
+            );
+
+            case EGG -> sdEgg(
+                    px, py,
+                    shape.x, shape.y,
+                    shape.z
+            );
         };
 
         if (params.isOnion()) {
@@ -183,6 +195,75 @@ public class Sdf2d {
                             l,
                             m * Mth.sign(cy * px - cx * py)
                         );
+    }
+
+    public static float sdUnevenCapsule(
+            float px, float py,
+            float r1,
+            float r2,
+            float h
+    ) {
+
+        px              = Math.abs(px);
+
+        float b         = (r1 - r2) / h;
+        float a         = (float)Math.sqrt(1.0f - b * b);
+        float k         = px * (-b) + py * a;
+
+        if (k           < 0.0f) {
+            return      Mth.length(px, py) - r1;
+        }
+
+        if (k           > a * h) {
+
+            float dx    = px;
+            float dy    = py - h;
+
+            return      Mth.length(dx, dy) - r2;
+        }
+
+        return          px * a + py * b - r1;
+    }
+
+    public static float sdEgg(
+            float px, float py,
+            float he,
+            float ra,
+            float rb
+    ) {
+
+        float ce        =
+                        0.5f * (
+                                he * he
+                                        - (ra - rb) * (ra - rb)
+                        ) / (ra - rb);
+
+        px              = Math.abs(px);
+
+        if (py          < 0.0f) {
+
+            return      Mth.length(px, py) - ra;
+        }
+
+        if (py * ce - px * he > he * ce) {
+
+            return      Mth.length(
+                            px,
+                            py - he
+                        ) - rb;
+        }
+
+        return          Mth.length(
+                            px + ce,
+                            py
+                        ) - (ce + ra);
+    }
+
+    public static float dot(
+            float ax, float ay,
+            float bx, float by
+    ) {
+        return ax * bx + ay * by;
     }
 
 }
