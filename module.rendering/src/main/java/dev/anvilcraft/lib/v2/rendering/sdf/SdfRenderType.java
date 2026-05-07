@@ -5,5 +5,11 @@ public enum SdfRenderType {
     CIRCLE,
     ARC,
     SECTOR,
-    PIE
+    PIE;
+
+    private static final SdfRenderType[] VALUES = values();
+
+    public static SdfRenderType fromOrdinal(int ordinal) {
+        return VALUES[ordinal];
+    }
 }

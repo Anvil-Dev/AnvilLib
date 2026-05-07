@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.test.client.gui;
 import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.client.gui.GuiLayer;
@@ -21,72 +22,89 @@ public class SdfGraphicsLayer implements GuiLayer {
     ) {
         this.timer += tracker.getGameTimeDeltaTicks();
 
-        SdfGraphics.getInstance()
-                .center(true)
-                .color(0xFFFFFFFF)
-                .rotate(this.timer)
-                .stroke(0)
-                .box(32, 40, 40, 20)
-                .fill(graphics)
-                .box(30, 65, 40, 20)
-                .round(2)
-                .fill(graphics)
-                .round(0)
-                .circle(80, 50, 20)
-                .fill(graphics)
-                .arc(130, 50, 45, 20, 5)
-                .fill(graphics)
-                .sector(180, 50, 45, 20, 5)
-                .fill(graphics)
-                .pie(230, 50, 45, 20)
-                .fill(graphics)
+        var minecraft = Minecraft.getInstance();
+        int xMouse  = (int)minecraft.mouseHandler.getScaledXPos(minecraft.getWindow());
+        int yMouse  = (int)minecraft.mouseHandler.getScaledYPos(minecraft.getWindow());
 
-                .stroke(2)
-                .box(32, 90, 40, 20)
-                .fill(graphics)
-                .box(30, 115, 40, 20)
-                .round(2)
-                .fill(graphics)
-                .round(0)
-                .circle(80, 100, 20)
-                .fill(graphics)
-                .arc(130, 100, 45, 20, 5)
-                .fill(graphics)
-                .sector(180, 100, 45, 20, 5)
-                .fill(graphics)
-                .pie(230, 100, 45, 20)
-                .fill(graphics)
+        var sdf     = SdfGraphics.getInstance()
+                    .reset()
+                    .rotate(this.timer)
+                    .center(true)
 
-                .stroke(0)
-                .box(32, 140, 40, 20)
-                .light(graphics, 5)
-                .box(30, 165, 40, 20)
-                .round(2)
-                .light(graphics, 5)
-                .round(0)
-                .circle(80, 150, 20)
-                .light(graphics, 5)
-                .arc(130, 150, 45, 20, 5)
-                .light(graphics, 5)
-                .sector(180, 150, 45, 20, 5)
-                .light(graphics, 5)
-                .pie(230, 150, 45, 20)
-                .light(graphics, 5)
+                    .stroke(0)
+                    .fill();
 
-                .stroke(2)
-                .box(32, 190, 40, 20)
-                .light(graphics, 5)
-                .box(30, 215, 40, 20)
-                .round(2)
-                .light(graphics, 5)
-                .round(0)
-                .circle(80, 200, 20)
-                .light(graphics, 5)
-                .arc(130, 200, 45, 20, 5)
-                .light(graphics, 5)
-                .sector(180, 200, 45, 20, 5)
-                .light(graphics, 5)
-                .pie(230, 200, 45, 20)
-                .light(graphics, 5);
+        this.draw(graphics, sdf, 0, xMouse, yMouse);
+
+        sdf.stroke(2);
+        this.draw(graphics, sdf, 50, xMouse, yMouse);
+
+        sdf.stroke(0).light(5);
+        this.draw(graphics, sdf, 150, xMouse, yMouse);
+
+        sdf.stroke(2);
+        this.draw(graphics, sdf, 200, xMouse, yMouse);
+
+        sdf.reset();
+    }
+
+    private void draw(
+            GuiGraphicsExtractor graphics,
+            SdfGraphics sdf,
+            int shift,
+            int xMouse, int yMouse
+    ) {
+        this.draw(
+                graphics,
+                sdf.box(32, 20 + shift, 40, 20),
+                xMouse, yMouse
+        );
+
+        this.draw(
+                graphics,
+                sdf.box(30, 65 + shift, 40, 20)
+                        .round(2),
+                xMouse, yMouse
+        );
+
+        this.draw(
+                graphics,
+                sdf.circle(80, 50 + shift, 20),
+                xMouse, yMouse
+        );
+
+        this.draw(
+                graphics,
+                sdf.arc(130, 50 + shift, 45, 20, 5),
+                xMouse, yMouse
+        );
+
+        this.draw(
+                graphics,
+                sdf.sector(180, 50 + shift, 45, 20, 5),
+                xMouse, yMouse
+        );
+
+        this.draw(
+                graphics,
+                sdf.pie(230, 50 + shift, 45, 20),
+                xMouse, yMouse
+        );
+    }
+    
+    private void draw(
+            GuiGraphicsExtractor graphics,
+            SdfGraphics sdf,
+            int mouseX, int mouseY
+    ) {
+
+        if (sdf.collide(mouseX, mouseY)) {
+            sdf.color(0xFFFFFFFF);
+        } else {
+            sdf.color(0x80808080);
+        }
+
+        sdf.draw(graphics);
+
     }
 }

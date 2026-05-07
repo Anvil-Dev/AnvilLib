@@ -10,17 +10,18 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
 import dev.anvilcraft.lib.v2.rendering.ALRendering;
 import dev.anvilcraft.lib.v2.rendering.state.LibGuiElementRenderState;
-import dev.anvilcraft.lib.v2.rendering.state.LibQuadGuiElementRenderState;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
+import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ConfigureMainRenderTargetEvent;
-import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix3x2f;
 import org.jspecify.annotations.NonNull;
@@ -29,147 +30,97 @@ import org.jspecify.annotations.Nullable;
 import java.util.Map;
 
 @EventBusSubscriber(modid = ALRendering.MODID, value = Dist.CLIENT)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SdfGraphics {
-
-    @SubscribeEvent
-    public static void init(ConfigureMainRenderTargetEvent event) {
-        SdfGraphics.instance = new SdfGraphics();
-    }
-
-    @SubscribeEvent
-    public static void endFrame(RenderGuiEvent.Post event) {
-        SdfGraphics.instance.flush();
-    }
-
-    private static final long       SDF_PARAMETER_SIZE          = SdfParametersUbo.DEFINITION.size();
-
+    private static final long           SDF_PARAMETER_SIZE      = SdfParameters.DEFINITION.size();
     @Getter
-    private static SdfGraphics      instance;
+    public static final SdfGraphics     instance                = new SdfGraphics(new SdfParameters());
 
-    private final GpuDevice         device                      = RenderSystem.getDevice();
-    private final SdfParametersUbo  parameters                  = new SdfParametersUbo();
-    private final CommandEncoder    encoder                     = this.device.createCommandEncoder();
-    private final GpuBuffer         ubo                         = this.device.createBuffer(
-            () -> "SDF Parameters",
-            GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
-            SDF_PARAMETER_SIZE * 128L
-    );
-
-    private float               x, y, w, h;
-    private int                 color;
-
-    private float               stroke;
-    private float               smooth;
-    private float               round;
-    private float               rotation;
-
-    private boolean             center;
-    private int                 index;
+    private final SdfParameters parameters;
 
     public SdfGraphics box(float x, float y, float width, float height) {
-        this.x          = x;
-        this.y          = y;
-        this.w          = width;
-        this.h          = height;
-
-        this.parameters .box(this.w, this.h);
+        this.parameters .getRect()
+                        .set(x, y, width, height);
+        this.parameters .box(width, height);
 
         return          this;
     }
 
-    public SdfGraphics roundedHBar(float x, float y, float width, float height) {
-        return          this.round(height * 0.5f)
-                            .box(x, y, width, height);
-    }
-
     public SdfGraphics circle(float x, float y, float radius) {
-        this.x          = x;
-        this.y          = y;
-        this.w          = radius * 2;
-        this.h          = radius * 2;
-
+        this.parameters .getRect()
+                        .set(x, y, radius * 2, radius * 2);
         this.parameters .circle(radius);
 
         return          this;
     }
 
     public SdfGraphics arc(float x, float y, float sweep, float radius, float width) {
-        this.x          = x;
-        this.y          = y;
-        this.w          = radius * 2 + width;
-        this.h          = radius * 2 + width;
+        var scale       = radius * 2 + width;
 
+        this.parameters .getRect()
+                        .set(x, y, scale, scale);
         this.parameters .arc(sweep, radius, width);
 
         return          this;
     }
 
     public SdfGraphics sector(float x, float y, float sweep, float radius, float width) {
-        this.x              = x;
-        this.y              = y;
-        this.w              = radius * 2;
-        this.h              = radius * 2;
-
+        this.parameters .getRect()
+                .set(x, y, radius * 2, radius * 2);
         this.parameters .sector(sweep, radius, width);
 
         return          this;
     }
 
     public SdfGraphics pie(float x, float y, float sweep, float radius) {
-        this.x          = x;
-        this.y          = y;
-        this.w          = radius * 2;
-        this.h          = radius * 2;
-
+        this.parameters .getRect()
+                        .set(x, y, radius * 2, radius * 2);
         this.parameters .pie(sweep, radius);
 
         return          this;
     }
 
     public SdfGraphics color(int color) {
-        this.color      = color;
+        this.parameters .color(color);
         return          this;
     }
 
     public SdfGraphics color(float red, float green, float blue, float alpha) {
-        this.color      = ARGB.colorFromFloat(red, green, blue, alpha);
+        this.parameters .color(ARGB.colorFromFloat(red, green, blue, alpha));
         return          this;
     }
 
     public SdfGraphics color(int red, int green, int blue, int alpha) {
-        this.color      = ARGB.color(alpha, red, green, blue);
+        this.parameters .color(ARGB.color(alpha, red, green, blue));
         return          this;
     }
 
     public SdfGraphics smooth(float radius) {
         var v           = Math.max(0.0f, radius);
-        this.smooth     = v;
         this.parameters .smooth(v);
         return          this;
     }
 
     public SdfGraphics round(float radius) {
         var v           = Math.max(0.0f, radius);
-        this.round      = v;
         this.parameters .round(v);
         return          this;
     }
 
     public SdfGraphics stroke(float width) {
         var v           = Math.max(0.0f, width * 0.5f);
-        this.stroke     = v;
         this.parameters .stroke(v);
         this.parameters .onion(width > 0.0f);
         return          this;
     }
 
     public SdfGraphics rotate(float degrees) {
-        this.rotation   = Mth.wrapDegrees(degrees);
+        this.parameters .rotate(Mth.wrapDegrees(degrees));
         return          this;
     }
 
     public SdfGraphics center(boolean center) {
-        this.center     = center;
+        this.parameters .center(center);
         return          this;
     }
 
@@ -178,63 +129,79 @@ public final class SdfGraphics {
         return          this;
     }
 
-    public SdfGraphics fill(@NotNull GuiGraphicsExtractor graphics) {
-        this.parameters .shared(
-                                this.smooth,
-                                this.stroke,
-                                this.round
-                        );
+    public SdfGraphics fill() {
         this.parameters .fill();
-
-        this            ._draw(graphics);
         return          this;
     }
 
-    public SdfGraphics light(@NotNull GuiGraphicsExtractor graphics, float radius) {
-        var last        = this.smooth;
-        this.smooth     = radius;
-
-        this.parameters .shared(
-                            4.605f / this.smooth,
-                            this.stroke,
-                            this.round
-                        );
-        this.parameters .light();
-
-        this            ._draw(graphics);
-        this.smooth     = last;
+    public SdfGraphics light(float radius) {
+        this.parameters .light(radius);
         return          this;
     }
 
-    public SdfGraphics flush() {
-        this.x          = 0;
-        this.y          = 0;
-        this.w          = 0;
-        this.h          = 0;
-        this.color      = 0;
-        this.stroke     = 0;
-        this.smooth     = 0;
-        this.round      = 0;
-        this.rotation   = 0;
-        this.index      = 0;
-        this.center     = false;
+    public SdfGraphics draw(@NotNull GuiGraphicsExtractor graphics) {
+        _draw(graphics, this.parameters);
+        return          this;
+    }
 
+    public SdfGraphics reset() {
         this.parameters .reset();
         return          this;
     }
 
-    private void _draw(@NotNull GuiGraphicsExtractor graphics) {
-        var pose        = new Matrix3x2f(graphics.pose());
-        var ex          = (this.round + this.smooth + this.stroke) * 2.0f;
-        var width       = this.w + ex;
-        var height      = this.h + ex;
+    // todo: fix bugs
+    public boolean collide(float x, float y) {
+        return Sdf2d.sd(this.parameters, x, y) < 0.0f;
+    }
 
-        if (this.center) {
-            pose    .translate(this.x, this.y);
+    public SdfGraphics cache() {
+        return new SdfGraphics(this.parameters.duplicate());
+    }
+
+    public static void flush() {
+        instance.parameters .reset();
+        SdfGraphics.index   = 0;
+    }
+
+    private static  CommandEncoder  encoder;
+    private static  GpuBuffer       ubo;
+
+    private static  int             index;
+
+    @SubscribeEvent
+    public static void init(ConfigureMainRenderTargetEvent event) {
+        GpuDevice device = RenderSystem.getDevice();
+        encoder         = device.createCommandEncoder();
+        ubo             = device.createBuffer(
+                () -> "SDF Parameters",
+                GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
+                SDF_PARAMETER_SIZE * 128L
+        );
+    }
+
+    private static void _draw(
+            @NotNull GuiGraphicsExtractor graphics,
+            @NotNull SdfParameters parameters
+    ) {
+        var round       = parameters.getRound();
+        var smooth      = parameters.getSmooth();
+        var stroke      = parameters.getStroke();
+
+        var rect        = parameters.getRect();
+        var z           = rect.z;
+        var w           = rect.w;
+
+        var pose        = new Matrix3x2f(graphics.pose());
+        var ex          = (round + smooth + stroke) * 2.0f;
+        var width       = rect.z + ex;
+        var height      = rect.w + ex;
+
+        if (parameters.isCenter()) {
+            pose    .translate(rect.x, rect.y);
         } else {
             pose    .translate(
-                    this.x + width * 0.5f,
-                    this.y + height * 0.5f
+                    rect.x + width * 0.5f,
+                    rect.y + height * 0.5f
             );
         }
 
@@ -243,37 +210,43 @@ public final class SdfGraphics {
         var x1          = +0.5f;
         var y1          = +0.5f;
 
-        pose            .rotate(Mth.DEG_TO_RAD * this.rotation)
+        pose            .rotate(Mth.DEG_TO_RAD * parameters.getRotation())
                         .scale(width, height);
 
-        this.parameters .getRect()
-                        .set(
-                                x0,
-                                y0,
-                                width,
-                                height
-                        );
+        rect.z          = width;
+        rect.w          = height;
 
-        var offset      = this.index * SDF_PARAMETER_SIZE;
-        var slice       = this.ubo.slice(offset, SDF_PARAMETER_SIZE);
+        var offset      = index * SDF_PARAMETER_SIZE;
+        var slice       = ubo.slice(offset, SDF_PARAMETER_SIZE);
         var state       = new RenderState(
                         pose,
                         x0, y0,
                         x1, y1,
-                        this.color,
-                        this.index,
-                        this.ubo.slice(),
+                        parameters.getColor(),
+                        index,
+                        ubo.slice(),
                         null
         );
 
-        this.parameters .upload(this.encoder, slice);
+        parameters      .upload(encoder, slice);
 
         graphics        .submitGuiElementRenderState(state);
 
-        this.index      ++;
+        rect.z          = z;
+        rect.w          = w;
+
+        SdfGraphics.index++;
     }
 
-    public record RenderState(
+    private static boolean _collide(
+            @NotNull SdfParameters parameters,
+            float x,
+            float y
+    ) {
+        return false;
+    }
+
+    private record RenderState(
             Matrix3x2f pose,
             float x0,
             float y0,
@@ -284,7 +257,7 @@ public final class SdfGraphics {
             GpuBufferSlice sdfParametersUbo,
             @Nullable ScreenRectangle scissorArea,
             @Nullable ScreenRectangle bounds
-    ) implements LibQuadGuiElementRenderState {
+    ) implements LibGuiElementRenderState {
 
         private RenderState(
                 Matrix3x2f pose,
@@ -324,8 +297,14 @@ public final class SdfGraphics {
         }
 
         @Override
+        public @NonNull TextureSetup textureSetup() {
+            return TextureSetup.noTexture();
+        }
+
+        @Override
         public Map<String, GpuBufferSlice> bufferSlices() {
             return Map.of("SDFParameters", this.sdfParametersUbo());
         }
     }
+
 }

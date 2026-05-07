@@ -45,6 +45,8 @@ public class GuiRendererMixin {
     )
     private void addElementsToMeshes(GuiRenderState.TraverseRange traverseRange, CallbackInfo ci) {
         this.anvillib$renderState = null;
+
+        SdfGraphics.flush();
     }
 
     @Inject(
@@ -56,20 +58,6 @@ public class GuiRendererMixin {
     )
     private void addElementToMesh(GuiElementRenderState renderState, CallbackInfo ci) {
         this.anvillib$renderState = renderState;
-    }
-
-    @Inject(
-            method = "addElementToMesh",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/render/GuiRenderer;getBufferBuilder(Lcom/mojang/blaze3d/pipeline/RenderPipeline;)Lcom/mojang/blaze3d/vertex/BufferBuilder;"
-            )
-    )
-    private void flushSdfGraphics(GuiElementRenderState renderState, CallbackInfo ci) {
-        if (this.previousPipeline == ALRPipelines.SDF_GRAPHICS) {
-            SdfGraphics .getInstance()
-                        .flush();
-        }
     }
 
 

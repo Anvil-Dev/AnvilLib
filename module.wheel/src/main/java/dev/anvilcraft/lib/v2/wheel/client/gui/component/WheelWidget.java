@@ -2,11 +2,10 @@ package dev.anvilcraft.lib.v2.wheel.client.gui.component;
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.platform.Window;
+import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.wheel.AnvilLibWheel;
 import dev.anvilcraft.lib.v2.wheel.api.WheelSelectionEffect;
 import dev.anvilcraft.lib.v2.wheel.client.gui.render.state.AnnularSectorRenderState;
-import dev.anvilcraft.lib.v2.wheel.client.gui.render.state.RingRenderState;
-import dev.anvilcraft.lib.v2.wheel.client.gui.render.state.SelectionRenderState;
 import dev.anvilcraft.lib.v2.util.MathUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -297,6 +296,37 @@ public class WheelWidget extends AbstractWidget {
     }
 
     public void renderRing(
+            GuiGraphicsExtractor guiGraphics,
+            float centerX,
+            float centerY,
+            int color,
+            float innerDiameter,
+            float outerDiameter,
+            float mouseX,
+            float mouseY
+    ) {
+        var width   = outerDiameter - innerDiameter;
+        var radius  = outerDiameter - width * 0.5f;
+
+        SdfGraphics ring = SdfGraphics.getInstance()
+                .reset()
+                .center(true)
+                .circle(
+                        centerX,
+                        centerY,
+                        radius
+                )
+                .stroke(width * 2f);
+
+        if (!ring.collide(mouseX, mouseY)) {
+            ring.color(color);
+        }
+
+        ring    .fill()
+                .draw(guiGraphics);
+    }
+
+    public void renderRing(
         GuiGraphicsExtractor guiGraphics,
         float centerX,
         float centerY,
@@ -304,7 +334,25 @@ public class WheelWidget extends AbstractWidget {
         float innerDiameter,
         float outerDiameter
     ) {
-        float x1 = centerX - outerDiameter - 5;
+
+        var width   = outerDiameter - innerDiameter;
+        var radius  = outerDiameter - width * 0.5f;
+
+        SdfGraphics ring = SdfGraphics.getInstance()
+                .reset()
+                .center(true)
+                .circle(
+                        centerX,
+                        centerY,
+                        radius
+                )
+                .stroke(width * 2f);
+
+
+        ring    .fill()
+                .draw(guiGraphics);
+
+        /*float x1 = centerX - outerDiameter - 5;
         float y1 = centerY - outerDiameter - 5;
         float x2 = centerX + outerDiameter + 5;
         float y2 = centerY + outerDiameter + 5;
@@ -325,11 +373,11 @@ public class WheelWidget extends AbstractWidget {
             color,
             writeUniform,
             guiGraphics.peekScissorStack()
-        ));
+        ));*/
     }
 
     public void renderSelectionEffect(GuiGraphicsExtractor guiGraphics, float centerX, float centerY, int color, float ringWidth) {
-        float dotDiameter = this.getSelectionDotDiameter(ringWidth);
+        /*float dotDiameter = this.getSelectionDotDiameter(ringWidth);
         float dotRadius = dotDiameter * 0.5f;
         float x1 = centerX - dotRadius * 2;
         float y1 = centerY - dotRadius * 2;
@@ -352,7 +400,17 @@ public class WheelWidget extends AbstractWidget {
             color,
             writeUniform,
             guiGraphics.peekScissorStack()
-        ));
+        ));*/
+
+        float dotDiameter = this.getSelectionDotDiameter(ringWidth) * 2.0f;
+        float dotRadius = dotDiameter * 0.5f;
+        SdfGraphics .getInstance()
+                .center(true)
+                .stroke(0)
+                .color(color)
+                .circle(centerX, centerY, 1f)
+                .light(dotDiameter)
+                .draw(guiGraphics);
     }
 
     public void renderAnnularSectorSelection(
@@ -522,6 +580,7 @@ public class WheelWidget extends AbstractWidget {
             this.renderProgressAnimation(guiGraphics, progress);
             return;
         }
+
         this.renderRing(
             guiGraphics,
             this.centerPos.x,
