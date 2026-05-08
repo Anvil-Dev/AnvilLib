@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.font;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
@@ -16,6 +17,7 @@ import javax.swing.UIManager;
 public class FontManager {
     public static final FontManager INSTANCE = new FontManager();
     private final Map<String, Set<Font>> familyMap = new HashMap<>();
+    private final Map<String, Font> fontMap = new HashMap<>();
     private final Font defaultFont;
 
     private FontManager() {
@@ -24,6 +26,7 @@ public class FontManager {
         for (Font font : allFonts) {
             String familyName = font.getFamily();
             familyMap.computeIfAbsent(familyName, _ -> new java.util.HashSet<>()).add(font);
+            fontMap.put(font.getFontName(), font);
         }
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -39,5 +42,9 @@ public class FontManager {
 
     public Collection<String> getFamilyFontNames(String familyName) {
         return this.familyMap.get(familyName).stream().map(Font::getFontName).toList();
+    }
+
+    public Font getFont(@Nullable String name) {
+        return name == null ? this.getDefaultFont() : this.fontMap.get(name);
     }
 }

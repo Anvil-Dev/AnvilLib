@@ -50,8 +50,8 @@ neoForge {
     // accessTransformers.add('src/main/resources/META-INF/accesstransformer.cfg')
 
     interfaceInjectionData {
-        // from 'src/main/resources/interface_injections.json'
-        // publish file('src/main/resources/interface_injections.json')
+         from 'src/main/resources/interface_injections.json'
+         publish file('src/main/resources/interface_injections.json')
     }
 
     // Default run configurations.

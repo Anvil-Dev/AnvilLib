@@ -16,6 +16,7 @@ import java.util.List;
 public class FontConfigScreen extends Screen {
     protected final Screen lastScreen;
     private Dropdown.@Nullable Shielding shielding;
+    @SuppressWarnings("FieldCanBeLocal")
     private @Nullable Dropdown familyDropdown;
     private @Nullable Dropdown fontDropdown;
     private Component selectedFamilyText = Component.empty();
@@ -88,7 +89,15 @@ public class FontConfigScreen extends Screen {
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.centeredText(this.font, this.title, this.width / 2, 24, 0xFFFFFFFF);
         guiGraphics.centeredText(this.font, this.selectedFamilyText, this.width / 2, this.height / 2 - 56, 0xFFFFFFFF);
-        guiGraphics.centeredText(this.font, this.selectedFontText, this.width / 2, this.height / 2 - 44, 0xFFFFFFFF);
+        if (fontDropdown != null) {
+            guiGraphics.anvillib$centeredText(
+                FontManager.INSTANCE.getFont(this.fontDropdown.getValueId()),
+                this.selectedFontText,
+                this.width / 2,
+                this.height / 2 - 44,
+                0xFFFFFFFF
+            );
+        }
         int dropdownWidth = Math.clamp(this.width - 40, 180, 320);
         int dropdownLabelX = (this.width - dropdownWidth) / 2;
         int familyDropdownLabelY = this.height / 2 - 24 + this.font.lineHeight / 2;
@@ -110,6 +119,9 @@ public class FontConfigScreen extends Screen {
     }
 
     private void refreshFontOptions(@Nullable String family, @Nullable String preferredFont, boolean persistSelected) {
+        if (this.fontDropdown == null) {
+            return;
+        }
         if (family == null || family.isBlank() || !FontManager.INSTANCE.getFamilyNames().contains(family)) {
             this.fontDropdown.setAllow(List.of());
             this.updateSelectedFont(null);
