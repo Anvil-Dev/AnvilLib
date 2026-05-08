@@ -107,6 +107,7 @@ public class GuiRendererMixin {
             draw, (_, v) -> {
                 if (v instanceof LibGuiElementRenderState state) {
                     state.bufferSlices().forEach(renderPass::setUniform);
+                    state.executeDraw(renderPass);
                 }
                 return v;
             }

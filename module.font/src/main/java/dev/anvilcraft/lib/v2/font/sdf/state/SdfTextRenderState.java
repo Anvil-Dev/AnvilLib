@@ -1,6 +1,8 @@
 package dev.anvilcraft.lib.v2.font.sdf.state;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.anvilcraft.lib.v2.font.ALFPipelines;
 import dev.anvilcraft.lib.v2.font.sdf.SdfTextLayout;
@@ -10,8 +12,8 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
-import org.jspecify.annotations.Nullable;
 import org.joml.Matrix3x2f;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -24,6 +26,7 @@ public record SdfTextRenderState(
     Matrix3x2f pose,
     List<SdfTextLayout.GlyphQuad> glyphs,
     Identifier atlasTexture,
+    GpuSampler diffuseSampler,
     int atlasWidth,
     int atlasHeight,
     int color,
@@ -39,6 +42,12 @@ public record SdfTextRenderState(
     public TextureSetup textureSetup() {
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(this.atlasTexture);
         return TextureSetup.singleTexture(texture.getTextureView(), texture.getSampler());
+    }
+
+    @Override
+    public void executeDraw(RenderPass renderPass) {
+        AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(this.atlasTexture);
+        renderPass.bindTexture("DiffuseSampler", texture.getTextureView(), diffuseSampler);
     }
 
     @Override

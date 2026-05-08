@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.state;
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.systems.RenderPass;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import org.joml.Matrix3x2f;
@@ -11,6 +12,9 @@ import javax.annotation.Nullable;
 public interface LibGuiElementRenderState extends GuiElementRenderState {
     default Map<String, GpuBufferSlice> bufferSlices() {
         return Map.of();
+    }
+
+    default void executeDraw(RenderPass renderPass) {
     }
 
     static @Nullable ScreenRectangle getBounds(

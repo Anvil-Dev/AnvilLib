@@ -100,15 +100,7 @@ public final class SdfTextLayout {
     }
 
     public record GlyphQuad(
-        int x0,
-        int y0,
-        int x1,
-        int y1,
-        float u0,
-        float v0,
-        float u1,
-        float v1,
-        char glyph
+        int x0, int y0, int x1, int y1, float u0, float v0, float u1, float v1, char glyph
     ) {
     }
 }

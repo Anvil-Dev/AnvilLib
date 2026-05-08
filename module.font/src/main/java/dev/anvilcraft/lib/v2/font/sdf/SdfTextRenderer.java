@@ -1,5 +1,10 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
+import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
 import dev.anvilcraft.lib.v2.font.ALFPipelines;
 import dev.anvilcraft.lib.v2.font.sdf.state.SdfTextRenderState;
 import net.minecraft.client.Minecraft;
@@ -11,6 +16,7 @@ import net.minecraft.util.FormattedCharSequence;
 import org.jspecify.annotations.Nullable;
 
 import java.awt.Font;
+import java.util.OptionalDouble;
 
 /**
  * MVP text renderer facade for the future SDF pipeline.
@@ -24,10 +30,20 @@ public final class SdfTextRenderer {
     private static final int ASCII_GLYPH_SIZE = 8;
     private static final int ASCII_TEXTURE_SIZE = 128;
 
-    private SdfTextRenderer() {
+    private final GpuDevice device = RenderSystem.getDevice();
+    private final GpuSampler diffuseSampler = device.createSampler(
+        AddressMode.CLAMP_TO_EDGE,
+        AddressMode.CLAMP_TO_EDGE,
+        FilterMode.LINEAR,
+        FilterMode.LINEAR,
+        1,
+        OptionalDouble.empty()
+    );
+
+    public SdfTextRenderer() {
     }
 
-    public static void drawString(
+    public void drawString(
         GuiGraphicsExtractor graphics,
         @Nullable Font font,
         @Nullable String text,
@@ -48,12 +64,20 @@ public final class SdfTextRenderer {
         }
 
         Identifier atlasTexture = SdfAtlasTexture.getOrUpload(atlas);
-        if (!drawAtlasPipeline(graphics, layout, atlasTexture, atlas.atlasImage().getWidth(), atlas.atlasImage().getHeight(), color)) {
+        if (!drawAtlasPipeline(
+            graphics,
+            layout,
+            atlasTexture,
+            this.diffuseSampler,
+            atlas.atlasImage().getWidth(),
+            atlas.atlasImage().getHeight(),
+            color
+        )) {
             graphics.text(Minecraft.getInstance().font, text, x, y, color, dropShadow);
         }
     }
 
-    public static void drawComponent(
+    public void drawComponent(
         GuiGraphicsExtractor graphics,
         @Nullable Font font,
         Component text,
@@ -62,10 +86,10 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        drawString(graphics, font, text.getString(), x, y, color, dropShadow);
+        this.drawString(graphics, font, text.getString(), x, y, color, dropShadow);
     }
 
-    public static void drawFormatted(
+    public void drawFormatted(
         GuiGraphicsExtractor graphics,
         @Nullable Font font,
         FormattedCharSequence text,
@@ -74,7 +98,7 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        drawString(graphics, font, flatten(text), x, y, color, dropShadow);
+        this.drawString(graphics, font, flatten(text), x, y, color, dropShadow);
     }
 
     public static void drawWrapped(
@@ -91,32 +115,18 @@ public final class SdfTextRenderer {
         graphics.textWithWordWrap(Minecraft.getInstance().font, text, x, y, width, color, dropShadow);
     }
 
-    public static void drawCentered(
-        GuiGraphicsExtractor graphics,
-        @Nullable Font font,
-        Component text,
-        int x,
-        int y,
-        int color
-    ) {
+    public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, Component text, int x, int y, int color) {
         String value = text.getString();
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         int drawX = x - atlas.measureText(value) / 2;
-        drawString(graphics, font, value, drawX, y, color, false);
+        this.drawString(graphics, font, value, drawX, y, color, false);
     }
 
-    public static void drawCentered(
-        GuiGraphicsExtractor graphics,
-        @Nullable Font font,
-        FormattedCharSequence text,
-        int x,
-        int y,
-        int color
-    ) {
+    public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, FormattedCharSequence text, int x, int y, int color) {
         String value = flatten(text);
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         int drawX = x - atlas.measureText(value) / 2;
-        drawString(graphics, font, value, drawX, y, color, false);
+        this.drawString(graphics, font, value, drawX, y, color, false);
     }
 
     private static String flatten(FormattedCharSequence text) {
@@ -160,6 +170,7 @@ public final class SdfTextRenderer {
         GuiGraphicsExtractor graphics,
         SdfTextLayout layout,
         Identifier atlasTexture,
+        GpuSampler diffuseSampler,
         int atlasWidth,
         int atlasHeight,
         int color
@@ -172,6 +183,7 @@ public final class SdfTextRenderer {
             graphics.pose(),
             layout.quads(),
             atlasTexture,
+            diffuseSampler,
             atlasWidth,
             atlasHeight,
             color,
