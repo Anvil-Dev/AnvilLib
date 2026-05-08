@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
 import dev.anvilcraft.lib.v2.font.ALFPipelines;
+import dev.anvilcraft.lib.v2.font.sdf.state.SdfTextRenderState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -165,26 +166,17 @@ public final class SdfTextRenderer {
             return false;
         }
 
-        for (SdfTextLayout.GlyphQuad quad : layout.quads()) {
-            int u = Math.round(quad.u0() * atlasWidth);
-            int v = Math.round(quad.v0() * atlasHeight);
-            int w = quad.x1() - quad.x0();
-            int h = quad.y1() - quad.y0();
+        SdfTextRenderState state = new SdfTextRenderState(
+            graphics.pose(),
+            layout.quads(),
+            atlasTexture,
+            atlasWidth,
+            atlasHeight,
+            color,
+            graphics.peekScissorStack()
+        );
 
-            graphics.blit(
-                ALFPipelines.SDF_TEXT,
-                atlasTexture,
-                quad.x0(),
-                quad.y0(),
-                u,
-                v,
-                w,
-                h,
-                atlasWidth,
-                atlasHeight,
-                color
-            );
-        }
+        graphics.submitGuiElementRenderState(state);
 
         return true;
     }
