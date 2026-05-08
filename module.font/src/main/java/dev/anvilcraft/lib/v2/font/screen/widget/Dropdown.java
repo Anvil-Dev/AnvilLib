@@ -102,10 +102,6 @@ public class Dropdown extends AbstractWidget {
         }
     }
 
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return this.handlePrimaryClick(mouseX, mouseY, button);
-    }
-
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
         return this.handlePrimaryClick(event.x(), event.y(), event.button());
     }
@@ -173,15 +169,19 @@ public class Dropdown extends AbstractWidget {
         narrationElementOutput.add(NarratedElementType.TITLE, this.getMessage());
         narrationElementOutput.add(NarratedElementType.USAGE, this.value == null ? Component.empty() : this.value.desc);
         if (this.expanded) {
-            narrationElementOutput.add(NarratedElementType.USAGE, Component.translatable("narration.anvillib.dropdown.expanded"));
+            narrationElementOutput.add(NarratedElementType.USAGE, Component.translatable("narration.anvillib_font.dropdown.expanded"));
         } else {
-            narrationElementOutput.add(NarratedElementType.USAGE, Component.translatable("narration.anvillib.dropdown.collapsed"));
+            narrationElementOutput.add(NarratedElementType.USAGE, Component.translatable("narration.anvillib_font.dropdown.collapsed"));
         }
     }
 
     public record DropdownEntry(Component desc, String id) {
         public static DropdownEntry create(String id) {
             return new DropdownEntry(Component.translatable(Util.makeDescriptionId("dropdown", AnvilLibFont.of(id))), id);
+        }
+
+        public static DropdownEntry create(String desc, String id) {
+            return new DropdownEntry(Component.literal(desc), id);
         }
     }
 }
