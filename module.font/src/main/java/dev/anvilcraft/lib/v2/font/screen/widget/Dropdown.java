@@ -14,21 +14,33 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class Dropdown extends AbstractWidget {
     private final List<DropdownEntry> allows = new ArrayList<>();
     private final Minecraft minecraft = Minecraft.getInstance();
-
     private @Nullable DropdownEntry value = null;
     private boolean expanded = false;
-    private int hoveredIndex = -1;
     @Setter
-    private Consumer<@Nullable DropdownEntry> onValueChanged = dropdownEntry -> {
+    private Consumer<@Nullable DropdownEntry> onValueChanged = _ -> {
     };
+    @Setter
+    private Consumer<Shielding> onShieldingAdd = _ -> {
+    };
+    @Setter
+    private Runnable onShieldingRemove = () -> {
+    };
+    @Setter
+    private Supplier<@Nullable Shielding> shieldingGetter = () -> null;
+    private final int screenWidth;
+    private final int screenHeight;
 
-    public Dropdown(int x, int y, int width, int height, Component message) {
+    public Dropdown(int x, int y, int width, int height, int screenWidth, int screenHeight, Component message) {
         super(x, y, width, height, message);
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
     }
 
     public void setAllow(List<DropdownEntry> allows) {
@@ -57,12 +69,12 @@ public class Dropdown extends AbstractWidget {
 
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphicsExtractor, int mouseX, int mouseY, float partialTick) {
-        this.hoveredIndex = this.getEntryIndexAt(mouseX, mouseY);
+        int hoveredIndex = this.getEntryIndexAt(mouseX, mouseY);
 
         int x1 = this.getX();
         int y1 = this.getY();
-        int x2 = x1 + this.width;
-        int y2 = y1 + this.height;
+        int x2 = x1 + this.getWidth();
+        int y2 = y1 + this.getHeight();
 
         int borderColor = this.isHoveredOrFocused() ? 0xFFE0E0E0 : 0xFF909090;
         int bgColor = this.active ? 0xCC202020 : 0xCC151515;
@@ -70,12 +82,18 @@ public class Dropdown extends AbstractWidget {
         guiGraphicsExtractor.fill(x1 + 1, y1 + 1, x2 - 1, y2 - 1, bgColor);
 
         Component valueText = this.value == null ? Component.empty() : this.value.desc;
-        guiGraphicsExtractor.centeredText(this.minecraft.font, valueText, x1 + (this.width / 2), y1 + (this.height - 8) / 2, 0xFFFFFFFF);
+        guiGraphicsExtractor.centeredText(
+            this.minecraft.font,
+            valueText,
+            x1 + (this.getWidth() / 2),
+            y1 + (this.getHeight() - 8) / 2,
+            0xFFFFFFFF
+        );
         guiGraphicsExtractor.centeredText(
             this.minecraft.font,
             Component.literal(this.expanded ? "▲" : "▼"),
             x2 - 8,
-            y1 + (this.height - 8) / 2,
+            y1 + (this.getHeight() - 8) / 2,
             0xFFFFFFFF
         );
 
@@ -83,10 +101,13 @@ public class Dropdown extends AbstractWidget {
             return;
         }
 
+        int startHeight = this.getY() + this.getHeight();
+        int maxHeight = this.getY() + this.calcMaxHeight();
+        guiGraphicsExtractor.enableScissor(x1, startHeight, Math.min(this.screenWidth, x2), maxHeight);
         for (int i = 0; i < this.allows.size(); i++) {
-            int rowTop = this.getY() + this.height + i * this.height;
-            int rowBottom = rowTop + this.height;
-            int rowBg = i == this.hoveredIndex ? 0xCC3F3F3F : 0xCC1F1F1F;
+            int rowTop = startHeight + i * this.getHeight();
+            int rowBottom = rowTop + this.getHeight();
+            int rowBg = i == hoveredIndex ? 0xCC3F3F3F : 0xCC1F1F1F;
 
             guiGraphicsExtractor.fill(x1, rowTop, x2, rowBottom, borderColor);
             guiGraphicsExtractor.fill(x1 + 1, rowTop + 1, x2 - 1, rowBottom - 1, rowBg);
@@ -95,11 +116,19 @@ public class Dropdown extends AbstractWidget {
             guiGraphicsExtractor.centeredText(
                 this.minecraft.font,
                 entry.desc,
-                x1 + (this.width / 2),
-                rowTop + (this.height - 8) / 2,
+                x1 + (this.getWidth() / 2),
+                rowTop + (this.getHeight() - 8) / 2,
                 0xFFFFFFFF
             );
         }
+        guiGraphicsExtractor.disableScissor();
+    }
+
+    public int calcMaxHeight() {
+        int startHeight = this.getY() + this.getHeight();
+        int maxHeight = this.screenHeight - startHeight - 10;
+        int targetHeight = this.allows.size() * this.getHeight();
+        return Math.min(maxHeight, targetHeight);
     }
 
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
@@ -113,6 +142,7 @@ public class Dropdown extends AbstractWidget {
 
         if (this.isPointInMainBox(mouseX, mouseY)) {
             this.expanded = !this.expanded;
+            this.shielding();
             return true;
         }
 
@@ -136,31 +166,32 @@ public class Dropdown extends AbstractWidget {
     }
 
     public boolean isMouseOver(double mouseX, double mouseY) {
-        if (!this.visible) {
+        Shielding shielding = this.shieldingGetter.get();
+        if (!this.visible || (shielding != null && shielding.isShielding(mouseX, mouseY, this))) {
             return false;
         }
         return this.isPointInMainBox(mouseX, mouseY) || this.isPointInDropdownList(mouseX, mouseY);
     }
 
     private boolean isPointInMainBox(double mouseX, double mouseY) {
-        return mouseX >= this.getX() && mouseX < this.getX() + this.width && mouseY >= this.getY() && mouseY < this.getY() + this.height;
+        return mouseX >= this.getX() && mouseX < this.getX() + this.getWidth() && mouseY >= this.getY() && mouseY < this.getY() + this.getHeight();
     }
 
     private boolean isPointInDropdownList(double mouseX, double mouseY) {
         if (!this.expanded || this.allows.isEmpty()) {
             return false;
         }
-        int listTop = this.getY() + this.height;
-        int listBottom = listTop + this.allows.size() * this.height;
-        return mouseX >= this.getX() && mouseX < this.getX() + this.width && mouseY >= listTop && mouseY < listBottom;
+        int listTop = this.getY() + this.getHeight();
+        int listBottom = listTop + this.allows.size() * this.getHeight();
+        return mouseX >= this.getX() && mouseX < this.getX() + this.getWidth() && mouseY >= listTop && mouseY < listBottom;
     }
 
     private int getEntryIndexAt(double mouseX, double mouseY) {
         if (!this.isPointInDropdownList(mouseX, mouseY)) {
             return -1;
         }
-        int listTop = this.getY() + this.height;
-        int index = (int) ((mouseY - listTop) / this.height);
+        int listTop = this.getY() + this.getHeight();
+        int index = (int) ((mouseY - listTop) / this.getHeight());
         return index >= 0 && index < this.allows.size() ? index : -1;
     }
 
@@ -175,6 +206,22 @@ public class Dropdown extends AbstractWidget {
         }
     }
 
+    protected void shielding() {
+        if (this.expanded) {
+            this.createShielding(this.getX(), this.getY(), this.getX() + this.getWidth(), this.getY() + this.calcMaxHeight());
+            return;
+        }
+        this.removeShielding();
+    }
+
+    protected void createShielding(int x1, int y1, int x2, int y2) {
+        this.onShieldingAdd.accept(new Shielding(Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2), this));
+    }
+
+    protected void removeShielding() {
+        this.onShieldingRemove.run();
+    }
+
     public record DropdownEntry(Component desc, String id) {
         public static DropdownEntry create(String id) {
             return new DropdownEntry(Component.translatable(Util.makeDescriptionId("dropdown", AnvilLibFont.of(id))), id);
@@ -182,6 +229,13 @@ public class Dropdown extends AbstractWidget {
 
         public static DropdownEntry create(String desc, String id) {
             return new DropdownEntry(Component.literal(desc), id);
+        }
+    }
+
+    public record Shielding(double x1, double y1, double x2, double y2, Dropdown dropdown) {
+        public boolean isShielding(double x, double y, Dropdown dropdown) {
+            if (Objects.equals(this.dropdown(), dropdown)) return false;
+            return x >= this.x1() && x < this.x2() && y >= this.y1() && y < this.y2();
         }
     }
 }

@@ -15,6 +15,7 @@ import java.util.List;
 
 public class FontConfigScreen extends Screen {
     protected final Screen lastScreen;
+    private Dropdown.@Nullable Shielding shielding;
     private @Nullable Dropdown familyDropdown;
     private @Nullable Dropdown fontDropdown;
     private Component selectedFamilyText = Component.empty();
@@ -37,6 +38,8 @@ public class FontConfigScreen extends Screen {
             familyDropdownY,
             dropdownWidth,
             20,
+            this.width,
+            this.height,
             Component.translatable("screen.anvillib_font.config.family")
         );
         this.fontDropdown = new Dropdown(
@@ -44,8 +47,18 @@ public class FontConfigScreen extends Screen {
             fontDropdownY,
             dropdownWidth,
             20,
+            this.width,
+            this.height,
             Component.translatable("screen.anvillib_font.config.font")
         );
+
+        this.familyDropdown.setOnShieldingAdd(shielding -> this.shielding = shielding);
+        this.familyDropdown.setOnShieldingRemove(() -> this.shielding = null);
+        this.familyDropdown.setShieldingGetter(() -> this.shielding);
+
+        this.fontDropdown.setOnShieldingAdd(shielding -> this.shielding = shielding);
+        this.fontDropdown.setOnShieldingRemove(() -> this.shielding = null);
+        this.fontDropdown.setShieldingGetter(() -> this.shielding);
 
         List<String> families = new ArrayList<>(FontManager.INSTANCE.getFamilyNames());
         families.sort(Comparator.comparing(String::toLowerCase));
@@ -83,9 +96,9 @@ public class FontConfigScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.centeredText(this.font, this.title, this.width / 2, 24, 0xFFFFFF);
-        guiGraphics.centeredText(this.font, this.selectedFamilyText, this.width / 2, this.height / 2 - 56, 0xFFFFFF);
-        guiGraphics.centeredText(this.font, this.selectedFontText, this.width / 2, this.height / 2 - 44, 0xFFFFFF);
+        guiGraphics.centeredText(this.font, this.title, this.width / 2, 24, 0xFFFFFFFF);
+        guiGraphics.centeredText(this.font, this.selectedFamilyText, this.width / 2, this.height / 2 - 56, 0xFFFFFFFF);
+        guiGraphics.centeredText(this.font, this.selectedFontText, this.width / 2, this.height / 2 - 44, 0xFFFFFFFF);
     }
 
     private void updateSelectedFamily(Dropdown.@Nullable DropdownEntry entry) {
