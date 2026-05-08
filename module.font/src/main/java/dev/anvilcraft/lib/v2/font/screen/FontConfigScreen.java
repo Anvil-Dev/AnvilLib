@@ -20,6 +20,8 @@ public class FontConfigScreen extends Screen {
     private @Nullable Dropdown fontDropdown;
     private Component selectedFamilyText = Component.empty();
     private Component selectedFontText = Component.empty();
+    private final Component familyComponent = Component.translatable("screen.anvillib_font.config.family");
+    private final Component fontComponent = Component.translatable("screen.anvillib_font.config.font");
 
     public FontConfigScreen(final ModContainer ignored, final Screen parent) {
         super(Component.translatable("screen.anvillib_font.config"));
@@ -28,29 +30,17 @@ public class FontConfigScreen extends Screen {
 
     @Override
     protected void init() {
+        int familyComponentWidth = this.font.width(this.familyComponent);
+        int fontComponentWidth = this.font.width(this.fontComponent);
+        int labelWidth = Math.max(familyComponentWidth, fontComponentWidth);
         int dropdownWidth = Math.clamp(this.width - 40, 180, 320);
-        int dropdownX = (this.width - dropdownWidth) / 2;
+        int dropdownX = (this.width - dropdownWidth) / 2 + labelWidth + 10;
+        dropdownWidth -= labelWidth + 10;
         int familyDropdownY = this.height / 2 - 24;
         int fontDropdownY = familyDropdownY + 28;
 
-        this.familyDropdown = new Dropdown(
-            dropdownX,
-            familyDropdownY,
-            dropdownWidth,
-            20,
-            this.width,
-            this.height,
-            Component.translatable("screen.anvillib_font.config.family")
-        );
-        this.fontDropdown = new Dropdown(
-            dropdownX,
-            fontDropdownY,
-            dropdownWidth,
-            20,
-            this.width,
-            this.height,
-            Component.translatable("screen.anvillib_font.config.font")
-        );
+        this.familyDropdown = new Dropdown(dropdownX, familyDropdownY, dropdownWidth, 20, this.width, this.height, this.familyComponent);
+        this.fontDropdown = new Dropdown(dropdownX, fontDropdownY, dropdownWidth, 20, this.width, this.height, this.fontComponent);
 
         this.familyDropdown.setOnShieldingAdd(shielding -> this.shielding = shielding);
         this.familyDropdown.setOnShieldingRemove(() -> this.shielding = null);
@@ -99,6 +89,12 @@ public class FontConfigScreen extends Screen {
         guiGraphics.centeredText(this.font, this.title, this.width / 2, 24, 0xFFFFFFFF);
         guiGraphics.centeredText(this.font, this.selectedFamilyText, this.width / 2, this.height / 2 - 56, 0xFFFFFFFF);
         guiGraphics.centeredText(this.font, this.selectedFontText, this.width / 2, this.height / 2 - 44, 0xFFFFFFFF);
+        int dropdownWidth = Math.clamp(this.width - 40, 180, 320);
+        int dropdownLabelX = (this.width - dropdownWidth) / 2;
+        int familyDropdownLabelY = this.height / 2 - 24 + this.font.lineHeight / 2;
+        int fontDropdownLabelY = familyDropdownLabelY + 28;
+        guiGraphics.text(this.font, this.familyComponent, dropdownLabelX, familyDropdownLabelY, 0xFFFFFFFF);
+        guiGraphics.text(this.font, this.fontComponent, dropdownLabelX, fontDropdownLabelY, 0xFFFFFFFF);
     }
 
     private void updateSelectedFamily(Dropdown.@Nullable DropdownEntry entry) {
