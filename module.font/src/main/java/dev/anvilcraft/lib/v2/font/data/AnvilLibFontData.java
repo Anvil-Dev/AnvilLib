@@ -26,6 +26,8 @@ public class AnvilLibFontData {
         @Override
         protected void addTranslations() {
             this.addDesc("screen", "config", "Font Config Screen");
+            this.addDesc("screen", "config.family", "Font Family");
+            this.addDesc("screen", "config.font", "Font");
             this.addDesc("narration", "dropdown.expanded", "Expanded");
             this.addDesc("narration", "dropdown.collapsed", "Collapsed");
         }

@@ -1,15 +1,131 @@
 package dev.anvilcraft.lib.v2.font.screen;
 
+import dev.anvilcraft.lib.v2.font.AnvilLibFont;
+import dev.anvilcraft.lib.v2.font.FontManager;
+import dev.anvilcraft.lib.v2.font.screen.widget.Dropdown;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.ModContainer;
+import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class FontConfigScreen extends Screen {
     protected final Screen lastScreen;
+    private @Nullable Dropdown familyDropdown;
+    private @Nullable Dropdown fontDropdown;
+    private Component selectedFamilyText = Component.empty();
+    private Component selectedFontText = Component.empty();
 
     public FontConfigScreen(final ModContainer ignored, final Screen parent) {
         super(Component.translatable("screen.anvillib_font.config"));
         this.lastScreen = parent;
+    }
+
+    @Override
+    protected void init() {
+        int dropdownWidth = Math.clamp(this.width - 40, 180, 320);
+        int dropdownX = (this.width - dropdownWidth) / 2;
+        int familyDropdownY = this.height / 2 - 24;
+        int fontDropdownY = familyDropdownY + 28;
+
+        this.familyDropdown = new Dropdown(
+            dropdownX,
+            familyDropdownY,
+            dropdownWidth,
+            20,
+            Component.translatable("screen.anvillib_font.config.family")
+        );
+        this.fontDropdown = new Dropdown(
+            dropdownX,
+            fontDropdownY,
+            dropdownWidth,
+            20,
+            Component.translatable("screen.anvillib_font.config.font")
+        );
+
+        List<String> families = new ArrayList<>(FontManager.INSTANCE.getFamilyNames());
+        families.sort(Comparator.comparing(String::toLowerCase));
+
+        List<Dropdown.DropdownEntry> options = families.stream().map(name -> Dropdown.DropdownEntry.create(name, name)).toList();
+        this.familyDropdown.setAllow(options);
+
+        String configuredFamily = AnvilLibFont.CONFIG.getFontFamily();
+        options.stream().filter(entry -> entry.id().equals(configuredFamily)).findFirst().ifPresent(this.familyDropdown::setValue);
+
+        this.updateSelectedFamily(this.familyDropdown.getValue());
+        this.familyDropdown.setOnValueChanged(entry -> {
+            if (entry == null) {
+                return;
+            }
+            AnvilLibFont.CONFIG.setFontFamily(entry.id());
+            this.updateSelectedFamily(entry);
+            this.refreshFontOptions(entry.id(), null, true);
+        });
+
+        this.fontDropdown.setOnValueChanged(entry -> {
+            if (entry == null) {
+                return;
+            }
+            AnvilLibFont.CONFIG.setFont(entry.id());
+            this.updateSelectedFont(entry);
+        });
+
+        this.refreshFontOptions(this.familyDropdown.getValueId(), AnvilLibFont.CONFIG.getFont(), false);
+
+        this.addRenderableWidget(this.fontDropdown);
+        this.addRenderableWidget(this.familyDropdown);
+    }
+
+    @Override
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        guiGraphics.centeredText(this.font, this.title, this.width / 2, 24, 0xFFFFFF);
+        guiGraphics.centeredText(this.font, this.selectedFamilyText, this.width / 2, this.height / 2 - 56, 0xFFFFFF);
+        guiGraphics.centeredText(this.font, this.selectedFontText, this.width / 2, this.height / 2 - 44, 0xFFFFFF);
+    }
+
+    private void updateSelectedFamily(Dropdown.@Nullable DropdownEntry entry) {
+        this.selectedFamilyText = entry == null
+                                  ? Component.literal("Current family: <none>")
+                                  : Component.literal("Current family: " + entry.id());
+    }
+
+    private void updateSelectedFont(Dropdown.@Nullable DropdownEntry entry) {
+        this.selectedFontText = entry == null
+                                ? Component.literal("Current font: <none>")
+                                : Component.literal("Current font: " + entry.id());
+    }
+
+    private void refreshFontOptions(@Nullable String family, @Nullable String preferredFont, boolean persistSelected) {
+        if (family == null || family.isBlank() || !FontManager.INSTANCE.getFamilyNames().contains(family)) {
+            this.fontDropdown.setAllow(List.of());
+            this.updateSelectedFont(null);
+            return;
+        }
+
+        List<Dropdown.DropdownEntry> fontOptions = FontManager.INSTANCE.getFamilyFontNames(family)
+            .stream()
+            .sorted(Comparator.comparing(String::toLowerCase))
+            .map(name -> Dropdown.DropdownEntry.create(name, name))
+            .toList();
+
+        this.fontDropdown.setAllow(fontOptions);
+
+        Dropdown.DropdownEntry selected = fontOptions.stream()
+            .filter(entry -> entry.id().equals(preferredFont))
+            .findFirst()
+            .orElse(this.fontDropdown.getValue());
+
+        this.fontDropdown.setValue(selected);
+        this.updateSelectedFont(selected);
+
+        if (persistSelected && selected != null) {
+            AnvilLibFont.CONFIG.setFont(selected.id());
+        }
     }
 
     @Override
