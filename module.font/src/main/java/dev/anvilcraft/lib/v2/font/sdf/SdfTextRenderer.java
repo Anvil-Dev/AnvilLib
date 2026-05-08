@@ -99,8 +99,10 @@ public final class SdfTextRenderer {
         int y,
         int color
     ) {
-        SdfGlyphAtlas.getOrCreate(font);
-        graphics.centeredText(Minecraft.getInstance().font, text, x, y, color);
+        String value = text.getString();
+        SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
+        int drawX = x - atlas.measureText(value) / 2;
+        drawString(graphics, font, value, drawX, y, color, false);
     }
 
     public static void drawCentered(

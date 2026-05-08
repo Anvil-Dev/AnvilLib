@@ -5,8 +5,10 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.anvilcraft.lib.v2.font.ALFPipelines;
 import dev.anvilcraft.lib.v2.font.sdf.SdfTextLayout;
 import dev.anvilcraft.lib.v2.rendering.state.LibGuiElementRenderState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 import org.joml.Matrix3x2f;
@@ -35,7 +37,8 @@ public record SdfTextRenderState(
 
     @Override
     public TextureSetup textureSetup() {
-        return TextureSetup.noTexture();
+        AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(this.atlasTexture);
+        return TextureSetup.singleTexture(texture.getTextureView(), texture.getSampler());
     }
 
     @Override
