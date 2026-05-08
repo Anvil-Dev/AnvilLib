@@ -36,6 +36,7 @@ public class Dropdown extends AbstractWidget {
     private Supplier<@Nullable Shielding> shieldingGetter = () -> null;
     private final int screenWidth;
     private final int screenHeight;
+    private int scrollOffset = 0;
 
     public Dropdown(int x, int y, int width, int height, int screenWidth, int screenHeight, Component message) {
         super(x, y, width, height, message);
@@ -46,6 +47,7 @@ public class Dropdown extends AbstractWidget {
     public void setAllow(List<DropdownEntry> allows) {
         this.allows.clear();
         this.allows.addAll(allows);
+        this.scrollOffset = 0;
         if (this.allows.contains(this.value)) {
             return;
         }
@@ -102,13 +104,19 @@ public class Dropdown extends AbstractWidget {
         }
 
         int startHeight = this.getY() + this.getHeight();
-        int maxHeight = this.getY() + this.calcMaxHeight();
-        guiGraphicsExtractor.enableScissor(x1, startHeight, Math.min(this.screenWidth, x2), maxHeight);
-        for (int i = 0; i < this.allows.size(); i++) {
-            int rowTop = startHeight + i * this.getHeight();
-            int rowBottom = rowTop + this.getHeight();
-            int rowBg = i == hoveredIndex ? 0xCC3F3F3F : 0xCC1F1F1F;
+        int listAreaHeight = this.calcMaxHeight();
+        int maxY = startHeight + listAreaHeight;
+        boolean needsScrollbar = this.maxScrollOffset() > 0;
+        int scrollbarWidth = needsScrollbar ? 5 : 0;
 
+        guiGraphicsExtractor.enableScissor(x1, startHeight, Math.min(this.screenWidth, x2), maxY);
+        for (int i = 0; i < this.allows.size(); i++) {
+            int rowTop = startHeight + (i - this.scrollOffset) * this.getHeight();
+            int rowBottom = rowTop + this.getHeight();
+
+            if (rowBottom <= startHeight || rowTop >= maxY) continue;
+
+            int rowBg = i == hoveredIndex ? 0xCC3F3F3F : 0xCC1F1F1F;
             guiGraphicsExtractor.fill(x1, rowTop, x2, rowBottom, borderColor);
             guiGraphicsExtractor.fill(x1 + 1, rowTop + 1, x2 - 1, rowBottom - 1, rowBg);
 
@@ -116,12 +124,25 @@ public class Dropdown extends AbstractWidget {
             guiGraphicsExtractor.centeredText(
                 this.minecraft.font,
                 entry.desc,
-                x1 + (this.getWidth() / 2),
+                x1 + (this.getWidth() - scrollbarWidth) / 2,
                 rowTop + (this.getHeight() - 8) / 2,
                 0xFFFFFFFF
             );
         }
         guiGraphicsExtractor.disableScissor();
+
+        if (needsScrollbar) {
+            int visibleRows = this.visibleRowCount();
+            int totalRows = this.allows.size();
+            int thumbHeight = Math.max(10, listAreaHeight * visibleRows / totalRows);
+            int maxScroll = this.maxScrollOffset();
+            int thumbTop = maxScroll == 0 ? 0 : (listAreaHeight - thumbHeight) * this.scrollOffset / maxScroll;
+
+            // track
+            guiGraphicsExtractor.fill(x2 - scrollbarWidth, startHeight, x2, maxY, 0xFF303030);
+            // thumb
+            guiGraphicsExtractor.fill(x2 - scrollbarWidth + 1, startHeight + thumbTop, x2 - 1, startHeight + thumbTop + thumbHeight, 0xFF909090);
+        }
     }
 
     public int calcMaxHeight() {
@@ -129,6 +150,23 @@ public class Dropdown extends AbstractWidget {
         int maxHeight = this.screenHeight - startHeight - 10;
         int targetHeight = this.allows.size() * this.getHeight();
         return Math.min(maxHeight, targetHeight);
+    }
+
+    private int visibleRowCount() {
+        return this.calcMaxHeight() / this.getHeight();
+    }
+
+    private int maxScrollOffset() {
+        return Math.max(0, this.allows.size() - this.visibleRowCount());
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (!this.expanded || scrollY == 0 || !this.isMouseOver(mouseX, mouseY)) {
+            return false;
+        }
+        this.scrollOffset = Math.clamp(this.scrollOffset - (int) Math.signum(scrollY), 0, this.maxScrollOffset());
+        return true;
     }
 
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
@@ -182,7 +220,7 @@ public class Dropdown extends AbstractWidget {
             return false;
         }
         int listTop = this.getY() + this.getHeight();
-        int listBottom = listTop + this.allows.size() * this.getHeight();
+        int listBottom = listTop + this.calcMaxHeight();
         return mouseX >= this.getX() && mouseX < this.getX() + this.getWidth() && mouseY >= listTop && mouseY < listBottom;
     }
 
@@ -191,7 +229,7 @@ public class Dropdown extends AbstractWidget {
             return -1;
         }
         int listTop = this.getY() + this.getHeight();
-        int index = (int) ((mouseY - listTop) / this.getHeight());
+        int index = (int) ((mouseY - listTop) / this.getHeight()) + this.scrollOffset;
         return index >= 0 && index < this.allows.size() ? index : -1;
     }
 
