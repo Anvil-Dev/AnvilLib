@@ -51,7 +51,8 @@ public final class SdfTextRenderer {
         }
 
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y);
+        float scale = scaleFor(atlas);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
         if (layout.quads().isEmpty()) {
             LOGGER.warn("SDF drawString: empty layout for text='{}' font={}", text, font);
             return;
@@ -67,6 +68,10 @@ public final class SdfTextRenderer {
             atlas.atlasImage().getHeight(),
             color
         );
+    }
+
+    private static float scaleFor(SdfGlyphAtlas atlas) {
+        return Minecraft.getInstance().font.lineHeight / (float) atlas.awtHeight();
     }
 
     public void drawComponent(
@@ -110,14 +115,16 @@ public final class SdfTextRenderer {
     public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, Component text, int x, int y, int color) {
         String value = text.getString();
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
-        int drawX = x - atlas.measureText(value) / 2;
+        float scale = scaleFor(atlas);
+        int drawX = x - Math.round(atlas.measureText(value) * scale) / 2;
         this.drawString(graphics, font, value, drawX, y, color, false);
     }
 
     public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, FormattedCharSequence text, int x, int y, int color) {
         String value = flatten(text);
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
-        int drawX = x - atlas.measureText(value) / 2;
+        float scale = scaleFor(atlas);
+        int drawX = x - Math.round(atlas.measureText(value) * scale) / 2;
         this.drawString(graphics, font, value, drawX, y, color, false);
     }
 

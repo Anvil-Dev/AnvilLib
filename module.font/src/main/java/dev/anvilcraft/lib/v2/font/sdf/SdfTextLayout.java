@@ -21,10 +21,10 @@ public final class SdfTextLayout {
     }
 
     public static SdfTextLayout from(SdfGlyphAtlas atlas, @Nullable String text, int x, int y) {
-        return fromAtlas(atlas, text, x, y);
+        return fromAtlas(atlas, text, x, y, 1.0f);
     }
 
-    public static SdfTextLayout fromAtlas(SdfGlyphAtlas atlas, @Nullable String text, int x, int y) {
+    public static SdfTextLayout fromAtlas(SdfGlyphAtlas atlas, @Nullable String text, int x, int y, float scale) {
         if (text == null || text.isEmpty()) {
             return new SdfTextLayout(List.of(), 0, 0);
         }
@@ -40,7 +40,7 @@ public final class SdfTextLayout {
             char c = text.charAt(i);
             SdfGlyphAtlas.GlyphInfo glyph = atlas.glyph(c);
             if (glyph == null) {
-                penX += Math.max(6, atlas.font().getSize() / 2);
+                penX += Math.round(Math.max(6, atlas.font().getSize() / 2) * scale);
                 continue;
             }
 
@@ -49,10 +49,12 @@ public final class SdfTextLayout {
             float u1 = glyph.endX() / (float) atlasWidth;
             float v1 = glyph.endY() / (float) atlasHeight;
 
-            quads.add(new GlyphQuad(penX, y, penX + glyph.width(), y + glyph.height(), u0, v0, u1, v1, c));
+            int w = Math.round(glyph.width() * scale);
+            int h = Math.round(glyph.height() * scale);
+            quads.add(new GlyphQuad(penX, y, penX + w, y + h, u0, v0, u1, v1, c));
 
-            penX += Math.max(1, glyph.advance());
-            maxHeight = Math.max(maxHeight, glyph.height());
+            penX += Math.max(1, Math.round(glyph.advance() * scale));
+            maxHeight = Math.max(maxHeight, h);
         }
 
         return new SdfTextLayout(quads, Math.max(0, penX - x), maxHeight);
