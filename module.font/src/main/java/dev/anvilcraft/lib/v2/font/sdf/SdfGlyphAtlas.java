@@ -169,36 +169,32 @@ public final class SdfGlyphAtlas {
             for (int x = 0; x < w; x++)
                 inside[y * w + x] = isInside(mask, x, y);
 
-        float[] dist = computeEdt(inside, w, maxRadius);
+        // Distance to nearest outside pixel (for inside pixels)
+        float[] distOutside = computeDistTo(inside, w, false);
+        // Distance to nearest inside pixel (for outside pixels)
+        float[] distInside  = computeDistTo(inside, w, true);
 
         for (int y = 0; y < w; y++) {
             for (int x = 0; x < w; x++) {
                 int i = y * w + x;
-                float signed = inside[i] ? dist[i] : -dist[i];
+                float signed = inside[i] ? distOutside[i] : -distInside[i];
+                signed = Math.min(signed, maxRadius);
                 float normalized = 0.5f + (signed / (2.0f * maxRadius));
                 int ch = Math.round(Math.max(0f, Math.min(1f, normalized)) * 255f);
-                int rgba = (ch << 24) | (ch << 16) | (ch << 8) | ch;
-                target.setRGB(tx + x, ty + y, rgba);
+                target.setRGB(tx + x, ty + y, (ch << 24) | (ch << 16) | (ch << 8) | ch);
             }
         }
     }
 
-    private static float[] computeEdt(boolean[] inside, int w, float maxRadius) {
+    /** Dead Reckoning EDT: distance from each pixel to nearest pixel where {@code inside == target}. */
+    private static float[] computeDistTo(boolean[] inside, int w, boolean target) {
         int n = w * w, HUGE = w * 3;
         int[] dx = new int[n], dy = new int[n];
-        for (int y = 0; y < w; y++) {
-            for (int x = 0; x < w; x++) {
-                int i = y * w + x;
-                boolean edge = false;
-                for (int ny = Math.max(0, y - 1); ny <= Math.min(w - 1, y + 1) && !edge; ny++)
-                    for (int nx = Math.max(0, x - 1); nx <= Math.min(w - 1, x + 1); nx++) {
-                        if (nx == x && ny == y) continue;
-                        if (inside[ny * w + nx] != inside[i]) { edge = true; break; }
-                    }
-                dx[i] = edge ? 0 : HUGE;
-                dy[i] = edge ? 0 : HUGE;
-            }
+        for (int i = 0; i < n; i++) {
+            dx[i] = (inside[i] == target) ? 0 : HUGE;
+            dy[i] = (inside[i] == target) ? 0 : HUGE;
         }
+        // Pass 1
         for (int y = 0; y < w; y++)
             for (int x = 0; x < w; x++) {
                 int i = y * w + x;
@@ -209,6 +205,7 @@ public final class SdfGlyphAtlas {
                 }
                 if (x > 0) tryUpdate(dx, dy, i, y * w + (x - 1), x, y, x - 1, y);
             }
+        // Pass 2
         for (int y = w - 1; y >= 0; y--)
             for (int x = w - 1; x >= 0; x--) {
                 int i = y * w + x;
@@ -221,7 +218,7 @@ public final class SdfGlyphAtlas {
             }
         float[] dist = new float[n];
         for (int i = 0; i < n; i++)
-            dist[i] = Math.min((float) Math.sqrt(dx[i] * dx[i] + dy[i] * dy[i]), maxRadius);
+            dist[i] = (float) Math.sqrt(dx[i] * dx[i] + dy[i] * dy[i]);
         return dist;
     }
 
