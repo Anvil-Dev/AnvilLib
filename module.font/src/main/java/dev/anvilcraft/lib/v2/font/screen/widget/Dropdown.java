@@ -191,6 +191,7 @@ public class Dropdown extends AbstractWidget {
         int index = this.getEntryIndexAt(mouseX, mouseY);
         if (index < 0) {
             this.expanded = false;
+            this.removeShielding();
             return false;
         }
 
@@ -200,6 +201,7 @@ public class Dropdown extends AbstractWidget {
             this.onValueChanged.accept(this.value);
         }
         this.expanded = false;
+        this.removeShielding();
         return true;
     }
 
