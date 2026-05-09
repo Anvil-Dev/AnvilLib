@@ -71,6 +71,21 @@ public final class SdfTextRenderer {
         return Minecraft.getInstance().font.lineHeight / (float) atlas.awtHeight();
     }
 
+    /** Derive a styled font for bold/italic. */
+    private static Font styledFont(Font base, boolean bold, boolean italic) {
+        int mask = Font.PLAIN;
+        if (bold) mask |= Font.BOLD;
+        if (italic) mask |= Font.ITALIC;
+        return mask == Font.PLAIN ? base : base.deriveFont(mask);
+    }
+
+    /** Replace codepoint with random ASCII for obfuscated style. */
+    private static int obfuscateCodepoint(int codepoint, int index) {
+        long t = System.currentTimeMillis() / 300L;
+        int r = (int)(((long)index * 7L + t) % 95L);
+        return 32 + r;
+    }
+
     public void drawComponent(
         GuiGraphicsExtractor graphics,
         @Nullable Font font,
@@ -92,31 +107,87 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
-        float scale = scaleFor(atlas);
-        Identifier atlasTexture = SdfAtlasTexture.getOrUpload(atlas);
-        int atlasW = atlas.atlasImage().getWidth();
-        int atlasH = atlas.atlasImage().getHeight();
-
-        int[] pen = {x};
+        int[] pen = {x, x}; // pen[0] = current x, pen[1] = segment start x
         StringBuilder buf = new StringBuilder();
         int[] segColor = {color};
+        boolean[] segBold = {false};
+        boolean[] segItalic = {false};
+        boolean[] segUnderline = {false};
+        boolean[] segStrikethrough = {false};
 
         text.accept((index, style, codepoint) -> {
-            int c = colorFromStyle(style, color);
-            if (c != segColor[0] && !buf.isEmpty()) {
-                pen[0] = flushSegment(graphics, atlas, atlasTexture, atlasW, atlasH, scale,
-                    buf.toString(), pen[0], y, segColor[0]);
-                buf.setLength(0);
+            if (style.isObfuscated()) {
+                codepoint = obfuscateCodepoint(codepoint, index);
             }
+
+            int c = colorFromStyle(style, color);
+            boolean b = style.isBold();
+            boolean i = style.isItalic();
+
+            if ((c != segColor[0] || b != segBold[0] || i != segItalic[0]) && !buf.isEmpty()) {
+                Font segFont = styledFont(font, segBold[0], segItalic[0]);
+                pen[0] = flushFormattedSegment(graphics, segFont, buf.toString(),
+                    pen[0], y, segColor[0]);
+                drawDecorations(graphics, pen[1], pen[0], y, segColor[0],
+                    segUnderline[0], segStrikethrough[0]);
+                buf.setLength(0);
+                pen[1] = pen[0];
+            }
+
             buf.appendCodePoint(codepoint);
             segColor[0] = c;
+            segBold[0] = b;
+            segItalic[0] = i;
+            segUnderline[0] = style.isUnderlined();
+            segStrikethrough[0] = style.isStrikethrough();
             return true;
         });
 
         if (!buf.isEmpty()) {
-            flushSegment(graphics, atlas, atlasTexture, atlasW, atlasH, scale,
-                buf.toString(), pen[0], y, segColor[0]);
+            Font segFont = styledFont(font, segBold[0], segItalic[0]);
+            pen[0] = flushFormattedSegment(graphics, segFont, buf.toString(),
+                pen[0], y, segColor[0]);
+            drawDecorations(graphics, pen[1], pen[0], y, segColor[0],
+                segUnderline[0], segStrikethrough[0]);
+        }
+    }
+
+    private int flushFormattedSegment(
+        GuiGraphicsExtractor graphics,
+        @Nullable Font font,
+        String text,
+        int x,
+        int y,
+        int color
+    ) {
+        SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
+        float scale = scaleFor(atlas);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
+        if (!layout.quads().isEmpty()) {
+            Identifier tex = SdfAtlasTexture.getOrUpload(atlas);
+            drawAtlasPipeline(graphics, layout, tex, this.diffuseSampler,
+                atlas.atlasImage().getWidth(), atlas.atlasImage().getHeight(), color);
+        }
+        return x + layout.width();
+    }
+
+    /** Draw underline and/or strikethrough lines for a text segment. */
+    private static void drawDecorations(
+        GuiGraphicsExtractor graphics,
+        int x0, int x1, int y,
+        int color,
+        boolean underline,
+        boolean strikethrough
+    ) {
+        if (x1 <= x0) return;
+        int lh = Minecraft.getInstance().font.lineHeight;
+        if (strikethrough) {
+            int sy = y + lh * 2 / 5;
+            graphics.fill(x0, sy, x1, sy + 1, color);
+        }
+        if (underline) {
+            int uy = y + lh - 1;
+            graphics.fill(x0, uy, x1, uy + 1, color);
         }
     }
 
@@ -149,25 +220,6 @@ public final class SdfTextRenderer {
         float scale = scaleFor(atlas);
         int drawX = x - Math.round(atlas.measureText(value) * scale) / 2;
         this.drawFormatted(graphics, font, text, drawX, y, color, false);
-    }
-
-    private int flushSegment(
-        GuiGraphicsExtractor graphics,
-        SdfGlyphAtlas atlas,
-        Identifier atlasTexture,
-        int atlasW,
-        int atlasH,
-        float scale,
-        String text,
-        int x,
-        int y,
-        int color
-    ) {
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
-        if (!layout.quads().isEmpty()) {
-            drawAtlasPipeline(graphics, layout, atlasTexture, this.diffuseSampler, atlasW, atlasH, color);
-        }
-        return x + layout.width();
     }
 
     private static int colorFromStyle(Style style, int defaultColor) {
