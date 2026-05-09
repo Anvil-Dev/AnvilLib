@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.FormattedCharSequence;
 import org.jspecify.annotations.Nullable;
 
@@ -65,6 +66,17 @@ public interface GuiGraphicsExtractorExtension {
 
     default void anvillib$textWithBackdrop(Font font, Component str, int textX, int textY, int textWidth, int textColor) {
         GuiGraphicsExtractor graphics = this.self();
-        graphics.textWithBackdrop(Minecraft.getInstance().font, str, textX, textY, textWidth, textColor);
+        int backgroundColor = Minecraft.getInstance().options.getBackgroundColor(0.0F);
+        if (backgroundColor != 0) {
+            int padding = 2;
+            graphics.fill(
+                textX - padding,
+                textY - padding,
+                textX + textWidth + padding,
+                textY + 9 + padding,
+                ARGB.multiply(backgroundColor, textColor)
+            );
+        }
+        this.anvillib$text(font, str, textX, textY, textColor, true);
     }
 }
