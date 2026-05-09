@@ -23,9 +23,8 @@ public final class SdfGlyphAtlas {
     private static final int LAST_CHAR = 126;
     private static final int CHAR_COUNT = LAST_CHAR - FIRST_CHAR + 1;
     private static final int COLUMNS = 16;
-    private static final float SDF_RADIUS_PX = 12.0f;
     /** AWT system fonts report size 1; derive to a fixed rendering size for the atlas. */
-    private static final int ATLAS_FONT_SIZE = 64;
+    private static final int ATLAS_FONT_SIZE = 24;
 
     private static final Map<String, SdfGlyphAtlas> CACHE = new ConcurrentHashMap<>();
 
@@ -33,6 +32,7 @@ public final class SdfGlyphAtlas {
     private final Font font;
     private final int cellSize;
     private final int rows;
+    private final float sdfRadius;
     private final BufferedImage atlasImage;
     private final Map<Character, GlyphInfo> glyphs;
 
@@ -40,6 +40,7 @@ public final class SdfGlyphAtlas {
         this.key = key;
         this.font = font;
         this.cellSize = Math.max(24, font.getSize() + 12);
+        this.sdfRadius = Math.max(12, font.getSize() * 0.5f);
         this.rows = (int) Math.ceil(CHAR_COUNT / (double) COLUMNS);
         this.atlasImage = new BufferedImage(this.cellSize * COLUMNS, this.cellSize * this.rows, BufferedImage.TYPE_INT_ARGB);
         this.glyphs = new HashMap<>();
@@ -133,13 +134,14 @@ public final class SdfGlyphAtlas {
     }
 
     private void blitSdfGlyph(BufferedImage glyphMask, int atlasX, int atlasY) {
+        float maxRadius = this.sdfRadius;
         for (int y = 0; y < this.cellSize; y++) {
             for (int x = 0; x < this.cellSize; x++) {
                 boolean inside = isInside(glyphMask, x, y);
-                float nearest = nearestEdgeDistance(glyphMask, x, y, inside, SDF_RADIUS_PX);
+                float nearest = nearestEdgeDistance(glyphMask, x, y, inside, maxRadius);
                 float signed = inside ? nearest : -nearest;
 
-                float normalized = 0.5f + (signed / (2.0f * SDF_RADIUS_PX));
+                float normalized = 0.5f + (signed / (2.0f * maxRadius));
                 normalized = Math.max(0.0f, Math.min(1.0f, normalized));
                 int channel = Math.round(normalized * 255.0f);
                 int rgba = (channel << 24) | (channel << 16) | (channel << 8) | channel;
