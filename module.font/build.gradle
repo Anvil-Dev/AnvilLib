@@ -10,6 +10,9 @@ plugins {
     id "me.modmuss50.mod-publish-plugin" version "1.1.0"
 }
 
+// Ensure renderdoc-loader is evaluated before this project
+evaluationDependsOn(':anvillib-rendering-neoforge-26.1:renderdoc-loader-internal')
+
 String buildType = 'snapshot'
 String buildNumber
 if (System.getenv("CI_BUILD") == 'false') buildNumber = null
@@ -62,6 +65,16 @@ neoForge {
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        clientRenderDoc {
+            client()
+
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'anvillib.rendering.debugMode', 'true'
+            systemProperty('neoforge.rendernurse.renderdoc.library', rootProject.file("libs/renderdoc.dll").absolutePath)
+            taskBefore(rootProject.project(':anvillib-rendering-neoforge-26.1:renderdoc-loader-internal').tasks.getByName('jar'))
+            jvmArgument("-javaagent:" + rootProject.project(':anvillib-rendering-neoforge-26.1:renderdoc-loader-internal').tasks.getByName('jar').archiveFile.get().asFile.absolutePath)
         }
 
         server {
