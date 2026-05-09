@@ -8,6 +8,8 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
+import java.awt.Font;
+
 @EventBusSubscriber
 @Mod(value = AnvilLibFont.MOD_ID, dist = Dist.CLIENT)
 public class AnvilLibFont {
@@ -17,6 +19,10 @@ public class AnvilLibFont {
     public AnvilLibFont(ModContainer container) {
         AnvilLibFontConfig.AnvilLibFontConfigManager.readConfig(AnvilLibFont.CONFIG);
         container.registerExtensionPoint(IConfigScreenFactory.class, FontConfigScreen::new);
+    }
+
+    public static Font getSelectFont() {
+        return FontManager.INSTANCE.getFont(AnvilLibFont.CONFIG.getFont());
     }
 
     public static Identifier of(String path) {

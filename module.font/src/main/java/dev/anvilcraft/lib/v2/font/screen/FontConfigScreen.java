@@ -4,7 +4,6 @@ import dev.anvilcraft.lib.v2.font.AnvilLibFont;
 import dev.anvilcraft.lib.v2.font.FontManager;
 import dev.anvilcraft.lib.v2.font.screen.widget.Dropdown;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -94,33 +93,10 @@ public class FontConfigScreen extends Screen {
         guiGraphics.centeredText(this.font, this.selectedFamilyText, this.width / 2, this.height / 2 - 56, 0xFFFFFFFF);
         if (fontDropdown != null) {
             guiGraphics.anvillib$centeredText(
-                FontManager.INSTANCE.getFont(this.fontDropdown.getValueId()),
+                AnvilLibFont.getSelectFont(),
                 this.selectedFontText,
                 this.width / 2,
                 this.height / 2 - 44,
-                0xFFFFFFFF
-            );
-            guiGraphics.anvillib$centeredText(
-                FontManager.INSTANCE.getFont(this.fontDropdown.getValueId()),
-                Component.empty()
-                    .append(
-                        Component.literal("Test: ")
-                            .withStyle(
-                                Style.EMPTY.applyFormats(ChatFormatting.RED)
-                                    .applyFormats(ChatFormatting.STRIKETHROUGH)
-                                    .withBold(true)
-                            )
-                    )
-                    .append(
-                        Component.literal("Test Text")
-                            .withStyle(
-                                Style.EMPTY.applyFormats(ChatFormatting.GREEN)
-                                    .applyFormats(ChatFormatting.UNDERLINE)
-                                    .withItalic(true)
-                            )
-                    ),
-                this.width / 2,
-                this.height / 2 - 56 - 12,
                 0xFFFFFFFF
             );
         }

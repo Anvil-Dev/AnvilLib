@@ -18,10 +18,12 @@ public class AnvilLibFontConfig {
     @SerializedName("_font_family_comment")
     private final String fontFamilyComment = "Select a font family";
     @Getter
+    @SerializedName("font_family")
     private String fontFamily = FontManager.INSTANCE.getDefaultFont().getFamily();
     @SerializedName("_font_comment")
     private final String fontComment = "Select a font";
     @Getter
+    @SerializedName("font")
     private String font = FontManager.INSTANCE.getDefaultFont().getFontName();
 
     void setValue(AnvilLibFontConfig config) {
