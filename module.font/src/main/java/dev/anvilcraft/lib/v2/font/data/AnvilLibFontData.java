@@ -9,7 +9,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = AnvilLibFont.MOD_ID)
 public class AnvilLibFontData {
     @SubscribeEvent
     public static void onData(GatherDataEvent.Client event) {

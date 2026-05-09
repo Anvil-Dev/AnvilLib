@@ -46,11 +46,12 @@ public class FontManager {
     }
 
     public Collection<String> getFamilyFontNames(String familyName) {
+        if (!this.fontMultimap.containsKey(familyName)) return Set.of();
         return this.fontMultimap.get(familyName).stream().map(Font::getFontName).toList();
     }
 
     public Font getFont(@Nullable String name) {
-        return name == null ? this.getDefaultFont() : this.fontMap.get(name);
+        return name == null || !this.fontMap.containsKey(name) ? this.getDefaultFont() : this.fontMap.get(name);
     }
 
     static class FontTrieNode {

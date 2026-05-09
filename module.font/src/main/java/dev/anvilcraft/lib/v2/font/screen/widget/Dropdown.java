@@ -141,15 +141,19 @@ public class Dropdown extends AbstractWidget {
             // track
             guiGraphicsExtractor.fill(x2 - scrollbarWidth, startHeight, x2, maxY, 0xFF303030);
             // thumb
-            guiGraphicsExtractor.fill(x2 - scrollbarWidth + 1, startHeight + thumbTop, x2 - 1, startHeight + thumbTop + thumbHeight, 0xFF909090);
+            guiGraphicsExtractor.fill(
+                x2 - scrollbarWidth + 1,
+                startHeight + thumbTop,
+                x2 - 1,
+                startHeight + thumbTop + thumbHeight,
+                0xFF909090
+            );
         }
     }
 
     public int calcMaxHeight() {
         int startHeight = this.getY() + this.getHeight();
-        int maxHeight = this.screenHeight - startHeight - 10;
-        int targetHeight = this.allows.size() * this.getHeight();
-        return Math.min(maxHeight, targetHeight);
+        return Math.clamp((long) this.allows.size() * this.getHeight(), 0, this.screenHeight - startHeight - 10);
     }
 
     private int visibleRowCount() {
@@ -248,7 +252,12 @@ public class Dropdown extends AbstractWidget {
 
     protected void shielding() {
         if (this.expanded) {
-            this.createShielding(this.getX(), this.getY(), this.getX() + this.getWidth(), this.getY() + this.calcMaxHeight());
+            this.createShielding(
+                this.getX(),
+                this.getY() + this.getHeight(),
+                this.getX() + this.getWidth(),
+                this.getY() + this.getHeight() + this.calcMaxHeight()
+            );
             return;
         }
         this.removeShielding();
