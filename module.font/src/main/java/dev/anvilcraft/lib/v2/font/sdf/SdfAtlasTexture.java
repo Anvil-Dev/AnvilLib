@@ -14,49 +14,50 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Uploads CPU-generated glyph atlases to GPU textures with LINEAR filtering for SDF sampling.
+ * Uploads SDF glyph atlas pages to GPU textures with LINEAR filtering.
  */
 public final class SdfAtlasTexture {
-    private static final Map<String, TextureEntry> CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, PageEntry> CACHE = new ConcurrentHashMap<>();
 
-    private SdfAtlasTexture() {
-    }
+    private SdfAtlasTexture() {}
 
-    public static Identifier getOrUpload(SdfGlyphAtlas atlas) {
-        String key = atlas.key();
-        int hash = hashImage(atlas.atlasImage());
+    /** Upload a single atlas page to the GPU, returning its texture identifier. */
+    public static Identifier uploadPage(SdfGlyphAtlas atlas, int pageIndex) {
+        SdfGlyphPage page = atlas.page(pageIndex);
+        String key = atlas.key() + ".p" + pageIndex;
+        int hash = hashImage(page.image);
 
-        TextureEntry entry = CACHE.get(key);
-        if (entry != null && entry.hash == hash) {
-            return entry.id;
-        }
+        PageEntry entry = CACHE.get(key);
+        if (entry != null && entry.hash == hash) return entry.id;
 
         Identifier id = Identifier.fromNamespaceAndPath("anvillib_font", "dynamic/sdf_atlas/" + sanitize(key));
-        SdfTexture texture = new SdfTexture(toNativeImage(atlas.atlasImage()));
+        SdfTexture texture = new SdfTexture(toNativeImage(page.image));
         Minecraft.getInstance().getTextureManager().register(id, texture);
 
-        if (entry != null) {
-            entry.texture.close();
-        }
-        CACHE.put(key, new TextureEntry(id, texture, hash));
+        if (entry != null) entry.texture.close();
+        CACHE.put(key, new PageEntry(id, texture, hash));
+        page.textureId = id;
+        page.dirty = false;
         return id;
     }
 
-    /**
-     * A minimal texture with LINEAR filtering, suitable for SDF glyph atlas sampling.
-     * Mirrors {@code DynamicTexture} but uses CLAMP+LINEAR instead of REPEAT+NEAREST.
-     */
-    private static final class SdfTexture extends AbstractTexture {
+    /** Upload all dirty pages of an atlas. Called before rendering. */
+    public static void ensureUploaded(SdfGlyphAtlas atlas) {
+        for (int i = 0; i < atlas.pageCount(); i++) {
+            SdfGlyphPage page = atlas.page(i);
+            if (page.dirty || page.textureId == null) {
+                uploadPage(atlas, i);
+            }
+        }
+    }
+
+    /** A minimal texture with LINEAR+CLAMP filtering for SDF sampling. */
+    static final class SdfTexture extends AbstractTexture {
         SdfTexture(NativeImage image) {
             GpuDevice device = RenderSystem.getDevice();
             this.texture = device.createTexture(
-                () -> "AnvilLib SDF Atlas",
-                5, // USAGE_COPY_DST | USAGE_SAMPLED
-                TextureFormat.RGBA8,
-                image.getWidth(),
-                image.getHeight(),
-                1,
-                1
+                () -> "AnvilLib SDF Atlas", 5, TextureFormat.RGBA8,
+                image.getWidth(), image.getHeight(), 1, 1
             );
             device.createCommandEncoder().writeToTexture(this.texture, image);
             this.textureView = device.createTextureView(this.texture);
@@ -64,54 +65,45 @@ public final class SdfAtlasTexture {
         }
     }
 
-    private static String sanitize(String key) {
-        StringBuilder builder = new StringBuilder(key.length());
-        for (int i = 0; i < key.length(); i++) {
-            char c = key.charAt(i);
-            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '/' || c == '_' || c == '-') {
-                builder.append(c);
-                continue;
-            }
-            if (c >= 'A' && c <= 'Z') {
-                builder.append((char) (c + ('a' - 'A')));
-            } else {
-                builder.append('_');
-            }
-        }
-        return builder.toString();
+    static NativeImage toNativeImage(BufferedImage image) {
+        NativeImage ni = new NativeImage(image.getWidth(), image.getHeight(), false);
+        for (int y = 0; y < image.getHeight(); y++)
+            for (int x = 0; x < image.getWidth(); x++)
+                ni.setPixel(x, y, image.getRGB(x, y));
+        return ni;
     }
 
-    private static NativeImage toNativeImage(BufferedImage image) {
-        NativeImage nativeImage = new NativeImage(image.getWidth(), image.getHeight(), false);
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                nativeImage.setPixel(x, y, image.getRGB(x, y));
+    private static String sanitize(String key) {
+        StringBuilder sb = new StringBuilder(key.length());
+        for (int i = 0; i < key.length(); i++) {
+            char c = key.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '/' || c == '_' || c == '-' || c == '.') {
+                sb.append(c);
+            } else if (c >= 'A' && c <= 'Z') {
+                sb.append((char)(c + ('a' - 'A')));
+            } else if (c == '#') {
+                sb.append('_');
+            } else {
+                sb.append('_');
             }
         }
-        return nativeImage;
+        return sb.toString();
     }
 
     private static int hashImage(BufferedImage image) {
         int hash = 1;
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
+        for (int y = 0; y < image.getHeight(); y++)
+            for (int x = 0; x < image.getWidth(); x++)
                 hash = 31 * hash + image.getRGB(x, y);
-            }
-        }
         return hash;
     }
 
-    private static final class TextureEntry {
-        private final Identifier id;
-        private final SdfTexture texture;
-        private final int hash;
-
-        private TextureEntry(Identifier id, SdfTexture texture, int hash) {
-            this.id = id;
-            this.texture = texture;
-            this.hash = hash;
+    private static final class PageEntry {
+        final Identifier id;
+        final SdfTexture texture;
+        final int hash;
+        PageEntry(Identifier id, SdfTexture texture, int hash) {
+            this.id = id; this.texture = texture; this.hash = hash;
         }
     }
 }
-
-

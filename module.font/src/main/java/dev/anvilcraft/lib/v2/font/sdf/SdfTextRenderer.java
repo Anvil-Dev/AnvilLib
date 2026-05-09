@@ -42,28 +42,18 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        if (text == null || text.isEmpty()) {
-            return;
-        }
+        if (text == null || text.isEmpty()) return;
 
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         float scale = scaleFor(atlas);
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y - 2, scale);
-        if (layout.quads().isEmpty()) {
-            LOGGER.warn("SDF drawString: empty layout for text='{}' font={}", text, font);
-            return;
-        }
+        int quadY = y - Math.round(atlas.awtAscent() * scale);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
+        if (layout.pages().isEmpty()) return;
 
-        Identifier atlasTexture = SdfAtlasTexture.getOrUpload(atlas);
-        drawAtlasPipeline(
-            graphics,
-            layout,
-            atlasTexture,
-            this.diffuseSampler,
-            atlas.atlasImage().getWidth(),
-            atlas.atlasImage().getHeight(),
-            color
-        );
+        SdfAtlasTexture.ensureUploaded(atlas);
+        for (SdfTextLayout.PageQuads pq : layout.pages()) {
+            drawAtlasPipeline(graphics, pq, this.diffuseSampler, color);
+        }
     }
 
     private static float scaleFor(SdfGlyphAtlas atlas) {
@@ -157,18 +147,13 @@ public final class SdfTextRenderer {
     private int flushFormattedSegment(GuiGraphicsExtractor graphics, @Nullable Font font, String text, int x, int y, int color) {
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         float scale = scaleFor(atlas);
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y - 2, scale);
-        if (!layout.quads().isEmpty()) {
-            Identifier tex = SdfAtlasTexture.getOrUpload(atlas);
-            drawAtlasPipeline(
-                graphics,
-                layout,
-                tex,
-                this.diffuseSampler,
-                atlas.atlasImage().getWidth(),
-                atlas.atlasImage().getHeight(),
-                color
-            );
+        int quadY = y - Math.round(atlas.awtAscent() * scale);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
+        SdfAtlasTexture.ensureUploaded(atlas);
+        for (SdfTextLayout.PageQuads pq : layout.pages()) {
+            if (pq.atlasTexture() != null && !pq.quads().isEmpty()) {
+                drawAtlasPipeline(graphics, pq, this.diffuseSampler, color);
+            }
         }
         return x + layout.width();
     }
@@ -278,24 +263,21 @@ public final class SdfTextRenderer {
 
     private static void drawAtlasPipeline(
         GuiGraphicsExtractor graphics,
-        SdfTextLayout layout,
-        Identifier atlasTexture,
+        SdfTextLayout.PageQuads pq,
         GpuSampler diffuseSampler,
-        int atlasWidth,
-        int atlasHeight,
         int color
     ) {
+        if (pq.atlasTexture() == null || pq.quads().isEmpty()) return;
         SdfTextRenderState state = new SdfTextRenderState(
             graphics.pose(),
-            layout.quads(),
-            atlasTexture,
+            pq.quads(),
+            pq.atlasTexture(),
             diffuseSampler,
-            atlasWidth,
-            atlasHeight,
+            pq.pageWidth(),
+            pq.pageHeight(),
             color,
             graphics.peekScissorStack()
         );
-
         graphics.submitGuiElementRenderState(state);
     }
 }

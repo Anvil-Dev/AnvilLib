@@ -2,28 +2,31 @@ package dev.anvilcraft.lib.v2.font.sdf;
 
 import org.jspecify.annotations.Nullable;
 
+import net.minecraft.resources.Identifier;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Minimal glyph atlas cache for the SDF text pipeline.
- *
- * <p>Current stage focuses on atlas construction and metrics caching for printable ASCII.
- * Actual SDF shader sampling is wired in later steps.</p>
+ * Multi-page on-demand SDF glyph atlas.
+ * <p>
+ * Glyphs are packed into fixed-size 1024×1024 pages. ASCII 32-126 is
+ * pre-warmed; all other codepoints are rendered lazily on first use.
  */
 public final class SdfGlyphAtlas {
+    static final int PAGE_SIZE = 1024;
     private static final int FIRST_CHAR = 32;
     private static final int LAST_CHAR = 126;
-    private static final int CHAR_COUNT = LAST_CHAR - FIRST_CHAR + 1;
-    private static final int COLUMNS = 16;
     /** AWT system fonts report size 1; derive to a fixed rendering size for the atlas. */
     private static final int ATLAS_FONT_SIZE = 64;
 
@@ -31,14 +34,16 @@ public final class SdfGlyphAtlas {
 
     private final String key;
     private final Font font;
-    private final int cellSize;
-    private final int padding;
-    private final int paddedCellSize;
-    private final int rows;
-    private final float sdfRadius;
+    final int cellSize;
+    final int padding;
+    final int paddedCellSize;
+    final float sdfRadius;
     private int awtAscent;
-    private final BufferedImage atlasImage;
-    private final Map<Character, GlyphInfo> glyphs;
+    private int awtHeight;
+    private final FontMetrics fontMetrics;
+
+    private final List<SdfGlyphPage> pages = new ArrayList<>();
+    private final Map<Integer, GlyphEntry> glyphMap = new HashMap<>();
 
     private SdfGlyphAtlas(String key, Font font) {
         this.key = key;
@@ -47,150 +52,122 @@ public final class SdfGlyphAtlas {
         this.sdfRadius = Math.max(12, font.getSize() * 0.25f);
         this.padding = Math.max(4, this.cellSize / 6);
         this.paddedCellSize = this.cellSize + 2 * this.padding;
-        this.rows = (int) Math.ceil(CHAR_COUNT / (double) COLUMNS);
-        this.atlasImage = new BufferedImage(this.paddedCellSize * COLUMNS, this.paddedCellSize * this.rows, BufferedImage.TYPE_INT_ARGB);
-        this.glyphs = new HashMap<>();
 
-        this.buildAsciiAtlas();
+        // Capture font metrics
+        BufferedImage tmp = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = tmp.createGraphics();
+        try {
+            g.setFont(this.font);
+            this.fontMetrics = g.getFontMetrics();
+            this.awtAscent = this.fontMetrics.getAscent();
+            this.awtHeight = this.fontMetrics.getHeight();
+        } finally {
+            g.dispose();
+        }
+
+        preWarmAscii();
     }
 
+    // ── Public API ──────────────────────────────────────────────
+
     public static SdfGlyphAtlas getOrCreate(@Nullable Font font) {
-        final Font resolved = resolveFont(font);
-        String key = resolved.getFontName(Locale.ENGLISH)+ "#" + resolved.getStyle() + "#" + resolved.getSize();
+        Font resolved = resolveFont(font);
+        String key = resolved.getFontName(Locale.ENGLISH) + "." + resolved.getStyle() + "." + resolved.getSize();
         return CACHE.computeIfAbsent(key, _ -> new SdfGlyphAtlas(key, resolved));
     }
 
     private static Font resolveFont(@Nullable Font font) {
-        if (font == null) {
-            return new Font("Dialog", Font.PLAIN, ATLAS_FONT_SIZE);
-        }
-        if (font.getSize() < 4) {
-            return font.deriveFont((float) ATLAS_FONT_SIZE);
-        }
+        if (font == null) return new Font("Dialog", Font.PLAIN, ATLAS_FONT_SIZE);
+        if (font.getSize() < 4) return font.deriveFont((float) ATLAS_FONT_SIZE);
         return font;
     }
 
-    public String key() {
-        return this.key;
-    }
+    public String key() { return this.key; }
 
-    public @Nullable GlyphInfo glyph(char c) {
-        return this.glyphs.get(c);
-    }
+    public Font font() { return this.font; }
 
-    public Font font() {
-        return this.font;
-    }
+    public int awtHeight() { return this.awtHeight; }
 
-    /** The point size used to render glyphs in this atlas, used as reference for screen scaling. */
-    public int awtHeight() {
-        return this.font.getSize();
-    }
+    public int awtAscent() { return this.awtAscent; }
 
-    /** AWT ascent (baseline-to-top distance) in atlas pixels. */
-    public int awtAscent() {
-        return this.awtAscent;
+    public int pageCount() { return this.pages.size(); }
+
+    public SdfGlyphPage page(int index) { return this.pages.get(index); }
+
+    /** Get (or lazily create) the glyph entry for a codepoint. */
+    public @Nullable GlyphEntry glyph(int codepoint) {
+        GlyphEntry entry = this.glyphMap.get(codepoint);
+        if (entry != null) return entry;
+        return createGlyph(codepoint);
     }
 
     public int measureText(String text) {
         int width = 0;
         for (int i = 0; i < text.length(); i++) {
-            GlyphInfo glyph = this.glyph(text.charAt(i));
-            width += glyph == null ? this.cellSize / 2 : glyph.advance();
+            GlyphEntry g = glyph(text.codePointAt(i));
+            width += g == null ? this.cellSize / 2 : g.advance;
         }
         return width;
     }
 
-    public BufferedImage atlasImage() {
-        return this.atlasImage;
+    // ── Glyph creation ──────────────────────────────────────────
+
+    private @Nullable GlyphEntry createGlyph(int codepoint) {
+        BufferedImage mask = renderMask(codepoint);
+        if (mask == null) return null;
+
+        int pageIdx = findOrCreatePageIndex();
+        SdfGlyphPage page = this.pages.get(pageIdx);
+        GlyphEntry entry = page.placeGlyph(this, mask);
+        entry = new GlyphEntry(pageIdx, entry.atlasX(), entry.atlasY(),
+            entry.width(), entry.height(),
+            this.fontMetrics.charWidth(codepoint));
+        this.glyphMap.put(codepoint, entry);
+        page.fillPaddingForCell(this, entry);
+        page.dirty = true;
+        return entry;
     }
 
-    private void buildAsciiAtlas() {
-        Graphics2D graphics = this.atlasImage.createGraphics();
-        try {
-            graphics.setFont(this.font);
-            graphics.setColor(new Color(0, 0, 0, 0));
-            graphics.fillRect(0, 0, this.atlasImage.getWidth(), this.atlasImage.getHeight());
-
-            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            FontMetrics metrics = graphics.getFontMetrics();
-            this.awtAscent = metrics.getAscent();
-
-            for (int code = FIRST_CHAR; code <= LAST_CHAR; code++) {
-                char character = (char) code;
-                int slot = code - FIRST_CHAR;
-                int col = slot % COLUMNS;
-                int row = slot / COLUMNS;
-
-                // Inner cell position within the padded grid
-                int padX = col * this.paddedCellSize;
-                int padY = row * this.paddedCellSize;
-                int innerX = padX + this.padding;
-                int innerY = padY + this.padding;
-
-                BufferedImage glyphMask = new BufferedImage(this.cellSize, this.cellSize, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D maskGraphics = glyphMask.createGraphics();
-                try {
-                    maskGraphics.setFont(this.font);
-                    maskGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    maskGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                    maskGraphics.setColor(new Color(0, 0, 0, 0));
-                    maskGraphics.fillRect(0, 0, this.cellSize, this.cellSize);
-                    maskGraphics.setColor(Color.WHITE);
-                    maskGraphics.drawString(String.valueOf(character), 2, Math.min(this.cellSize - 4, metrics.getAscent() + 2));
-                } finally {
-                    maskGraphics.dispose();
-                }
-
-                this.blitSdfGlyph(glyphMask, innerX, innerY);
-
-                this.glyphs.put(character, new GlyphInfo(character, innerX, innerY, this.cellSize, this.cellSize, metrics.charWidth(character)));
-            }
-        } finally {
-            graphics.dispose();
-        }
-
-        fillPadding();
-    }
-
-    /** Stretch edge pixels of each inner cell into the padding zone to prevent LINEAR sampling bleed. */
-    private void fillPadding() {
+    private void preWarmAscii() {
         for (int code = FIRST_CHAR; code <= LAST_CHAR; code++) {
-            int slot = code - FIRST_CHAR;
-            int col = slot % COLUMNS;
-            int row = slot / COLUMNS;
-
-            int padX = col * this.paddedCellSize;
-            int padY = row * this.paddedCellSize;
-            int innerX0 = padX + this.padding;
-            int innerY0 = padY + this.padding;
-            int innerX1 = innerX0 + this.cellSize - 1;
-            int innerY1 = innerY0 + this.cellSize - 1;
-
-            for (int y = padY; y < padY + this.paddedCellSize; y++) {
-                for (int x = padX; x < padX + this.paddedCellSize; x++) {
-                    if (x >= innerX0 && x <= innerX1 && y >= innerY0 && y <= innerY1) {
-                        continue;
-                    }
-                    int srcX = Math.clamp(x, innerX0, innerX1);
-                    int srcY = Math.clamp(y, innerY0, innerY1);
-                    this.atlasImage.setRGB(x, y, this.atlasImage.getRGB(srcX, srcY));
-                }
-            }
+            createGlyph(code);
         }
     }
 
-    private void blitSdfGlyph(BufferedImage glyphMask, int atlasX, int atlasY) {
-        int w = this.cellSize;
-        float maxRadius = this.sdfRadius;
-
-        boolean[] inside = new boolean[w * w];
-        for (int y = 0; y < w; y++) {
-            for (int x = 0; x < w; x++) {
-                inside[y * w + x] = isInside(glyphMask, x, y);
-            }
+    private int findOrCreatePageIndex() {
+        for (int i = 0; i < this.pages.size(); i++) {
+            if (this.pages.get(i).hasSpace()) return i;
         }
+        this.pages.add(new SdfGlyphPage(this.paddedCellSize));
+        return this.pages.size() - 1;
+    }
+
+    /** Render a single glyph as a white-on-transparent mask. */
+    private BufferedImage renderMask(int codepoint) {
+        String s = new String(Character.toChars(codepoint));
+        BufferedImage mask = new BufferedImage(this.cellSize, this.cellSize, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = mask.createGraphics();
+        try {
+            g.setFont(this.font);
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g.setColor(new Color(0, 0, 0, 0));
+            g.fillRect(0, 0, this.cellSize, this.cellSize);
+            g.setColor(Color.WHITE);
+            g.drawString(s, 2, Math.min(this.cellSize - 4, this.awtAscent + 2));
+        } finally {
+            g.dispose();
+        }
+        return mask;
+    }
+
+    // ── Static SDF computation utilities ─────────────────────────
+
+    static void blitSdfGlyph(BufferedImage mask, BufferedImage target, int tx, int ty, int w, float maxRadius) {
+        boolean[] inside = new boolean[w * w];
+        for (int y = 0; y < w; y++)
+            for (int x = 0; x < w; x++)
+                inside[y * w + x] = isInside(mask, x, y);
 
         float[] dist = computeEdt(inside, w, maxRadius);
 
@@ -199,42 +176,30 @@ public final class SdfGlyphAtlas {
                 int i = y * w + x;
                 float signed = inside[i] ? dist[i] : -dist[i];
                 float normalized = 0.5f + (signed / (2.0f * maxRadius));
-                normalized = Math.max(0.0f, Math.min(1.0f, normalized));
-                int channel = Math.round(normalized * 255.0f);
-                int rgba = (channel << 24) | (channel << 16) | (channel << 8) | channel;
-                this.atlasImage.setRGB(atlasX + x, atlasY + y, rgba);
+                int ch = Math.round(Math.max(0f, Math.min(1f, normalized)) * 255f);
+                int rgba = (ch << 24) | (ch << 16) | (ch << 8) | ch;
+                target.setRGB(tx + x, ty + y, rgba);
             }
         }
     }
 
-    /** Dead Reckoning Euclidean Distance Transform – O(n²) per cell. */
     private static float[] computeEdt(boolean[] inside, int w, float maxRadius) {
-        int n = w * w;
-        int HUGE = w * 3;
-        int[] dx = new int[n];
-        int[] dy = new int[n];
-
-        // Initialize: edge pixels have (0,0), others have HUGE
+        int n = w * w, HUGE = w * 3;
+        int[] dx = new int[n], dy = new int[n];
         for (int y = 0; y < w; y++) {
             for (int x = 0; x < w; x++) {
                 int i = y * w + x;
                 boolean edge = false;
-                for (int ny = Math.max(0, y - 1); ny <= Math.min(w - 1, y + 1) && !edge; ny++) {
+                for (int ny = Math.max(0, y - 1); ny <= Math.min(w - 1, y + 1) && !edge; ny++)
                     for (int nx = Math.max(0, x - 1); nx <= Math.min(w - 1, x + 1); nx++) {
                         if (nx == x && ny == y) continue;
-                        if (inside[ny * w + nx] != inside[i]) {
-                            edge = true;
-                            break;
-                        }
+                        if (inside[ny * w + nx] != inside[i]) { edge = true; break; }
                     }
-                }
                 dx[i] = edge ? 0 : HUGE;
                 dy[i] = edge ? 0 : HUGE;
             }
         }
-
-        // Pass 1: top-left → bottom-right
-        for (int y = 0; y < w; y++) {
+        for (int y = 0; y < w; y++)
             for (int x = 0; x < w; x++) {
                 int i = y * w + x;
                 if (y > 0) {
@@ -244,10 +209,7 @@ public final class SdfGlyphAtlas {
                 }
                 if (x > 0) tryUpdate(dx, dy, i, y * w + (x - 1), x, y, x - 1, y);
             }
-        }
-
-        // Pass 2: bottom-right → top-left
-        for (int y = w - 1; y >= 0; y--) {
+        for (int y = w - 1; y >= 0; y--)
             for (int x = w - 1; x >= 0; x--) {
                 int i = y * w + x;
                 if (x < w - 1) tryUpdate(dx, dy, i, y * w + (x + 1), x, y, x + 1, y);
@@ -257,39 +219,76 @@ public final class SdfGlyphAtlas {
                     if (x < w - 1) tryUpdate(dx, dy, i, (y + 1) * w + (x + 1), x, y, x + 1, y + 1);
                 }
             }
-        }
-
         float[] dist = new float[n];
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
             dist[i] = Math.min((float) Math.sqrt(dx[i] * dx[i] + dy[i] * dy[i]), maxRadius);
-        }
         return dist;
     }
 
     private static void tryUpdate(int[] dx, int[] dy, int cur, int nbr, int cx, int cy, int nx, int ny) {
-        int ndx = dx[nbr] + (nx - cx);
-        int ndy = dy[nbr] + (ny - cy);
-        int nd2 = ndx * ndx + ndy * ndy;
-        int od2 = dx[cur] * dx[cur] + dy[cur] * dy[cur];
-        if (nd2 < od2) {
-            dx[cur] = ndx;
-            dy[cur] = ndy;
+        int ndx = dx[nbr] + (nx - cx), ndy = dy[nbr] + (ny - cy);
+        if (ndx * ndx + ndy * ndy < dx[cur] * dx[cur] + dy[cur] * dy[cur]) {
+            dx[cur] = ndx; dy[cur] = ndy;
         }
     }
 
     private static boolean isInside(BufferedImage image, int x, int y) {
-        int alpha = (image.getRGB(x, y) >>> 24) & 0xFF;
-        return alpha > 16;
+        return ((image.getRGB(x, y) >>> 24) & 0xFF) > 16;
     }
 
-    public record GlyphInfo(char value, int atlasX, int atlasY, int width, int height, int advance) {
-        public int endX() {
-            return this.atlasX + this.width;
-        }
+    static void fillPadding(BufferedImage img, int padX, int padY, int paddedCellSize, int cellSize, int padding) {
+        int ix0 = padX + padding, iy0 = padY + padding;
+        int ix1 = ix0 + cellSize - 1, iy1 = iy0 + cellSize - 1;
+        for (int y = padY; y < padY + paddedCellSize; y++)
+            for (int x = padX; x < padX + paddedCellSize; x++) {
+                if (x >= ix0 && x <= ix1 && y >= iy0 && y <= iy1) continue;
+                img.setRGB(x, y, img.getRGB(Math.clamp(x, ix0, ix1), Math.clamp(y, iy0, iy1)));
+            }
+    }
 
-        public int endY() {
-            return this.atlasY + this.height;
-        }
+    // ── Inner types ─────────────────────────────────────────────
+
+    public record GlyphEntry(int pageIndex, int atlasX, int atlasY, int width, int height, int advance) {
+        public int endX() { return this.atlasX + this.width; }
+        public int endY() { return this.atlasY + this.height; }
     }
 }
 
+/** A single 1024×1024 atlas page holding packed glyphs. */
+final class SdfGlyphPage {
+    private static final int SIZE = SdfGlyphAtlas.PAGE_SIZE;
+    final BufferedImage image;
+    final int cols, rows;
+    int nextCol, nextRow;
+    Identifier textureId;
+    boolean dirty = true;
+
+    SdfGlyphPage(int paddedCellSize) {
+        this.cols = SIZE / paddedCellSize;
+        this.rows = SIZE / paddedCellSize;
+        this.image = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_ARGB);
+    }
+
+    boolean hasSpace() { return nextRow < rows; }
+
+    SdfGlyphAtlas.GlyphEntry placeGlyph(SdfGlyphAtlas atlas, BufferedImage mask) {
+        int col = nextCol, row = nextRow;
+        int padX = col * atlas.paddedCellSize;
+        int padY = row * atlas.paddedCellSize;
+        int innerX = padX + atlas.padding;
+        int innerY = padY + atlas.padding;
+        SdfGlyphAtlas.blitSdfGlyph(mask, this.image, innerX, innerY, atlas.cellSize, atlas.sdfRadius);
+        nextCol++;
+        if (nextCol >= cols) { nextCol = 0; nextRow++; }
+        dirty = true;
+        return new SdfGlyphAtlas.GlyphEntry(0, innerX, innerY, atlas.cellSize, atlas.cellSize, 0);
+    }
+
+    void fillPaddingForCell(SdfGlyphAtlas atlas, SdfGlyphAtlas.GlyphEntry e) {
+        int col = (e.atlasX() - atlas.padding) / atlas.paddedCellSize;
+        int row = (e.atlasY() - atlas.padding) / atlas.paddedCellSize;
+        SdfGlyphAtlas.fillPadding(this.image,
+            col * atlas.paddedCellSize, row * atlas.paddedCellSize,
+            atlas.paddedCellSize, atlas.cellSize, atlas.padding);
+    }
+}
