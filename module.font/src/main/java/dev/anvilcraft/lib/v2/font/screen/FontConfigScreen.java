@@ -4,6 +4,7 @@ import dev.anvilcraft.lib.v2.font.AnvilLibFont;
 import dev.anvilcraft.lib.v2.font.FontManager;
 import dev.anvilcraft.lib.v2.font.screen.widget.Dropdown;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -107,6 +108,7 @@ public class FontConfigScreen extends Screen {
                             .withStyle(
                                 Style.EMPTY.applyFormats(ChatFormatting.RED)
                                     .applyFormats(ChatFormatting.STRIKETHROUGH)
+                                    .withBold(true)
                             )
                     )
                     .append(
@@ -114,6 +116,7 @@ public class FontConfigScreen extends Screen {
                             .withStyle(
                                 Style.EMPTY.applyFormats(ChatFormatting.GREEN)
                                     .applyFormats(ChatFormatting.UNDERLINE)
+                                    .withItalic(true)
                             )
                     ),
                 this.width / 2,

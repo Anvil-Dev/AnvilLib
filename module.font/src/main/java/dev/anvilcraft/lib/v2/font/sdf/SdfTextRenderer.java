@@ -12,12 +12,12 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * SDF text renderer that draws strings via the SDF text render pipeline.
@@ -28,8 +28,7 @@ import org.slf4j.LoggerFactory;
 public final class SdfTextRenderer {
     private static final Logger LOGGER = LoggerFactory.getLogger(SdfTextRenderer.class);
 
-    private final GpuSampler diffuseSampler = RenderSystem.getSamplerCache()
-        .getClampToEdge(FilterMode.LINEAR);
+    private final GpuSampler diffuseSampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
 
     public SdfTextRenderer() {
     }
@@ -49,7 +48,7 @@ public final class SdfTextRenderer {
 
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         float scale = scaleFor(atlas);
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y - 2, scale);
         if (layout.quads().isEmpty()) {
             LOGGER.warn("SDF drawString: empty layout for text='{}' font={}", text, font);
             return;
@@ -71,7 +70,9 @@ public final class SdfTextRenderer {
         return Minecraft.getInstance().font.lineHeight / (float) atlas.awtHeight();
     }
 
-    /** Derive a styled font for bold/italic. */
+    /**
+     * Derive a styled font for bold/italic.
+     */
     private static Font styledFont(Font base, boolean bold, boolean italic) {
         int mask = Font.PLAIN;
         if (bold) mask |= Font.BOLD;
@@ -79,10 +80,12 @@ public final class SdfTextRenderer {
         return mask == Font.PLAIN ? base : base.deriveFont(mask);
     }
 
-    /** Replace codepoint with random ASCII for obfuscated style. */
+    /**
+     * Replace codepoint with random ASCII for obfuscated style.
+     */
     private static int obfuscateCodepoint(int codepoint, int index) {
         long t = System.currentTimeMillis() / 300L;
-        int r = (int)(((long)index * 7L + t) % 95L);
+        int r = (int) (((long) index * 7L + t) % 95L);
         return 32 + r;
     }
 
@@ -107,7 +110,10 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        int[] pen = {x, x}; // pen[0] = current x, pen[1] = segment start x
+        int[] pen = {
+            x,
+            x
+        }; // pen[0] = current x, pen[1] = segment start x
         StringBuilder buf = new StringBuilder();
         int[] segColor = {color};
         boolean[] segBold = {false};
@@ -126,10 +132,8 @@ public final class SdfTextRenderer {
 
             if ((c != segColor[0] || b != segBold[0] || i != segItalic[0]) && !buf.isEmpty()) {
                 Font segFont = styledFont(font, segBold[0], segItalic[0]);
-                pen[0] = flushFormattedSegment(graphics, segFont, buf.toString(),
-                    pen[0], y, segColor[0]);
-                drawDecorations(graphics, pen[1], pen[0], y, segColor[0],
-                    segUnderline[0], segStrikethrough[0]);
+                pen[0] = flushFormattedSegment(graphics, segFont, buf.toString(), pen[0], y, segColor[0]);
+                drawDecorations(graphics, pen[1], pen[0], y, segColor[0], segUnderline[0], segStrikethrough[0]);
                 buf.setLength(0);
                 pen[1] = pen[0];
             }
@@ -145,36 +149,38 @@ public final class SdfTextRenderer {
 
         if (!buf.isEmpty()) {
             Font segFont = styledFont(font, segBold[0], segItalic[0]);
-            pen[0] = flushFormattedSegment(graphics, segFont, buf.toString(),
-                pen[0], y, segColor[0]);
-            drawDecorations(graphics, pen[1], pen[0], y, segColor[0],
-                segUnderline[0], segStrikethrough[0]);
+            pen[0] = flushFormattedSegment(graphics, segFont, buf.toString(), pen[0], y, segColor[0]);
+            drawDecorations(graphics, pen[1], pen[0], y, segColor[0], segUnderline[0], segStrikethrough[0]);
         }
     }
 
-    private int flushFormattedSegment(
-        GuiGraphicsExtractor graphics,
-        @Nullable Font font,
-        String text,
-        int x,
-        int y,
-        int color
-    ) {
+    private int flushFormattedSegment(GuiGraphicsExtractor graphics, @Nullable Font font, String text, int x, int y, int color) {
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         float scale = scaleFor(atlas);
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y - 2, scale);
         if (!layout.quads().isEmpty()) {
             Identifier tex = SdfAtlasTexture.getOrUpload(atlas);
-            drawAtlasPipeline(graphics, layout, tex, this.diffuseSampler,
-                atlas.atlasImage().getWidth(), atlas.atlasImage().getHeight(), color);
+            drawAtlasPipeline(
+                graphics,
+                layout,
+                tex,
+                this.diffuseSampler,
+                atlas.atlasImage().getWidth(),
+                atlas.atlasImage().getHeight(),
+                color
+            );
         }
         return x + layout.width();
     }
 
-    /** Draw underline and/or strikethrough lines for a text segment. */
+    /**
+     * Draw underline and/or strikethrough lines relative to baseline.
+     */
     private static void drawDecorations(
         GuiGraphicsExtractor graphics,
-        int x0, int x1, int y,
+        int x0,
+        int x1,
+        int y,
         int color,
         boolean underline,
         boolean strikethrough
@@ -182,12 +188,12 @@ public final class SdfTextRenderer {
         if (x1 <= x0) return;
         int lh = Minecraft.getInstance().font.lineHeight;
         if (strikethrough) {
-            int sy = y + lh * 2 / 5;
+            int sy = y + lh / 2;
             graphics.fill(x0, sy, x1, sy + 1, color);
         }
         if (underline) {
-            int uy = y + lh - 1;
-            graphics.fill(x0, uy, x1, uy + 1, color);
+            int sy = y + lh;
+            graphics.fill(x0, sy, x1, sy + 1, color);
         }
     }
 

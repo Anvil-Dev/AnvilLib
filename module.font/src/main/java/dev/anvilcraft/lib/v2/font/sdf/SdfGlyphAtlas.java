@@ -36,6 +36,7 @@ public final class SdfGlyphAtlas {
     private final int paddedCellSize;
     private final int rows;
     private final float sdfRadius;
+    private int awtAscent;
     private final BufferedImage atlasImage;
     private final Map<Character, GlyphInfo> glyphs;
 
@@ -86,6 +87,11 @@ public final class SdfGlyphAtlas {
         return this.font.getSize();
     }
 
+    /** AWT ascent (baseline-to-top distance) in atlas pixels. */
+    public int awtAscent() {
+        return this.awtAscent;
+    }
+
     public int measureText(String text) {
         int width = 0;
         for (int i = 0; i < text.length(); i++) {
@@ -109,6 +115,7 @@ public final class SdfGlyphAtlas {
             graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             FontMetrics metrics = graphics.getFontMetrics();
+            this.awtAscent = metrics.getAscent();
 
             for (int code = FIRST_CHAR; code <= LAST_CHAR; code++) {
                 char character = (char) code;
