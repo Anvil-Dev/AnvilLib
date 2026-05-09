@@ -36,7 +36,6 @@ public final class SdfGlyphAtlas {
     private final int paddedCellSize;
     private final int rows;
     private final float sdfRadius;
-    private final int awtHeight;
     private final BufferedImage atlasImage;
     private final Map<Character, GlyphInfo> glyphs;
 
@@ -50,14 +49,6 @@ public final class SdfGlyphAtlas {
         this.rows = (int) Math.ceil(CHAR_COUNT / (double) COLUMNS);
         this.atlasImage = new BufferedImage(this.paddedCellSize * COLUMNS, this.paddedCellSize * this.rows, BufferedImage.TYPE_INT_ARGB);
         this.glyphs = new HashMap<>();
-
-        Graphics2D g = this.atlasImage.createGraphics();
-        try {
-            g.setFont(this.font);
-            this.awtHeight = g.getFontMetrics().getHeight();
-        } finally {
-            g.dispose();
-        }
 
         this.buildAsciiAtlas();
     }
@@ -90,9 +81,9 @@ public final class SdfGlyphAtlas {
         return this.font;
     }
 
-    /** AWT line height for this font at the atlas rendering size, used to compute scale. */
+    /** The point size used to render glyphs in this atlas, used as reference for screen scaling. */
     public int awtHeight() {
-        return this.awtHeight;
+        return this.font.getSize();
     }
 
     public int measureText(String text) {
