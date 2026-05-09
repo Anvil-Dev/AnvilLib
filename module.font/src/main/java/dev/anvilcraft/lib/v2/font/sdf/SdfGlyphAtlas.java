@@ -9,6 +9,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,7 +25,7 @@ public final class SdfGlyphAtlas {
     private static final int CHAR_COUNT = LAST_CHAR - FIRST_CHAR + 1;
     private static final int COLUMNS = 16;
     /** AWT system fonts report size 1; derive to a fixed rendering size for the atlas. */
-    private static final int ATLAS_FONT_SIZE = 24;
+    private static final int ATLAS_FONT_SIZE = 64;
 
     private static final Map<String, SdfGlyphAtlas> CACHE = new ConcurrentHashMap<>();
 
@@ -49,7 +50,7 @@ public final class SdfGlyphAtlas {
 
     public static SdfGlyphAtlas getOrCreate(@Nullable Font font) {
         final Font resolved = resolveFont(font);
-        String key = resolved.getFontName() + "#" + resolved.getStyle() + "#" + resolved.getSize();
+        String key = resolved.getFontName(Locale.ENGLISH)+ "#" + resolved.getStyle() + "#" + resolved.getSize();
         return CACHE.computeIfAbsent(key, _ -> new SdfGlyphAtlas(key, resolved));
     }
 

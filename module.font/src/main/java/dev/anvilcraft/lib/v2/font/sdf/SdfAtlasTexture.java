@@ -1,8 +1,12 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.blaze3d.textures.TextureFormat;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
 
 import java.awt.image.BufferedImage;
@@ -10,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Uploads CPU-generated glyph atlases to GPU textures and returns bindable identifiers.
+ * Uploads CPU-generated glyph atlases to GPU textures with LINEAR filtering for SDF sampling.
  */
 public final class SdfAtlasTexture {
     private static final Map<String, TextureEntry> CACHE = new ConcurrentHashMap<>();
@@ -28,14 +32,36 @@ public final class SdfAtlasTexture {
         }
 
         Identifier id = Identifier.fromNamespaceAndPath("anvillib_font", "dynamic/sdf_atlas/" + sanitize(key));
-        DynamicTexture dynamicTexture = new DynamicTexture(() -> "AnvilLib SDF Atlas", toNativeImage(atlas.atlasImage()));
-        Minecraft.getInstance().getTextureManager().register(id, dynamicTexture);
+        SdfTexture texture = new SdfTexture(toNativeImage(atlas.atlasImage()));
+        Minecraft.getInstance().getTextureManager().register(id, texture);
 
         if (entry != null) {
             entry.texture.close();
         }
-        CACHE.put(key, new TextureEntry(id, dynamicTexture, hash));
+        CACHE.put(key, new TextureEntry(id, texture, hash));
         return id;
+    }
+
+    /**
+     * A minimal texture with LINEAR filtering, suitable for SDF glyph atlas sampling.
+     * Mirrors {@code DynamicTexture} but uses CLAMP+LINEAR instead of REPEAT+NEAREST.
+     */
+    private static final class SdfTexture extends AbstractTexture {
+        SdfTexture(NativeImage image) {
+            GpuDevice device = RenderSystem.getDevice();
+            this.texture = device.createTexture(
+                () -> "AnvilLib SDF Atlas",
+                5, // USAGE_COPY_DST | USAGE_SAMPLED
+                TextureFormat.RGBA8,
+                image.getWidth(),
+                image.getHeight(),
+                1,
+                1
+            );
+            device.createCommandEncoder().writeToTexture(this.texture, image);
+            this.textureView = device.createTextureView(this.texture);
+            this.sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+        }
     }
 
     private static String sanitize(String key) {
@@ -77,10 +103,10 @@ public final class SdfAtlasTexture {
 
     private static final class TextureEntry {
         private final Identifier id;
-        private final DynamicTexture texture;
+        private final SdfTexture texture;
         private final int hash;
 
-        private TextureEntry(Identifier id, DynamicTexture texture, int hash) {
+        private TextureEntry(Identifier id, SdfTexture texture, int hash) {
             this.id = id;
             this.texture = texture;
             this.hash = hash;

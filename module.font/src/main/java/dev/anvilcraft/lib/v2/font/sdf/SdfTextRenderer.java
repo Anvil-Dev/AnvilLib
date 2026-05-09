@@ -1,8 +1,6 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
-import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
 import dev.anvilcraft.lib.v2.font.ALFPipelines;
@@ -16,7 +14,6 @@ import net.minecraft.util.FormattedCharSequence;
 import org.jspecify.annotations.Nullable;
 
 import java.awt.Font;
-import java.util.OptionalDouble;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,15 +31,8 @@ public final class SdfTextRenderer {
     private static final int ASCII_GLYPH_SIZE = 8;
     private static final int ASCII_TEXTURE_SIZE = 128;
 
-    private final GpuDevice device = RenderSystem.getDevice();
-    private final GpuSampler diffuseSampler = device.createSampler(
-        AddressMode.CLAMP_TO_EDGE,
-        AddressMode.CLAMP_TO_EDGE,
-        FilterMode.LINEAR,
-        FilterMode.LINEAR,
-        1,
-        OptionalDouble.empty()
-    );
+    private final GpuSampler diffuseSampler = RenderSystem.getSamplerCache()
+        .getClampToEdge(FilterMode.LINEAR);
 
     public SdfTextRenderer() {
     }
