@@ -44,7 +44,7 @@ public final class SdfGlyphAtlas {
         this.key = key;
         this.font = font;
         this.cellSize = Math.max(24, font.getSize() + 12);
-        this.sdfRadius = Math.max(12, font.getSize() * 0.5f);
+        this.sdfRadius = Math.max(8, font.getSize() * 0.25f);
         this.padding = Math.max(4, this.cellSize / 6);
         this.paddedCellSize = this.cellSize + 2 * this.padding;
         this.rows = (int) Math.ceil(CHAR_COUNT / (double) COLUMNS);
