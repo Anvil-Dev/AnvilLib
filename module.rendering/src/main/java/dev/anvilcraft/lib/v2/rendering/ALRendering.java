@@ -1,11 +1,9 @@
 package dev.anvilcraft.lib.v2.rendering;
 
 import dev.anvilcraft.lib.v2.rendering.bloom.BloomPostEffect;
-import dev.anvilcraft.lib.v2.rendering.test.ALRTest;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderBuffers;
-import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
@@ -57,7 +55,7 @@ public class ALRendering {
         Minecraft minecraft = Minecraft.getInstance();
         RenderBuffers renderBuffers = minecraft.renderBuffers();
         FeatureRenderDispatcher frd = new FeatureRenderDispatcher(
-            new SubmitNodeStorage(),
+            bloomPostEffect.getSubmitNodeStorage(),
             minecraft.getModelManager(),
             renderBuffers.bufferSource(),
             minecraft.getAtlasManager(),

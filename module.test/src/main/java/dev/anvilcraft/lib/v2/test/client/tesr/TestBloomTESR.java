@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import com.mojang.math.Axis;
 import dev.anvilcraft.lib.v2.rendering.ALRendering;
+import dev.anvilcraft.lib.v2.rendering.foundation.compound.CompoundSubmitNodeStorage;
 import dev.anvilcraft.lib.v2.test.block.tile.TestBloomTile;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,6 +19,7 @@ import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.Items;
@@ -57,15 +59,17 @@ public class TestBloomTESR implements BlockEntityRenderer<TestBloomTile, TestBlo
         SubmitNodeCollector submitNodeCollector,
         CameraRenderState cameraRenderState
     ) {
+        CompoundSubmitNodeStorage compoundSubmit = ALRendering.getBloomPostEffect().createCompoundSubmitStorage(submitNodeCollector);
         Minecraft minecraft = Minecraft.getInstance();
         poseStack.pushPose();
         poseStack.translate(0, 2, 0);
         poseStack.scale(1 / 16f, -1 / 16f, 1 / 16f);
-        submitNodeCollector.submitText(
+        MutableComponent literal = Component.literal(testBloomRenderState.getText());
+        compoundSubmit.submitText(
             poseStack,
             0,
             0,
-            Component.literal(testBloomRenderState.getText()).getVisualOrderText(),
+            literal.getVisualOrderText(),
             false,
             Font.DisplayMode.NORMAL,
             LightCoordsUtil.FULL_BRIGHT,
@@ -73,13 +77,15 @@ public class TestBloomTESR implements BlockEntityRenderer<TestBloomTile, TestBlo
             0,
             0
         );
+
         poseStack.popPose();
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
-        poseStack.mulPose(Axis.YP.rotationDegrees((
-                                                      minecraft.level.getGameTime() + minecraft.getDeltaTracker()
-                                                          .getGameTimeDeltaPartialTick(true)
-                                                  ) * 2.25f));
+        poseStack.mulPose(
+            Axis.YP.rotationDegrees(
+                (minecraft.level.getGameTime() + minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true)) * 2.25f
+            )
+        );
         ItemStackRenderState renderState = new ItemStackRenderState();
         minecraft.getItemModelResolver().updateForTopItem(
             renderState,
@@ -89,14 +95,7 @@ public class TestBloomTESR implements BlockEntityRenderer<TestBloomTile, TestBlo
             minecraft.player,
             42
         );
-        renderState.submit(poseStack, submitNodeCollector, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
-        PoseStack.Pose pose = poseStack.last().copy();
-        ALRendering.getBloomPostEffect().drawBloomed((nodeCollector, poseStack1) -> {
-            poseStack1.pushPose();
-            poseStack1.last().set(pose);
-            renderState.submit(poseStack1, nodeCollector, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
-            poseStack1.popPose();
-        });
+        renderState.submit(poseStack, compoundSubmit, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
         poseStack.popPose();
     }
 
