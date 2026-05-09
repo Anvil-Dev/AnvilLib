@@ -76,13 +76,22 @@ public class FontManager {
         }
 
         void result(String prefix, Multimap<String, Font> result) {
-            if (this.value == null) {
-                this.children.forEach((prefixChar, child) -> child.result(prefix + prefixChar, result));
+            if (this.value != null) {
+                Set<Font> set = new TreeSet<>(Comparator.comparing(Font::getFontName));
+                this.subFont(set);
+                result.putAll(this.value.getFontName(), set);
                 return;
             }
-            Set<Font> set = new TreeSet<>(Comparator.comparing(Font::getFontName));
-            this.subFont(set);
-            result.putAll(this.value.getFontName(), set);
+            // Only group at word boundaries: prefix ending with space & multiple descendants
+            if (prefix.endsWith(" ")) {
+                Set<Font> set = new TreeSet<>(Comparator.comparing(Font::getFontName));
+                this.subFont(set);
+                if (set.size() > 1) {
+                    result.putAll(prefix.stripTrailing(), set);
+                    return;
+                }
+            }
+            this.children.forEach((prefixChar, child) -> child.result(prefix + prefixChar, result));
         }
 
         static Multimap<String, Font> process(Collection<Font> fonts) {
