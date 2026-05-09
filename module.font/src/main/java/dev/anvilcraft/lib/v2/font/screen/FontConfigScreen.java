@@ -45,6 +45,8 @@ public class FontConfigScreen extends Screen {
         int fontDropdownY = familyDropdownY + 28;
         int btnY = fontDropdownY + 28;
 
+        this.shielding = null;
+
         this.familyDropdown = new Dropdown(dropdownX, familyDropdownY, dropdownWidth, 20, this.width, this.height, this.familyComponent);
         this.fontDropdown = new Dropdown(dropdownX, fontDropdownY, dropdownWidth, 20, this.width, this.height, this.fontComponent);
         this.testBtn = Button

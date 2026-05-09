@@ -37,6 +37,7 @@ public class Dropdown extends AbstractWidget {
     private final int screenWidth;
     private final int screenHeight;
     private int scrollOffset = 0;
+    private boolean draggingScrollbar;
 
     public Dropdown(int x, int y, int width, int height, int screenWidth, int screenHeight, Component message) {
         super(x, y, width, height, message);
@@ -192,6 +193,13 @@ public class Dropdown extends AbstractWidget {
             return false;
         }
 
+        // Click on scrollbar: start dragging
+        if (this.needsScrollbar() && this.isOnScrollbar(mouseX, mouseY)) {
+            this.draggingScrollbar = true;
+            this.scrollToMouse(mouseY);
+            return true;
+        }
+
         int index = this.getEntryIndexAt(mouseX, mouseY);
         if (index < 0) {
             this.expanded = false;
@@ -207,6 +215,43 @@ public class Dropdown extends AbstractWidget {
         this.expanded = false;
         this.removeShielding();
         return true;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        if (this.draggingScrollbar) {
+            this.scrollToMouse(event.y());
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        this.draggingScrollbar = false;
+        return false;
+    }
+
+    private boolean needsScrollbar() {
+        return this.maxScrollOffset() > 0;
+    }
+
+    private boolean isOnScrollbar(double mouseX, double mouseY) {
+        int x2 = this.getX() + this.getWidth();
+        int listTop = this.getY() + this.getHeight();
+        int listBottom = listTop + this.calcMaxHeight();
+        return mouseX >= x2 - 5 && mouseX < x2 && mouseY >= listTop && mouseY < listBottom;
+    }
+
+    private void scrollToMouse(double mouseY) {
+        int listTop = this.getY() + this.getHeight();
+        int listHeight = this.calcMaxHeight();
+        int thumbHeight = Math.max(10, listHeight * this.visibleRowCount() / this.allows.size());
+        int trackHeight = listHeight - thumbHeight;
+        int maxScroll = this.maxScrollOffset();
+        if (trackHeight <= 0 || maxScroll <= 0) return;
+        int relativeY = (int) Math.clamp(mouseY - listTop - thumbHeight / 2.0, 0, trackHeight);
+        this.scrollOffset = relativeY * maxScroll / trackHeight;
     }
 
     public boolean isMouseOver(double mouseX, double mouseY) {
