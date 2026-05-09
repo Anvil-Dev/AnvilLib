@@ -198,6 +198,33 @@ jobs:
       signing_key: ${{ secrets.SIGNING_KEY }}
       signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
+  font:
+    needs:
+      - rendering
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: font
+      module_id: anvillib-font
+      mod_id: anvillib_font
+      ci_build: true
+      pr_build: false
+    secrets:
+      maven_url: ${{ secrets.MAVEN_URL }}
+      maven_user: ${{ secrets.MAVEN_USER }}
+      maven_pass: ${{ secrets.MAVEN_PASS }}
+  font-maven-central-deploy:
+    uses: ./.github/workflows/publish_maven_central.yml
+    needs:
+      - font
+    with:
+      module: font
+      module_id: anvillib-font
+    secrets:
+      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      signing_key: ${{ secrets.SIGNING_KEY }}
+      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
+      signing_password: ${{ secrets.SIGNING_PASSWORD }}
   rendering:
     uses: ./.github/workflows/build_and_test.yml
     with:
@@ -348,6 +375,7 @@ jobs:
       - util
       - wheel
       - sync
+      - font
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: main

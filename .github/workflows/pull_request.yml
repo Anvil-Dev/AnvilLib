@@ -79,6 +79,16 @@ jobs:
       mod_id: anvillib_recipe
       ci_build: true
       pr_build: true
+  font:
+    needs:
+      - rendering
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: font
+      module_id: anvillib-font
+      mod_id: anvillib_font
+      ci_build: true
+      pr_build: true
   rendering:
     uses: ./.github/workflows/build_and_test.yml
     with:
@@ -144,6 +154,7 @@ jobs:
       - util
       - wheel
       - sync
+      - font
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: main
