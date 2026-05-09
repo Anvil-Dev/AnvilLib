@@ -43,13 +43,18 @@ public class FontConfigScreen extends Screen {
         dropdownWidth -= labelWidth + 10;
         int familyDropdownY = this.height / 2 - 24;
         int fontDropdownY = familyDropdownY + 28;
+        int btnY = fontDropdownY + 28;
 
         this.familyDropdown = new Dropdown(dropdownX, familyDropdownY, dropdownWidth, 20, this.width, this.height, this.familyComponent);
         this.fontDropdown = new Dropdown(dropdownX, fontDropdownY, dropdownWidth, 20, this.width, this.height, this.fontComponent);
-        this.testBtn = Button.builder(
-            Component.translatable("screen.anvillib_font.config.test"),
-            (_) -> this.minecraft.setScreen(new FontTestScreen(this))
-        ).build();
+        this.testBtn = Button
+            .builder(
+                Component.translatable("screen.anvillib_font.config.test"),
+                (_) -> this.minecraft.setScreen(new FontTestScreen(this))
+            )
+            .size(btnWidth, 20)
+            .pos(btnX, btnY)
+            .build();
 
         this.familyDropdown.setOnShieldingAdd(shielding -> this.shielding = shielding);
         this.familyDropdown.setOnShieldingRemove(() -> this.shielding = null);
@@ -88,6 +93,7 @@ public class FontConfigScreen extends Screen {
 
         this.refreshFontOptions(this.familyDropdown.getValueId(), AnvilLibFont.CONFIG.getFont(), false);
 
+        this.addRenderableWidget(this.testBtn);
         this.addRenderableWidget(this.fontDropdown);
         this.addRenderableWidget(this.familyDropdown);
     }
