@@ -3,11 +3,10 @@ package dev.anvilcraft.lib.v2.font.screen;
 import dev.anvilcraft.lib.v2.font.AnvilLibFont;
 import dev.anvilcraft.lib.v2.font.FontManager;
 import dev.anvilcraft.lib.v2.font.screen.widget.Dropdown;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
 import net.neoforged.fml.ModContainer;
 import org.jspecify.annotations.Nullable;
 
@@ -21,6 +20,7 @@ public class FontConfigScreen extends Screen {
     @SuppressWarnings("FieldCanBeLocal")
     private @Nullable Dropdown familyDropdown;
     private @Nullable Dropdown fontDropdown;
+    private @Nullable Button testBtn;
     private Component selectedFamilyText = Component.empty();
     private Component selectedFontText = Component.empty();
     private final Component familyComponent = Component.translatable("screen.anvillib_font.config.family");
@@ -37,13 +37,19 @@ public class FontConfigScreen extends Screen {
         int fontComponentWidth = this.font.width(this.fontComponent);
         int labelWidth = Math.max(familyComponentWidth, fontComponentWidth);
         int dropdownWidth = Math.clamp(this.width - 40, 180, 320);
+        int btnWidth = dropdownWidth;
         int dropdownX = (this.width - dropdownWidth) / 2 + labelWidth + 10;
+        int btnX = (this.width - btnWidth) / 2;
         dropdownWidth -= labelWidth + 10;
         int familyDropdownY = this.height / 2 - 24;
         int fontDropdownY = familyDropdownY + 28;
 
         this.familyDropdown = new Dropdown(dropdownX, familyDropdownY, dropdownWidth, 20, this.width, this.height, this.familyComponent);
         this.fontDropdown = new Dropdown(dropdownX, fontDropdownY, dropdownWidth, 20, this.width, this.height, this.fontComponent);
+        this.testBtn = Button.builder(
+            Component.translatable("screen.anvillib_font.config.test"),
+            (_) -> this.minecraft.setScreen(new FontTestScreen(this))
+        ).build();
 
         this.familyDropdown.setOnShieldingAdd(shielding -> this.shielding = shielding);
         this.familyDropdown.setOnShieldingRemove(() -> this.shielding = null);
