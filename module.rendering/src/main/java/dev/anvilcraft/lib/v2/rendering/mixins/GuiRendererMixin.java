@@ -5,7 +5,6 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
@@ -13,9 +12,7 @@ import dev.anvilcraft.lib.v2.rendering.state.LibGuiElementRenderState;
 import net.minecraft.client.gui.render.GuiRenderer;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
-import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -106,8 +103,31 @@ public class GuiRendererMixin {
         this.anvillib$renderStatesByDraw.computeIfPresent(
             draw, (_, v) -> {
                 if (v instanceof LibGuiElementRenderState state) {
-                    state.bufferSlices().forEach(renderPass::setUniform);
-                    state.executeDraw(renderPass);
+                    state.executeDrawBeforeSetPipline(renderPass);
+                }
+                return v;
+            }
+        );
+    }
+
+    @Inject(
+        method = "executeDraw",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/pipeline/RenderPipeline;getVertexFormatMode()Lcom/mojang/blaze3d/vertex/VertexFormat$Mode;"
+        )
+    )
+    private void executeDrawAfterSetPipline(
+        GuiRenderer.Draw draw,
+        RenderPass renderPass,
+        GpuBuffer indexBuffer,
+        VertexFormat.IndexType indexType,
+        CallbackInfo ci
+    ) {
+        this.anvillib$renderStatesByDraw.computeIfPresent(
+            draw, (_, v) -> {
+                if (v instanceof LibGuiElementRenderState state) {
+                    state.executeDrawAfterSetPipline(renderPass);
                 }
                 return v;
             }

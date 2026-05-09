@@ -16,6 +16,8 @@ import org.joml.Matrix3x2f;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Render state for SDF text rendering.
@@ -32,6 +34,7 @@ public record SdfTextRenderState(
     int color,
     @Nullable ScreenRectangle scissorArea
 ) implements LibGuiElementRenderState {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SdfTextRenderState.class);
 
     @Override
     public RenderPipeline pipeline() {
@@ -41,12 +44,14 @@ public record SdfTextRenderState(
     @Override
     public TextureSetup textureSetup() {
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(this.atlasTexture);
-        return TextureSetup.singleTexture(texture.getTextureView(), texture.getSampler());
+        return TextureSetup.singleTexture(texture.getTextureView(), this.diffuseSampler);
     }
 
     @Override
-    public void executeDraw(RenderPass renderPass) {
+    public void executeDrawAfterSetPipline(RenderPass renderPass) {
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(this.atlasTexture);
+        LOGGER.debug("SDF executeDraw: binding DiffuseSampler with texture={} view={} sampler={}",
+            this.atlasTexture, texture.getTextureView(), diffuseSampler);
         renderPass.bindTexture("DiffuseSampler", texture.getTextureView(), diffuseSampler);
     }
 
@@ -92,11 +97,10 @@ public record SdfTextRenderState(
     @Nullable
     @Override
     public ScreenRectangle bounds() {
-        if (this.scissorArea == null || this.glyphs.isEmpty()) {
-            return this.scissorArea;
+        if (this.glyphs.isEmpty()) {
+            return null;
         }
 
-        // Calculate bounding box from all glyphs
         float minX = Float.MAX_VALUE;
         float minY = Float.MAX_VALUE;
         float maxX = Float.MIN_VALUE;
@@ -110,7 +114,7 @@ public record SdfTextRenderState(
         }
 
         if (minX >= maxX || minY >= maxY) {
-            return this.scissorArea;
+            return null;
         }
 
         return LibGuiElementRenderState.getBounds(

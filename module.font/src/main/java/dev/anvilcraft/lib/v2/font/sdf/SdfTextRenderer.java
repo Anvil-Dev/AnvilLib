@@ -17,14 +17,18 @@ import org.jspecify.annotations.Nullable;
 
 import java.awt.Font;
 import java.util.OptionalDouble;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * MVP text renderer facade for the future SDF pipeline.
+ * SDF text renderer that draws strings via the {@link ALFPipelines#SDF_TEXT} pipeline.
  *
- * <p>At this stage it warms the glyph atlas cache and renders via vanilla text as a safe fallback.
- * Once the font shader pipeline lands, draw methods can switch to atlas sampling without API changes.</p>
+ * <p>Uses a CPU-generated SDF glyph atlas uploaded to a GPU texture,
+ * sampled by a custom fragment shader for smooth anti-aliased text.</p>
  */
 public final class SdfTextRenderer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SdfTextRenderer.class);
+
     private static final Identifier ASCII_FONT_TEXTURE = Identifier.withDefaultNamespace("textures/font/ascii.png");
     private static final int ASCII_GRID_SIZE = 16;
     private static final int ASCII_GLYPH_SIZE = 8;
@@ -56,15 +60,17 @@ public final class SdfTextRenderer {
             return;
         }
 
-        // Prepare cache and geometry; render backend switch can consume this layout directly.
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y);
         if (layout.quads().isEmpty()) {
+            LOGGER.warn("SDF drawString: empty layout for text='{}' font={}", text, font);
             return;
         }
 
         Identifier atlasTexture = SdfAtlasTexture.getOrUpload(atlas);
-        if (!drawAtlasPipeline(
+        LOGGER.debug("SDF drawString: text='{}' x={} y={} quads={} atlasSize={}x{} atlasTexture={}",
+            text, x, y, layout.quads().size(), atlas.atlasImage().getWidth(), atlas.atlasImage().getHeight(), atlasTexture);
+        drawAtlasPipeline(
             graphics,
             layout,
             atlasTexture,
@@ -72,9 +78,7 @@ public final class SdfTextRenderer {
             atlas.atlasImage().getWidth(),
             atlas.atlasImage().getHeight(),
             color
-        )) {
-            graphics.text(Minecraft.getInstance().font, text, x, y, color, dropShadow);
-        }
+        );
     }
 
     public void drawComponent(
@@ -166,7 +170,7 @@ public final class SdfTextRenderer {
         return true;
     }
 
-    private static boolean drawAtlasPipeline(
+    private static void drawAtlasPipeline(
         GuiGraphicsExtractor graphics,
         SdfTextLayout layout,
         Identifier atlasTexture,
@@ -175,10 +179,6 @@ public final class SdfTextRenderer {
         int atlasHeight,
         int color
     ) {
-        if (layout.quads().isEmpty()) {
-            return false;
-        }
-
         SdfTextRenderState state = new SdfTextRenderState(
             graphics.pose(),
             layout.quads(),
@@ -191,8 +191,6 @@ public final class SdfTextRenderer {
         );
 
         graphics.submitGuiElementRenderState(state);
-
-        return true;
     }
 }
 
