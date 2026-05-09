@@ -44,7 +44,7 @@ public final class SdfGlyphAtlas {
         this.key = key;
         this.font = font;
         this.cellSize = Math.max(24, font.getSize() + 12);
-        this.sdfRadius = Math.max(8, font.getSize() * 0.25f);
+        this.sdfRadius = Math.max(12, font.getSize() * 0.25f);
         this.padding = Math.max(4, this.cellSize / 6);
         this.paddedCellSize = this.cellSize + 2 * this.padding;
         this.rows = (int) Math.ceil(CHAR_COUNT / (double) COLUMNS);
@@ -182,13 +182,22 @@ public final class SdfGlyphAtlas {
     }
 
     private void blitSdfGlyph(BufferedImage glyphMask, int atlasX, int atlasY) {
+        int w = this.cellSize;
         float maxRadius = this.sdfRadius;
-        for (int y = 0; y < this.cellSize; y++) {
-            for (int x = 0; x < this.cellSize; x++) {
-                boolean inside = isInside(glyphMask, x, y);
-                float nearest = nearestEdgeDistance(glyphMask, x, y, inside, maxRadius);
-                float signed = inside ? nearest : -nearest;
 
+        boolean[] inside = new boolean[w * w];
+        for (int y = 0; y < w; y++) {
+            for (int x = 0; x < w; x++) {
+                inside[y * w + x] = isInside(glyphMask, x, y);
+            }
+        }
+
+        float[] dist = computeEdt(inside, w, maxRadius);
+
+        for (int y = 0; y < w; y++) {
+            for (int x = 0; x < w; x++) {
+                int i = y * w + x;
+                float signed = inside[i] ? dist[i] : -dist[i];
                 float normalized = 0.5f + (signed / (2.0f * maxRadius));
                 normalized = Math.max(0.0f, Math.min(1.0f, normalized));
                 int channel = Math.round(normalized * 255.0f);
@@ -198,38 +207,79 @@ public final class SdfGlyphAtlas {
         }
     }
 
-    private static boolean isInside(BufferedImage image, int x, int y) {
-        int alpha = (image.getRGB(x, y) >>> 24) & 0xFF;
-        return alpha > 16;
-    }
+    /** Dead Reckoning Euclidean Distance Transform – O(n²) per cell. */
+    private static float[] computeEdt(boolean[] inside, int w, float maxRadius) {
+        int n = w * w;
+        int HUGE = w * 3;
+        int[] dx = new int[n];
+        int[] dy = new int[n];
 
-    private static float nearestEdgeDistance(BufferedImage image, int px, int py, boolean inside, float maxRadius) {
-        float best = maxRadius;
-        int radius = (int) Math.ceil(maxRadius);
-
-        int minX = Math.max(0, px - radius);
-        int maxX = Math.min(image.getWidth() - 1, px + radius);
-        int minY = Math.max(0, py - radius);
-        int maxY = Math.min(image.getHeight() - 1, py + radius);
-
-        for (int y = minY; y <= maxY; y++) {
-            for (int x = minX; x <= maxX; x++) {
-                boolean sampleInside = isInside(image, x, y);
-                if (sampleInside == inside) {
-                    continue;
-                }
-                float dx = x - px;
-                float dy = y - py;
-                float dist = (float) Math.sqrt(dx * dx + dy * dy);
-                if (dist < best) {
-                    best = dist;
-                    if (best <= 0.5f) {
-                        return best;
+        // Initialize: edge pixels have (0,0), others have HUGE
+        for (int y = 0; y < w; y++) {
+            for (int x = 0; x < w; x++) {
+                int i = y * w + x;
+                boolean edge = false;
+                for (int ny = Math.max(0, y - 1); ny <= Math.min(w - 1, y + 1) && !edge; ny++) {
+                    for (int nx = Math.max(0, x - 1); nx <= Math.min(w - 1, x + 1); nx++) {
+                        if (nx == x && ny == y) continue;
+                        if (inside[ny * w + nx] != inside[i]) {
+                            edge = true;
+                            break;
+                        }
                     }
+                }
+                dx[i] = edge ? 0 : HUGE;
+                dy[i] = edge ? 0 : HUGE;
+            }
+        }
+
+        // Pass 1: top-left → bottom-right
+        for (int y = 0; y < w; y++) {
+            for (int x = 0; x < w; x++) {
+                int i = y * w + x;
+                if (y > 0) {
+                    if (x > 0)     tryUpdate(dx, dy, i, (y - 1) * w + (x - 1), x, y, x - 1, y - 1);
+                    tryUpdate(dx, dy, i, (y - 1) * w + x, x, y, x, y - 1);
+                    if (x < w - 1) tryUpdate(dx, dy, i, (y - 1) * w + (x + 1), x, y, x + 1, y - 1);
+                }
+                if (x > 0) tryUpdate(dx, dy, i, y * w + (x - 1), x, y, x - 1, y);
+            }
+        }
+
+        // Pass 2: bottom-right → top-left
+        for (int y = w - 1; y >= 0; y--) {
+            for (int x = w - 1; x >= 0; x--) {
+                int i = y * w + x;
+                if (x < w - 1) tryUpdate(dx, dy, i, y * w + (x + 1), x, y, x + 1, y);
+                if (y < w - 1) {
+                    if (x > 0)     tryUpdate(dx, dy, i, (y + 1) * w + (x - 1), x, y, x - 1, y + 1);
+                    tryUpdate(dx, dy, i, (y + 1) * w + x, x, y, x, y + 1);
+                    if (x < w - 1) tryUpdate(dx, dy, i, (y + 1) * w + (x + 1), x, y, x + 1, y + 1);
                 }
             }
         }
-        return best;
+
+        float[] dist = new float[n];
+        for (int i = 0; i < n; i++) {
+            dist[i] = Math.min((float) Math.sqrt(dx[i] * dx[i] + dy[i] * dy[i]), maxRadius);
+        }
+        return dist;
+    }
+
+    private static void tryUpdate(int[] dx, int[] dy, int cur, int nbr, int cx, int cy, int nx, int ny) {
+        int ndx = dx[nbr] + (nx - cx);
+        int ndy = dy[nbr] + (ny - cy);
+        int nd2 = ndx * ndx + ndy * ndy;
+        int od2 = dx[cur] * dx[cur] + dy[cur] * dy[cur];
+        if (nd2 < od2) {
+            dx[cur] = ndx;
+            dy[cur] = ndy;
+        }
+    }
+
+    private static boolean isInside(BufferedImage image, int x, int y) {
+        int alpha = (image.getRGB(x, y) >>> 24) & 0xFF;
+        return alpha > 16;
     }
 
     public record GlyphInfo(char value, int atlasX, int atlasY, int width, int height, int advance) {
