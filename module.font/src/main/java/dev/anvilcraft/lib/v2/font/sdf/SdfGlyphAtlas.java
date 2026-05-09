@@ -32,6 +32,8 @@ public final class SdfGlyphAtlas {
     private final String key;
     private final Font font;
     private final int cellSize;
+    private final int padding;
+    private final int paddedCellSize;
     private final int rows;
     private final float sdfRadius;
     private final int awtHeight;
@@ -43,11 +45,12 @@ public final class SdfGlyphAtlas {
         this.font = font;
         this.cellSize = Math.max(24, font.getSize() + 12);
         this.sdfRadius = Math.max(12, font.getSize() * 0.5f);
+        this.padding = Math.max(4, this.cellSize / 6);
+        this.paddedCellSize = this.cellSize + 2 * this.padding;
         this.rows = (int) Math.ceil(CHAR_COUNT / (double) COLUMNS);
-        this.atlasImage = new BufferedImage(this.cellSize * COLUMNS, this.cellSize * this.rows, BufferedImage.TYPE_INT_ARGB);
+        this.atlasImage = new BufferedImage(this.paddedCellSize * COLUMNS, this.paddedCellSize * this.rows, BufferedImage.TYPE_INT_ARGB);
         this.glyphs = new HashMap<>();
 
-        // Capture AWT line height before building atlas (buildAsciiAtlas uses the same metrics)
         Graphics2D g = this.atlasImage.createGraphics();
         try {
             g.setFont(this.font);
@@ -121,11 +124,12 @@ public final class SdfGlyphAtlas {
                 int slot = code - FIRST_CHAR;
                 int col = slot % COLUMNS;
                 int row = slot / COLUMNS;
-                int x = col * this.cellSize;
-                int y = row * this.cellSize;
 
-                int baseline = y + Math.min(this.cellSize - 4, metrics.getAscent() + 2);
-                int drawX = x + 2;
+                // Inner cell position within the padded grid
+                int padX = col * this.paddedCellSize;
+                int padY = row * this.paddedCellSize;
+                int innerX = padX + this.padding;
+                int innerY = padY + this.padding;
 
                 BufferedImage glyphMask = new BufferedImage(this.cellSize, this.cellSize, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D maskGraphics = glyphMask.createGraphics();
@@ -141,12 +145,41 @@ public final class SdfGlyphAtlas {
                     maskGraphics.dispose();
                 }
 
-                this.blitSdfGlyph(glyphMask, x, y);
+                this.blitSdfGlyph(glyphMask, innerX, innerY);
 
-                this.glyphs.put(character, new GlyphInfo(character, x, y, this.cellSize, this.cellSize, metrics.charWidth(character)));
+                this.glyphs.put(character, new GlyphInfo(character, innerX, innerY, this.cellSize, this.cellSize, metrics.charWidth(character)));
             }
         } finally {
             graphics.dispose();
+        }
+
+        fillPadding();
+    }
+
+    /** Stretch edge pixels of each inner cell into the padding zone to prevent LINEAR sampling bleed. */
+    private void fillPadding() {
+        for (int code = FIRST_CHAR; code <= LAST_CHAR; code++) {
+            int slot = code - FIRST_CHAR;
+            int col = slot % COLUMNS;
+            int row = slot / COLUMNS;
+
+            int padX = col * this.paddedCellSize;
+            int padY = row * this.paddedCellSize;
+            int innerX0 = padX + this.padding;
+            int innerY0 = padY + this.padding;
+            int innerX1 = innerX0 + this.cellSize - 1;
+            int innerY1 = innerY0 + this.cellSize - 1;
+
+            for (int y = padY; y < padY + this.paddedCellSize; y++) {
+                for (int x = padX; x < padX + this.paddedCellSize; x++) {
+                    if (x >= innerX0 && x <= innerX1 && y >= innerY0 && y <= innerY1) {
+                        continue;
+                    }
+                    int srcX = Math.clamp(x, innerX0, innerX1);
+                    int srcY = Math.clamp(y, innerY0, innerY1);
+                    this.atlasImage.setRGB(x, y, this.atlasImage.getRGB(srcX, srcY));
+                }
+            }
         }
     }
 
