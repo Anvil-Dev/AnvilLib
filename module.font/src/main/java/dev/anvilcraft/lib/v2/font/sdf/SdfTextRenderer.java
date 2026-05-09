@@ -46,7 +46,7 @@ public final class SdfTextRenderer {
 
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         float scale = scaleFor(atlas);
-        int quadY = y - Math.round(atlas.awtAscent() * scale);
+        int quadY = y - 2;
         SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
         if (layout.pages().isEmpty()) return;
 
@@ -147,7 +147,7 @@ public final class SdfTextRenderer {
     private int flushFormattedSegment(GuiGraphicsExtractor graphics, @Nullable Font font, String text, int x, int y, int color) {
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         float scale = scaleFor(atlas);
-        int quadY = y - Math.round(atlas.awtAscent() * scale);
+        int quadY = y - 2;
         SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
         SdfAtlasTexture.ensureUploaded(atlas);
         for (SdfTextLayout.PageQuads pq : layout.pages()) {

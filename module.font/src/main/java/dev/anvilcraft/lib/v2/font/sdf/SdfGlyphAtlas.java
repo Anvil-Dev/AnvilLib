@@ -86,7 +86,7 @@ public final class SdfGlyphAtlas {
 
     public Font font() { return this.font; }
 
-    public int awtHeight() { return this.awtHeight; }
+    public int awtHeight() { return this.font.getSize(); }
 
     public int awtAscent() { return this.awtAscent; }
 
