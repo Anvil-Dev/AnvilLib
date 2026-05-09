@@ -50,8 +50,6 @@ public record SdfTextRenderState(
     @Override
     public void executeDrawAfterSetPipline(RenderPass renderPass) {
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(this.atlasTexture);
-        LOGGER.debug("SDF executeDraw: binding DiffuseSampler with texture={} view={} sampler={}",
-            this.atlasTexture, texture.getTextureView(), diffuseSampler);
         renderPass.bindTexture("DiffuseSampler", texture.getTextureView(), diffuseSampler);
     }
 

@@ -24,6 +24,8 @@ public final class SdfGlyphAtlas {
     private static final int CHAR_COUNT = LAST_CHAR - FIRST_CHAR + 1;
     private static final int COLUMNS = 16;
     private static final float SDF_RADIUS_PX = 12.0f;
+    /** AWT system fonts report size 1; derive to a fixed rendering size for the atlas. */
+    private static final int ATLAS_FONT_SIZE = 64;
 
     private static final Map<String, SdfGlyphAtlas> CACHE = new ConcurrentHashMap<>();
 
@@ -45,9 +47,19 @@ public final class SdfGlyphAtlas {
     }
 
     public static SdfGlyphAtlas getOrCreate(@Nullable Font font) {
-        Font safeFont = font == null ? new Font("Dialog", Font.PLAIN, 16) : font;
-        String key = safeFont.getFontName() + "#" + safeFont.getStyle() + "#" + safeFont.getSize();
-        return CACHE.computeIfAbsent(key, _ -> new SdfGlyphAtlas(key, safeFont));
+        final Font resolved = resolveFont(font);
+        String key = resolved.getFontName() + "#" + resolved.getStyle() + "#" + resolved.getSize();
+        return CACHE.computeIfAbsent(key, _ -> new SdfGlyphAtlas(key, resolved));
+    }
+
+    private static Font resolveFont(@Nullable Font font) {
+        if (font == null) {
+            return new Font("Dialog", Font.PLAIN, ATLAS_FONT_SIZE);
+        }
+        if (font.getSize() < 4) {
+            return font.deriveFont((float) ATLAS_FONT_SIZE);
+        }
+        return font;
     }
 
     public String key() {

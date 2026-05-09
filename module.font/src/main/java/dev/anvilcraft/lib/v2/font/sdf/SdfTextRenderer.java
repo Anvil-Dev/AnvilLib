@@ -68,8 +68,6 @@ public final class SdfTextRenderer {
         }
 
         Identifier atlasTexture = SdfAtlasTexture.getOrUpload(atlas);
-        LOGGER.debug("SDF drawString: text='{}' x={} y={} quads={} atlasSize={}x{} atlasTexture={}",
-            text, x, y, layout.quads().size(), atlas.atlasImage().getWidth(), atlas.atlasImage().getHeight(), atlasTexture);
         drawAtlasPipeline(
             graphics,
             layout,

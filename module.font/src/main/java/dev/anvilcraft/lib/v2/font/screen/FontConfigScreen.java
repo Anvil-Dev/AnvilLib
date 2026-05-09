@@ -98,13 +98,6 @@ public class FontConfigScreen extends Screen {
                 0xFFFFFFFF
             );
         }
-        guiGraphics.anvillib$centeredText(
-            FontManager.INSTANCE.getFont(this.fontDropdown.getValueId()),
-            "Font Test",
-            this.width / 2,
-            this.height / 2 - 44,
-            0xFFFFFFFF
-        );
         int dropdownWidth = Math.clamp(this.width - 40, 180, 320);
         int dropdownLabelX = (this.width - dropdownWidth) / 2;
         int familyDropdownLabelY = this.height / 2 - 24 + this.font.lineHeight / 2;
