@@ -140,11 +140,7 @@ public final class SdfTextRenderer {
     }
 
     public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, Component text, int x, int y, int color) {
-        String value = text.getString();
-        SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
-        float scale = scaleFor(atlas);
-        int drawX = x - Math.round(atlas.measureText(value) * scale) / 2;
-        this.drawString(graphics, font, value, drawX, y, color, false);
+        drawCentered(graphics, font, text.getVisualOrderText(), x, y, color);
     }
 
     public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, FormattedCharSequence text, int x, int y, int color) {
@@ -152,7 +148,7 @@ public final class SdfTextRenderer {
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         float scale = scaleFor(atlas);
         int drawX = x - Math.round(atlas.measureText(value) * scale) / 2;
-        this.drawString(graphics, font, value, drawX, y, color, false);
+        this.drawFormatted(graphics, font, text, drawX, y, color, false);
     }
 
     private int flushSegment(
@@ -175,7 +171,7 @@ public final class SdfTextRenderer {
     }
 
     private static int colorFromStyle(Style style, int defaultColor) {
-        return style.getColor() != null ? style.getColor().getValue() : defaultColor;
+        return style.getColor() != null ? style.getColor().getValue() | 0xFF000000 : defaultColor;
     }
 
     private static List<String> wrapLines(SdfGlyphAtlas atlas, String text, int maxWidth, float scale) {
