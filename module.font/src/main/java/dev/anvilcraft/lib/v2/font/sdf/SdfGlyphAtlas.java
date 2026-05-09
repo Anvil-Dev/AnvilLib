@@ -266,7 +266,7 @@ final class SdfGlyphPage {
     SdfGlyphPage(int paddedCellSize) {
         this.cols = SIZE / paddedCellSize;
         this.rows = SIZE / paddedCellSize;
-        this.image = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_ARGB);
+        this.image = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_BYTE_GRAY);
     }
 
     boolean hasSpace() { return nextRow < rows; }

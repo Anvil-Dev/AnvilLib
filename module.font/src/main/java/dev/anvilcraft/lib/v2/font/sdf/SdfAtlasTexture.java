@@ -51,12 +51,12 @@ public final class SdfAtlasTexture {
         }
     }
 
-    /** A minimal texture with LINEAR+CLAMP filtering for SDF sampling. */
+    /** A minimal single-channel texture with LINEAR+CLAMP filtering for SDF sampling. */
     static final class SdfTexture extends AbstractTexture {
         SdfTexture(NativeImage image) {
             GpuDevice device = RenderSystem.getDevice();
             this.texture = device.createTexture(
-                () -> "AnvilLib SDF Atlas", 5, TextureFormat.RGBA8,
+                () -> "AnvilLib SDF Atlas", 5, TextureFormat.RED8,
                 image.getWidth(), image.getHeight(), 1, 1
             );
             device.createCommandEncoder().writeToTexture(this.texture, image);
@@ -66,10 +66,12 @@ public final class SdfAtlasTexture {
     }
 
     static NativeImage toNativeImage(BufferedImage image) {
-        NativeImage ni = new NativeImage(image.getWidth(), image.getHeight(), false);
+        NativeImage ni = new NativeImage(NativeImage.Format.RGBA, image.getWidth(), image.getHeight(), false);
         for (int y = 0; y < image.getHeight(); y++)
-            for (int x = 0; x < image.getWidth(); x++)
-                ni.setPixel(x, y, image.getRGB(x, y));
+            for (int x = 0; x < image.getWidth(); x++) {
+                int gray = image.getRGB(x, y) & 0xFF;
+                ni.setPixel(x, y, (0xFF << 24) | (gray << 16) | (gray << 8) | gray);
+            }
         return ni;
     }
 
