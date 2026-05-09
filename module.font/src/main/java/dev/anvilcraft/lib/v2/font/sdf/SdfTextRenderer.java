@@ -3,33 +3,30 @@ package dev.anvilcraft.lib.v2.font.sdf;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
-import dev.anvilcraft.lib.v2.font.ALFPipelines;
 import dev.anvilcraft.lib.v2.font.sdf.state.SdfTextRenderState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import org.jspecify.annotations.Nullable;
 
 import java.awt.Font;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * SDF text renderer that draws strings via the {@link ALFPipelines#SDF_TEXT} pipeline.
- *
- * <p>Uses a CPU-generated SDF glyph atlas uploaded to a GPU texture,
- * sampled by a custom fragment shader for smooth anti-aliased text.</p>
+ * SDF text renderer that draws strings via the SDF text render pipeline.
+ * <p>
+ * Uses a CPU-generated SDF glyph atlas uploaded to a GPU texture,
+ * sampled by a custom fragment shader for smooth anti-aliased text.
  */
 public final class SdfTextRenderer {
     private static final Logger LOGGER = LoggerFactory.getLogger(SdfTextRenderer.class);
-
-    private static final Identifier ASCII_FONT_TEXTURE = Identifier.withDefaultNamespace("textures/font/ascii.png");
-    private static final int ASCII_GRID_SIZE = 16;
-    private static final int ASCII_GLYPH_SIZE = 8;
-    private static final int ASCII_TEXTURE_SIZE = 128;
 
     private final GpuSampler diffuseSampler = RenderSystem.getSamplerCache()
         .getClampToEdge(FilterMode.LINEAR);
@@ -83,7 +80,7 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        this.drawString(graphics, font, text.getString(), x, y, color, dropShadow);
+        this.drawFormatted(graphics, font, text.getVisualOrderText(), x, y, color, dropShadow);
     }
 
     public void drawFormatted(
@@ -95,10 +92,35 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        this.drawString(graphics, font, flatten(text), x, y, color, dropShadow);
+        SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
+        float scale = scaleFor(atlas);
+        Identifier atlasTexture = SdfAtlasTexture.getOrUpload(atlas);
+        int atlasW = atlas.atlasImage().getWidth();
+        int atlasH = atlas.atlasImage().getHeight();
+
+        int[] pen = {x};
+        StringBuilder buf = new StringBuilder();
+        int[] segColor = {color};
+
+        text.accept((index, style, codepoint) -> {
+            int c = colorFromStyle(style, color);
+            if (c != segColor[0] && !buf.isEmpty()) {
+                pen[0] = flushSegment(graphics, atlas, atlasTexture, atlasW, atlasH, scale,
+                    buf.toString(), pen[0], y, segColor[0]);
+                buf.setLength(0);
+            }
+            buf.appendCodePoint(codepoint);
+            segColor[0] = c;
+            return true;
+        });
+
+        if (!buf.isEmpty()) {
+            flushSegment(graphics, atlas, atlasTexture, atlasW, atlasH, scale,
+                buf.toString(), pen[0], y, segColor[0]);
+        }
     }
 
-    public static void drawWrapped(
+    public void drawWrapped(
         GuiGraphicsExtractor graphics,
         @Nullable Font font,
         FormattedText text,
@@ -108,8 +130,13 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        SdfGlyphAtlas.getOrCreate(font);
-        graphics.textWithWordWrap(Minecraft.getInstance().font, text, x, y, width, color, dropShadow);
+        SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
+        float scale = scaleFor(atlas);
+        List<String> lines = wrapLines(atlas, text.getString(), width, scale);
+        int lineHeight = Minecraft.getInstance().font.lineHeight;
+        for (int i = 0; i < lines.size(); i++) {
+            this.drawString(graphics, font, lines.get(i), x, y + i * lineHeight, color, dropShadow);
+        }
     }
 
     public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, Component text, int x, int y, int color) {
@@ -121,48 +148,78 @@ public final class SdfTextRenderer {
     }
 
     public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, FormattedCharSequence text, int x, int y, int color) {
-        String value = flatten(text);
+        String value = flattenToString(text);
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getOrCreate(font);
         float scale = scaleFor(atlas);
         int drawX = x - Math.round(atlas.measureText(value) * scale) / 2;
         this.drawString(graphics, font, value, drawX, y, color, false);
     }
 
-    private static String flatten(FormattedCharSequence text) {
-        StringBuilder builder = new StringBuilder();
-        text.accept((index, style, codePoint) -> {
-            builder.appendCodePoint(codePoint);
-            return true;
-        });
-        return builder.toString();
+    private int flushSegment(
+        GuiGraphicsExtractor graphics,
+        SdfGlyphAtlas atlas,
+        Identifier atlasTexture,
+        int atlasW,
+        int atlasH,
+        float scale,
+        String text,
+        int x,
+        int y,
+        int color
+    ) {
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
+        if (!layout.quads().isEmpty()) {
+            drawAtlasPipeline(graphics, layout, atlasTexture, this.diffuseSampler, atlasW, atlasH, color);
+        }
+        return x + layout.width();
     }
 
-    private static boolean drawAsciiPipeline(GuiGraphicsExtractor graphics, String text, int x, int y, int color) {
-        SdfTextLayout layout = SdfTextLayout.fromAsciiTexture(text, x, y, ASCII_GLYPH_SIZE, ASCII_GRID_SIZE, ASCII_TEXTURE_SIZE);
-        if (layout.quads().isEmpty()) {
-            return false;
+    private static int colorFromStyle(Style style, int defaultColor) {
+        return style.getColor() != null ? style.getColor().getValue() : defaultColor;
+    }
+
+    private static List<String> wrapLines(SdfGlyphAtlas atlas, String text, int maxWidth, float scale) {
+        List<String> lines = new ArrayList<>();
+        if (text.isEmpty()) {
+            lines.add("");
+            return lines;
         }
 
-        for (SdfTextLayout.GlyphQuad quad : layout.quads()) {
-            int u = Math.round(quad.u0() * ASCII_TEXTURE_SIZE);
-            int v = Math.round(quad.v0() * ASCII_TEXTURE_SIZE);
-
-            graphics.blit(
-                ALFPipelines.SDF_TEXT,
-                ASCII_FONT_TEXTURE,
-                quad.x0(),
-                quad.y0(),
-                u,
-                v,
-                quad.x1() - quad.x0(),
-                quad.y1() - quad.y0(),
-                ASCII_TEXTURE_SIZE,
-                ASCII_TEXTURE_SIZE,
-                color
-            );
+        for (String paragraph : text.split("\n", -1)) {
+            if (paragraph.isEmpty()) {
+                lines.add("");
+                continue;
+            }
+            String[] words = paragraph.split(" ");
+            StringBuilder line = new StringBuilder();
+            for (String word : words) {
+                String candidate = line.isEmpty() ? word : line + " " + word;
+                if (Math.round(atlas.measureText(candidate) * scale) > maxWidth) {
+                    if (line.isEmpty()) {
+                        lines.add(word);
+                    } else {
+                        lines.add(line.toString());
+                        line = new StringBuilder(word);
+                    }
+                } else {
+                    line = new StringBuilder(candidate);
+                }
+            }
+            if (!line.isEmpty()) {
+                lines.add(line.toString());
+            }
         }
 
-        return true;
+        return lines;
+    }
+
+    private static String flattenToString(FormattedCharSequence text) {
+        StringBuilder buf = new StringBuilder();
+        text.accept((index, style, cp) -> {
+            buf.appendCodePoint(cp);
+            return true;
+        });
+        return buf.toString();
     }
 
     private static void drawAtlasPipeline(

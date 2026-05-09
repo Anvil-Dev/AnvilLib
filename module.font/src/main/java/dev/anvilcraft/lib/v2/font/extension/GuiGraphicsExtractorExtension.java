@@ -61,7 +61,7 @@ public interface GuiGraphicsExtractorExtension {
     }
 
     default void anvillib$textWithWordWrap(Font font, FormattedText string, int x, int y, int width, int col, boolean dropShadow) {
-        SdfTextRenderer.drawWrapped(this.self(), font, string, x, y, width, col, dropShadow);
+        this.anvillib$textRenderer().drawWrapped(this.self(), font, string, x, y, width, col, dropShadow);
     }
 
     default void anvillib$textWithBackdrop(Font font, Component str, int textX, int textY, int textWidth, int textColor) {
