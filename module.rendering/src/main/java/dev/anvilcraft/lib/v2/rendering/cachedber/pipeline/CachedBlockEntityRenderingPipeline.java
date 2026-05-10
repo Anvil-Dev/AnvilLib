@@ -4,21 +4,30 @@ import dev.anvilcraft.lib.v2.rendering.cachedber.renderer.CachedBlockEntityRende
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.extensions.IBlockEntityRendererExtension;
+import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 import java.util.Queue;
 
 /**
  * @author ZhuRuoLing
  */
 @SuppressWarnings("unused")
+@EventBusSubscriber
 public class CachedBlockEntityRenderingPipeline {
     @Nullable
     private static CachedBlockEntityRenderingPipeline instance;
@@ -26,16 +35,19 @@ public class CachedBlockEntityRenderingPipeline {
     private final ClientLevel level;
     private final Queue<Runnable> pendingCompiles = new ArrayDeque<>();
     private final Queue<Runnable> pendingUploads = new ArrayDeque<>();
-    private final Map<ChunkPos, CachedRegion> regions = new HashMap<>();
+    private final Map<ChunkPos, CachedRenderingChunk> chunks = new HashMap<>();
     @Getter
     private boolean valid = true;
+    private static Vec3 cameraOldPosition = null;
+    @Getter
+    private static boolean cameraMoved = true;
 
-    public CachedRegion getRenderRegion(ChunkPos chunkPos) {
-        if (regions.containsKey(chunkPos)) {
-            return regions.get(chunkPos);
+    public CachedRenderingChunk getRenderRegion(ChunkPos chunkPos) {
+        if (chunks.containsKey(chunkPos)) {
+            return chunks.get(chunkPos);
         }
-        CachedRegion region = new CachedRegion(chunkPos, this);
-        regions.put(chunkPos, region);
+        CachedRenderingChunk region = new CachedRenderingChunk(chunkPos, this);
+        chunks.put(chunkPos, region);
         return region;
     }
 
@@ -110,12 +122,14 @@ public class CachedBlockEntityRenderingPipeline {
      * Releases all buffers in use and mark current pipeline instance as invalid.
      */
     public void releaseBuffers() {
-        regions.values().forEach(CachedRegion::releaseBuffers);
+        chunks.values().forEach(CachedRenderingChunk::releaseBuffers);
         valid = false;
     }
 
-    public void render() {
-        regions.values().forEach(CachedRegion::render);
+    public void render(Frustum frustum) {
+        for (CachedRenderingChunk value : chunks.values()) {
+            value.render(frustum);
+        }
     }
 
     /**
@@ -129,8 +143,18 @@ public class CachedBlockEntityRenderingPipeline {
         return instance;
     }
 
-
     public void forcedUpdate(BlockPos pos) {
         getRenderRegion(ChunkPos.containing(pos)).forcedUpdate();
+    }
+
+    @SubscribeEvent
+    public static void on(RenderLevelStageEvent.AfterSky event) {
+        Vec3 pos = event.getLevelRenderState().cameraRenderState.pos;
+        if (pos.equals(cameraOldPosition)) {
+            cameraMoved = false;
+            return;
+        }
+        cameraOldPosition = new Vec3(pos.x, pos.y, pos.z);
+        cameraMoved = true;
     }
 }

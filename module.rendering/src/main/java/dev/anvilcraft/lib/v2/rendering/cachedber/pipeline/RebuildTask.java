@@ -16,10 +16,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import java.util.ArrayList;
 
 class RebuildTask implements Runnable {
-    private final CachedRegion owner;
+    private final CachedRenderingChunk owner;
     private boolean cancelled = false;
 
-    public RebuildTask(CachedRegion owner) {
+    public RebuildTask(CachedRenderingChunk owner) {
         this.owner = owner;
     }
 

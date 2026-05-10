@@ -57,7 +57,7 @@ public class AnvilLibRendering {
     @SubscribeEvent
     public static void on(RenderLevelStageEvent.AfterTranslucentFeatures event) {
         if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
-            CachedBlockEntityRenderingPipeline.getInstance().render();
+            CachedBlockEntityRenderingPipeline.getInstance().render(event.getLevelRenderState().cameraRenderState.cullFrustum);
         }
         Minecraft minecraft = Minecraft.getInstance();
         RenderBuffers renderBuffers = minecraft.renderBuffers();

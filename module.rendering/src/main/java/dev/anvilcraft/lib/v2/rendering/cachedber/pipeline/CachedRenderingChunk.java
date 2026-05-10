@@ -11,6 +11,7 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import dev.anvilcraft.lib.v2.rendering.foundation.ALRMeshSorting;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.VertexBufferHost;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
@@ -18,10 +19,12 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
@@ -43,15 +46,17 @@ import java.util.function.Consumer;
 /**
  * @author ZhuRuoLing
  */
-public class CachedRegion implements VertexBufferHost {
+public class CachedRenderingChunk implements VertexBufferHost {
     @Getter
     private final ChunkPos chunkPos;
     private final Map<RenderType, GpuBuffer> buffers = new HashMap<>();
+    private final Map<RenderType, GpuBuffer> indexBuffers = new HashMap<>();
     private final Map<RenderType, ByteBufferBuilder> sortBuffers = new HashMap<>();
     @Getter
     private final Set<BlockEntity> blockEntities = new HashSet<>();
     private final CachedBlockEntityRenderingPipeline pipeline;
     private final Minecraft minecraft = Minecraft.getInstance();
+    private final AABB renderingBB;
     private Map<RenderType, MeshData.SortState> meshSorting = new HashMap<>();
     private Reference2IntMap<RenderType> indexCountMap = new Reference2IntOpenHashMap<>();
     @Nullable
@@ -60,10 +65,12 @@ public class CachedRegion implements VertexBufferHost {
     @Getter
     @Setter(AccessLevel.PACKAGE)
     private boolean isEmpty = true;
+    private boolean isFreshMesh = true;
 
-    public CachedRegion(ChunkPos chunkPos, CachedBlockEntityRenderingPipeline pipeline) {
+    public CachedRenderingChunk(ChunkPos chunkPos, CachedBlockEntityRenderingPipeline pipeline) {
         this.chunkPos = chunkPos;
         this.pipeline = pipeline;
+        this.renderingBB = new AABB(this.chunkPos.getMinBlockX(), -65, this.chunkPos.getMinBlockZ(), this.chunkPos.getMaxBlockX(), 321, this.chunkPos.getMaxBlockZ());
     }
 
     /**
@@ -111,28 +118,36 @@ public class CachedRegion implements VertexBufferHost {
         }
     }
 
-    public void render() {
+    public void render(Frustum frustum) {
+        if (!frustum.isVisible(renderingBB)) return;
         renderInternal(buffers.keySet());
     }
 
-    public GpuBuffer getBuffer(Map<RenderType, GpuBuffer> buffers, RenderType renderType, long size) {
+    public GpuBuffer getBuffer(Map<RenderType, GpuBuffer> buffers, RenderType renderType, long size, int usage) {
         if (buffers.containsKey(renderType)) {
             GpuBuffer buffer = buffers.get(renderType);
 
             if (buffer.size() < size) {
-                buffer = RenderSystem.getDevice().createBuffer(renderType::toString, GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_COPY_SRC, size);
-                buffers.put(renderType, buffer);
+                buffer = RenderSystem.getDevice().createBuffer(renderType::toString, usage | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_COPY_SRC, size);
+                GpuBuffer old = buffers.put(renderType, buffer);
+                if (old != null) {
+                    old.close();
+                }
             }
 
             return buffers.get(renderType);
         }
-        GpuBuffer vb = RenderSystem.getDevice().createBuffer(renderType::toString, GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_COPY_SRC, size);
+        GpuBuffer vb = RenderSystem.getDevice().createBuffer(renderType::toString, usage | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_COPY_SRC, size);
         buffers.put(renderType, vb);
         return vb;
     }
 
     public GpuBuffer getVertexBuffer(RenderType renderType, long size) {
-        return getBuffer(this.buffers, renderType, size);
+        return getBuffer(this.buffers, renderType, size, GpuBuffer.USAGE_VERTEX);
+    }
+
+    public GpuBuffer getIndexBuffer(RenderType renderType, long size) {
+        return getBuffer(this.indexBuffers, renderType, size, GpuBuffer.USAGE_INDEX);
     }
 
 //    public GpuBuffer getBloomBuffers(RenderType renderType, long size) {
@@ -170,6 +185,7 @@ public class CachedRegion implements VertexBufferHost {
 
     public void releaseBuffers() {
         buffers.values().forEach(GpuBuffer::close);
+        indexBuffers.values().forEach(GpuBuffer::close);
         sortBuffers.values().forEach(ByteBufferBuilder::close);
     }
 
@@ -201,28 +217,7 @@ public class CachedRegion implements VertexBufferHost {
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(RenderSystem.getModelViewMatrix(), new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), renderType.state.textureTransform.getMatrix());
         Map<String, RenderSetup.TextureAndSampler> textures = renderType.state.getTextures();
 
-        GpuBuffer indices;
-        VertexFormat.IndexType indexType;
-        if (sortState == null) {
-            RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.mode());
-            indices = autoIndices.getBuffer(indexCount);
-            indexType = autoIndices.type();
-        } else {
-            ByteBufferBuilder.Result result = sortState.buildSortedIndexBuffer(
-                this.getSortingByteBufferBuilder(renderType),
-                VertexSorting.byDistance(cameraPosition.toVector3f())
-            );
-
-            if (result != null) {
-                indices = renderType.state.pipeline.getVertexFormat().uploadImmediateIndexBuffer(result.byteBuffer());
-                indexType = sortState.indexType();
-                result.close();
-            } else {
-                RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.mode());
-                indices = autoIndices.getBuffer(indexCount);
-                indexType = autoIndices.type();
-            }
-        }
+        IndexGenerationResult indexGenerationResult = getIndexBuffer(renderType, cameraPosition, sortState, indexCount);
 
         RenderTarget renderTarget = renderType.state.outputTarget.getRenderTarget();
         GpuTextureView colorTexture = RenderSystem.outputColorTextureOverride != null ? RenderSystem.outputColorTextureOverride : renderTarget.getColorTextureView();
@@ -248,12 +243,59 @@ public class CachedRegion implements VertexBufferHost {
                 renderPass.bindTexture(entry.getKey(), entry.getValue().textureView(), entry.getValue().sampler());
             }
 
-            renderPass.setIndexBuffer(indices, indexType);
+            renderPass.setIndexBuffer(indexGenerationResult.indices(), indexGenerationResult.indexType());
             renderPass.drawIndexed(0, 0, indexCount, 1);
         }
 
         modelViewStack.popMatrix();
     }
+
+    private CachedRenderingChunk.IndexGenerationResult getIndexBuffer(RenderType renderType, Vec3 cameraPosition, MeshData.@Nullable SortState sortState, int indexCount) {
+        VertexFormat.IndexType indexType;
+        GpuBuffer indices;
+        if (sortState == null) {
+            RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.mode());
+            indices = autoIndices.getBuffer(indexCount);
+            indexType = autoIndices.type();
+        } else {
+            if (isFreshMesh || CachedBlockEntityRenderingPipeline.isCameraMoved()) {
+                if (isFreshMesh) {
+                    isFreshMesh = false;
+                }
+                System.out.println("CachedBlockEntityRenderingPipeline.isCameraMoved() = " + CachedBlockEntityRenderingPipeline.isCameraMoved());
+                ByteBufferBuilder.Result result = sortState.buildSortedIndexBuffer(
+                    this.getSortingByteBufferBuilder(renderType),
+                    VertexSorting.byDistance(cameraPosition.toVector3f())
+                    // ALRMeshSorting.byDistance(cameraPosition.toVector3f())
+                );
+
+                if (result != null) {
+                    System.out.println("NEW RESULT!");
+                    indices = getIndexBuffer(renderType, (long) sortState.indexType().bytes * indexCount);
+                    System.out.println("indices = " + indices);
+                    RenderSystem.getDevice().createCommandEncoder().writeToBuffer(indices.slice(), result.byteBuffer());
+                    indexType = sortState.indexType();
+                    result.close();
+                } else {
+                    RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.mode());
+                    indices = autoIndices.getBuffer(indexCount);
+                    indexType = autoIndices.type();
+                }
+            } else {
+                if (indexBuffers.containsKey(renderType)) {
+                    indices = getIndexBuffer(renderType, (long) sortState.indexType().bytes * indexCount);
+                    indexType = sortState.indexType();
+                } else {
+                    RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.mode());
+                    indices = autoIndices.getBuffer(indexCount);
+                    indexType = autoIndices.type();
+                }
+
+            }
+        }
+        return new IndexGenerationResult(indices, indexType);
+    }
+
 
     public void forcedUpdate() {
         pipeline.submitCompileTask(new RebuildTask(this));
@@ -274,5 +316,11 @@ public class CachedRegion implements VertexBufferHost {
     public void replaceMeshData(Map<RenderType, MeshData.SortState> meshSorts, Reference2IntMap<RenderType> indexCountMap) {
         this.meshSorting = meshSorts;
         this.indexCountMap = indexCountMap;
+        indexBuffers.forEach((_, buffers) -> buffers.close());
+        indexBuffers.clear();
+        this.isFreshMesh = true;
+    }
+
+    private record IndexGenerationResult(GpuBuffer indices, VertexFormat.IndexType indexType) {
     }
 }
