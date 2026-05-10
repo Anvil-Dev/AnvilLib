@@ -1,4 +1,4 @@
-package dev.anvilcraft.lib.v2.rendering.foundation.ubo;
+package dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;

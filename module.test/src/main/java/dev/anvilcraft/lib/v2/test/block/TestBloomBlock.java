@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.test.block;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import com.mojang.serialization.MapCodec;
+import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.block.tile.TestBloomTile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
@@ -35,7 +36,7 @@ public class TestBloomBlock extends BaseEntityBlock {
 
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
-        return new TestBloomTile(blockPos, blockState);
+        return new TestBloomTile(TestTiles.TEST_BLOOM.get(),blockPos, blockState);
     }
 
     @Override

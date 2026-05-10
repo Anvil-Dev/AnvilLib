@@ -16,10 +16,6 @@ public class TestBloomTile extends BlockEntity {
         super(type, worldPosition, blockState);
     }
 
-    public TestBloomTile(BlockPos worldPosition, BlockState blockState) {
-        super(TestTiles.TEST_BLOOM.get(), worldPosition, blockState);
-    }
-
     public void test() {
     }
 }

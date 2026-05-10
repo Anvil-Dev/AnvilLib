@@ -1,8 +1,8 @@
 package dev.anvilcraft.lib.v2.rendering.bloom;
 
-import dev.anvilcraft.lib.v2.rendering.foundation.ubo.UboLayoutDefinition;
-import dev.anvilcraft.lib.v2.rendering.foundation.ubo.UboLayoutEntry;
-import dev.anvilcraft.lib.v2.rendering.foundation.ubo.UboObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutDefinition;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutEntry;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboObject;
 import lombok.Getter;
 import lombok.Setter;
 import org.joml.Vector2f;
@@ -17,7 +17,7 @@ public class BloomPipelineParametersUbo extends UboObject<BloomPipelineParameter
     );
 
     private final Vector2f      resolution = new Vector2f();
-    private             int     frameIndex;
+    private       int           frameIndex;
 
     public void setResolution(int width, int height) {
         this.resolution.set(

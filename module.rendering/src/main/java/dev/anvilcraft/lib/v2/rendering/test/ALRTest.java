@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.test;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import dev.anvilcraft.lib.v2.rendering.ALRendering;
+import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -16,9 +16,9 @@ public class ALRTest {
 
 
     public static void renderCarrotBloomed() {
-        if (!ALRendering.DEBUG) return;
+        if (!AnvilLibRendering.DEBUG) return;
         renderCarrot();
-        ALRendering.getBloomPostEffect().drawBloomed(ALRTest::submitCarrot);
+        AnvilLibRendering.getBloomPostEffect().drawBloomed(ALRTest::submitCarrot);
     }
 
     private static void submitCarrot(SubmitNodeCollector nodeCollector, PoseStack poseStack) {

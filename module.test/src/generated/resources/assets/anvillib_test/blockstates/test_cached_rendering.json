@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "up=false": {
+      "model": "anvillib_test:block/test_cached_rendering"
+    },
+    "up=true": {
+      "model": "anvillib_test:block/test_cached_rendering",
+      "x": 180
+    }
+  }
+}

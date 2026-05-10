@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering;
 
 import dev.anvilcraft.lib.v2.rendering.bloom.BloomPostEffect;
+import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderBuffers;
@@ -17,9 +18,9 @@ import net.neoforged.neoforge.client.pipeline.RegisterPipelineModifiersEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Mod(value = ALRendering.MODID, dist = Dist.CLIENT)
+@Mod(value = AnvilLibRendering.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber
-public class ALRendering {
+public class AnvilLibRendering {
     public static final boolean DEBUG = System.getProperty("anvillib.rendering.debugMode") != null;
     public static final String MODID = "anvillib_rendering";
 
@@ -28,7 +29,7 @@ public class ALRendering {
     @Getter
     private static BloomPostEffect bloomPostEffect;
 
-    public ALRendering(IEventBus modBus) {
+    public AnvilLibRendering(IEventBus modBus) {
     }
 
     public static Identifier location(String path) {
@@ -47,11 +48,17 @@ public class ALRendering {
 
     @SubscribeEvent
     public static void on(RenderFrameEvent.Pre event) {
+        if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
+            CachedBlockEntityRenderingPipeline.getInstance().runTasks();
+        }
         bloomPostEffect.beginFrame();
     }
 
     @SubscribeEvent
-    public static void on(RenderLevelStageEvent.AfterLevel event) {
+    public static void on(RenderLevelStageEvent.AfterTranslucentFeatures event) {
+        if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
+            CachedBlockEntityRenderingPipeline.getInstance().render();
+        }
         Minecraft minecraft = Minecraft.getInstance();
         RenderBuffers renderBuffers = minecraft.renderBuffers();
         FeatureRenderDispatcher frd = new FeatureRenderDispatcher(
@@ -64,6 +71,11 @@ public class ALRendering {
             minecraft.font,
             minecraft.gameRenderer.getGameRenderState()
         );
-        bloomPostEffect.process(event.getModelViewMatrix(), frd);
+        bloomPostEffect.runBloomDraws(event.getModelViewMatrix(), frd);
+    }
+
+    @SubscribeEvent
+    public static void on(RenderLevelStageEvent.AfterLevel event) {
+        bloomPostEffect.process();
     }
 }

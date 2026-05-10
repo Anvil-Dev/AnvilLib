@@ -47,6 +47,10 @@ public class RegistrumLegacyBlockModelBuilder {
         this.texture = texture.copy();
     }
 
+    public RegistrumLegacyBlockModelBuilder texture(TextureSlot slot, Identifier texture) {
+        return texture(slot, texture, false);
+    }
+
     public RegistrumLegacyBlockModelBuilder texture(TextureSlot slot, Identifier texture, boolean translucent) {
         this.template.requiredTextureSlot(slot);
         this.texture.put(slot, new Material(texture, translucent));

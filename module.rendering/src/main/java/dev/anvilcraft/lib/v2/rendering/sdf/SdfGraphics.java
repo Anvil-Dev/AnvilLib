@@ -8,7 +8,7 @@ import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
-import dev.anvilcraft.lib.v2.rendering.ALRendering;
+import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
 import dev.anvilcraft.lib.v2.rendering.state.LibGuiElementRenderState;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -29,7 +29,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
-@EventBusSubscriber(modid = ALRendering.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = AnvilLibRendering.MODID, value = Dist.CLIENT)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SdfGraphics {
     private static final int            MAX_SDF_AMOUNT          = 256;
