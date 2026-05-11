@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/generators/RegistrateRecipeProvider.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/generators/RegistrateRecipeProvider.java
  *
  */
 
@@ -61,8 +61,7 @@ import net.neoforged.neoforge.common.Tags;
 
 import java.util.List;
 import java.util.function.Supplier;
-import javax.annotation.CheckReturnValue;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class RegistrumRecipeProvider extends RecipeProvider implements RecipeOutput {
 
@@ -349,7 +348,6 @@ public class RegistrumRecipeProvider extends RecipeProvider implements RecipeOut
             .save(this, safeId(sourceIngredient) + "_from_" + safeName(output.get()));
     }
 
-    @CheckReturnValue
     public <T extends ItemLike> ShapelessRecipeBuilder singleItemUnfinished(
         DataIngredient source,
         RecipeCategory category,

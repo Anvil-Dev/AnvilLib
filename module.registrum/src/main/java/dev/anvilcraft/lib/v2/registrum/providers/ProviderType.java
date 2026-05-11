@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/ProviderType.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/ProviderType.java
  *
  */
 
@@ -20,7 +20,6 @@ import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumModelProvid
 import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumRecipeProvider;
 import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumRecipeRunner;
 import dev.anvilcraft.lib.v2.registrum.providers.loot.RegistrumLootTableProvider;
-import dev.anvilcraft.lib.v2.util.nullness.FieldsAreNonnullByDefault;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
@@ -39,7 +38,6 @@ import net.neoforged.neoforge.data.loading.DatagenModLoader;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import javax.annotation.ParametersAreNonnullByDefault;
 
 /**
  * Represents a type of data that can be generated, and specifies a factory for the provider.
@@ -52,8 +50,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
  */
 @FunctionalInterface
 @SuppressWarnings("deprecation")
-@FieldsAreNonnullByDefault
-@ParametersAreNonnullByDefault
 public interface ProviderType<T extends RegistrumProvider> extends GeneratorType<T> {
 
     // SERVER DATA

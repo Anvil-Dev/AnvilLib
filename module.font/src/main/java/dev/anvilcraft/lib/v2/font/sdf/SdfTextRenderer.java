@@ -9,14 +9,12 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.Font;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -218,38 +216,7 @@ public final class SdfTextRenderer {
     }
 
     private static List<String> wrapLines(SdfGlyphAtlas atlas, String text, int maxWidth, float scale) {
-        List<String> lines = new ArrayList<>();
-        if (text.isEmpty()) {
-            lines.add("");
-            return lines;
-        }
-
-        for (String paragraph : text.split("\n", -1)) {
-            if (paragraph.isEmpty()) {
-                lines.add("");
-                continue;
-            }
-            String[] words = paragraph.split(" ");
-            StringBuilder line = new StringBuilder();
-            for (String word : words) {
-                String candidate = line.isEmpty() ? word : line + " " + word;
-                if (Math.round(atlas.measureText(candidate) * scale) > maxWidth) {
-                    if (line.isEmpty()) {
-                        lines.add(word);
-                    } else {
-                        lines.add(line.toString());
-                        line = new StringBuilder(word);
-                    }
-                } else {
-                    line = new StringBuilder(candidate);
-                }
-            }
-            if (!line.isEmpty()) {
-                lines.add(line.toString());
-            }
-        }
-
-        return lines;
+        return dev.anvilcraft.lib.v2.font.ALFont.wrapLines(atlas, text, maxWidth, scale);
     }
 
     private static String flattenToString(FormattedCharSequence text) {

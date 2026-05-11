@@ -102,12 +102,25 @@ public final class SdfGlyphAtlas {
     }
 
     public int measureText(String text) {
+        return measureText(text, 0, text.length());
+    }
+
+    /** Measure width of substring {@code text[start..end)} in atlas pixels. */
+    public int measureText(String text, int start, int end) {
         int width = 0;
-        for (int i = 0; i < text.length(); i++) {
-            GlyphEntry g = glyph(text.codePointAt(i));
+        for (int i = start; i < end; ) {
+            int cp = text.codePointAt(i);
+            GlyphEntry g = glyph(cp);
             width += g == null ? this.cellSize / 2 : g.advance;
+            i += Character.charCount(cp);
         }
         return width;
+    }
+
+    /** Measure a single codepoint's advance in atlas pixels. */
+    public int measureCodepoint(int codepoint) {
+        GlyphEntry g = glyph(codepoint);
+        return g == null ? this.cellSize / 2 : g.advance;
     }
 
     // ── Glyph creation ──────────────────────────────────────────

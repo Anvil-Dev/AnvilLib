@@ -24,7 +24,7 @@ public class AnvilLibFontConfig {
     private final String fontComment = "Select a font";
     @Getter
     @SerializedName("font")
-    private String font = FontManager.INSTANCE.getDefaultFont().getFontName();
+    private String font = FontManager.INSTANCE.getDefaultFontFamily();
 
     void setValue(AnvilLibFontConfig config) {
         this.fontFamily = config.fontFamily;
@@ -81,8 +81,8 @@ public class AnvilLibFontConfig {
                 () -> AnvilLibFontConfigManager.configPath = FMLLoader.getCurrent()
                     .getGameDir()
                     .resolve("config")
-                    .resolve("anvillib")
-                    .resolve("anvillib-font-client.json")
+                    .resolve(AnvilLibFont.MAIN_ID)
+                    .resolve("%s-client.json".formatted(AnvilLibFont.MOD_ID))
             );
         }
     }
