@@ -7,16 +7,12 @@
  *  * License, v. 2.0. If a copy of the MPL was not distributed with this
  *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/util/package-info.java
+ *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/util/entry/package-info.java
  *
  */
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
-@FieldsAreNonnullByDefault
+@NullMarked
 package dev.anvilcraft.lib.v2.registrum.util;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
-import dev.anvilcraft.lib.v2.util.nullness.FieldsAreNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
 
-import javax.annotation.ParametersAreNonnullByDefault;

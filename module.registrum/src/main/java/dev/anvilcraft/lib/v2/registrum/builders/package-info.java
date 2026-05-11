@@ -11,13 +11,8 @@
  *
  */
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
-@FieldsAreNonnullByDefault
+@NullMarked
 package dev.anvilcraft.lib.v2.registrum.builders;
 
-import dev.anvilcraft.lib.v2.util.nullness.FieldsAreNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
-
-import javax.annotation.ParametersAreNonnullByDefault;

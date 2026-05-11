@@ -10,13 +10,7 @@
  *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/package-info.java
  *
  */
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
-@FieldsAreNonnullByDefault
+@NullMarked
 package dev.anvilcraft.lib.v2.registrum.builders.modifier;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
-import dev.anvilcraft.lib.v2.util.nullness.FieldsAreNonnullByDefault;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
