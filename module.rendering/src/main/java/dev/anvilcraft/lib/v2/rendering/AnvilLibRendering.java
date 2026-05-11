@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Mod(value = AnvilLibRendering.MODID, dist = Dist.CLIENT)
-@EventBusSubscriber
+@EventBusSubscriber(Dist.CLIENT)
 public class AnvilLibRendering {
     public static final boolean DEBUG = System.getProperty("anvillib.rendering.debugMode") != null;
     public static final String MODID = "anvillib_rendering";

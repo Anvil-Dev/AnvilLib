@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -23,7 +24,7 @@ import java.util.Queue;
  * @author ZhuRuoLing
  */
 @SuppressWarnings("unused")
-@EventBusSubscriber
+@EventBusSubscriber(Dist.CLIENT)
 public class CachedBlockEntityRenderingPipeline {
     @Nullable
     private static CachedBlockEntityRenderingPipeline instance;
