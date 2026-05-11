@@ -11,6 +11,8 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
+import dev.anvilcraft.lib.v2.rendering.extension.ALRRenderTypeExtension;
 import dev.anvilcraft.lib.v2.rendering.foundation.ALRMeshSorting;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.VertexBufferHost;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
@@ -18,6 +20,7 @@ import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.ExtensionMethod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -176,10 +179,21 @@ public class CachedRenderingChunk implements VertexBufferHost {
         List<RenderType> renderingOrders = new ArrayList<>(renderTypes);
         renderingOrders.sort(Comparator.comparingInt(a -> (a.sortOnUpload() ? 1 : 0)));
 
+        renderLayers(renderingOrders, cameraPosition, false);
+        renderLayers(renderingOrders, cameraPosition, true);
+    }
+
+    private void renderLayers(List<RenderType> renderingOrders, Vec3 cameraPosition, boolean translucent) {
         for (RenderType renderType : renderingOrders) {
+            if (renderType.sortOnUpload() != translucent) continue;
             GpuBuffer vb = buffers.get(renderType);
             if (vb == null) continue;
             renderLayer(renderType, vb, cameraPosition);
+            if (ALRRenderTypeExtension.isRenderingBloomed(renderType)) {
+                ALRPostEffects.getBloomPostEffect().beginBloomDraw();
+                renderLayer(renderType, vb, cameraPosition);
+                ALRPostEffects.getBloomPostEffect().endBloomDraw();
+            }
         }
     }
 
@@ -262,20 +276,21 @@ public class CachedRenderingChunk implements VertexBufferHost {
                 if (isFreshMesh) {
                     isFreshMesh = false;
                 }
-                System.out.println("CachedBlockEntityRenderingPipeline.isCameraMoved() = " + CachedBlockEntityRenderingPipeline.isCameraMoved());
+                Vector3f relativePos = cameraPosition.toVector3f().sub(chunkPos.getMinBlockX(), 0, chunkPos.getMinBlockZ());
+
+                ByteBufferBuilder builder = this.getSortingByteBufferBuilder(renderType);
                 ByteBufferBuilder.Result result = sortState.buildSortedIndexBuffer(
-                    this.getSortingByteBufferBuilder(renderType),
-                    VertexSorting.byDistance(cameraPosition.toVector3f())
-                    // ALRMeshSorting.byDistance(cameraPosition.toVector3f())
+                    builder,
+                     ALRMeshSorting.byDistance(relativePos)
                 );
 
+
                 if (result != null) {
-                    System.out.println("NEW RESULT!");
                     indices = getIndexBuffer(renderType, (long) sortState.indexType().bytes * indexCount);
-                    System.out.println("indices = " + indices);
                     RenderSystem.getDevice().createCommandEncoder().writeToBuffer(indices.slice(), result.byteBuffer());
                     indexType = sortState.indexType();
                     result.close();
+                    builder.clear();
                 } else {
                     RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.mode());
                     indices = autoIndices.getBuffer(indexCount);
@@ -295,7 +310,6 @@ public class CachedRenderingChunk implements VertexBufferHost {
         }
         return new IndexGenerationResult(indices, indexType);
     }
-
 
     public void forcedUpdate() {
         pipeline.submitCompileTask(new RebuildTask(this));

@@ -26,7 +26,7 @@ public class ALRMeshSorting {
             int[] indices = new int[points.size()];
 
             for (int i = 0; i < points.size(); i++) {
-                keys[i] = ~floatToSortableInt(origin.distanceSquared(points.get(i, vector3f)));
+                keys[i] = floatToSortableInt(origin.distanceSquared(points.get(i, vector3f)));
                 indices[i] = i;
             }
 
@@ -35,13 +35,12 @@ public class ALRMeshSorting {
             } else {
                 IntArrays.radixSortIndirect(indices, keys, true);
             }
-
             return indices;
         }
     }
 
     public static int floatToSortableInt(float f) {
         int b = Float.floatToRawIntBits(f);
-        return b ^ ((b >> 31) | 0x80000000);
+        return b ^ ((b >> 31) | 0x7fffffff);
     }
 }

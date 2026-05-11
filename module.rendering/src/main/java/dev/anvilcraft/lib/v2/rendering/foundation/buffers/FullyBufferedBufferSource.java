@@ -94,6 +94,7 @@ public class FullyBufferedBufferSource extends MultiBufferSource.BufferSource im
 
                 GpuBuffer vertexBuffer = host.getVertexBuffer(renderType, compiledVertices);
                 RenderSystem.getDevice().createCommandEncoder().writeToBuffer(vertexBuffer.slice(), mesh.vertexBuffer());
+                mesh.close();
             }
         }
         byteBuffer.close();

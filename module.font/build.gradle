@@ -1,15 +1,7 @@
-evaluationDependsOn(':anvillib-rendering-neoforge-26.1:renderdoc-loader-internal')
-
 dependencies {
     if (System.getenv("NOT_DEV") == 'true') {
         jarJar(api("dev.anvilcraft.lib:anvillib-rendering-neoforge-26.1:latest.release"))
     } else {
         jarJar(implementation project(":anvillib-rendering-neoforge-26.1"))
-    }
-}
-
-tasks.configureEach {
-    if (name == 'runClientRenderDoc') {
-        dependsOn ':anvillib-rendering-neoforge-26.1:renderdoc-loader-internal:jar'
     }
 }

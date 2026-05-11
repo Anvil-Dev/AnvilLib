@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.mixins;
 
 import com.mojang.blaze3d.platform.Window;
+import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
 import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
 import dev.anvilcraft.lib.v2.rendering.bloom.BloomPostEffect;
 import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
@@ -26,7 +27,7 @@ public class MinecraftMixin {
         at = @At("RETURN")
     )
     private void onCreateInstance(GameConfig gameConfig, CallbackInfo ci) {
-        AnvilLibRendering.createPipelines();
+        ALRPostEffects.createPostEffects();
     }
 
     @Inject(
@@ -34,7 +35,7 @@ public class MinecraftMixin {
         at = @At("RETURN")
     )
     private void onResizeGui(CallbackInfo ci) {
-        BloomPostEffect bloomPostEffect = AnvilLibRendering.getBloomPostEffect();
+        BloomPostEffect bloomPostEffect = ALRPostEffects.getBloomPostEffect();
         if (bloomPostEffect != null) {
             bloomPostEffect.resize(
                 this.window.getWidth(),

@@ -43,11 +43,6 @@ import java.util.OptionalInt;
 
 @SuppressWarnings({"FieldMayBeFinal", "SameParameterValue"})
 public class BloomPostEffect implements DirtyTracked {
-    public static final ResourceKey<PipelineModifier> REDIRECT_TO_BLOOM = ResourceKey.create(
-        PipelineModifier.MODIFIERS_KEY,
-        AnvilLibRendering.location("redirect_to_bloom")
-    );
-
     public static final int UNIFORM_TRANSFORM_SIZE = TransformsUbo.DEFINITION.size();
     public static final int UNIFORM_BLUR_SIZE = BlurParametersUbo.DEFINITION.size();
     public static final int UNIFORM_BLOOM_SIZE = BloomParametersUbo.DEFINITION.size();
