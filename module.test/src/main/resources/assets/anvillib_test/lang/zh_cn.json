@@ -1,7 +1,9 @@
 {
-  "key.categories.anvillib_test.wheel": "铁砧库 测试-轮盘",
-  "key.anvillib_test.wheel_tap": "轮盘（触发）",
+  "block.anvillib_test.test_bloom": "Test Bloom",
+  "item.anvillib_test.test_item": "Test Item",
   "key.anvillib_test.wheel_hold": "轮盘（长按）",
+  "key.anvillib_test.wheel_hold_annular": "轮盘（长按，扇形）",
+  "key.anvillib_test.wheel_tap": "轮盘（触发）",
   "key.anvillib_test.wheel_tap_annular": "轮盘（触发，扇形）",
-  "key.anvillib_test.wheel_hold_annular": "轮盘（长按，扇形）"
+  "key.categories.anvillib_test.wheel": "铁砧库 测试-轮盘"
 }

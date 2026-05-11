@@ -1,0 +1,9 @@
+{
+  "block.anvillib_test.test_bloom": "Test Bloom",
+  "item.anvillib_test.test_item": "Test Item",
+  "key.anvillib_test.wheel_hold": "Wheel Hold",
+  "key.anvillib_test.wheel_hold_annular": "Wheel Hold (Annular)",
+  "key.anvillib_test.wheel_tap": "Wheel Tap",
+  "key.anvillib_test.wheel_tap_annular": "Wheel Tap (Annular)",
+  "key.categories.anvillib_test.wheel": "AnvilLib Test-Wheel"
+}
