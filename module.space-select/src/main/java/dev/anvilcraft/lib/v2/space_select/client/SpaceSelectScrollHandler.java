@@ -1,0 +1,56 @@
+package dev.anvilcraft.lib.v2.space_select.client;
+
+import dev.anvilcraft.lib.v2.space_select.AnvilLibSpaceSelect;
+import dev.anvilcraft.lib.v2.space_select.District;
+import dev.anvilcraft.lib.v2.space_select.SpaceSelectItem;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.InputEvent;
+
+@EventBusSubscriber(modid = AnvilLibSpaceSelect.MOD_ID, value = Dist.CLIENT)
+public final class SpaceSelectScrollHandler {
+
+    private SpaceSelectScrollHandler() {
+    }
+
+    @SubscribeEvent
+    public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.screen != null) return;
+
+        boolean ctrlDown = mc.hasControlDown();
+        boolean altDown = mc.hasAltDown();
+        if (!ctrlDown && !altDown) return;
+
+        ItemStack heldStack = mc.player.getMainHandItem();
+        if (!(heldStack.getItem() instanceof SpaceSelectItem)) {
+            heldStack = mc.player.getOffhandItem();
+            if (!(heldStack.getItem() instanceof SpaceSelectItem)) return;
+        }
+
+        District district = AnvilLibSpaceSelectClient.MANAGER.getDistrictMap().get(heldStack);
+        if (district == null) return;
+
+        double scrollY = event.getScrollDeltaY();
+        if (scrollY == 0) return;
+        int scrollAmount = (int) Math.signum(scrollY);
+
+        Vec3 lookAngle = mc.player.getViewVector(1.0F);
+        Vec3 playerPos = mc.player.position();
+
+        if (ctrlDown) {
+            Direction.Axis axis = District.getPrimaryAxis(lookAngle);
+            district.scaleOnAxis(axis, scrollAmount, playerPos, lookAngle);
+            event.setCanceled(true);
+        } else {
+            Direction dir = Direction.getApproximateNearest(lookAngle.x, lookAngle.y, lookAngle.z);
+            district.move(dir, scrollAmount);
+            event.setCanceled(true);
+        }
+    }
+}

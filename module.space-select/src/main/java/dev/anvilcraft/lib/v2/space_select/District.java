@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.space_select;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.ARGB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -82,6 +83,61 @@ public record District(
             this.end().getY() + stepY,
             this.end().getZ() + stepZ
         );
+    }
+
+    public boolean contains(double x, double y, double z) {
+        return x >= this.start.getX() && x <= this.end.getX()
+            && y >= this.start.getY() && y <= this.end.getY()
+            && z >= this.start.getZ() && z <= this.end.getZ();
+    }
+
+    public static Direction.Axis getPrimaryAxis(Vec3 lookAngle) {
+        double absX = Math.abs(lookAngle.x);
+        double absY = Math.abs(lookAngle.y);
+        double absZ = Math.abs(lookAngle.z);
+        if (absX >= absY && absX >= absZ) return Direction.Axis.X;
+        if (absY >= absX && absY >= absZ) return Direction.Axis.Y;
+        return Direction.Axis.Z;
+    }
+
+    public void scaleOnAxis(Direction.Axis axis, int scrollAmount, Vec3 playerPos, Vec3 lookAngle) {
+        double playerCoord = axis.choose(playerPos.x, playerPos.y, playerPos.z);
+        double minCoord = axis.choose(this.start.getX(), this.start.getY(), this.start.getZ());
+        double maxCoord = axis.choose(this.end.getX(), this.end.getY(), this.end.getZ());
+        double lookComp = axis.choose(lookAngle.x, lookAngle.y, lookAngle.z);
+
+        boolean inside = playerCoord >= minCoord && playerCoord <= maxCoord;
+
+        int faceSign;
+        if (inside) {
+            faceSign = lookComp > 0 ? 1 : -1;
+        } else {
+            double distToMin = Math.abs(playerCoord - minCoord);
+            double distToMax = Math.abs(playerCoord - maxCoord);
+            faceSign = distToMin < distToMax ? -1 : 1;
+        }
+
+        int delta = faceSign * scrollAmount;
+
+        if (faceSign > 0) {
+            int newEnd = (int) maxCoord + delta;
+            if (newEnd >= (int) minCoord) {
+                setAxisCoord(this.end, axis, newEnd);
+            }
+        } else {
+            int newStart = (int) minCoord + delta;
+            if (newStart <= (int) maxCoord) {
+                setAxisCoord(this.start, axis, newStart);
+            }
+        }
+    }
+
+    private static void setAxisCoord(BlockPos.MutableBlockPos pos, Direction.Axis axis, int value) {
+        switch (axis) {
+            case X -> pos.setX(value);
+            case Y -> pos.setY(value);
+            case Z -> pos.setZ(value);
+        }
     }
 
     public VoxelShape shape() {
