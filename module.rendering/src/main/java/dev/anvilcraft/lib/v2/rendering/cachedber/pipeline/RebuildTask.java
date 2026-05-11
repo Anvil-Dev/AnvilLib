@@ -57,8 +57,7 @@ class RebuildTask implements Runnable {
                     renderState,
                     poseStack,
                     submitNodeStorage,
-                    minecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState,
-                    false
+                    minecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState
                 );
             }
 

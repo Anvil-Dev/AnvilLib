@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import dev.anvilcraft.lib.v2.rendering.cachedber.renderer.CachedBlockEntityRenderState;
 import dev.anvilcraft.lib.v2.rendering.cachedber.renderer.CachedBlockEntityRenderer;
+import dev.anvilcraft.lib.v2.rendering.foundation.BloomSubmitNodeStorage;
 import dev.anvilcraft.lib.v2.test.block.tile.TestCachedRenderingTile;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -18,6 +19,7 @@ import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RedstoneLampBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class TestCachedRenderer implements CachedBlockEntityRenderer<TestCachedRenderingTile, TestCachedRenderer.State> {
@@ -41,7 +43,7 @@ public class TestCachedRenderer implements CachedBlockEntityRenderer<TestCachedR
         );
         minecraft.getBlockModelResolver().update(
             state.blockModelRenderState,
-            Blocks.LIME_STAINED_GLASS.defaultBlockState(),
+            Blocks.SEA_LANTERN.defaultBlockState(),
             state.displayContext
         );
 
@@ -49,22 +51,28 @@ public class TestCachedRenderer implements CachedBlockEntityRenderer<TestCachedR
     }
 
     @Override
-    public void submit(State renderState, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera, boolean bloomed) {
+    public void submit(State renderState, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
         poseStack.pushPose();
-        poseStack.translate(0.5, 1.5, 0.5);
+        poseStack.translate(0.5, 1, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(90));
-        renderState.renderState.submit(poseStack, submitNodeCollector, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
+        renderState.renderState.submit(
+            poseStack,
+            submitNodeCollector,
+            LightCoordsUtil.FULL_BRIGHT,
+            OverlayTexture.NO_OVERLAY,
+            0
+        );
         poseStack.popPose();
-        for (int x = 0; x < 16; x++) {
-            for (int y = 0; y < 16; y++) {
-                for (int z = 0; z < 16; z++) {
-                    poseStack.pushPose();
-                    poseStack.translate(x, y, z);
-                    renderState.blockModelRenderState.submit(poseStack, submitNodeCollector, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
-                    poseStack.popPose();
-                }
-            }
-        }
+        poseStack.pushPose();
+        poseStack.translate(0, 1.5, 0);
+        renderState.blockModelRenderState.submit(
+            poseStack,
+            BloomSubmitNodeStorage.wrap(submitNodeCollector),
+            LightCoordsUtil.FULL_BRIGHT,
+            OverlayTexture.NO_OVERLAY,
+            0
+        );
+        poseStack.popPose();
     }
 
     public static class State extends CachedBlockEntityRenderState {

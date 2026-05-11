@@ -18,4 +18,10 @@ public interface ALRRenderTypeExtension {
     static boolean isRenderingBloomed(RenderType thiz) {
         return of(thiz).anvillib_rendering$bloomRendering();
     }
+
+    static RenderType copyWithBloom(RenderType that) {
+        RenderType newValue = RenderType.create(that.name, that.state);
+        setRenderingBloomed(newValue, true);
+        return newValue;
+    }
 }

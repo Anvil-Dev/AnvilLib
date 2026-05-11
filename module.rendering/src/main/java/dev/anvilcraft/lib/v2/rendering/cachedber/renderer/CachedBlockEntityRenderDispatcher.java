@@ -55,14 +55,13 @@ public class CachedBlockEntityRenderDispatcher {
         S renderState,
         PoseStack poseStack,
         SubmitNodeCollector submitNodeCollector,
-        CameraRenderState camera,
-        boolean bloomed
+        CameraRenderState camera
     ) {
         BlockEntityType<?> type = renderState.blockEntityType;
         CachedBlockEntityRenderer<?, S> renderer = (CachedBlockEntityRenderer) renderers.get(type);
         if (renderer == null) return;
 
-        renderer.submit(renderState, poseStack, submitNodeCollector, camera, bloomed);
+        renderer.submit(renderState, poseStack, submitNodeCollector, camera);
     }
 
     public boolean hasRenderer(BlockEntity be) {

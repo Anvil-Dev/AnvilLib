@@ -11,5 +11,5 @@ public interface CachedBlockEntityRenderer<T extends BlockEntity, S extends Cach
 
     S extractRenderState(T blockEntity, S state, float partialTicks, Camera camera);
 
-    void submit(S renderState, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera, boolean bloomed);
+    void submit(S renderState, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera);
 }
