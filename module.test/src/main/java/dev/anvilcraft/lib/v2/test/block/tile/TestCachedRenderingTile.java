@@ -15,7 +15,11 @@ public class TestCachedRenderingTile extends BlockEntity {
     public void setRemoved() {
         super.setRemoved();
         if (this.level.isClientSide()) {
-            CachedBlockEntityRenderingPipeline.getInstance().blockRemoved(this);
+            onClientRemove();
         }
+    }
+
+    private void onClientRemove() {
+        CachedBlockEntityRenderingPipeline.getInstance().blockRemoved(this);
     }
 }

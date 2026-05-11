@@ -11,16 +11,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.neoforge.client.extensions.IBlockEntityRendererExtension;
-import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.PrimitiveIterator;
 import java.util.Queue;
 
 /**
@@ -87,10 +83,7 @@ public class CachedBlockEntityRenderingPipeline {
      * @param be The removed {@link BlockEntity}
      */
     public void blockRemoved(BlockEntity be) {
-        IBlockEntityRendererExtension<?> renderer = Minecraft.getInstance()
-            .getBlockEntityRenderDispatcher()
-            .getRenderer(be);
-        if (renderer == null) return;
+        if (!CachedBlockEntityRenderDispatcher.INSTANCE.hasRenderer(be)) return;
         ChunkPos chunkPos = ChunkPos.containing(be.getBlockPos());
         getRenderRegion(chunkPos).blockRemoved(be);
     }

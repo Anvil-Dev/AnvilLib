@@ -52,7 +52,7 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
-        if (properties.get("anvillib.clientRenderDocRun")) {
+        if (project.properties.get("anvillib.clientRenderDocRun").toString() == "true") {
 
             renderDocClient {
                 client()
@@ -243,7 +243,7 @@ lombok {
 }
 
 tasks.configureEach {
-    if (name == 'runClientRenderDoc') {
-        dependsOn 'renderdoc-loader-internal:jar'
+    if (name == 'runRenderDocClient') {
+        dependsOn rootProject.project('renderdoc-loader-internal').tasks.getByName('jar')
     }
 }
