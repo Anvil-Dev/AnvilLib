@@ -14,6 +14,14 @@ on:
       - settings.gradle
 
 jobs:
+  codec:
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: codec
+      module_id: anvillib-codec
+      mod_id: anvillib_codec
+      ci_build: true
+      pr_build: true
   config:
     uses: ./.github/workflows/build_and_test.yml
     with:
@@ -22,12 +30,14 @@ jobs:
       mod_id: anvillib_config
       ci_build: true
       pr_build: true
-  codec:
+  font:
+    needs:
+      - rendering
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: codec
-      module_id: anvillib-codec
-      mod_id: anvillib_codec
+      module: font
+      module_id: anvillib-font
+      mod_id: anvillib_font
       ci_build: true
       pr_build: true
   integration:
@@ -49,8 +59,8 @@ jobs:
   multiblock:
     uses: ./.github/workflows/build_and_test.yml
     needs:
-      - config
       - codec
+      - config
       - network
       - util
     with:
@@ -69,32 +79,14 @@ jobs:
       pr_build: true
   recipe:
     needs:
-      - config
       - codec
+      - config
       - util
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: recipe
       module_id: anvillib-recipe
       mod_id: anvillib_recipe
-      ci_build: true
-      pr_build: true
-  font:
-    needs:
-      - rendering
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: font
-      module_id: anvillib-font
-      mod_id: anvillib_font
-      ci_build: true
-      pr_build: true
-  rendering:
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: rendering
-      module_id: anvillib-rendering
-      mod_id: anvillib_rendering
       ci_build: true
       pr_build: true
   registrum:
@@ -105,6 +97,34 @@ jobs:
       module: registrum
       module_id: anvillib-registrum
       mod_id: anvillib_registrum
+      ci_build: true
+      pr_build: true
+  rendering:
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: rendering
+      module_id: anvillib-rendering
+      mod_id: anvillib_rendering
+      ci_build: true
+      pr_build: true
+  space-select:
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: space-select
+      module_id: anvillib-space-select
+      mod_id: anvillib_space_select
+      ci_build: true
+      pr_build: true
+  sync:
+    uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - codec
+      - network
+      - util
+    with:
+      module: sync
+      module_id: anvillib-sync
+      mod_id: anvillib_sync
       ci_build: true
       pr_build: true
   util:
@@ -120,41 +140,30 @@ jobs:
   wheel:
     uses: ./.github/workflows/build_and_test.yml
     needs:
-      - util
       - rendering
+      - util
     with:
       module: wheel
       module_id: anvillib-wheel
       mod_id: anvillib_wheel
       ci_build: true
       pr_build: true
-  sync:
-    uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - util
-      - codec
-      - network
-    with:
-      module: sync
-      module_id: anvillib-sync
-      mod_id: anvillib_sync
-      ci_build: true
-      pr_build: true
   main:
     needs:
-      - config
       - codec
+      - config
+      - font
       - integration
       - moveable-entity-block
       - multiblock
       - network
       - recipe
-      - rendering
       - registrum
+      - rendering
+      - space-select
+      - sync
       - util
       - wheel
-      - sync
-      - font
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: main

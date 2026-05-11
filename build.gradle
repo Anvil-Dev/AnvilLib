@@ -24,14 +24,15 @@ tasks.register("createModule") {
     if (id.matches("[A-Z]+")) {
         throw new GradleException("Id cannot be all uppercase.")
     }
-    String name = id.substring(0, 1).toUpperCase() + id.substring(1)
-    String mod_id = "anvillib_$id"
-    String mod_name = "AnvilLib-$name"
-    String class_name = "AnvilLib$name"
+    String underlinedId = id.replace('-', '_')
+    String mod_id = "anvillib_$underlinedId"
+    String bigHumpName = id.split('-').collect { it.substring(0, 1).toUpperCase() + it.substring(1) }.join()
+    String mod_name = "AnvilLib-$bigHumpName"
+    String class_name = "AnvilLib$bigHumpName"
     File buildGradle = file("module.$id/build.gradle")
     File gradleProperties = file("module.$id/gradle.properties")
-    File mainClass = file("module.$id/src/main/java/dev/anvilcraft/lib/v2/$id/${class_name}.java")
-    File packageInfo = file("module.$id/src/main/java/dev/anvilcraft/lib/v2/$id/package-info.java")
+    File mainClass = file("module.$id/src/main/java/dev/anvilcraft/lib/v2/$underlinedId/${class_name}.java")
+    File packageInfo = file("module.$id/src/main/java/dev/anvilcraft/lib/v2/$underlinedId/package-info.java")
     File modInfoPath = file("module.$id/src/main/resources/META-INF/")
     File mixinConfig = file("module.$id/src/main/resources/${mod_id}.mixins.json")
     buildGradle.parentFile.mkdirs()
@@ -66,7 +67,7 @@ tasks.register("createModule") {
     )
     mainClass.write(
             """
-            package dev.anvilcraft.lib.v2.$id;
+            package dev.anvilcraft.lib.v2.$underlinedId;
             
             import net.minecraft.resources.Identifier;
             import net.neoforged.fml.common.Mod;
@@ -84,7 +85,7 @@ tasks.register("createModule") {
     packageInfo.write(
             """
             @NullMarked
-            package dev.anvilcraft.lib.v2;
+            package dev.anvilcraft.lib.v2.$underlinedId;
             
             import org.jspecify.annotations.NullMarked;
             """.stripIndent().trim()
@@ -94,7 +95,7 @@ tasks.register("createModule") {
             {
               "required": true,
               "minVersion": "0.8",
-              "package": "dev.anvilcraft.lib.v2.${id}.mixin",
+              "package": "dev.anvilcraft.lib.v2.${underlinedId}.mixin",
               "compatibilityLevel": "JAVA_8",
               "refmap": "anvillib.refmap.json",
               "mixins": [
