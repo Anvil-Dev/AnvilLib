@@ -62,6 +62,16 @@ public class Dropdown extends AbstractWidget {
         this.value = value;
     }
 
+
+    public void setValue(@Nullable String value) {
+        for (DropdownEntry allow : this.allows) {
+            if (Objects.equals(allow.id, value)) {
+                this.setValue(allow);
+                return;
+            }
+        }
+    }
+
     public @Nullable DropdownEntry getValue() {
         return this.value;
     }

@@ -11,7 +11,9 @@ import java.awt.GraphicsEnvironment;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -20,8 +22,18 @@ import javax.swing.UIManager;
 @Slf4j
 @Getter
 public class FontManager {
+    private static final List<String> DEFAULT_FONTS = List.of(
+        "HarmonyOS Sans SC",
+        "Microsoft YaHei",
+        "微软雅黑",
+        "PingFang",
+        "苹方",
+        "Cantarell",
+        "Noto Sans"
+    );
     public static final FontManager INSTANCE = new FontManager();
-    private final Map<String, Font> fontMap = new HashMap<>();
+    private final Map<String, Font> fontByName = new HashMap<>();
+    private final Map<Font, String> familyByFont = new HashMap<>();
     private final Multimap<String, Font> fontMultimap;
     private final Font defaultFont;
 
@@ -29,20 +41,40 @@ public class FontManager {
         GraphicsEnvironment graphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
         Font[] allFonts = graphicsEnvironment.getAllFonts();
         for (Font font : allFonts) {
-            fontMap.put(font.getFontName(), font);
+            fontByName.put(font.getFontName(), font);
         }
-        this.fontMultimap = FontTrieNode.process(this.fontMap.values());
+        this.fontMultimap = FontTrieNode.process(this.fontByName.values());
         log.info("fontMultimap: {}", this.fontMultimap);
+        this.fontMultimap.forEach((k, v) -> this.familyByFont.put(v, k));
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
             log.error(e.getLocalizedMessage(), e);
         }
-        this.defaultFont = UIManager.getFont("Label.font");
+        Font defaultFont = null;
+        for (String font : FontManager.DEFAULT_FONTS) {
+            if (defaultFont != null) break;
+            defaultFont = this.getFont(font);
+        }
+        if (defaultFont == null) {
+            defaultFont = UIManager.getFont("Label.font");
+        }
+        this.defaultFont = Objects.requireNonNullElseGet(
+            defaultFont,
+            () -> this.fontByName.values().stream().findFirst().orElseThrow(() -> new RuntimeException("No fonts found"))
+        );
     }
 
     public Collection<String> getFamilyNames() {
         return this.fontMultimap.keySet();
+    }
+
+    public String getFamilyName(Font font) {
+        return this.familyByFont.getOrDefault(font, font.getFontName());
+    }
+
+    public String getDefaultFontFamily() {
+        return this.getFamilyName(this.getDefaultFont());
     }
 
     public Collection<String> getFamilyFontNames(String familyName) {
@@ -51,7 +83,7 @@ public class FontManager {
     }
 
     public Font getFont(@Nullable String name) {
-        return name == null || !this.fontMap.containsKey(name) ? this.getDefaultFont() : this.fontMap.get(name);
+        return name == null || !this.fontByName.containsKey(name) ? this.getDefaultFont() : this.fontByName.get(name);
     }
 
     static class FontTrieNode {

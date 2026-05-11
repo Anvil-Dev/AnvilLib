@@ -13,6 +13,7 @@ import java.awt.Font;
 @EventBusSubscriber
 @Mod(value = AnvilLibFont.MOD_ID, dist = Dist.CLIENT)
 public class AnvilLibFont {
+    public static final String MAIN_ID = "anvillib";
     public static final String MOD_ID = "anvillib_font";
     public static final AnvilLibFontConfig CONFIG = new AnvilLibFontConfig();
 

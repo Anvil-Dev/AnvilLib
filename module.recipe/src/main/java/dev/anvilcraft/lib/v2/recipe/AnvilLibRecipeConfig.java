@@ -4,7 +4,7 @@ import dev.anvilcraft.lib.v2.config.BoundedDiscrete;
 import dev.anvilcraft.lib.v2.config.Comment;
 import dev.anvilcraft.lib.v2.config.Config;
 
-@Config(name = AnvilLibRecipe.MOD_ID)
+@Config(group = AnvilLibRecipe.MAIN_ID, name = AnvilLibRecipe.MOD_ID)
 public class AnvilLibRecipeConfig {
     @Comment("Maximum efficiency of in world recipes")
     @BoundedDiscrete(min = 1, max = 128)

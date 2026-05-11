@@ -64,6 +64,7 @@ public class ConfigManager {
         if (configClass.isAnnotationPresent(Config.class)) {
             Config config = configClass.getAnnotation(Config.class);
             String name = config.name();
+            String group = config.group();
             ModConfig.Type type = config.type();
             ImmutableList.Builder<ConfigField> valuesBuilder = ImmutableList.builder();
             try {
@@ -72,7 +73,7 @@ public class ConfigManager {
                 log.error(e.getMessage(), e);
             }
             ModConfigSpec spec = builder.build();
-            this.configSpecMap.put(configObj, new ConfigRecord(name, type, spec, configObj, valuesBuilder.build()));
+            this.configSpecMap.put(configObj, new ConfigRecord(group, name, type, spec, configObj, valuesBuilder.build()));
         }
         return configObj;
     }

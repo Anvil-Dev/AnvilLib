@@ -1,8 +1,11 @@
 package dev.anvilcraft.lib.v2.test;
 
 import dev.anvilcraft.lib.v2.registrum.Registrum;
+import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
 import dev.anvilcraft.lib.v2.test.all.TestBlocks;
+import dev.anvilcraft.lib.v2.test.all.TestItems;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
+import dev.anvilcraft.lib.v2.test.data.LangHandler;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -11,6 +14,7 @@ import net.neoforged.fml.common.Mod;
 public class AnvilLibTest {
     public static final String MOD_ID = "anvillib_test";
     public static final Registrum REGISTRUM = Registrum.create(MOD_ID);
+
     public static Identifier of(String path) {
         return Identifier.fromNamespaceAndPath(AnvilLibTest.MOD_ID, path);
     }
@@ -18,5 +22,7 @@ public class AnvilLibTest {
     public AnvilLibTest(IEventBus modBus) {
         TestBlocks.setupRegistration();
         TestTiles.setupRegistration();
+        TestItems.setupRegistration();
+        REGISTRUM.addDataGenerator(ProviderType.LANG, LangHandler::addLang);
     }
 }

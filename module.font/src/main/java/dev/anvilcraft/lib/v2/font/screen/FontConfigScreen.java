@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.font.screen;
 
 import dev.anvilcraft.lib.v2.font.AnvilLibFont;
+import dev.anvilcraft.lib.v2.font.AnvilLibFontConfig;
 import dev.anvilcraft.lib.v2.font.FontManager;
 import dev.anvilcraft.lib.v2.font.screen.widget.Dropdown;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -92,8 +93,11 @@ public class FontConfigScreen extends Screen {
             AnvilLibFont.CONFIG.setFont(entry.id());
             this.updateSelectedFont(entry);
         });
+        this.familyDropdown.setValue(AnvilLibFont.CONFIG.getFontFamily());
 
         this.refreshFontOptions(this.familyDropdown.getValueId(), AnvilLibFont.CONFIG.getFont(), false);
+
+        this.familyDropdown.setValue(AnvilLibFont.CONFIG.getFont());
 
         this.addRenderableWidget(this.testBtn);
         this.addRenderableWidget(this.fontDropdown);
