@@ -112,7 +112,7 @@ public class CreativeTabBuilder<P> extends AbstractBuilder<CreativeModeTab, Crea
 
     public CreativeTabBuilder<P> withSearchBar(int searchBarWidth) {
         this.builder = this.builder.withSearchBar(searchBarWidth);
-        return this.withSearchBar();
+        return this;
     }
 
     public CreativeTabBuilder<P> withScrollBarSpriteLocation(Identifier scrollBarSpriteLocation) {
