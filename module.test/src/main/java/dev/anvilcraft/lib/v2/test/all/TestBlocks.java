@@ -39,20 +39,31 @@ public class TestBlocks {
 
     public static final BlockEntry<TestCachedRenderingBlock> TEST_CACHED_RENDERING = AnvilLibTest.REGISTRUM
         .block("test_cached_rendering", TestCachedRenderingBlock::new)
-        .properties(p -> p.noOcclusion().noCollision()).blockstate(() -> (ctx, gen) -> {
-            Identifier model = gen.withParent(ModelTemplates.SLAB_BOTTOM)
-                .texture(TextureSlot.BOTTOM, Identifier.withDefaultNamespace("block/dirt"), false)
-                .texture(TextureSlot.TOP, Identifier.withDefaultNamespace("block/dirt"), false)
-                .texture(TextureSlot.SIDE, Identifier.withDefaultNamespace("block/dirt"), false)
-                .build(ctx.get());
-
-            MultiVariantGenerator generator = MultiVariantGenerator.dispatch(ctx.get())
-                .with(PropertyDispatch.initial(TestCachedRenderingBlock.UP)
-                    .select(false, BlockModelGenerators.plainVariant(model))
-                    .select(true, BlockModelGenerators.plainVariant(model).with(VariantMutator.X_ROT.withValue(Quadrant.R180)))
-                );
-            gen.blockStateOutput.accept(generator);
-        })
+        .properties(p -> p.noOcclusion().noCollision())
+        .blockstate(() -> (ctx, provider) -> provider.blockStateOutput.accept(
+            BlockModelGenerators.createSimpleBlock(
+                ctx.get(),
+                BlockModelGenerators.plainVariant(provider.withParent(ModelTemplates.SLAB_BOTTOM)
+                    .texture(TextureSlot.BOTTOM, Identifier.withDefaultNamespace("block/dirt"), false)
+                    .texture(TextureSlot.TOP, Identifier.withDefaultNamespace("block/dirt"), false)
+                    .texture(TextureSlot.SIDE, Identifier.withDefaultNamespace("block/dirt"), false)
+                    .build(ctx.get()))
+            )
+        ))
+//        .blockstate(() -> (_, _) -> {
+//            Identifier model = gen.withParent(ModelTemplates.SLAB_BOTTOM)
+//                .texture(TextureSlot.BOTTOM, Identifier.withDefaultNamespace("block/dirt"), false)
+//                .texture(TextureSlot.TOP, Identifier.withDefaultNamespace("block/dirt"), false)
+//                .texture(TextureSlot.SIDE, Identifier.withDefaultNamespace("block/dirt"), false)
+//                .build(ctx.get());
+//
+//            MultiVariantGenerator generator = MultiVariantGenerator.dispatch(ctx.get())
+//                .with(PropertyDispatch.initial(TestCachedRenderingBlock.UP)
+//                    .select(false, BlockModelGenerators.plainVariant(model))
+//                    .select(true, BlockModelGenerators.plainVariant(model).with(VariantMutator.X_ROT.withValue(Quadrant.R180)))
+//                );
+//            gen.blockStateOutput.accept(generator);
+//        })
         .simpleItem()
         .register();
 
