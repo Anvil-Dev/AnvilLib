@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.space_select;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.ARGB;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -100,13 +101,15 @@ public record District(
         return Direction.Axis.Z;
     }
 
-    public void scaleOnAxis(Direction.Axis axis, int scrollAmount, Vec3 playerPos, Vec3 lookAngle) {
+    public void scaleOnAxis(Direction.Axis axis, int scrollAmount, Vec3 playerPos, AABB boundingBox, Vec3 lookAngle) {
         double playerCoord = axis.choose(playerPos.x, playerPos.y, playerPos.z);
+        double minPlayerCoord = axis.choose(boundingBox.minX, boundingBox.minY, boundingBox.minZ);
+        double maxPlayerCoord = axis.choose(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ);
         double minCoord = axis.choose(this.start.getX(), this.start.getY(), this.start.getZ());
         double maxCoord = axis.choose(this.end.getX(), this.end.getY(), this.end.getZ());
         double lookComp = axis.choose(lookAngle.x, lookAngle.y, lookAngle.z);
 
-        boolean inside = playerCoord >= minCoord && playerCoord <= maxCoord + 1;
+        boolean inside = maxPlayerCoord >= minCoord && minPlayerCoord <= maxCoord + 1;
 
         int faceSign;
         if (inside) {

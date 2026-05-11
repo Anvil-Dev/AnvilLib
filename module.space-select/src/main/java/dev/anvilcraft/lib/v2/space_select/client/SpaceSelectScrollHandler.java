@@ -6,6 +6,7 @@ import dev.anvilcraft.lib.v2.space_select.SpaceSelectItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -42,10 +43,11 @@ public final class SpaceSelectScrollHandler {
 
         Vec3 lookAngle = mc.player.getViewVector(1.0F);
         Vec3 playerPos = mc.player.position();
+        AABB boundingBox = mc.player.getBoundingBox();
 
         if (ctrlDown) {
             Direction.Axis axis = District.getPrimaryAxis(lookAngle);
-            district.scaleOnAxis(axis, scrollAmount, playerPos, lookAngle);
+            district.scaleOnAxis(axis, scrollAmount, playerPos, boundingBox, lookAngle);
             event.setCanceled(true);
         } else {
             Direction dir = Direction.getApproximateNearest(lookAngle.x, lookAngle.y, lookAngle.z);
