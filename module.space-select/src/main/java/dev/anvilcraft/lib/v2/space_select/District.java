@@ -87,8 +87,8 @@ public record District(
 
     public boolean contains(double x, double y, double z) {
         return x >= this.start.getX() && x <= this.end.getX()
-            && y >= this.start.getY() && y <= this.end.getY()
-            && z >= this.start.getZ() && z <= this.end.getZ();
+               && y >= this.start.getY() && y <= this.end.getY()
+               && z >= this.start.getZ() && z <= this.end.getZ();
     }
 
     public static Direction.Axis getPrimaryAxis(Vec3 lookAngle) {
@@ -106,14 +106,14 @@ public record District(
         double maxCoord = axis.choose(this.end.getX(), this.end.getY(), this.end.getZ());
         double lookComp = axis.choose(lookAngle.x, lookAngle.y, lookAngle.z);
 
-        boolean inside = playerCoord >= minCoord && playerCoord <= maxCoord;
+        boolean inside = playerCoord >= minCoord && playerCoord <= maxCoord + 1;
 
         int faceSign;
         if (inside) {
             faceSign = lookComp > 0 ? 1 : -1;
         } else {
             double distToMin = Math.abs(playerCoord - minCoord);
-            double distToMax = Math.abs(playerCoord - maxCoord);
+            double distToMax = Math.abs(playerCoord - maxCoord + 1);
             faceSign = distToMin < distToMax ? -1 : 1;
         }
 
