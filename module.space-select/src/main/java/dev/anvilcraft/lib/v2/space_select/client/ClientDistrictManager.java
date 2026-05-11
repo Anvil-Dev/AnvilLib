@@ -44,6 +44,12 @@ public class ClientDistrictManager extends DistrictManager {
         }
     }
 
+    @Override
+    public void clear(ItemStack stack) {
+        super.clear(stack);
+        this.selectingMap.remove(stack);
+    }
+
     public @Nullable District getTempDistrict() {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
