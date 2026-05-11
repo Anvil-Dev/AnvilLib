@@ -68,8 +68,10 @@ import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Util;
@@ -82,6 +84,9 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -1642,6 +1647,23 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      */
     public <T extends ICondition> ConditionBuilder<T, S> condition(String name, MapCodec<T> codec) {
         return condition(self(), name, codec);
+    }
+
+    // Recipe Type and Recipe Serializer
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends Recipe<?>> Pair<NoConfigBuilder<RecipeType<?>, RecipeType<Recipe<?>>, S>, NoConfigBuilder<RecipeSerializer<?>, RecipeSerializer<T>, S>> recipe(String name, MapCodec<T> codec, StreamCodec<RegistryFriendlyByteBuf, T> streamCodec) {
+
+        return Pair.of(generic(name + "_type", Registries.RECIPE_TYPE, () -> new RecipeType<>() {
+            @Override
+            public String toString() {
+                return modid + ":" + name;
+            }
+        }), generic(name + "_serializer", Registries.RECIPE_SERIALIZER, () -> new RecipeSerializer<>(codec, streamCodec)));
     }
 
 }
