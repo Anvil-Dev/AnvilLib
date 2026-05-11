@@ -29,6 +29,7 @@ import net.neoforged.fml.LogicalSide;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+@SuppressWarnings("unused")
 public interface RegistrumTagsProvider<T> extends RegistrumLookupFillerProvider {
 
     CompletableFuture<TagsProvider.TagLookup<T>> contentsGetter();

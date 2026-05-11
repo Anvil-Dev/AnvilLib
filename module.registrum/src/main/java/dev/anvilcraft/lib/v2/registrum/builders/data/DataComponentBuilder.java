@@ -35,8 +35,10 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+@SuppressWarnings("unused")
 public class DataComponentBuilder<E, P> extends AbstractBuilder<DataComponentType<?>, DataComponentType<E>, P, DataComponentBuilder<E, P>> {
     final DataComponentType.Builder<E> builder;
+
     public DataComponentBuilder(AbstractRegistrum<?> owner, P parent, String name, BuilderCallback callback) {
         super(owner, parent, name, callback, Registries.DATA_COMPONENT_TYPE);
         builder = DataComponentType.builder();

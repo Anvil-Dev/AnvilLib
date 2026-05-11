@@ -27,12 +27,14 @@ import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+@SuppressWarnings("unused")
 @RequiredArgsConstructor
 @Log4j2
 public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullType T> {
@@ -56,7 +58,9 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
             if (!waitingModListeners.contains(owner, evtClass)) {
                 waitingModListeners.put(owner, evtClass, new ArrayList<>());
             }
-            waitingModListeners.get(owner, evtClass).add(Pair.of(priority, listener));
+            List<Pair<EventPriority, Consumer<?>>> pairs = waitingModListeners.get(owner, evtClass);
+            if (pairs == null) return;
+            pairs.add(Pair.of(priority, listener));
             return;
         }
         if (!seenModBus) {
@@ -90,7 +94,12 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
         OneTimeEventReceiver.<T>addListener(bus, EventPriority.NORMAL, evtClass, listener);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings(
+        {
+            "unchecked",
+            "DeprecatedIsStillUsed"
+        }
+    )
     @Deprecated
     public static <T extends Event> void addListener(
         IEventBus bus,
@@ -116,9 +125,9 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
         }
     }
 
-    private static final List<Triple<IEventBus, Object, Class<? extends Event>>> toUnregister = new ArrayList<>();
+    private static final List<Triple<@Nullable IEventBus, Object, Class<? extends Event>>> toUnregister = new ArrayList<>();
 
-    private static synchronized void unregister(IEventBus bus, Object listener, Event event) {
+    private static synchronized void unregister(@Nullable IEventBus bus, Object listener, Event event) {
         unregister(bus, listener, event.getClass());
     }
 
@@ -126,13 +135,15 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
         unregister(owner.getModEventBus(), listener, event);
     }
 
-    private static synchronized void unregister(IEventBus bus, Object listener, Class<? extends Event> event) {
+    private static synchronized void unregister(@Nullable IEventBus bus, Object listener, Class<? extends Event> event) {
         toUnregister.add(Triple.of(bus, listener, event));
     }
 
     private static void onLoadComplete(FMLLoadCompleteEvent event) {
         event.enqueueWork(() -> {
-            toUnregister.forEach(t -> t.getLeft().unregister(t.getMiddle()));
+            toUnregister.forEach(t -> {
+                if (t.getLeft() != null) t.getLeft().unregister(t.getMiddle());
+            });
             toUnregister.clear();
         });
     }

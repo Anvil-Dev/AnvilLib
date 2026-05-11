@@ -16,6 +16,7 @@ package dev.anvilcraft.lib.v2.registrum.providers;
 import net.minecraft.data.DataProvider;
 import net.minecraft.resources.Identifier;
 
+@SuppressWarnings("unused")
 public interface RegistrumProviderDelegate<R, T extends R> extends DataProvider {
 
     String getName();

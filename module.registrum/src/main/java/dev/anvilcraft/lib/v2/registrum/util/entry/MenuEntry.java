@@ -26,6 +26,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.function.Consumer;
 
+@SuppressWarnings("unused")
 public class MenuEntry<T extends AbstractContainerMenu> extends RegistryEntry<MenuType<?>, MenuType<T>> {
 
     public MenuEntry(AbstractRegistrum<?> owner, DeferredHolder<MenuType<?>, MenuType<T>> delegate) {

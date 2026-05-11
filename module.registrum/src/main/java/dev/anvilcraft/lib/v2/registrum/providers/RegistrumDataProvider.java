@@ -92,7 +92,7 @@ public class RegistrumDataProvider implements DataProvider {
 
     @Override
     public CompletableFuture<?> run(CachedOutput cache) {
-        return registriesLookup.thenCompose(provider -> {
+        return registriesLookup.thenCompose(_ -> {
             var list = Lists.<CompletableFuture<?>>newArrayList();
 
             for (Map.Entry<@NonnullType ProviderType<?>, RegistrumProvider> e : subProviders.entrySet()) {

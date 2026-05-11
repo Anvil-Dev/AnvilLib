@@ -24,6 +24,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
+@SuppressWarnings("unused")
 public class RegistrumRecipeRunner extends RecipeProvider.Runner implements RegistrumProvider {
 
     final AbstractRegistrum<?> owner;

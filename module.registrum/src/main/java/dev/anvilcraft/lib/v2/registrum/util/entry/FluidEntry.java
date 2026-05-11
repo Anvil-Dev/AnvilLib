@@ -25,6 +25,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
+@SuppressWarnings("unused")
 public class FluidEntry<T extends BaseFlowingFluid> extends RegistryEntry<Fluid, T> {
 
     private final @Nullable BlockEntry<? extends Block> block;
@@ -34,7 +35,7 @@ public class FluidEntry<T extends BaseFlowingFluid> extends RegistryEntry<Fluid,
         BlockEntry<? extends Block> block = null;
         try {
             block = BlockEntry.cast(getSibling(BuiltInRegistries.BLOCK));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
         } // TODO add way to get entry optionally
         this.block = block;
     }
@@ -70,6 +71,6 @@ public class FluidEntry<T extends BaseFlowingFluid> extends RegistryEntry<Fluid,
         }
     )
     public <I extends Item> Optional<I> getBucket() {
-        return Optional.ofNullable((I) get().getBucket());
+        return Optional.of((I) get().getBucket());
     }
 }

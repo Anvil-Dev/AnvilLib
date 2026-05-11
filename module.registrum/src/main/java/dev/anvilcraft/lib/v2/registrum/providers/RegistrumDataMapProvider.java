@@ -41,7 +41,7 @@ public class RegistrumDataMapProvider extends DataMapProvider implements Registr
     /**
      * Generate data map entries.
      *
-     * @param provider
+     * @param provider HolderLookup.Provider
      */
     @Override
     protected void gather(HolderLookup.Provider provider) {

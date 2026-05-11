@@ -49,7 +49,12 @@ import java.util.function.Function;
  * @param <T> The type of the provider
  */
 @FunctionalInterface
-@SuppressWarnings("deprecation")
+@SuppressWarnings(
+    {
+        "deprecation",
+        "unused"
+    }
+)
 public interface ProviderType<T extends RegistrumProvider> extends GeneratorType<T> {
 
     // SERVER DATA

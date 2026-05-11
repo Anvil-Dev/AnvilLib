@@ -33,7 +33,8 @@ import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
-public class GlobalLootModifierBuilder<T extends IGlobalLootModifier, P> extends AbstractBuilder<MapCodec<? extends IGlobalLootModifier>, MapCodec<T>, P, GlobalLootModifierBuilder<T, P>> {
+public class GlobalLootModifierBuilder<T extends IGlobalLootModifier, P>
+    extends AbstractBuilder<MapCodec<? extends IGlobalLootModifier>, MapCodec<T>, P, GlobalLootModifierBuilder<T, P>> {
 
     final MapCodec<T> codec;
 

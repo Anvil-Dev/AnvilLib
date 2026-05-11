@@ -46,6 +46,7 @@ import org.jspecify.annotations.Nullable;
  * @param <T> The type of block entity being built
  * @param <P> Parent object type
  */
+@SuppressWarnings("unused")
 public class BlockEntityBuilder<T extends BlockEntity, P>
     extends AbstractBuilder<BlockEntityType<?>, BlockEntityType<T>, P, BlockEntityBuilder<T, P>> {
 

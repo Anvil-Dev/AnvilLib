@@ -63,6 +63,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
+@SuppressWarnings("unused")
 public class RegistrumRecipeProvider extends RecipeProvider implements RecipeOutput {
 
     private final RegistrumRecipeRunner runner;
@@ -315,9 +316,6 @@ public class RegistrumRecipeProvider extends RecipeProvider implements RecipeOut
     }
 
     /**
-     * @param <T>
-     * @param source
-     * @param output
      * @deprecated Broken, use {@link #storage(NonNullSupplier, RecipeCategory, NonNullSupplier)} or {@link #storage(DataIngredient, RecipeCategory, NonNullSupplier, DataIngredient, NonNullSupplier)}.
      */
     @Deprecated

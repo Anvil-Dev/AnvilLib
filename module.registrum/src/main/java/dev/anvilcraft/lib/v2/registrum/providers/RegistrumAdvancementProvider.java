@@ -44,6 +44,7 @@ import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 @Log4j2
+@SuppressWarnings("unused")
 public class RegistrumAdvancementProvider implements RegistrumProvider, Consumer<AdvancementHolder> {
 
     private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
@@ -53,7 +54,7 @@ public class RegistrumAdvancementProvider implements RegistrumProvider, Consumer
     private final CompletableFuture<HolderLookup.Provider> registriesLookup;
     private final List<CompletableFuture<?>> advancementsToSave = Lists.newArrayList();
     @Getter
-    private HolderLookup.Provider provider;
+    private HolderLookup.@Nullable Provider provider;
 
     public RegistrumAdvancementProvider(
         AbstractRegistrum<?> owner,
@@ -66,7 +67,7 @@ public class RegistrumAdvancementProvider implements RegistrumProvider, Consumer
     }
 
     public <T> Holder<T> resolve(ResourceKey<T> key) {
-        return provider.lookupOrThrow(key.registryKey()).getOrThrow(key);
+        return Objects.requireNonNull(this.provider).lookupOrThrow(key.registryKey()).getOrThrow(key);
     }
 
     @Override
@@ -83,7 +84,7 @@ public class RegistrumAdvancementProvider implements RegistrumProvider, Consumer
     }
 
     private @Nullable CachedOutput cache;
-    private Set<Identifier> seenAdvancements = new HashSet<>();
+    private final Set<Identifier> seenAdvancements = new HashSet<>();
 
     @Override
     public CompletableFuture<?> run(CachedOutput cache) {

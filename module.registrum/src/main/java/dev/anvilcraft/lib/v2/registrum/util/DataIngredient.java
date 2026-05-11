@@ -39,6 +39,7 @@ import java.util.function.Supplier;
  * <p>
  * <strong>This class should not be used for any purpose other than data generation</strong>, it will throw an exception if it is serialized to a packet buffer.
  */
+@SuppressWarnings("unused")
 public final class DataIngredient {
 
     //TODO <1.21.5> removed delegate. Is there a need to add it back?
@@ -62,7 +63,7 @@ public final class DataIngredient {
     private DataIngredient(Ingredient parent, Identifier id, ItemPredicate... predicates) {
         this.parent = parent;
         this.id = id;
-        this.criteriaFactory = prov -> RegistrumRecipeProvider.inventoryTrigger(predicates);
+        this.criteriaFactory = _ -> RegistrumRecipeProvider.inventoryTrigger(predicates);
     }
 
     public Criterion<InventoryChangeTrigger.TriggerInstance> getCriterion(RegistrumRecipeProvider prov) {

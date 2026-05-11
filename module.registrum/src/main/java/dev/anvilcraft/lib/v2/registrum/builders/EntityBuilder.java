@@ -47,9 +47,9 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
-import org.jspecify.annotations.Nullable;
 
 /**
  * A builder for entities, allows for customization of the {@link EntityType.Builder}, easy creation of spawn egg items, and configuration of data associated with entities (loot tables, etc.).
@@ -57,6 +57,7 @@ import org.jspecify.annotations.Nullable;
  * @param <T> The type of entity being built
  * @param <P> Parent object type
  */
+@SuppressWarnings("unused")
 public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityType<?>, EntityType<T>, P, EntityBuilder<T, P>> {
 
     /**
@@ -184,7 +185,6 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
      * @return this {@link EntityBuilder}
      * @throws IllegalStateException When called more than once
      */
-    @SuppressWarnings("unchecked")
     public EntityBuilder<T, P> spawnPlacement(
         SpawnPlacementType type,
         Heightmap.Types heightmap,
@@ -206,9 +206,7 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
             }
             */
             OneTimeEventReceiver.addModListener(
-                getOwner(), RegisterSpawnPlacementsEvent.class, e -> {
-                    e.register(t, type, heightmap, predicate, operation);
-                }
+                getOwner(), RegisterSpawnPlacementsEvent.class, e -> e.register(t, type, heightmap, predicate, operation)
             );
         });
         return this;

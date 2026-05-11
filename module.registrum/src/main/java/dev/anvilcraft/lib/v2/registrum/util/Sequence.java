@@ -15,6 +15,7 @@ package dev.anvilcraft.lib.v2.registrum.util;
 
 import java.util.function.Supplier;
 
+@SuppressWarnings("unused")
 public class Sequence<T> {
 
     public static <T> Sequence<T> create() {

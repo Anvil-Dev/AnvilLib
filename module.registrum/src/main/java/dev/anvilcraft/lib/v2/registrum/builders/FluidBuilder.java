@@ -56,15 +56,17 @@ import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
-import org.jspecify.annotations.Nullable;
 
+@SuppressWarnings("unused")
 public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder<Fluid, T, P, FluidBuilder<T, P>> {
 
     @FunctionalInterface
@@ -101,6 +103,7 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
                 if (clientExtension != null) {
                     IClientFluidTypeExtensions extensions = clientExtension.get().get();
                     NonNullSupplier<FluidType> fluidType = this.fluidType;
+                    //noinspection ConstantValue
                     if (extensions != null && fluidType != null) {
                         e.registerFluidType(extensions, fluidType.get());
                     }
@@ -262,9 +265,8 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
         AbstractRegistrum<?> owner, P parent, String name, BuilderCallback callback,
         FluidTypeFactory typeFactory, FluidFactory<T> fluidFactory
     ) {
-        FluidBuilder<T, P> ret = new FluidBuilder<>(owner, parent, name, callback, typeFactory, fluidFactory)
+        return new FluidBuilder<>(owner, parent, name, callback, typeFactory, fluidFactory)
             .defaultLang().defaultSource().defaultBlock().defaultBucket();
-        return ret;
     }
 
     /**
@@ -306,14 +308,14 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
     @Nullable
     private Boolean defaultSource, defaultBlock, defaultBucket;
 
-    private NonNullConsumer<FluidType.Properties> typeProperties = $ -> {
+    private NonNullConsumer<FluidType.Properties> typeProperties = _ -> {
     };
 
     private NonNullConsumer<BaseFlowingFluid.Properties> fluidProperties;
 
-    private @Nullable Supplier<Supplier<ChunkSectionLayer>> layer = null;
+    private final @Nullable Supplier<Supplier<ChunkSectionLayer>> layer = null;
 
-    private boolean registerType;
+    private final boolean registerType;
 
     @Nullable
     private NonNullSupplier<? extends BaseFlowingFluid> source;
@@ -467,7 +469,7 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
         }
         this.defaultBlock = false;
         final NonNullSupplier<T> supplier = asSupplier();
-        final var lightLevel = Lazy.of(() -> fluidType.get().getLightLevel());
+        final var lightLevel = Lazy.of(() -> Objects.requireNonNull(fluidType).get().getLightLevel());
         final ToIntFunction<BlockState> lightLevelInt = $ -> lightLevel.get();
         return getOwner().<B, FluidBuilder<T, P>>block(this, sourceName, p -> factory.apply(supplier.get(), p))
             .properties(p -> BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).noLootTable())
@@ -578,7 +580,8 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
 
     private BaseFlowingFluid.Properties makeProperties() {
         NonNullSupplier<? extends BaseFlowingFluid> source = this.source;
-        BaseFlowingFluid.Properties ret = new BaseFlowingFluid.Properties(fluidType, source == null ? null : source::get, asSupplier());
+        @SuppressWarnings("DataFlowIssue")
+        BaseFlowingFluid.Properties ret = new BaseFlowingFluid.Properties(Objects.requireNonNull(fluidType), source, asSupplier());
         fluidProperties.accept(ret);
         return ret;
     }
@@ -646,7 +649,7 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
 
         NonNullSupplier<? extends BaseFlowingFluid> source = this.source;
         if (source != null) {
-            getCallback().accept(sourceName, Registries.FLUID, (FluidBuilder) this, source::get);
+            getCallback().accept(sourceName, Registries.FLUID, (FluidBuilder) this, source);
         } else {
             throw new IllegalStateException("Fluid must have a source version: " + getName());
         }

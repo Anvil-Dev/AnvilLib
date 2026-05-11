@@ -40,7 +40,7 @@ public class Registrum extends AbstractRegistrum<Registrum> {
                 String message = "# [Registrum] Failed to register eventListeners for mod " + modid + ", This should be reported to this mod's dev #";
 
 
-                StringBuilder hashtags = new StringBuilder().append("#".repeat(message.length()));
+                StringBuilder hashtags = new StringBuilder().repeat("#", message.length());
 
                 log.fatal(hashtags.toString());
                 log.fatal(message);

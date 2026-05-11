@@ -28,17 +28,14 @@ import java.util.function.Predicate;
  *
  * @param <S> The type of the entry
  */
+@SuppressWarnings("unused")
 public class RegistryEntry<R, S extends R> extends DeferredHolder<R, S> implements NonNullSupplier<S> {
     private final AbstractRegistrum<?> owner;
 
     @SuppressWarnings("unused")
     public RegistryEntry(AbstractRegistrum<?> owner, DeferredHolder<R, S> key) {
         super(key.getKey());
-
-        if (owner == null) {
-            throw new NullPointerException("Owner must not be null");
-        }
-        this.owner = owner;
+        this.owner = Objects.requireNonNull(owner, "Owner must not be null");
     }
 
     public <X, Y extends X> RegistryEntry<X, Y> getSibling(ResourceKey<? extends Registry<X>> registryType) {

@@ -49,6 +49,7 @@ import java.util.Arrays;
  * @param <S> Self type
  * @see Builder
  */
+@SuppressWarnings("unused")
 @RequiredArgsConstructor
 public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuilder<R, T, P, S>> implements Builder<R, T, P, S> {
 
@@ -108,7 +109,7 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
     @SafeVarargs
     public final <TP extends TagsProvider<R> & RegistrumTagsProvider<R>> S tag(ProviderType<? extends TP> type, TagKey<R>... tags) {
         if (!tagsByType.containsKey(type)) {
-            setData(type, (ctx, prov) -> tagsByType.get(type).stream()
+            setData(type, (_, prov) -> tagsByType.get(type).stream()
                 .map(t -> (TagKey<R>) t)
                 .map(prov::rawBuilder)
                 .forEach(b -> b.add(asTag())));
@@ -159,7 +160,7 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
      * @return this {@link Builder}
      */
     public S lang(NonNullFunction<T, String> langKeyProvider) {
-        return lang(langKeyProvider, (p, t) -> p.<R>getAutomaticName(t, getRegistryKey()));
+        return lang(langKeyProvider, (p, t) -> p.getAutomaticName(t, getRegistryKey()));
     }
 
     /**

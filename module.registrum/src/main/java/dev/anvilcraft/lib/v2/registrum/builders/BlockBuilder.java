@@ -62,6 +62,7 @@ import java.util.function.Supplier;
  * @param <T> The type of block being built
  * @param <P> Parent object type
  */
+@SuppressWarnings("unused")
 public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, P, BlockBuilder<T, P>> {
 
     /**
@@ -213,7 +214,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      * @return the {@link BlockEntityBuilder}
      */
     public <BE extends BlockEntity> BlockEntityBuilder<BE, BlockBuilder<T, P>> blockEntity(BlockEntityFactory<BE> factory) {
-        return getOwner().<BE, BlockBuilder<T, P>>blockEntity(this, getName(), factory).validBlock(asSupplier());
+        return getOwner().blockEntity(this, getName(), factory).validBlock(asSupplier());
     }
 
     /**

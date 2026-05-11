@@ -14,7 +14,6 @@
 package dev.anvilcraft.lib.v2.registrum.util;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
 
 import java.util.function.Supplier;

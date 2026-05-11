@@ -56,6 +56,7 @@ import org.jspecify.annotations.Nullable;
  * @param <T> The type of item being built
  * @param <P> Parent object type
  */
+@SuppressWarnings("unused")
 public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, ItemBuilder<T, P>> {
 
     /**
@@ -92,7 +93,7 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
     private NonNullSupplier<Item.Properties> initialProperties = Item.Properties::new;
     private NonNullFunction<Item.Properties, Item.Properties> propertiesCallback = NonNullUnaryOperator.identity();
 
-    private Map<ResourceKey<CreativeModeTab>, NonNullBiConsumer<DataGenContext<Item, T>, CreativeModeTabModifier>> creativeModeTabs = Maps.newLinkedHashMap();
+    private final Map<ResourceKey<CreativeModeTab>, NonNullBiConsumer<DataGenContext<Item, T>, CreativeModeTabModifier>> creativeModeTabs = Maps.newLinkedHashMap();
 
     protected ItemBuilder(
         AbstractRegistrum<?> owner,

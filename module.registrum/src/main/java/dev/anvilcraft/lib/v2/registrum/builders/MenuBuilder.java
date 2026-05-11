@@ -35,6 +35,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 
 import org.jspecify.annotations.Nullable;
 
+@SuppressWarnings("unused")
 public class MenuBuilder<T extends AbstractContainerMenu, S extends Screen & MenuAccess<T>, P>
     extends AbstractBuilder<MenuType<?>, MenuType<T>, P, MenuBuilder<T, S, P>> {
 

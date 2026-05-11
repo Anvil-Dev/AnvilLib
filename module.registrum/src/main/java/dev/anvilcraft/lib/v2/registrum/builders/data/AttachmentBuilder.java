@@ -41,6 +41,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+@SuppressWarnings("unused")
 public class AttachmentBuilder<E, P> extends AbstractBuilder<AttachmentType<?>, AttachmentType<E>, P, AttachmentBuilder<E, P>> {
 
     private final AttachmentType.Builder<E> builder;

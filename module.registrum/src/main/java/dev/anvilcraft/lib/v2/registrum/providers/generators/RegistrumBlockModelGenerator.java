@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+@SuppressWarnings("unused")
 public class RegistrumBlockModelGenerator extends BlockModelGenerators {
 
     private final AbstractRegistrum<?> parent;

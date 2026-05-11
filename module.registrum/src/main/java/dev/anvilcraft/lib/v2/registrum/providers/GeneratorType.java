@@ -13,5 +13,6 @@
 
 package dev.anvilcraft.lib.v2.registrum.providers;
 
+@SuppressWarnings("unused")
 public interface GeneratorType<T> {
 }

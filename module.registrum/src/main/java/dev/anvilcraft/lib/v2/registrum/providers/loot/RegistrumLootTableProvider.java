@@ -28,8 +28,8 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.data.loot.LootTableSubProvider;
 import net.minecraft.data.loot.packs.VanillaLootTableProvider;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.context.ContextKeySet;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -38,22 +38,25 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.fml.util.ObfuscationReflectionHelper;
 import org.apache.commons.lang3.function.TriFunction;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+@SuppressWarnings("unused")
 public class RegistrumLootTableProvider extends LootTableProvider implements RegistrumProvider {
 
     public interface LootType<T extends RegistrumLootTables> {
 
-        static LootType<RegistrumBlockLootTables> BLOCK = register("block", LootContextParamSets.BLOCK, RegistrumBlockLootTables::new);
-        static LootType<RegistrumEntityLootTables> ENTITY = register("entity", LootContextParamSets.ENTITY, RegistrumEntityLootTables::new);
+        LootType<RegistrumBlockLootTables> BLOCK = register("block", LootContextParamSets.BLOCK, RegistrumBlockLootTables::new);
+        LootType<RegistrumEntityLootTables> ENTITY = register("entity", LootContextParamSets.ENTITY, RegistrumEntityLootTables::new);
 
         T getLootCreator(HolderLookup.Provider provider, AbstractRegistrum<?> parent, Consumer<T> callback);
 
@@ -64,7 +67,7 @@ public class RegistrumLootTableProvider extends LootTableProvider implements Reg
             ContextKeySet set,
             TriFunction<HolderLookup.Provider, AbstractRegistrum<?>, Consumer<T>, T> factory
         ) {
-            LootType<T> type = new LootType<T>() {
+            LootType<T> type = new LootType<>() {
                 @Override
                 public T getLootCreator(HolderLookup.Provider provider, AbstractRegistrum<?> parent, Consumer<T> callback) {
                     return factory.apply(provider, parent, callback);
@@ -88,7 +91,7 @@ public class RegistrumLootTableProvider extends LootTableProvider implements Reg
     private final Multimap<ContextKeySet, Consumer<BiConsumer<ResourceKey<LootTable>, LootTable.Builder>>> lootActions = HashMultimap.create();
     private final Set<RegistrumLootTables> currentLootCreators = new HashSet<>();
 
-    private CompletableFuture<HolderLookup.Provider> provider;
+    private final CompletableFuture<HolderLookup.Provider> provider;
 
     public RegistrumLootTableProvider(
         AbstractRegistrum<?> parent,
@@ -101,6 +104,7 @@ public class RegistrumLootTableProvider extends LootTableProvider implements Reg
     }
 
     public HolderLookup.Provider getProvider() {
+        //noinspection DataFlowIssue
         return provider.getNow(null);
     }
 
@@ -141,7 +145,8 @@ public class RegistrumLootTableProvider extends LootTableProvider implements Reg
         return creator;
     }
 
-    private static final BiMap<Identifier, ContextKeySet> SET_REGISTRY = ObfuscationReflectionHelper.getPrivateValue(
+    @SuppressWarnings("DataFlowIssue")
+    private static final @Nullable BiMap<Identifier, ContextKeySet> SET_REGISTRY = ObfuscationReflectionHelper.getPrivateValue(
         LootContextParamSets.class,
         null,
         "REGISTRY"
@@ -155,7 +160,7 @@ public class RegistrumLootTableProvider extends LootTableProvider implements Reg
         for (LootType<?> type : LOOT_TYPES.values()) {
             builder.add(new SubProviderEntry(provider -> getLootCreator(provider, parent, type), type.getLootSet()));
         }
-        for (ContextKeySet set : SET_REGISTRY.values()) {
+        for (ContextKeySet set : Objects.requireNonNull(SET_REGISTRY).values()) {
             builder.add(new SubProviderEntry((provider) -> callback -> lootActions.get(set).forEach(a -> a.accept(callback)), set));
         }
         return builder.build();

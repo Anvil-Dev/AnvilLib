@@ -41,8 +41,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.jspecify.annotations.Nullable;
 
+@SuppressWarnings("unused")
 public class RegistrumLangProvider extends LanguageProvider implements RegistrumProvider {
 
     private static class AccessibleLanguageProvider extends LanguageProvider {
@@ -52,7 +52,7 @@ public class RegistrumLangProvider extends LanguageProvider implements Registrum
         }
 
         @Override
-        public void add(@Nullable String key, @Nullable String value) {
+        public void add(String key, String value) {
             super.add(key, value);
         }
 
@@ -86,7 +86,7 @@ public class RegistrumLangProvider extends LanguageProvider implements Registrum
         owner.genData(ProviderType.LANG, this);
     }
 
-    public static final String toEnglishName(String internalName) {
+    public static String toEnglishName(String internalName) {
         return Arrays.stream(internalName.toLowerCase(Locale.ROOT).split("_"))
             .map(StringUtils::capitalize)
             .collect(Collectors.joining(" "));
@@ -168,6 +168,7 @@ public class RegistrumLangProvider extends LanguageProvider implements Registrum
     );
 
     static {
+        //noinspection ConstantValue
         if (NORMAL_CHARS.length() != UPSIDE_DOWN_CHARS.length()) {
             throw new AssertionError("Char maps do not match in length!");
         }
@@ -180,7 +181,10 @@ public class RegistrumLangProvider extends LanguageProvider implements Registrum
 
         List<int[]> placeholders = new ArrayList<>();
         while (matcher.find()) {
-            placeholders.add(new int[]{matcher.start(), matcher.end()});
+            placeholders.add(new int[]{
+                matcher.start(),
+                matcher.end()
+            });
         }
 
         List<String> segments = new ArrayList<>();

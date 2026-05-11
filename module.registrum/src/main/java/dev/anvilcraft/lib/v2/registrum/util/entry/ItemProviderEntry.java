@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+@SuppressWarnings("unused")
 public class ItemProviderEntry<R extends ItemLike, T extends R> extends RegistryEntry<R, T> implements ItemLike {
 
     public ItemProviderEntry(AbstractRegistrum<?> owner, DeferredHolder<R, T> delegate) {

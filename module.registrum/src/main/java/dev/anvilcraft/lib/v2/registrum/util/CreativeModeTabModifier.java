@@ -23,6 +23,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
+@SuppressWarnings("unused")
 public final class CreativeModeTabModifier implements CreativeModeTab.Output {
     private final Supplier<FeatureFlagSet> flags;
     private final BooleanSupplier hasPermissions;
