@@ -117,7 +117,7 @@ public record District(
             faceSign = distToMin < distToMax ? -1 : 1;
         }
 
-        int delta = faceSign * scrollAmount;
+        int delta = (lookComp > 0 ? 1 : -1) * scrollAmount;
 
         if (faceSign > 0) {
             int newEnd = (int) maxCoord + delta;
