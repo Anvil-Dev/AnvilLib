@@ -295,7 +295,7 @@ jobs:
       - space-select
     with:
       module: space-select
-      module_id: anvillib-space_select
+      module_id: anvillib-space-select
     secrets:
       maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
       maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}

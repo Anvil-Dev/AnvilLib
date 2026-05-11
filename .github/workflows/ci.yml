@@ -282,7 +282,7 @@ jobs:
     with:
       module: space-select
       module_id: anvillib-space-select
-      mod_id: space_select
+      mod_id: anvillib_space_select
       ci_build: true
       pr_build: false
     secrets:
@@ -311,7 +311,7 @@ jobs:
     with:
       module: sync
       module_id: anvillib-sync
-      mod_id: sync
+      mod_id: anvillib_sync
       ci_build: true
       pr_build: false
     secrets:
