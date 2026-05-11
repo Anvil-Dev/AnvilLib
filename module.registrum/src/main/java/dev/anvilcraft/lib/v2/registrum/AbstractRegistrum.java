@@ -1490,64 +1490,139 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     }
 
     // Attachment Type
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     protected <E, P> AttachmentBuilder<E, P> attachment(P parent, String name, Function<IAttachmentHolder, E> const_) {
         return entry(name, callback -> new AttachmentBuilder<>(this, parent, name, callback, const_));
     }
 
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     public <E> AttachmentBuilder<E, S> attachment(String name, Function<IAttachmentHolder, E> const_) {
         return attachment(self(), name, const_);
     }
 
-
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     protected <E, P> AttachmentBuilder<E, P> attachment(P parent, String name, Supplier<E> const_) {
         return entry(name, callback -> new AttachmentBuilder<>(this, parent, name, callback, const_));
     }
 
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     public <E> AttachmentBuilder<E, S> attachment(String name, Supplier<E> const_) {
         return attachment(self(), name, const_);
     }
 
     // Data Component Type
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     protected <E, P> DataComponentBuilder<E, P> dataComponent(P parent, String name) {
         return entry(name, callback -> new DataComponentBuilder<>(this, parent, name, callback));
     }
 
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     public <E> DataComponentBuilder<E, S> dataComponent(String name) {
         return dataComponent(self(), name);
     }
 
     // Biome Modifier
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     protected <T extends BiomeModifier, P> BiomeModifierBuilder<T, P> biomeModifier(P parent, String name, MapCodec<T> codec) {
         return entry(name, callback -> new BiomeModifierBuilder<>(this, parent, name, callback, codec));
     }
 
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     public <T extends BiomeModifier> BiomeModifierBuilder<T, S> biomeModifier(String name, MapCodec<T> codec) {
         return biomeModifier(self(), name, codec);
     }
 
     // Hlobal Loot Modifier
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     protected <T extends IGlobalLootModifier, P> GlobalLootModifierBuilder<T, P> glm(P parent, String name, MapCodec<T> codec) {
         return entry(name, callback -> new GlobalLootModifierBuilder<>(this, parent, name, callback, codec));
     }
 
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     public <T extends IGlobalLootModifier> GlobalLootModifierBuilder<T, S> glm(String name, MapCodec<T> codec) {
         return glm(self(), name, codec);
     }
 
     // Structure Modifier
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     protected <T extends StructureModifier, P> StructureModifierBuilder<T, P> structureModifier(P parent, String name, MapCodec<T> codec) {
         return entry(name, callback -> new StructureModifierBuilder<>(this, parent, name, callback, codec));
     }
 
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     public <T extends StructureModifier> StructureModifierBuilder<T, S> structureModifier(String name, MapCodec<T> codec) {
         return structureModifier(self(), name, codec);
     }
 
     // Condition
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     protected <T extends ICondition, P> ConditionBuilder<T, P> condition(P parent, String name, MapCodec<T> codec) {
         return entry(name, callback -> new ConditionBuilder<>(this, parent, name, callback, codec));
     }
 
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
     public <T extends ICondition> ConditionBuilder<T, S> condition(String name, MapCodec<T> codec) {
         return condition(self(), name, codec);
     }
