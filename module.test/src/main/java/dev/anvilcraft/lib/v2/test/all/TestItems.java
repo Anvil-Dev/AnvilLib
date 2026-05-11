@@ -8,7 +8,11 @@ import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.world.item.Items;
 
 public class TestItems {
-    public static final ItemEntry<TestItem> TEST_BLOOM = AnvilLibTest.REGISTRUM
+    static {
+        AnvilLibTest.REGISTRUM.defaultCreativeTab(TestItemGroups.TEST_TAB);
+    }
+
+    public static final ItemEntry<TestItem> TEST_ITEM = AnvilLibTest.REGISTRUM
         .item("test_item", TestItem::new)
         .model(() -> (ctx, provider) -> provider.itemModelOutput.accept(
             ctx.get(),

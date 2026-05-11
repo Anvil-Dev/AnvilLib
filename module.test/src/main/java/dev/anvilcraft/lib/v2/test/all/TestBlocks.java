@@ -8,6 +8,10 @@ import net.minecraft.client.data.models.model.TexturedModel;
 import net.minecraft.world.level.block.Blocks;
 
 public class TestBlocks {
+    static {
+        AnvilLibTest.REGISTRUM.defaultCreativeTab(TestItemGroups.TEST_TAB);
+    }
+
     public static final BlockEntry<TestBloomBlock> TEST_BLOOM = AnvilLibTest.REGISTRUM.block("test_bloom", TestBloomBlock::new)
         .properties(p -> p.noOcclusion().noCollision())
         .blockstate(() -> (ctx, provider) -> provider.blockStateOutput.accept(

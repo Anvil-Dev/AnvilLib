@@ -28,6 +28,7 @@ import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder.BlockEntityFa
 import dev.anvilcraft.lib.v2.registrum.builders.Builder;
 import dev.anvilcraft.lib.v2.registrum.builders.BuilderCallback;
 import dev.anvilcraft.lib.v2.registrum.builders.ConditionBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.CreativeTabBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.EntityBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.FluidBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.ItemBuilder;
@@ -82,6 +83,7 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -803,6 +805,15 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     }
 
     /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public S defaultCreativeTab(RegistryEntry<CreativeModeTab, CreativeModeTab> tab) {
+        return defaultCreativeTab(tab.getKey());
+    }
+
+    /**
      * Registers a new modifier callback to be used to modify the given CreativeModeTab.
      *
      * <p>
@@ -1506,6 +1517,33 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         );
     }
 
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    protected <P> CreativeTabBuilder<P> creativeTab(P parent, String name, Supplier<ItemLike> icon) {
+        return entry(name, callback -> CreativeTabBuilder.create(this, parent, name, callback, icon));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public CreativeTabBuilder<S> creativeTab(String name, ItemLike icon) {
+        return creativeTab(self(), name, () -> icon);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public CreativeTabBuilder<S> creativeTab(String name, Supplier<ItemLike> icon) {
+        return creativeTab(self(), name, icon);
+    }
+
     // Attachment Type
 
     /**
@@ -1643,5 +1681,4 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     public <T extends ICondition> ConditionBuilder<T, S> condition(String name, MapCodec<T> codec) {
         return condition(self(), name, codec);
     }
-
 }

@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.test;
 import dev.anvilcraft.lib.v2.registrum.Registrum;
 import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
 import dev.anvilcraft.lib.v2.test.all.TestBlocks;
+import dev.anvilcraft.lib.v2.test.all.TestItemGroups;
 import dev.anvilcraft.lib.v2.test.all.TestItems;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.data.LangHandler;
@@ -20,6 +21,7 @@ public class AnvilLibTest {
     }
 
     public AnvilLibTest(IEventBus modBus) {
+        TestItemGroups.setupRegistration();
         TestBlocks.setupRegistration();
         TestTiles.setupRegistration();
         TestItems.setupRegistration();
