@@ -21,19 +21,19 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.mojang.serialization.Codec;
-import dev.anvilcraft.lib.v2.registrum.builders.BlockBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder;
+import com.mojang.serialization.MapCodec;
+import dev.anvilcraft.lib.v2.registrum.builders.*;
 import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder.BlockEntityFactory;
-import dev.anvilcraft.lib.v2.registrum.builders.Builder;
-import dev.anvilcraft.lib.v2.registrum.builders.BuilderCallback;
-import dev.anvilcraft.lib.v2.registrum.builders.EntityBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.FluidBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.ItemBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ForgeMenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.MenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ScreenFactory;
-import dev.anvilcraft.lib.v2.registrum.builders.NoConfigBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.data.AttachmentBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.data.DataComponentBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.modifier.BiomeModifierBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.modifier.GlobalLootModifierBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.modifier.StructureModifierBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.recipe.RecipeSerializerBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.recipe.RecipeTypeBuilder;
 import dev.anvilcraft.lib.v2.registrum.providers.DataProviderInitializer;
 import dev.anvilcraft.lib.v2.registrum.providers.GeneratorType;
 import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
@@ -43,6 +43,7 @@ import dev.anvilcraft.lib.v2.registrum.util.CreativeModeTabModifier;
 import dev.anvilcraft.lib.v2.registrum.util.DebugMarkers;
 import dev.anvilcraft.lib.v2.registrum.util.OneTimeEventReceiver;
 import dev.anvilcraft.lib.v2.registrum.util.entry.ItemEntry;
+import dev.anvilcraft.lib.v2.registrum.util.entry.RecipeEntry;
 import dev.anvilcraft.lib.v2.registrum.util.entry.RegistryEntry;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullBiFunction;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullConsumer;
@@ -61,8 +62,10 @@ import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
@@ -75,6 +78,7 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -82,6 +86,11 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.attachment.IAttachmentHolder;
+import net.neoforged.neoforge.common.conditions.ICondition;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.common.world.BiomeModifier;
+import net.neoforged.neoforge.common.world.StructureModifier;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.data.loading.DatagenModLoader;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -107,6 +116,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -1484,4 +1494,182 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
             }
         );
     }
+
+    // Attachment Type
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <E, P> AttachmentBuilder<E, P> attachment(P parent, String name, Function<IAttachmentHolder, E> const_) {
+        return entry(name, callback -> new AttachmentBuilder<>(this, parent, name, callback, const_));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <E> AttachmentBuilder<E, S> attachment(String name, Function<IAttachmentHolder, E> const_) {
+        return attachment(self(), name, const_);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <E, P> AttachmentBuilder<E, P> attachment(P parent, String name, Supplier<E> const_) {
+        return entry(name, callback -> new AttachmentBuilder<>(this, parent, name, callback, const_));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <E> AttachmentBuilder<E, S> attachment(String name, Supplier<E> const_) {
+        return attachment(self(), name, const_);
+    }
+
+    // Data Component Type
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <E, P> DataComponentBuilder<E, P> dataComponent(P parent, String name) {
+        return entry(name, callback -> new DataComponentBuilder<>(this, parent, name, callback));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <E> DataComponentBuilder<E, S> dataComponent(String name) {
+        return dataComponent(self(), name);
+    }
+
+    // Biome Modifier
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <T extends BiomeModifier, P> BiomeModifierBuilder<T, P> biomeModifier(P parent, String name, MapCodec<T> codec) {
+        return entry(name, callback -> new BiomeModifierBuilder<>(this, parent, name, callback, codec));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends BiomeModifier> BiomeModifierBuilder<T, S> biomeModifier(String name, MapCodec<T> codec) {
+        return biomeModifier(self(), name, codec);
+    }
+
+    // Hlobal Loot Modifier
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <T extends IGlobalLootModifier, P> GlobalLootModifierBuilder<T, P> glm(P parent, String name, MapCodec<T> codec) {
+        return entry(name, callback -> new GlobalLootModifierBuilder<>(this, parent, name, callback, codec));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends IGlobalLootModifier> GlobalLootModifierBuilder<T, S> glm(String name, MapCodec<T> codec) {
+        return glm(self(), name, codec);
+    }
+
+    // Structure Modifier
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <T extends StructureModifier, P> StructureModifierBuilder<T, P> structureModifier(P parent, String name, MapCodec<T> codec) {
+        return entry(name, callback -> new StructureModifierBuilder<>(this, parent, name, callback, codec));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends StructureModifier> StructureModifierBuilder<T, S> structureModifier(String name, MapCodec<T> codec) {
+        return structureModifier(self(), name, codec);
+    }
+
+    // Condition
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <T extends ICondition, P> ConditionBuilder<T, P> condition(P parent, String name, MapCodec<T> codec) {
+        return entry(name, callback -> new ConditionBuilder<>(this, parent, name, callback, codec));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends ICondition> ConditionBuilder<T, S> condition(String name, MapCodec<T> codec) {
+        return condition(self(), name, codec);
+    }
+
+    // Sound Event
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <P> SoundEventBuilder<P> soundEvent(P parent, String name) {
+        return entry(name, callback -> new SoundEventBuilder<>(this, parent, name, callback));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public SoundEventBuilder<S> soundEvent(String name) {
+        return soundEvent(self(), name);
+    }
+
+    // Recipe
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends Recipe<?>, P> RecipeEntry<T> recipe(P parent, String name, MapCodec<T> codec, StreamCodec<RegistryFriendlyByteBuf, T> streamCodec) {
+        return new RecipeEntry<>(
+                entry(name, callback -> new RecipeTypeBuilder<T, P>(this, parent, name, callback)).register(),
+                entry(name, callback -> new RecipeSerializerBuilder<>(this, parent, name, callback, codec, streamCodec)).register()
+        );
+    }
+
+    public <T extends Recipe<?>> RecipeEntry<T> recipe(String name, MapCodec<T> codec, StreamCodec<RegistryFriendlyByteBuf, T> streamCodec) {
+        return recipe(self(), name, codec, streamCodec);
+    }
+
+
 }
