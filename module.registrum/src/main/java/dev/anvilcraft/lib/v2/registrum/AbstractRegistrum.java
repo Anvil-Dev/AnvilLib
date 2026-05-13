@@ -22,20 +22,11 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
-import dev.anvilcraft.lib.v2.registrum.builders.BlockBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.*;
 import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder.BlockEntityFactory;
-import dev.anvilcraft.lib.v2.registrum.builders.Builder;
-import dev.anvilcraft.lib.v2.registrum.builders.BuilderCallback;
-import dev.anvilcraft.lib.v2.registrum.builders.ConditionBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.EntityBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.FluidBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.ItemBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ForgeMenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.MenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ScreenFactory;
-import dev.anvilcraft.lib.v2.registrum.builders.NoConfigBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.data.AttachmentBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.data.DataComponentBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.modifier.BiomeModifierBuilder;
@@ -1664,6 +1655,26 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
                 return modid + ":" + name;
             }
         }).register(), generic(name + "_serializer", Registries.RECIPE_SERIALIZER, () -> new RecipeSerializer<>(codec, streamCodec)).register());
+    }
+
+    // Sound Event
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> SoundEventBuilder<P> soundEvent(P parent, String name) {
+        return entry(name, callback -> new SoundEventBuilder<>(this, parent, name, callback))
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public SoundEventBuilder<S> soundEvent(String name) {
+        return soundEvent(self(), name);
     }
 
 }
