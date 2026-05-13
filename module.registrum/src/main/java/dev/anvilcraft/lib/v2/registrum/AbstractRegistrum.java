@@ -31,6 +31,7 @@ import dev.anvilcraft.lib.v2.registrum.builders.ConditionBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.CreativeTabBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.EntityBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.FluidBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.GameEventBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.ItemBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ForgeMenuFactory;
@@ -72,6 +73,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -1761,4 +1763,24 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     ) {
         return recipe(self(), name, codec, streamCodec);
     }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> GameEventBuilder<P> gameEvent(P parent, String name, int radius) {
+        return entry(name, callback -> new GameEventBuilder<>(this, parent, name, callback, radius));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public GameEventBuilder<S> gameEvent(String name, int radius) {
+        return gameEvent(self(), name, radius);
+    }
+
+
 }
