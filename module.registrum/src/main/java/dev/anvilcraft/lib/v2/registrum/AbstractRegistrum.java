@@ -22,11 +22,21 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
-import dev.anvilcraft.lib.v2.registrum.builders.*;
+import dev.anvilcraft.lib.v2.registrum.builders.BlockBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder.BlockEntityFactory;
+import dev.anvilcraft.lib.v2.registrum.builders.Builder;
+import dev.anvilcraft.lib.v2.registrum.builders.BuilderCallback;
+import dev.anvilcraft.lib.v2.registrum.builders.ConditionBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.EntityBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.FluidBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.ItemBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ForgeMenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.MenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ScreenFactory;
+import dev.anvilcraft.lib.v2.registrum.builders.NoConfigBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.SoundEventBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.data.AttachmentBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.data.DataComponentBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.modifier.BiomeModifierBuilder;
@@ -66,8 +76,8 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType.EntityFactory;
@@ -104,6 +114,8 @@ import net.neoforged.neoforge.registries.RegistryBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.message.Message;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -119,9 +131,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Manages all registrations and data generators for a mod.
@@ -1660,14 +1669,23 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      *
      * @author baka4n
      */
-    public <T extends Recipe<?>, P> RecipeEntry<T> recipe(P parent, String name, MapCodec<T> codec, StreamCodec<RegistryFriendlyByteBuf, T> streamCodec) {
+    public <T extends Recipe<?>, P> RecipeEntry<T> recipe(
+        P parent,
+        String name,
+        MapCodec<T> codec,
+        StreamCodec<RegistryFriendlyByteBuf, T> streamCodec
+    ) {
         return new RecipeEntry<>(
-                entry(name, callback -> new RecipeTypeBuilder<T, P>(this, parent, name, callback)).register(),
-                entry(name, callback -> new RecipeSerializerBuilder<>(this, parent, name, callback, codec, streamCodec)).register()
+            entry(name, callback -> new RecipeTypeBuilder<T, P>(this, parent, name, callback)).register(),
+            entry(name, callback -> new RecipeSerializerBuilder<>(this, parent, name, callback, codec, streamCodec)).register()
         );
     }
 
-    public <T extends Recipe<?>> RecipeEntry<T> recipe(String name, MapCodec<T> codec, StreamCodec<RegistryFriendlyByteBuf, T> streamCodec) {
+    public <T extends Recipe<?>> RecipeEntry<T> recipe(
+        String name,
+        MapCodec<T> codec,
+        StreamCodec<RegistryFriendlyByteBuf, T> streamCodec
+    ) {
         return recipe(self(), name, codec, streamCodec);
     }
 

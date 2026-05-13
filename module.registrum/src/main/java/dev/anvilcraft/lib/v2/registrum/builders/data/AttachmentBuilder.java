@@ -32,7 +32,11 @@ import dev.anvilcraft.lib.v2.registrum.util.entry.data.AttachmentEntry;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.attachment.*;
+import net.neoforged.neoforge.attachment.AttachmentSyncHandler;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.attachment.IAttachmentCopyHandler;
+import net.neoforged.neoforge.attachment.IAttachmentHolder;
+import net.neoforged.neoforge.attachment.IAttachmentSerializer;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
@@ -46,10 +50,17 @@ public class AttachmentBuilder<E, P> extends AbstractBuilder<AttachmentType<?>, 
 
     private final AttachmentType.Builder<E> builder;
 
-    public AttachmentBuilder(AbstractRegistrum<?> owner, P parent, String name, BuilderCallback callback, Function<IAttachmentHolder, E> const_) {
+    public AttachmentBuilder(
+        AbstractRegistrum<?> owner,
+        P parent,
+        String name,
+        BuilderCallback callback,
+        Function<IAttachmentHolder, E> const_
+    ) {
         super(owner, parent, name, callback, NeoForgeRegistries.Keys.ATTACHMENT_TYPES);
         this.builder = AttachmentType.builder(const_);
     }
+
     public AttachmentBuilder(AbstractRegistrum<?> owner, P parent, String name, BuilderCallback callback, Supplier<E> const_) {
         super(owner, parent, name, callback, NeoForgeRegistries.Keys.ATTACHMENT_TYPES);
         this.builder = AttachmentType.builder(const_);
@@ -59,10 +70,12 @@ public class AttachmentBuilder<E, P> extends AbstractBuilder<AttachmentType<?>, 
         builder.serialize(serializer);
         return this;
     }
+
     public AttachmentBuilder<E, P> serialize(MapCodec<E> serializer) {
         builder.serialize(serializer);
         return this;
     }
+
     public AttachmentBuilder<E, P> serialize(MapCodec<E> serializer, Predicate<? super E> predicate) {
         builder.serialize(serializer, predicate);
         return this;
@@ -77,15 +90,21 @@ public class AttachmentBuilder<E, P> extends AbstractBuilder<AttachmentType<?>, 
         builder.copyHandler(cloner);
         return this;
     }
+
     public AttachmentBuilder<E, P> sync(AttachmentSyncHandler<E> syncHandler) {
         builder.sync(syncHandler);
         return this;
     }
+
     public AttachmentBuilder<E, P> sync(StreamCodec<? super RegistryFriendlyByteBuf, E> streamCodec) {
         builder.sync(streamCodec);
         return this;
     }
-    public AttachmentBuilder<E, P> sync(BiPredicate<IAttachmentHolder, ServerPlayer> sendToPlayer, StreamCodec<? super RegistryFriendlyByteBuf, E> streamCodec) {
+
+    public AttachmentBuilder<E, P> sync(
+        BiPredicate<IAttachmentHolder, ServerPlayer> sendToPlayer,
+        StreamCodec<? super RegistryFriendlyByteBuf, E> streamCodec
+    ) {
         builder.sync(sendToPlayer, streamCodec);
         return this;
     }
