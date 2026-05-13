@@ -1656,14 +1656,14 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      *
      * @author baka4n
      */
-    public <T extends Recipe<?>> Pair<NoConfigBuilder<RecipeType<?>, RecipeType<Recipe<?>>, S>, NoConfigBuilder<RecipeSerializer<?>, RecipeSerializer<T>, S>> recipe(String name, MapCodec<T> codec, StreamCodec<RegistryFriendlyByteBuf, T> streamCodec) {
+    public <T extends Recipe<?>> Pair<RegistryEntry<RecipeType<?>, RecipeType<Recipe<?>>>, RegistryEntry<RecipeSerializer<?>, RecipeSerializer<T>>> recipe(String name, MapCodec<T> codec, StreamCodec<RegistryFriendlyByteBuf, T> streamCodec) {
 
         return Pair.of(generic(name + "_type", Registries.RECIPE_TYPE, () -> new RecipeType<>() {
             @Override
             public String toString() {
                 return modid + ":" + name;
             }
-        }), generic(name + "_serializer", Registries.RECIPE_SERIALIZER, () -> new RecipeSerializer<>(codec, streamCodec)));
+        }).register(), generic(name + "_serializer", Registries.RECIPE_SERIALIZER, () -> new RecipeSerializer<>(codec, streamCodec)).register());
     }
 
 }
