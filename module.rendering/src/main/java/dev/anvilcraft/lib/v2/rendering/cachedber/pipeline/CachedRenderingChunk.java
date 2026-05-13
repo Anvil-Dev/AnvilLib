@@ -176,14 +176,11 @@ public class CachedRenderingChunk implements VertexBufferHost {
             return;
         }
 
-        List<RenderType> renderingOrders = new ArrayList<>(renderTypes);
-        renderingOrders.sort(Comparator.comparingInt(a -> (a.sortOnUpload() ? 1 : 0)));
-
-        renderLayers(renderingOrders, cameraPosition, false);
-        renderLayers(renderingOrders, cameraPosition, true);
+        renderLayers(renderTypes, cameraPosition, false);
+        renderLayers(renderTypes, cameraPosition, true);
     }
 
-    private void renderLayers(List<RenderType> renderingOrders, Vec3 cameraPosition, boolean translucent) {
+    private void renderLayers(Collection<RenderType> renderingOrders, Vec3 cameraPosition, boolean translucent) {
         for (RenderType renderType : renderingOrders) {
             if (renderType.sortOnUpload() != translucent) continue;
             GpuBuffer vb = buffers.get(renderType);
