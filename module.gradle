@@ -11,6 +11,8 @@ base {
     archivesName = "${project.mod_id}-neoforge-${libs.versions.minecraft.get()}"
 }
 
+evaluationDependsOn(':renderdoc-loader-internal')
+
 repositories {
     exclusiveContent {
         forRepositories(
@@ -48,6 +50,19 @@ neoForge {
             server()
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        if (project.properties.get("anvillib.clientRenderDocRun").toString() == "true") {
+
+            renderDocClient {
+                client()
+
+                systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+                systemProperty 'anvillib.rendering.debugMode', 'true'
+                systemProperty('neoforge.rendernurse.renderdoc.library', file("libs/renderdoc.dll").absolutePath)
+                taskBefore(rootProject.project('renderdoc-loader-internal').tasks.getByName('jar'))
+                jvmArgument("-javaagent:" + rootProject.project('renderdoc-loader-internal').tasks.getByName('jar').archiveFile.get().asFile.absolutePath)
+            }
         }
 
         gameTestServer {
@@ -225,4 +240,10 @@ machete {
 
 lombok {
     version = "1.18.44"
+}
+
+tasks.configureEach {
+    if (name == 'runRenderDocClient') {
+        dependsOn rootProject.project('renderdoc-loader-internal').tasks.getByName('jar')
+    }
 }

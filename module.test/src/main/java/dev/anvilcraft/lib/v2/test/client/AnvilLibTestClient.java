@@ -1,11 +1,15 @@
 package dev.anvilcraft.lib.v2.test.client;
 
+import dev.anvilcraft.lib.v2.rendering.cachedber.renderer.CachedBlockEntityRenderDispatcher;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
+import dev.anvilcraft.lib.v2.test.all.TestTiles;
+import dev.anvilcraft.lib.v2.test.client.cber.TestCachedRenderer;
 import dev.anvilcraft.lib.v2.test.client.gui.SdfGraphicsLayer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 
 @EventBusSubscriber(modid = AnvilLibTest.MOD_ID)
@@ -14,6 +18,10 @@ public class AnvilLibTestClient {
     public AnvilLibTestClient() {
     }
 
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        CachedBlockEntityRenderDispatcher.INSTANCE.registerRenderer(TestTiles.TEST_CACHED_RENDERING, new TestCachedRenderer());
+    }
 
     @SubscribeEvent
     public static void onRegisterGuiLayers(RegisterGuiLayersEvent e) {

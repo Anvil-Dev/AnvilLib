@@ -3,7 +3,8 @@ package dev.anvilcraft.lib.v2.test.client.tesr;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import com.mojang.math.Axis;
-import dev.anvilcraft.lib.v2.rendering.ALRendering;
+import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
+import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
 import dev.anvilcraft.lib.v2.rendering.foundation.compound.CompoundSubmitNodeStorage;
 import dev.anvilcraft.lib.v2.test.block.tile.TestBloomTile;
 import lombok.Getter;
@@ -59,7 +60,7 @@ public class TestBloomTESR implements BlockEntityRenderer<TestBloomTile, TestBlo
         SubmitNodeCollector submitNodeCollector,
         CameraRenderState cameraRenderState
     ) {
-        CompoundSubmitNodeStorage compoundSubmit = ALRendering.getBloomPostEffect().createCompoundSubmitStorage(submitNodeCollector);
+        CompoundSubmitNodeStorage compoundSubmit = ALRPostEffects.getBloomPostEffect().createCompoundSubmitStorage(submitNodeCollector);
         Minecraft minecraft = Minecraft.getInstance();
         poseStack.pushPose();
         poseStack.translate(0, 2, 0);

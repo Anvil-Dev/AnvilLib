@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "anvillib_test:block/test_cached_rendering"
+  }
+}

@@ -21,7 +21,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
-import dev.anvilcraft.lib.v2.rendering.ALRendering;
+import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
 import dev.anvilcraft.lib.v2.rendering.foundation.compound.CompoundSubmitNodeStorage;
 import dev.anvilcraft.lib.v2.rendering.foundation.compound.DirtyTracked;
 import lombok.Getter;
@@ -43,11 +43,6 @@ import java.util.OptionalInt;
 
 @SuppressWarnings({"FieldMayBeFinal", "SameParameterValue"})
 public class BloomPostEffect implements DirtyTracked {
-    public static final ResourceKey<PipelineModifier> REDIRECT_TO_BLOOM = ResourceKey.create(
-        PipelineModifier.MODIFIERS_KEY,
-        ALRendering.location("redirect_to_bloom")
-    );
-
     public static final int UNIFORM_TRANSFORM_SIZE = TransformsUbo.DEFINITION.size();
     public static final int UNIFORM_BLUR_SIZE = BlurParametersUbo.DEFINITION.size();
     public static final int UNIFORM_BLOOM_SIZE = BloomParametersUbo.DEFINITION.size();
@@ -202,7 +197,8 @@ public class BloomPostEffect implements DirtyTracked {
         RenderSystem.outputDepthTextureOverride = null;
     }
 
-    private void runBloomDraws(Matrix4fc modelViewMatrix, FeatureRenderDispatcher featureRenderDispatcher) {
+    public void runBloomDraws(Matrix4fc modelViewMatrix, FeatureRenderDispatcher featureRenderDispatcher) {
+        if (!dirty) return;
         beginBloomDraw();
         PoseStack poseStack = new PoseStack();
         RenderSystem.getModelViewStack().pushMatrix();
@@ -219,9 +215,7 @@ public class BloomPostEffect implements DirtyTracked {
     }
 
     @SuppressWarnings("DataFlowIssue")
-    public void process(Matrix4fc modelViewMatrix, FeatureRenderDispatcher featureRenderDispatcher) {
-        if (!dirty) return;
-        runBloomDraws(modelViewMatrix, featureRenderDispatcher);
+    public void process() {
         CommandEncoder commandEncoder = device.createCommandEncoder();
 
         transformsUbo.upload(commandEncoder, transformUBO.slice());

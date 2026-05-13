@@ -1,8 +1,8 @@
 package dev.anvilcraft.lib.v2.rendering.bloom;
 
-import dev.anvilcraft.lib.v2.rendering.foundation.ubo.UboLayoutDefinition;
-import dev.anvilcraft.lib.v2.rendering.foundation.ubo.UboLayoutEntry;
-import dev.anvilcraft.lib.v2.rendering.foundation.ubo.UboObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutDefinition;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutEntry;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboObject;
 import lombok.Getter;
 import lombok.Setter;
 import org.joml.Matrix4f;

@@ -15,7 +15,7 @@ import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 @EventBusSubscriber(Dist.CLIENT)
 public class ALRPipelines {
     public static final RenderPipeline.Snippet POST_PASS = RenderPipeline.builder()
-        .withVertexShader(ALRendering.location("core/blit"))
+        .withVertexShader(AnvilLibRendering.location("core/blit"))
         .withUniform("Transforms", UniformType.UNIFORM_BUFFER)
         .withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS)
         .withSampler("DiffuseSampler")
@@ -23,28 +23,28 @@ public class ALRPipelines {
         .buildSnippet();
 
     public static final RenderPipeline BLUR = RenderPipeline.builder(POST_PASS)
-        .withLocation(ALRendering.location("blur"))
-        .withFragmentShader(ALRendering.location("core/blur"))
+        .withLocation(AnvilLibRendering.location("blur"))
+        .withFragmentShader(AnvilLibRendering.location("core/blur"))
         .withUniform("BlurParameters", UniformType.UNIFORM_BUFFER)
         .build();
 
     public static final RenderPipeline APPLY_BLOOM = RenderPipeline.builder(POST_PASS)
-        .withLocation(ALRendering.location("apply_bloom"))
-        .withFragmentShader(ALRendering.location("core/apply_bloom"))
+        .withLocation(AnvilLibRendering.location("apply_bloom"))
+        .withFragmentShader(AnvilLibRendering.location("core/apply_bloom"))
         .withSampler("GameSampler")
         .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
         .build();
 
     public static final RenderPipeline DOWNSAMPLE = RenderPipeline.builder(POST_PASS)
-            .withLocation(ALRendering.location("down_sample"))
-            .withFragmentShader(ALRendering.location("core/down_sample"))
+            .withLocation(AnvilLibRendering.location("down_sample"))
+            .withFragmentShader(AnvilLibRendering.location("core/down_sample"))
             .withSampler("DiffuseSampler")
             .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
             .build();
 
     public static final RenderPipeline UPSAMPLE = RenderPipeline.builder(POST_PASS)
-            .withLocation(ALRendering.location("up_sample"))
-            .withFragmentShader(ALRendering.location("core/up_sample"))
+            .withLocation(AnvilLibRendering.location("up_sample"))
+            .withFragmentShader(AnvilLibRendering.location("core/up_sample"))
             .withSampler("DiffuseSampler")
             .withSampler("PreviousSampler")
             .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
@@ -58,9 +58,9 @@ public class ALRPipelines {
             .build();
 
     public static final RenderPipeline SDF_GRAPHICS = RenderPipeline.builder()
-            .withLocation(ALRendering.location("sdf_graphics"))
-            .withVertexShader(ALRendering.location("core/sdf_graphics"))
-            .withFragmentShader(ALRendering.location("core/sdf_graphics"))
+            .withLocation(AnvilLibRendering.location("sdf_graphics"))
+            .withVertexShader(AnvilLibRendering.location("core/sdf_graphics"))
+            .withFragmentShader(AnvilLibRendering.location("core/sdf_graphics"))
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
             .withVertexFormat(SDF_GRAPHICS_FORMAT, VertexFormat.Mode.QUADS)
             .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)

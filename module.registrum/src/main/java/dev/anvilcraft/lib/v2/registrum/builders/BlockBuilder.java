@@ -154,7 +154,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      * @see #item()
      */
     public BlockBuilder<T, P> simpleItem() {
-        return item().build();
+        return item().defaultLang().build();
     }
 
     /**

@@ -1,6 +1,7 @@
 {
   "block.anvillib_test.test_bloom": "Test Bloom",
   "item.anvillib_test.test_item": "Test Item",
+  "itemGroup.anvillib_test.test_tab": "Test Tab",
   "key.anvillib_test.wheel_hold": "轮盘（长按）",
   "key.anvillib_test.wheel_hold_annular": "轮盘（长按，扇形）",
   "key.anvillib_test.wheel_tap": "轮盘（触发）",

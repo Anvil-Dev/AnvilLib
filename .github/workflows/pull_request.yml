@@ -22,6 +22,14 @@ jobs:
       mod_id: anvillib_codec
       ci_build: true
       pr_build: true
+  collision:
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: collision
+      module_id: anvillib-collision
+      mod_id: anvillib_collision
+      ci_build: true
+      pr_build: true
   config:
     uses: ./.github/workflows/build_and_test.yml
     with:
@@ -151,6 +159,7 @@ jobs:
   main:
     needs:
       - codec
+      - collision
       - config
       - font
       - integration
