@@ -46,22 +46,22 @@ public class RegistrumItemTagsProvider extends RegistrumTagsProvider.IntrinsicIm
         this.blockTags = blockTags;
     }
 
-    public void copy(TagKey<Block> p_206422_, TagKey<Item> p_206423_) {
-        this.tagsToCopy.put(p_206422_, p_206423_);
+    public void copy(TagKey<Block> blockTagKey, TagKey<Item> itemTagKey) {
+        this.tagsToCopy.put(blockTagKey, itemTagKey);
     }
 
     @Override
     protected CompletableFuture<HolderLookup.Provider> createContentsProvider() {
         return super.createContentsProvider().thenCombineAsync(
-            this.blockTags, (p_274766_, p_274767_) -> {
-                this.tagsToCopy.forEach((p_274763_, p_274764_) -> {
-                    TagBuilder tagbuilder = this.getOrCreateRawBuilder(p_274764_);
-                    Optional<TagBuilder> optional = p_274767_.apply(p_274763_);
-                    optional.orElseThrow(() -> new IllegalStateException("Missing block tag " + p_274764_.location()))
+            this.blockTags, (provider, blockTagLookup) -> {
+                this.tagsToCopy.forEach((blockTagKey, itemTagKey) -> {
+                    TagBuilder tagbuilder = this.getOrCreateRawBuilder(itemTagKey);
+                    Optional<TagBuilder> optional = blockTagLookup.apply(blockTagKey);
+                    optional.orElseThrow(() -> new IllegalStateException("Missing block tag " + itemTagKey.location()))
                         .build()
                         .forEach(tagbuilder::add);
                 });
-                return p_274766_;
+                return provider;
             }
         );
     }
