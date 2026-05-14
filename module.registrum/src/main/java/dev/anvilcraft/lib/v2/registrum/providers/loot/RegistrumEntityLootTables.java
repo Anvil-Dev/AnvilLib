@@ -34,11 +34,11 @@ public class RegistrumEntityLootTables extends EntityLootSubProvider implements 
     private final Consumer<RegistrumEntityLootTables> callback;
 
     public RegistrumEntityLootTables(
-        HolderLookup.Provider p_346214_,
+        HolderLookup.Provider provider,
         AbstractRegistrum<?> parent,
         Consumer<RegistrumEntityLootTables> callback
     ) {
-        super(FeatureFlags.REGISTRY.allFlags(), p_346214_);
+        super(FeatureFlags.REGISTRY.allFlags(), provider);
         this.parent = parent;
         this.callback = callback;
     }
@@ -59,17 +59,17 @@ public class RegistrumEntityLootTables extends EntityLootSubProvider implements 
 
 
     @Override
-    public LootItemCondition.Builder killedByFrog(HolderGetter<EntityType<?>> p_361765_) {
-        return super.killedByFrog(p_361765_);
+    public LootItemCondition.Builder killedByFrog(HolderGetter<EntityType<?>> entityTypes) {
+        return super.killedByFrog(entityTypes);
     }
 
     @Override
-    public void add(EntityType<?> p_248740_, LootTable.Builder p_249440_) {
-        super.add(p_248740_, p_249440_);
+    public void add(EntityType<?> entityType, LootTable.Builder builder) {
+        super.add(entityType, builder);
     }
 
     @Override
-    public void add(EntityType<?> p_252130_, ResourceKey<LootTable> p_335943_, LootTable.Builder p_249357_) {
-        super.add(p_252130_, p_335943_, p_249357_);
+    public void add(EntityType<?> entityType, ResourceKey<LootTable> lootTable, LootTable.Builder builder) {
+        super.add(entityType, lootTable, builder);
     }
 }
