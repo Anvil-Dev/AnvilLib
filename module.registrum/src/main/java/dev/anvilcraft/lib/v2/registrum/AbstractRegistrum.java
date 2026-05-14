@@ -37,7 +37,9 @@ import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ForgeMenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.MenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ScreenFactory;
+import dev.anvilcraft.lib.v2.registrum.builders.MobEffectBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.NoConfigBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.PotionBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.SoundEventBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.data.AttachmentBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.data.DataComponentBuilder;
@@ -82,6 +84,8 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Util;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType.EntityFactory;
 import net.minecraft.world.entity.MobCategory;
@@ -1782,5 +1786,44 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         return gameEvent(self(), name, radius);
     }
 
+    // Potion
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> PotionBuilder<P> potion(P parent, String name,MobEffectInstance... effects) {
+        return entry(name, callback -> new PotionBuilder<>(this, parent, name, callback, effects));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public PotionBuilder<S> potion(String name,MobEffectInstance... effects) {
+        return potion(self(), name, effects);
+    }
+
+    // Mob Effect
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends MobEffect, P> MobEffectBuilder<T, P> mobEffect(P parent, String name, NonNullSupplier<T> supplier) {
+        return entry(name, callback -> new MobEffectBuilder<>(this, parent, name, callback, supplier));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends MobEffect> MobEffectBuilder<T, S> mobEffect(String name, NonNullSupplier<T> supplier) {
+        return mobEffect(self(), name, supplier);
+    }
 
 }
