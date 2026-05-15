@@ -23,6 +23,7 @@ public class SdfGraphicsLayer implements GuiLayer {
         this.timer += tracker.getGameTimeDeltaTicks();
 
         var minecraft = Minecraft.getInstance();
+        if (minecraft.screen != null) return;
         int xMouse  = (int)minecraft.mouseHandler.getScaledXPos(minecraft.getWindow());
         int yMouse  = (int)minecraft.mouseHandler.getScaledYPos(minecraft.getWindow());
 

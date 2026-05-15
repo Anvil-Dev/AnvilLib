@@ -44,7 +44,6 @@ import java.util.OptionalInt;
 @SuppressWarnings({"FieldMayBeFinal", "SameParameterValue"})
 public class BloomPostEffect implements DirtyTracked {
     public static final int UNIFORM_TRANSFORM_SIZE = TransformsUbo.DEFINITION.size();
-    public static final int UNIFORM_BLUR_SIZE = BlurParametersUbo.DEFINITION.size();
     public static final int UNIFORM_BLOOM_SIZE = BloomParametersUbo.DEFINITION.size();
     public static final int UNIFORM_ENHANCED_BLOOM_SIZE = BloomPipelineParametersUbo.DEFINITION.size();
 
@@ -65,12 +64,6 @@ public class BloomPostEffect implements DirtyTracked {
         () -> "BloomPostEffect->TransformUBO",
         GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
         UNIFORM_TRANSFORM_SIZE
-    );
-
-    private final GpuBuffer blurUBO = device.createBuffer(
-        () -> "BloomPostEffect->BlurUBO",
-        GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
-        UNIFORM_BLUR_SIZE
     );
 
     private final GpuBuffer bloomUBO = device.createBuffer(
@@ -110,8 +103,6 @@ public class BloomPostEffect implements DirtyTracked {
     );
 
     @Getter
-    private final BlurParametersUbo blurParameters;
-    @Getter
     private final BloomParametersUbo bloomParameters;
     @Getter
     private final BloomPipelineParametersUbo enhancedBloomParameters;
@@ -146,7 +137,6 @@ public class BloomPostEffect implements DirtyTracked {
 
         this.width = window.getWidth();
         this.height = window.getHeight();
-        this.blurParameters = new BlurParametersUbo(sampleStepLength, colorMultiplier, new Vector2f());
         this.bloomParameters = new BloomParametersUbo(bloomIntensity, bloomThreshold, bloomIntensityMultiplier);
         this.enhancedBloomParameters = new BloomPipelineParametersUbo();
         this.passes = passes;
@@ -277,33 +267,7 @@ public class BloomPostEffect implements DirtyTracked {
         bloomPass.close();
     }
 
-    @SuppressWarnings("DataFlowIssue")
-    private void blurOnce(CommandEncoder commandEncoder, RenderTarget inputTarget, RenderTarget outputTarget, boolean horizontal) {
-        Vector2f direction;
-        if (horizontal) {
-            direction = new Vector2f(1f, 0f);
-        } else {
-            direction = new Vector2f(0f, 1f);
-        }
-        blurParameters.setDirection(direction);
-        blurParameters.upload(commandEncoder, blurUBO.slice());
 
-        RenderPass blurPass = commandEncoder.createRenderPass(
-            () -> "BloomPostEffect Blur " + (horizontal ? "H" : "V"),
-            outputTarget.getColorTextureView(),
-            OptionalInt.of(0)
-        );
-
-        blurPass.setPipeline(ALRPipelines.BLUR);
-        blurPass.setUniform("Transforms", transformUBO);
-        blurPass.setUniform("BlurParameters", blurUBO);
-        blurPass.bindTexture("DiffuseSampler", inputTarget.getColorTextureView(), inputSampler);
-        blurPass.setVertexBuffer(0, vertexBuffer);
-        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
-        blurPass.setIndexBuffer(sequentialBuffer.getBuffer(indexCount), sequentialBuffer.type());
-        blurPass.drawIndexed(0, 0, indexCount, 1);
-        blurPass.close();
-    }
 
     private void doDownSample(
         CommandEncoder commandEncoder,
@@ -454,10 +418,6 @@ public class BloomPostEffect implements DirtyTracked {
                 this.upsampleTargets[i].resize(pWidth, pHeight);
             }
         }
-    }
-
-    public static RenderPipeline applyRedirect(RenderPipeline pipeline, Identifier name) {
-        return pipeline;
     }
 
     private static RenderTarget[] arrayInit(String name, int size) {

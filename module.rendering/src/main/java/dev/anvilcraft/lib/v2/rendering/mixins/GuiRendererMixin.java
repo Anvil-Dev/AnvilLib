@@ -5,12 +5,14 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.internal.ItemStackRenderStateInternals;
 import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.rendering.state.LibGuiElementRenderState;
 import net.minecraft.client.gui.render.GuiRenderer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import net.minecraft.client.renderer.state.gui.GuiItemRenderState;
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
@@ -136,6 +138,25 @@ public class GuiRendererMixin {
                 return v;
             }
         );
+    }
+
+    @ModifyArg(
+        method = "submitBlitFromItemAtlas",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/state/gui/BlitRenderState;<init>(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/client/gui/render/TextureSetup;Lorg/joml/Matrix3x2f;IIIIFFFFILnet/minecraft/client/gui/navigation/ScreenRectangle;Lnet/minecraft/client/gui/navigation/ScreenRectangle;)V"
+        ),
+        index = 0
+    )
+    public RenderPipeline modifyPipeline(
+        RenderPipeline pipeline,
+        @Local(argsOnly = true, index = 1) GuiItemRenderState itemState
+    ) {
+        boolean transparencyEnforced = ItemStackRenderStateInternals.isTransparencyEnforced(itemState.itemStackRenderState());
+        if (transparencyEnforced) {
+            return RenderPipelines.GUI_TEXTURED;
+        }
+        return pipeline;
     }
 
     @ModifyArg(
