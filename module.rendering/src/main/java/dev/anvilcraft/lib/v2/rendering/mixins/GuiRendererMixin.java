@@ -7,15 +7,19 @@ import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import dev.anvilcraft.lib.v2.rendering.internal.ItemStackRenderStateInternals;
 import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.rendering.state.LibGuiElementRenderState;
 import net.minecraft.client.gui.render.GuiRenderer;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
+import net.minecraft.client.renderer.state.gui.GuiItemRenderState;
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
+import net.minecraft.util.ARGB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.HashMap;
@@ -27,9 +31,9 @@ public class GuiRendererMixin {
     @Unique
     private GuiElementRenderState anvillib$renderState = null;
     @Unique
-    private Map<GuiRenderer.MeshToDraw, GuiElementRenderState> anvillib$renderStatesByMeshToDraw = new HashMap<>();
+    private final Map<GuiRenderer.MeshToDraw, GuiElementRenderState> anvillib$renderStatesByMeshToDraw = new HashMap<>();
     @Unique
-    private Map<GuiRenderer.Draw, GuiElementRenderState> anvillib$renderStatesByDraw = new HashMap<>();
+    private final Map<GuiRenderer.Draw, GuiElementRenderState> anvillib$renderStatesByDraw = new HashMap<>();
 
     @Inject(
         method = "addElementsToMeshes",
@@ -103,7 +107,7 @@ public class GuiRendererMixin {
         this.anvillib$renderStatesByDraw.computeIfPresent(
             draw, (_, v) -> {
                 if (v instanceof LibGuiElementRenderState state) {
-                    state.executeDrawBeforeSetPipline(renderPass);
+                    state.executeDrawBeforeSetPipeline(renderPass);
                 }
                 return v;
             }
@@ -127,11 +131,31 @@ public class GuiRendererMixin {
         this.anvillib$renderStatesByDraw.computeIfPresent(
             draw, (_, v) -> {
                 if (v instanceof LibGuiElementRenderState state) {
-                    state.executeDrawAfterSetPipline(renderPass);
+                    state.executeDrawAfterSetPipeline(renderPass);
                 }
                 return v;
             }
         );
+    }
+
+    @ModifyArg(
+        method = "submitBlitFromItemAtlas",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/state/gui/BlitRenderState;<init>(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/client/gui/render/TextureSetup;Lorg/joml/Matrix3x2f;IIIIFFFFILnet/minecraft/client/gui/navigation/ScreenRectangle;Lnet/minecraft/client/gui/navigation/ScreenRectangle;)V"
+        ),
+        index = 11
+    )
+    public int modifyAlpha(
+        int color,
+        @Local(argsOnly = true, index = 1) GuiItemRenderState itemState
+    ) {
+        boolean transparencyEnforced = ItemStackRenderStateInternals.isTransparencyEnforced(itemState.itemStackRenderState());
+        if (transparencyEnforced) {
+            float newAlpha = ItemStackRenderStateInternals.getAlpha(itemState.itemStackRenderState());
+            return ARGB.color(newAlpha, color);
+        }
+        return color;
     }
 
     @Inject(

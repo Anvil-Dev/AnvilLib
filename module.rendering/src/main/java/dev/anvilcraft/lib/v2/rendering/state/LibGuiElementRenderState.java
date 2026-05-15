@@ -14,11 +14,11 @@ public interface LibGuiElementRenderState extends GuiElementRenderState {
         return Map.of();
     }
 
-    default void executeDrawBeforeSetPipline(RenderPass renderPass) {
+    default void executeDrawBeforeSetPipeline(RenderPass renderPass) {
         this.bufferSlices().forEach(renderPass::setUniform);
     }
 
-    default void executeDrawAfterSetPipline(RenderPass renderPass) {
+    default void executeDrawAfterSetPipeline(RenderPass renderPass) {
     }
 
     static @Nullable ScreenRectangle getBounds(

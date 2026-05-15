@@ -48,7 +48,7 @@ public record SdfTextRenderState(
     }
 
     @Override
-    public void executeDrawAfterSetPipline(RenderPass renderPass) {
+    public void executeDrawAfterSetPipeline(RenderPass renderPass) {
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(this.atlasTexture);
         renderPass.bindTexture("DiffuseSampler", texture.getTextureView(), diffuseSampler);
     }
