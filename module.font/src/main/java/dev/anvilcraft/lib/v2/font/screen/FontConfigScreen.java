@@ -1,7 +1,6 @@
 package dev.anvilcraft.lib.v2.font.screen;
 
 import dev.anvilcraft.lib.v2.font.AnvilLibFont;
-import dev.anvilcraft.lib.v2.font.AnvilLibFontConfig;
 import dev.anvilcraft.lib.v2.font.FontManager;
 import dev.anvilcraft.lib.v2.font.screen.widget.Dropdown;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -42,9 +41,9 @@ public class FontConfigScreen extends Screen {
         int dropdownX = (this.width - dropdownWidth) / 2 + labelWidth + 10;
         int btnX = (this.width - btnWidth) / 2;
         dropdownWidth -= labelWidth + 10;
-        int familyDropdownY = this.height / 2 - 24;
+        int btnY = this.height / 2 - 24;
+        int familyDropdownY = btnY + 28;
         int fontDropdownY = familyDropdownY + 28;
-        int btnY = fontDropdownY + 28;
 
         this.shielding = null;
 
@@ -120,7 +119,7 @@ public class FontConfigScreen extends Screen {
         }
         int dropdownWidth = Math.clamp(this.width - 40, 180, 320);
         int dropdownLabelX = (this.width - dropdownWidth) / 2;
-        int familyDropdownLabelY = this.height / 2 - 24 + this.font.lineHeight / 2;
+        int familyDropdownLabelY = this.height / 2 - 24 + this.font.lineHeight / 2 + 28;
         int fontDropdownLabelY = familyDropdownLabelY + 28;
         guiGraphics.text(this.font, this.familyComponent, dropdownLabelX, familyDropdownLabelY, 0xFFFFFFFF);
         guiGraphics.text(this.font, this.fontComponent, dropdownLabelX, fontDropdownLabelY, 0xFFFFFFFF);

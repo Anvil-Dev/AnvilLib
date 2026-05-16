@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -30,7 +31,7 @@ public final class SdfGlyphAtlas {
     /** AWT system fonts report size 1; derive to a fixed rendering size for the atlas. */
     private static final int ATLAS_FONT_SIZE = 64;
 
-    private static final Map<String, SdfGlyphAtlas> CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, CompletableFuture<SdfGlyphAtlas>> CACHE = new ConcurrentHashMap<>();
 
     private final String key;
     private final Font font;
@@ -70,10 +71,25 @@ public final class SdfGlyphAtlas {
 
     // ── Public API ──────────────────────────────────────────────
 
-    public static SdfGlyphAtlas getOrCreate(@Nullable Font font) {
+    /** Start building the atlas on a background thread; returns the future. */
+    public static CompletableFuture<SdfGlyphAtlas> getOrCreate(@Nullable Font font) {
         Font resolved = resolveFont(font);
         String key = resolved.getFontName(Locale.ENGLISH) + "." + resolved.getStyle() + "." + resolved.getSize();
-        return CACHE.computeIfAbsent(key, _ -> new SdfGlyphAtlas(key, resolved));
+        return CACHE.computeIfAbsent(key, _ ->
+            CompletableFuture.supplyAsync(() -> new SdfGlyphAtlas(key, resolved))
+        );
+    }
+
+    /** Return the atlas if fully built, or {@code null} if still constructing. */
+    public static @Nullable SdfGlyphAtlas getIfReady(@Nullable Font font) {
+        Font resolved = resolveFont(font);
+        String key = resolved.getFontName(Locale.ENGLISH) + "." + resolved.getStyle() + "." + resolved.getSize();
+        CompletableFuture<SdfGlyphAtlas> f = CACHE.get(key);
+        if (f != null && f.isDone()) {
+            try { return f.get(); } catch (Exception ignored) {}
+        }
+        if (f == null) getOrCreate(font);
+        return null;
     }
 
     private static Font resolveFont(@Nullable Font font) {
