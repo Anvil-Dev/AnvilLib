@@ -45,7 +45,7 @@ public final class WheelTestClientHandler {
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) {
+        if (mc.player == null || mc.screen != null) {
             return;
         }
         boolean holdDotKey = WheelTestKeys.HOLD_KEY.matches(event.getKeyEvent());

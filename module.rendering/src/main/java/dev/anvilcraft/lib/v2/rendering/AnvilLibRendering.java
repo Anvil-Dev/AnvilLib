@@ -37,7 +37,7 @@ public class AnvilLibRendering {
     }
 
     @SubscribeEvent
-    public static void on(RenderLevelStageEvent.AfterTranslucentFeatures event) {
+    public static void on(RenderLevelStageEvent.AfterTranslucentParticles event) {
         if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
             CachedBlockEntityRenderingPipeline.getInstance().render(event.getLevelRenderState().cameraRenderState.cullFrustum);
         }
