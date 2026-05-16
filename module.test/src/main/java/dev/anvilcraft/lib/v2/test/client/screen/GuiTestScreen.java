@@ -2,17 +2,47 @@ package dev.anvilcraft.lib.v2.test.client.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import dev.anvilcraft.lib.v2.rendering.foundation.fakeworld.FakeDisplayLevel;
 import dev.anvilcraft.lib.v2.rendering.gui.GuiRenderExtras;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluids;
 
 public class GuiTestScreen extends Screen {
+
+    private final FakeDisplayLevel level = new FakeDisplayLevel(Minecraft.getInstance().level);
+    private final FakeDisplayLevel structure = new FakeDisplayLevel(Minecraft.getInstance().level);
+
     public GuiTestScreen() {
         super(Component.literal("SCREEN TEST"));
+        BlockState chestState = Blocks.CHEST.defaultBlockState();
+        level.setBlockEntity(BlockPos.ZERO, new ChestBlockEntity(BlockPos.ZERO, chestState));
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                structure.setBlock(new BlockPos(x, 0, z), Blocks.GRASS_BLOCK.defaultBlockState(), 0);
+            }
+        }
+
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                boolean isEdge = x == -2 || x == 2 || z == -2 || z == 2;
+                if (isEdge) {
+                    structure.setBlock(new BlockPos(x, 1, z), Blocks.GLASS.defaultBlockState(), 0);
+                } else {
+                    structure.setFluidState(new BlockPos(x, 1, z), Fluids.WATER.defaultFluidState());
+                }
+            }
+        }
+        BlockPos chestPos = new BlockPos(0, 2, 0);
+        structure.setBlock(chestPos, chestState, 0);
+        structure.setBlockEntity(chestPos, new ChestBlockEntity(chestPos, chestState));
     }
 
     @Override
@@ -74,34 +104,92 @@ public class GuiTestScreen extends Screen {
         }
 
         float gameTime = (minecraft.level.getGameTime() + minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true));
-        int size = (int) ((Math.sin(gameTime * 0.25) + 1.25f) * 4f * 32f);
 
-        PoseStack poseStack = new PoseStack();
-
-        poseStack.mulPose(Axis.XP.rotationDegrees(30));
-        poseStack.mulPose(Axis.YP.rotationDegrees(45));
-
-        poseStack.mulPose(Axis.YP.rotationDegrees(gameTime* 4.25f));
-
-
+        int size = 144;
         graphics.fill(
             startX,
             startY + 16 * 4,
             startX + size,
             startY + 16 * 4 + size,
-            -1
+            0x4429B6F6
         );
+
+        graphics.fill(
+            startX,
+            startY + 16 * 4 + size,
+            startX + size,
+            startY + 16 * 4 + size + size,
+            0x44DCE775
+        );
+
+        graphics.fill(
+            startX + 144,
+            startY + 16 * 4,
+            startX + 144 + 144,
+            startY + 16 * 4 + 144,
+            0x44FF8A65
+        );
+
+        PoseStack poseStack = new PoseStack();
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.XP.rotationDegrees(30));
+        poseStack.mulPose(Axis.YP.rotationDegrees(45));
+
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.YP.rotationDegrees(gameTime * 4.25f));
+
         GuiRenderExtras.tessellateBlock(
             graphics,
-            Blocks.GLASS.defaultBlockState(),
-            null,
-            null,
+            Blocks.CHEST.defaultBlockState(),
+            level,
+            BlockPos.ZERO,
             startX,
             startY + 16 * 4,
             size,
             true,
             poseStack
         );
+
+        poseStack.popPose();
+
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.YP.rotationDegrees(-gameTime * 4.25f));
+        GuiRenderExtras.tessellateBlock(
+            graphics,
+            Blocks.GRASS_BLOCK.defaultBlockState(),
+            null,
+            null,
+            startX,
+            startY + 16 * 4 + size,
+            size,
+            true,
+            poseStack
+        );
+
+        poseStack.popPose();
+
+        poseStack.popPose();
+
+        poseStack.pushPose();
+
+        poseStack.mulPose(Axis.XP.rotationDegrees(30));
+        poseStack.mulPose(Axis.YP.rotationDegrees(45));
+        poseStack.mulPose(Axis.YP.rotationDegrees(gameTime * 4.25f));
+
+        GuiRenderExtras.submitStructure(
+            graphics,
+            structure,
+            new BlockPos(-2, 0, -2),
+            new BlockPos(2, 2, 2),
+            startX + 144,
+            startY + 16 * 4,
+            startX + 144 + 144,
+            startY + 16 * 4 + 144,
+            18,
+            true,
+            poseStack
+        );
+
         graphics.pose().popMatrix();
     }
 

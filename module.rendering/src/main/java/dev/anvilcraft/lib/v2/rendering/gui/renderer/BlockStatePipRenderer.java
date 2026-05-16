@@ -1,10 +1,12 @@
 package dev.anvilcraft.lib.v2.rendering.gui.renderer;
 
 import com.mojang.blaze3d.platform.Lighting;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
+import dev.anvilcraft.lib.v2.rendering.ALRSharedMath;
+import dev.anvilcraft.lib.v2.rendering.util.Timer;
+import dev.anvilcraft.lib.v2.rendering.foundation.fakeworld.SimpleDelegatingTintAccess;
+import dev.anvilcraft.lib.v2.rendering.foundation.fakeworld.SimpleTintedEmptyLevelAccess;
 import dev.anvilcraft.lib.v2.rendering.gui.state.BlockStatePipRenderingState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
@@ -18,11 +20,9 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
 
 
 public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePipRenderingState> {
@@ -38,7 +38,7 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     protected void renderToTexture(BlockStatePipRenderingState renderState, PoseStack poseStack) {
-        Level level = renderState.level();
+        BlockAndTintGetter level = renderState.level();
         BlockPos blockPos = renderState.blockPos();
         BlockEntity blockEntity = null;
         BlockEntityRenderer blockEntityRenderer = null;
@@ -46,10 +46,14 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
         long seed = 42;
         ModelBlockRenderer blockRenderer = new ModelBlockRenderer(renderState.ambientOcclusion(), true, minecraft.getBlockColors());
         BlockState state = renderState.blockState();
+        BlockAndTintGetter wrappedLevel;
         if (level != null && blockPos != null) {
             blockEntity = level.getBlockEntity(blockPos);
             blockEntityRenderer = minecraft.getBlockEntityRenderDispatcher().getRenderer(blockEntity);
             seed = state.getSeed(blockPos);
+            wrappedLevel = new SimpleDelegatingTintAccess(level);
+        }else {
+            wrappedLevel = new SimpleTintedEmptyLevelAccess();
         }
 
         int guiScale = minecraft.gameRenderer.getGameRenderState().windowRenderState.guiScale;
@@ -65,7 +69,7 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
 
         poseStack.scale(scale, scale, scale);
 
-        poseStack.translate(1, 0.5, 0);
+        poseStack.translate((ALRSharedMath.SQRT_2 / 4) + 0.5, 0.5, 0);
 
         poseStack.last().pose().mul(renderState.pose3D().pose());
         poseStack.last().normal().mul(renderState.pose3D().normal());
@@ -82,7 +86,7 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
             0,
             0,
             0,
-            BlockAndTintGetter.EMPTY,
+            wrappedLevel,
             BlockPos.ZERO,
             state,
             minecraft.getModelManager().getBlockStateModelSet().get(state),
@@ -105,7 +109,7 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
             poseStack.pushPose();
             poseStack.translate(-0.5f, 0, -0.5f);
             BlockEntityRenderState blockEntityRenderState = blockEntityRenderer.createRenderState();
-            blockEntityRenderer.extractRenderState(blockEntity, blockEntityRenderState, getPartialTick(), Vec3.ZERO, null);
+            blockEntityRenderer.extractRenderState(blockEntity, blockEntityRenderState, Timer.getPartialTick(), Vec3.ZERO, null);
             blockEntityRenderer.submit(
                 blockEntityRenderState,
                 poseStack,
@@ -118,10 +122,6 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
         this.bufferSource.endBatch();
     }
 
-    public static float getPartialTick() {
-        return Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(Minecraft.getInstance().isPaused());
-    }
-
     @Override
     protected float getTranslateY(int height, int guiScale) {
         return height / 4f;
@@ -131,4 +131,5 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
     protected String getTextureLabel() {
         return "block state";
     }
+
 }
