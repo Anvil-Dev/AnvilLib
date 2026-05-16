@@ -17,6 +17,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
@@ -39,8 +40,9 @@ import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.MenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ScreenFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MobEffectBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.NoConfigBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.PotionBuilder;
-import dev.anvilcraft.lib.v2.registrum.builders.SoundEventBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.SelfBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.self.PotionBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.self.SoundEventBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.data.AttachmentBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.data.DataComponentBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.modifier.BiomeModifierBuilder;
@@ -48,6 +50,9 @@ import dev.anvilcraft.lib.v2.registrum.builders.modifier.GlobalLootModifierBuild
 import dev.anvilcraft.lib.v2.registrum.builders.modifier.StructureModifierBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.recipe.RecipeSerializerBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.recipe.RecipeTypeBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.villager.PoiTypeBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.villager.VillagerProfessionBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.villager.VillagerTypeBuilder;
 import dev.anvilcraft.lib.v2.registrum.providers.DataProviderInitializer;
 import dev.anvilcraft.lib.v2.registrum.providers.GeneratorType;
 import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
@@ -65,6 +70,7 @@ import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullUnaryOperator;
 import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -74,8 +80,8 @@ import lombok.extern.log4j.Log4j2;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -83,12 +89,14 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Util;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType.EntityFactory;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -96,10 +104,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.trading.TradeSet;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -135,6 +145,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -910,6 +921,15 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      * @return The {@link Builder} instance
      */
     public <R, T extends R, P, S2 extends Builder<R, T, P, S2>> S2 entry(String name, NonNullFunction<BuilderCallback, S2> factory) {
+        return factory.apply(this::accept);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T, P, S2 extends SelfBuilder<T, P, S2>> S2 selfEntry(String name, NonNullFunction<BuilderCallback, S2> factory) {
         return factory.apply(this::accept);
     }
 
@@ -1724,8 +1744,19 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      * @author baka4n
      */
     protected <P> SoundEventBuilder<P> soundEvent(P parent, String name) {
-        return entry(name, callback -> new SoundEventBuilder<>(this, parent, name, callback));
+        return selfEntry(name, callback -> new SoundEventBuilder<>(this, parent, name, callback));
     }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <P> SoundEventBuilder<P> soundEvent(P parent, String name, float fix) {
+        return selfEntry(name, callback -> new SoundEventBuilder<>(this, parent, name, callback, fix));
+    }
+
+
 
     /**
      * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
@@ -1735,6 +1766,17 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     public SoundEventBuilder<S> soundEvent(String name) {
         return soundEvent(self(), name);
     }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public SoundEventBuilder<S> soundEvent(String name, float fix) {
+        return soundEvent(self(), name, fix);
+    }
+
+
 
     // Recipe
 
@@ -1794,7 +1836,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      * @author baka4n
      */
     public <P> PotionBuilder<P> potion(P parent, String name,MobEffectInstance... effects) {
-        return entry(name, callback -> new PotionBuilder<>(this, parent, name, callback, effects));
+        return selfEntry(name, callback -> new PotionBuilder<>(this, parent, name, callback, effects));
     }
 
     /**
@@ -1825,5 +1867,145 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     public <T extends MobEffect> MobEffectBuilder<T, S> mobEffect(String name, NonNullSupplier<T> supplier) {
         return mobEffect(self(), name, supplier);
     }
+
+    // Villager Settings
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> VillagerTypeBuilder<P> villager(P parent, String name) {
+        return selfEntry(name, callback -> new VillagerTypeBuilder<>(this, parent, name, callback));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public VillagerTypeBuilder<S> villager(String name) {
+        return villager(self(), name);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> PoiTypeBuilder<P> poi(P parent,
+                                     String name,
+                                     Supplier<Set<BlockState>> matchingStates,
+                                     int maxTickets,
+                                     int validRange) {
+        return selfEntry(name, callback -> new PoiTypeBuilder<>(this, parent, name, callback, matchingStates, maxTickets, validRange));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public PoiTypeBuilder<S> poi(String name,
+                                 Supplier<Set<BlockState>> matchingStates,
+                                 int maxTickets,
+                                 int validRange) {
+        return poi(self(), name, matchingStates, maxTickets, validRange);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> VillagerProfessionBuilder<P> profession(P parent, String name, Predicate<Holder<PoiType>> heldJobSite,
+                                                       Predicate<Holder<PoiType>> acquirableJobSite,
+                                                       ImmutableSet<Item> requestedItems,
+                                                       ImmutableSet<Block> secondaryPoi,
+                                                       @Nullable SoundEvent workSound,
+                                                       Int2ObjectMap<ResourceKey<TradeSet>> tradeSetsByLevel) {
+        return selfEntry(name, callback -> new VillagerProfessionBuilder<>(
+                this, parent, name, callback,
+                heldJobSite, acquirableJobSite,
+                requestedItems, secondaryPoi,
+                workSound, tradeSetsByLevel
+        ));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public VillagerProfessionBuilder<S> profession(String name, Predicate<Holder<PoiType>> heldJobSite,
+                                                       Predicate<Holder<PoiType>> acquirableJobSite,
+                                                       ImmutableSet<Item> requestedItems,
+                                                       ImmutableSet<Block> secondaryPoi,
+                                                       @Nullable SoundEvent workSound,
+                                                       Int2ObjectMap<ResourceKey<TradeSet>> tradeSetsByLevel) {
+        return profession(self(), name, heldJobSite, acquirableJobSite, requestedItems, secondaryPoi, workSound, tradeSetsByLevel);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> VillagerProfessionBuilder<P> profession(P parent,
+                                                       String name,
+                                                       Predicate<Holder<PoiType>> heldJobSite,
+                                                       Predicate<Holder<PoiType>> acquirableJobSite,
+                                                       @Nullable SoundEvent workSound,
+                                                       Int2ObjectMap<ResourceKey<TradeSet>> tradeSetsByLevel) {
+        return selfEntry(name, callback -> new VillagerProfessionBuilder<>(
+                this, parent, name, callback,
+                heldJobSite, acquirableJobSite,
+                workSound, tradeSetsByLevel
+        ));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public VillagerProfessionBuilder<S> profession(String name,
+                                                   Predicate<Holder<PoiType>> heldJobSite,
+                                                   Predicate<Holder<PoiType>> acquirableJobSite,
+                                                   @Nullable SoundEvent workSound,
+                                                   Int2ObjectMap<ResourceKey<TradeSet>> tradeSetsByLevel) {
+        return profession(self(), name, heldJobSite, acquirableJobSite, workSound, tradeSetsByLevel);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> VillagerProfessionBuilder<P> profession(P parent,
+                                                       String name,
+                                                       ResourceKey<PoiType> jobSite,
+                                                       @Nullable SoundEvent workSound,
+                                                       Int2ObjectMap<ResourceKey<TradeSet>> tradeSetsByLevel) {
+        return selfEntry(name, callback -> new VillagerProfessionBuilder<>(this, parent, name, callback, jobSite, workSound, tradeSetsByLevel));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public VillagerProfessionBuilder<S> profession(String name,
+                                                   ResourceKey<PoiType> jobSite,
+                                                   @Nullable SoundEvent workSound,
+                                                   Int2ObjectMap<ResourceKey<TradeSet>> tradeSetsByLevel) {
+        return profession(self(), name, jobSite, workSound, tradeSetsByLevel);
+    }
+
+
+
+
+
+
 
 }

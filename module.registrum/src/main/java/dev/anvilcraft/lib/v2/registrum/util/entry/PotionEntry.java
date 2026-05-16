@@ -4,12 +4,12 @@ import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
 import net.minecraft.world.item.alchemy.Potion;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
-public class PotionEntry extends RegistryEntry<Potion, Potion> {
+public class PotionEntry extends SelfEntry<Potion> {
     public PotionEntry(AbstractRegistrum<?> owner, DeferredHolder<Potion, Potion> key) {
         super(owner, key);
     }
 
-    public static PotionEntry cast(RegistryEntry<Potion, Potion> entry) {
-        return RegistryEntry.cast(PotionEntry.class, entry);
+    public static PotionEntry cast(SelfEntry<Potion> entry) {
+        return SelfEntry.cast(PotionEntry.class, entry);
     }
 }
