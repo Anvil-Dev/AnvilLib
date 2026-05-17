@@ -7,7 +7,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
-public class SelfBuilder<T, P, S extends SelfBuilder<T, P, S>> extends AbstractBuilder<T, T, P, SelfBuilder<T, P, S>> {
+public class SelfBuilder<T, P, S extends SelfBuilder<T, P, S>> extends AbstractBuilder<T, T, P, S> {
     final NonNullSupplier<T> factory;
     public SelfBuilder(AbstractRegistrum<?> owner, P parent, String name, BuilderCallback callback, ResourceKey<? extends Registry<T>> registryType, NonNullSupplier<T> factory) {
         super(owner, parent, name, callback, registryType);
