@@ -82,7 +82,7 @@ public class SliderComponent implements UIComponent {
 
     /** 根据鼠标 X 坐标更新值。 */
     public void setValueFromMouse(float mouseX) {
-        float ratio = Mth.clamp((mouseX - x) / width, 0f, 1f);
+        float ratio = Mth.clamp((mouseX - x) / Math.max(width - 1, 1), 0f, 1f);
         float newValue = min + ratio * (max - min);
         if (newValue != value) {
             value = newValue;
