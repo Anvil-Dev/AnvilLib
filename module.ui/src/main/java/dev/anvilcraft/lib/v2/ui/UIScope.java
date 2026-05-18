@@ -106,7 +106,20 @@ public abstract class UIScope {
     }
 
     /**
-     * 创建滑块。
+     * 创建复选框（vModel 双向绑定）。
+     * @param label 标签文字
+     * @param vModel {@link Ref}<{@link Boolean}>，点击时自动同步值，无需手动 onToggle
+     */
+    public CheckboxComponent Checkbox(String label, Ref<Boolean> vModel) {
+        CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, vModel.getValue());
+        c.onToggle(() -> vModel.setValue(!vModel.getValue()));
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    /**
+     * 创建滑块（手动值）。
      * @param value 初始值
      * @param min 最小值
      * @param max 最大值
@@ -120,11 +133,39 @@ public abstract class UIScope {
     }
 
     /**
+     * 创建滑块（vModel 双向绑定）。
+     * @param min 最小值
+     * @param max 最大值
+     * @param width 轨道宽度（像素）
+     * @param vModel {@link Ref}<{@link Float}>，拖拽时自动同步值
+     */
+    public SliderComponent Slider(float min, float max, float width, Ref<Float> vModel) {
+        SliderComponent c = new SliderComponent(Modifier.NONE, vModel.getValue(), min, max, width);
+        c.onChange(vModel::setValue);
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    /**
      * 创建单行文本输入框。
      * @param placeholder 占位提示文字（灰色，仅在无输入时显示）
      */
     public TextInputComponent TextInput(String placeholder) {
         TextInputComponent c = new TextInputComponent(Modifier.NONE, placeholder);
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    /**
+     * 创建单行文本输入框（vModel 双向绑定）。
+     * @param placeholder 占位提示文字
+     * @param vModel {@link Ref}<{@link String}>，输入时自动同步值
+     */
+    public TextInputComponent TextInput(String placeholder, Ref<String> vModel) {
+        TextInputComponent c = new TextInputComponent(Modifier.NONE, placeholder);
+        c.onChange(vModel::setValue);
         addChild(c);
         Composition.current().emit(c);
         return c;

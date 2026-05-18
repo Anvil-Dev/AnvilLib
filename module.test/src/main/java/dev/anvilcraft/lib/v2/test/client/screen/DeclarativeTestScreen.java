@@ -80,8 +80,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     // ── 5. Checkbox ──
                     col.Text("5) Checkbox:");
                     col.Row(row -> {
-                        row.Checkbox("Enable feature", checked.getValue())
-                                .onToggle(() -> checked.setValue(!checked.getValue()));
+                        row.Checkbox("Enable feature", checked);
                         row.Text("  Enabled: " + checked.getValue());
                     }).spacing(4);
 
@@ -91,8 +90,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     Ref<Float> sliderVal = comp.ref(50f);
                     col.Text("6) Slider:");
                     col.Row(row -> {
-                        row.Slider(sliderVal.getValue(), 0, 100, 100)
-                                .onChange(sliderVal::setValue);
+                        row.Slider(0, 100, 100, sliderVal);
                         row.Text(" " + sliderVal.getValue().intValue() + "%");
                     }).spacing(4);
 
@@ -101,8 +99,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     // ── 7. TextInput ──
                     col.Text("7) TextInput:");
                     col.Row(row -> {
-                        row.TextInput("Enter text...")
-                                .onChange(text::setValue);
+                        row.TextInput("Enter text...", text);
                         row.Text("  Value: '" + text.getValue() + "'");
                     }).spacing(4);
 
