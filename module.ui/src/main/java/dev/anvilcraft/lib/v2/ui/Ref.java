@@ -36,18 +36,18 @@ public class Ref<T> {
         Composition comp = Composition.currentOrNull();
         if (comp != null && comp.currentSlot != null) {
             comp.currentSlot.addReadState(this);
-            readers.add(comp.currentSlot);
+            this.readers.add(comp.currentSlot);
         }
-        return value;
+        return this.value;
     }
 
     /**
      * 设置新值。若值发生变化，标记所有 reader slot 为脏。
      */
     public void setValue(@Nullable T newValue) {
-        if (!Objects.equals(value, newValue)) {
-            value = newValue;
-            for (Composition.Slot slot : readers) {
+        if (!Objects.equals(this.value, newValue)) {
+            this.value = newValue;
+            for (Composition.Slot slot : this.readers) {
                 slot.markDirty();
             }
         }
@@ -55,6 +55,6 @@ public class Ref<T> {
 
     @Override
     public String toString() {
-        return "State(" + value + ")";
+        return "State(" + this.value + ")";
     }
 }

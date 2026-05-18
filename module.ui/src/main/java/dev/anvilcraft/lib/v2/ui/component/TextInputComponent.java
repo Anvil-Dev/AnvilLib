@@ -20,20 +20,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * 单行文本输入框。参照原版 {@code EditBox} 实现。
- * <p>
- * placeholder 作为占位提示（灰色），开始输入后直接替换为输入内容。
- * 字符输入通过 {@link CharacterEvent} 处理，支持所有语言和输入法。
- */
 @Accessors(fluent = true)
-@SuppressWarnings(
-    {
-        "unused",
-        "UnusedReturnValue"
-    }
-)
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class TextInputComponent implements UIComponent, KeyInputHandler {
+
     private static final int BG_COLOR = 0xFF202020;
     private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int PLACEHOLDER_COLOR = 0xFF555555;
@@ -42,8 +32,7 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     private static final float PADDING_V = 4;
     private static final float WIDTH = 160;
     private final String placeholder;
-    @Getter
-    @Setter
+    @Getter @Setter
     private Modifier modifier;
     @Getter
     private String value = "";
@@ -55,7 +44,6 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     @Getter
     private int cursorPos;
 
-    @Getter
     private float x, y, width, height;
 
     public TextInputComponent(Modifier modifier, @Nullable String placeholder) {
@@ -69,17 +57,14 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     }
 
     public void setCursorPos(int pos) {
-        this.cursorPos = Math.clamp(pos, 0, value.length());
+        this.cursorPos = Math.clamp(pos, 0, this.value.length());
     }
 
     public void setFocused(boolean focused) {
         this.focused = focused;
     }
 
-    @Override
-    public List<UIComponent> children() {
-        return Collections.emptyList();
-    }
+    @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
@@ -97,87 +82,70 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        int ix = (int) x, iy = (int) y, iw = (int) width, ih = (int) height;
+        int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
         extractor.fill(ix, iy, ix + iw, iy + ih, BG_COLOR);
 
         var font = Minecraft.getInstance().font;
         int textX = ix + (int) PADDING_H;
-        int textY = (int) (y + (height + font.lineHeight) / 2f - font.lineHeight);
-        boolean hasText = !value.isEmpty();
+        int textY = (int) (this.y + (this.height + font.lineHeight) / 2f - font.lineHeight);
+        boolean hasText = !this.value.isEmpty();
 
-        String display = hasText ? value : placeholder;
+        String display = hasText ? this.value : this.placeholder;
         int color = hasText ? TEXT_COLOR : PLACEHOLDER_COLOR;
         extractor.text(font, display, textX, textY, color);
 
-        if (focused && hasText) {
-            String before = value.substring(0, Math.min(cursorPos, value.length()));
-            int cursorX = (int) (x + PADDING_H + font.width(before));
+        if (this.focused && hasText) {
+            String before = this.value.substring(0, Math.min(this.cursorPos, this.value.length()));
+            int cursorX = (int) (this.x + PADDING_H + font.width(before));
             extractor.fill(cursorX, iy + 2, cursorX + 1, iy + ih - 2, CURSOR_COLOR);
         }
     }
 
-    // ── 键盘输入 ──
-
     @Override
     public boolean onKeyPressed(KeyEvent event) {
         int key = event.key();
-        if (key == 259) { // 退格
-            if (cursorPos > 0) {
-                value = new StringBuilder(value).deleteCharAt(cursorPos - 1).toString();
-                cursorPos--;
-                fireChange();
+        if (key == 259) {
+            if (this.cursorPos > 0) {
+                this.value = new StringBuilder(this.value).deleteCharAt(this.cursorPos - 1).toString();
+                this.cursorPos--;
+                this.fireChange();
             }
             return true;
         }
-        if (key == 261) { // Delete
-            if (cursorPos < value.length()) {
-                value = new StringBuilder(value).deleteCharAt(cursorPos).toString();
-                fireChange();
+        if (key == 261) {
+            if (this.cursorPos < this.value.length()) {
+                this.value = new StringBuilder(this.value).deleteCharAt(this.cursorPos).toString();
+                this.fireChange();
             }
             return true;
         }
-        if (key == 263) {
-            if (cursorPos > 0) cursorPos--;
-            return true;
-        } // ←
-        if (key == 262) {
-            if (cursorPos < value.length()) cursorPos++;
-            return true;
-        } // →
-        if (key == 268) {
-            cursorPos = 0;
-            return true;
-        } // Home
-        if (key == 269) {
-            cursorPos = value.length();
-            return true;
-        } // End
+        if (key == 263) { if (this.cursorPos > 0) this.cursorPos--; return true; }
+        if (key == 262) { if (this.cursorPos < this.value.length()) this.cursorPos++; return true; }
+        if (key == 268) { this.cursorPos = 0; return true; }
+        if (key == 269) { this.cursorPos = this.value.length(); return true; }
         return false;
     }
 
-    /**
-     * 字符输入——支持所有语言、输入法、小键盘。参照原版 {@code EditBox.charTyped}。
-     */
     @Override
     public boolean onCharTyped(CharacterEvent event) {
         if (!event.isAllowedChatCharacter()) return false;
         String text = StringUtil.filterText(event.codepointAsString());
         if (text.isEmpty()) return false;
-        insertText(text);
+        this.insertText(text);
         return true;
     }
 
     private void insertText(String text) {
-        value = new StringBuilder(value).insert(cursorPos, text).toString();
-        cursorPos += text.length();
-        fireChange();
+        this.value = new StringBuilder(this.value).insert(this.cursorPos, text).toString();
+        this.cursorPos += text.length();
+        this.fireChange();
     }
 
     private void fireChange() {
-        if (onChange != null) onChange.accept(value);
+        if (this.onChange != null) this.onChange.accept(this.value);
     }
 
     public LayoutRect hitRect() {
-        return LayoutRect.of(x, y, width, height);
+        return LayoutRect.of(this.x, this.y, this.width, this.height);
     }
 }

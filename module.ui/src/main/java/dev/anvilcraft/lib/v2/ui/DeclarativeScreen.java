@@ -50,13 +50,12 @@ public abstract class DeclarativeScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(extractor, mouseX, mouseY, partialTick);
-        if (composition != null) {
-            composition.renderFrame(extractor, this.width, this.height);
-            updateHover(mouseX, mouseY);
-            refreshFocus();
-            // 延迟渲染下拉弹出层（确保 z-order 正确）
-            for (UIComponent child : rootScope.getChildren()) {
-                renderPopups(child, extractor);
+        if (this.composition != null) {
+            this.composition.renderFrame(extractor, this.width, this.height);
+            this.updateHover(mouseX, mouseY);
+            this.refreshFocus();
+            for (UIComponent child : this.rootScope.getChildren()) {
+                this.renderPopups(child, extractor);
             }
         }
     }
@@ -66,10 +65,10 @@ public abstract class DeclarativeScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (event.key() == 256) {
-            onClose();
+            this.onClose();
             return true;
         }
-        if (focusOwner != null && focusOwner.onKeyPressed(event)) {
+        if (this.focusOwner != null && this.focusOwner.onKeyPressed(event)) {
             return true;
         }
         return super.keyPressed(event);
@@ -82,13 +81,13 @@ public abstract class DeclarativeScreen extends Screen {
 
     @Override
     protected void init() {
-        composition = new Composition(rootScope);
-        composition.setContent(this::content);
+        this.composition = new Composition(this.rootScope);
+        this.composition.setContent(this::content);
     }
 
     private void renderPopups(UIComponent component, GuiGraphicsExtractor extractor) {
         if (component instanceof DropdownComponent dd) dd.renderPopup(extractor);
-        for (UIComponent child : component.children()) renderPopups(child, extractor);
+        for (UIComponent child : component.children()) this.renderPopups(child, extractor);
     }
 
     // ── 鼠标输入 ──
@@ -97,21 +96,21 @@ public abstract class DeclarativeScreen extends Screen {
      * recompose 后重新绑定 focusOwner（旧实例可能已被替换）。
      */
     private void refreshFocus() {
-        if (focusOwner == null) return;
-        for (UIComponent child : rootScope.getChildren()) {
-            KeyInputHandler found = findFocused(child);
+        if (this.focusOwner == null) return;
+        for (UIComponent child : this.rootScope.getChildren()) {
+            KeyInputHandler found = this.findFocused(child);
             if (found != null) {
-                focusOwner = found;
+                this.focusOwner = found;
                 return;
             }
         }
-        focusOwner = null;
+        this.focusOwner = null;
     }
 
     private @Nullable KeyInputHandler findFocused(UIComponent component) {
         if (component instanceof TextInputComponent tf && tf.focused()) return tf;
         for (UIComponent child : component.children()) {
-            KeyInputHandler found = findFocused(child);
+            KeyInputHandler found = this.findFocused(child);
             if (found != null) return found;
         }
         return null;
@@ -124,25 +123,22 @@ public abstract class DeclarativeScreen extends Screen {
             int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
             int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
 
-            // 清除焦点
-            focusOwner = null;
-            for (UIComponent child : rootScope.getChildren()) {
-                clearFocusRecursive(child);
+            this.focusOwner = null;
+            for (UIComponent child : this.rootScope.getChildren()) {
+                this.clearFocusRecursive(child);
             }
 
-            // 命中测试
             boolean hit = false;
-            for (UIComponent child : rootScope.getChildren()) {
-                if (hitTestClick(child, mx, my)) {
+            for (UIComponent child : this.rootScope.getChildren()) {
+                if (this.hitTestClick(child, mx, my)) {
                     hit = true;
                     break;
                 }
             }
 
-            // 未命中任何 dropdown 时关闭所有
             if (!hit) {
-                for (UIComponent child : rootScope.getChildren()) {
-                    closeDropdownsRecursive(child);
+                for (UIComponent child : this.rootScope.getChildren()) {
+                    this.closeDropdownsRecursive(child);
                 }
             }
 
@@ -156,8 +152,8 @@ public abstract class DeclarativeScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        for (UIComponent child : rootScope.getChildren()) {
-            stopDragRecursive(child);
+        for (UIComponent child : this.rootScope.getChildren()) {
+            this.stopDragRecursive(child);
         }
         return super.mouseReleased(event);
     }
@@ -169,16 +165,16 @@ public abstract class DeclarativeScreen extends Screen {
         var mc = Minecraft.getInstance();
         int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
         int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        for (UIComponent child : rootScope.getChildren()) {
-            if (hitTestDrag(child, mx, my)) return true;
+        for (UIComponent child : this.rootScope.getChildren()) {
+            if (this.hitTestDrag(child, mx, my)) return true;
         }
         return super.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        for (UIComponent child : rootScope.getChildren()) {
-            if (hitTestScroll(child, (float) mouseX, (float) mouseY, (float) scrollY)) {
+        for (UIComponent child : this.rootScope.getChildren()) {
+            if (this.hitTestScroll(child, (float) mouseX, (float) mouseY, (float) scrollY)) {
                 return true;
             }
         }
@@ -187,7 +183,7 @@ public abstract class DeclarativeScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
-        if (focusOwner != null && focusOwner.onCharTyped(event)) {
+        if (this.focusOwner != null && this.focusOwner.onCharTyped(event)) {
             return true;
         }
         return super.charTyped(event);
@@ -201,7 +197,7 @@ public abstract class DeclarativeScreen extends Screen {
     private boolean hitTestClick(UIComponent component, float px, float py) {
         var children = component.children();
         for (int i = children.size() - 1; i >= 0; i--) {
-            if (hitTestClick(children.get(i), px, py)) return true;
+            if (this.hitTestClick(children.get(i), px, py)) return true;
         }
         switch (component) {
             case ButtonComponent btn when btn.hitRect().contains(px, py) -> {
@@ -218,7 +214,7 @@ public abstract class DeclarativeScreen extends Screen {
             }
             case TextInputComponent tf when tf.hitRect().contains(px, py) -> {
                 tf.setFocused(true);
-                focusOwner = tf;
+                this.focusOwner = tf;
                 return true;
             }
             case DropdownComponent dd -> {
@@ -245,7 +241,7 @@ public abstract class DeclarativeScreen extends Screen {
     private boolean hitTestDrag(UIComponent component, float px, float py) {
         var children = component.children();
         for (int i = children.size() - 1; i >= 0; i--) {
-            if (hitTestDrag(children.get(i), px, py)) return true;
+            if (this.hitTestDrag(children.get(i), px, py)) return true;
         }
         switch (component) {
             case SliderComponent sl when sl.hitRect().contains(px, py) -> {
@@ -271,7 +267,7 @@ public abstract class DeclarativeScreen extends Screen {
      */
     private void closeDropdownsRecursive(UIComponent component) {
         if (component instanceof DropdownComponent dd) dd.setOpen(false);
-        for (UIComponent child : component.children()) closeDropdownsRecursive(child);
+        for (UIComponent child : component.children()) this.closeDropdownsRecursive(child);
     }
 
     /**
@@ -280,7 +276,7 @@ public abstract class DeclarativeScreen extends Screen {
     private void stopDragRecursive(UIComponent component) {
         if (component instanceof ScrollableComponent sc) sc.stopScrollbarDrag();
         if (component instanceof DropdownComponent dd) dd.stopPopupScrollbarDrag();
-        for (UIComponent child : component.children()) stopDragRecursive(child);
+        for (UIComponent child : component.children()) this.stopDragRecursive(child);
     }
 
     /**
@@ -289,7 +285,7 @@ public abstract class DeclarativeScreen extends Screen {
     private boolean hitTestScroll(UIComponent component, float px, float py, float amount) {
         var children = component.children();
         for (int i = children.size() - 1; i >= 0; i--) {
-            if (hitTestScroll(children.get(i), px, py, amount)) return true;
+            if (this.hitTestScroll(children.get(i), px, py, amount)) return true;
         }
         if (component instanceof ScrollableComponent sc && sc.hitRect().contains(px, py)) {
             return sc.onScroll(amount);
@@ -306,15 +302,15 @@ public abstract class DeclarativeScreen extends Screen {
      */
     private void clearFocusRecursive(UIComponent component) {
         if (component instanceof TextInputComponent tf) tf.setFocused(false);
-        for (UIComponent child : component.children()) clearFocusRecursive(child);
+        for (UIComponent child : component.children()) this.clearFocusRecursive(child);
     }
 
     /**
      * 遍历组件树，更新 ButtonComponent 的 hover 状态。
      */
     private void updateHover(float mouseX, float mouseY) {
-        for (UIComponent child : rootScope.getChildren()) {
-            updateHoverRecursive(child, mouseX, mouseY);
+        for (UIComponent child : this.rootScope.getChildren()) {
+            this.updateHoverRecursive(child, mouseX, mouseY);
         }
     }
 
@@ -323,7 +319,7 @@ public abstract class DeclarativeScreen extends Screen {
             btn.setHovered(btn.hitRect().contains(mx, my));
         }
         for (UIComponent child : component.children()) {
-            updateHoverRecursive(child, mx, my);
+            this.updateHoverRecursive(child, mx, my);
         }
     }
 

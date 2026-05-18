@@ -44,8 +44,8 @@ public class SpacerComponent implements UIComponent {
     @Override
     public MeasuredSize measure(Constraints constraints) {
         return MeasuredSize.of(
-            constraints.constrainWidth(spacerWidth),
-            constraints.constrainHeight(spacerHeight)
+            constraints.constrainWidth(this.spacerWidth),
+            constraints.constrainHeight(this.spacerHeight)
         );
     }
 

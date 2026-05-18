@@ -63,7 +63,7 @@ public class SliderComponent implements UIComponent {
     @Override
     public MeasuredSize measure(Constraints constraints) {
         return MeasuredSize.of(
-            constraints.constrainWidth(trackWidth),
+            constraints.constrainWidth(this.trackWidth),
             constraints.constrainHeight(THUMB_H)
         );
     }
@@ -78,17 +78,17 @@ public class SliderComponent implements UIComponent {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        int ix = (int) x, iy = (int) y;
-        int iw = (int) width;
+        int ix = (int) this.x, iy = (int) this.y;
+        int iw = (int) this.width;
 
         // 轨道 — 居中画在 THUMB_H 中间
-        int trackY = (int) (y + (THUMB_H - TRACK_H) / 2f);
+        int trackY = (int) (this.y + (THUMB_H - TRACK_H) / 2f);
         extractor.fill(ix, trackY, ix + iw, (int) (trackY + TRACK_H), TRACK_COLOR);
 
         // 滑块 — 按比例定位
-        float ratio = (value - min) / (max - min);
-        float thumbX = x + ratio * (width - THUMB_W);
-        int tix = (int) thumbX, tiy = (int) y;
+        float ratio = (this.value - this.min) / (this.max - this.min);
+        float thumbX = this.x + ratio * (this.width - THUMB_W);
+        int tix = (int) thumbX, tiy = (int) this.y;
         extractor.fill(tix, tiy, tix + (int) THUMB_W, tiy + (int) THUMB_H, THUMB_COLOR);
     }
 
@@ -96,11 +96,11 @@ public class SliderComponent implements UIComponent {
      * 根据鼠标 X 坐标更新值。
      */
     public void setValueFromMouse(float mouseX) {
-        float ratio = Mth.clamp((mouseX - x) / Math.max(width - 1, 1), 0f, 1f);
-        float newValue = min + ratio * (max - min);
-        if (newValue != value) {
-            value = newValue;
-            if (onChange != null) onChange.accept(value);
+        float ratio = Mth.clamp((mouseX - this.x) / Math.max(this.width - 1, 1), 0f, 1f);
+        float newValue = this.min + ratio * (this.max - this.min);
+        if (newValue != this.value) {
+            this.value = newValue;
+            if (this.onChange != null) this.onChange.accept(this.value);
         }
     }
 
@@ -108,6 +108,6 @@ public class SliderComponent implements UIComponent {
      * 命中测试包围盒（整个轨道+滑块区域）。
      */
     public LayoutRect hitRect() {
-        return LayoutRect.of(x, y, width, height);
+        return LayoutRect.of(this.x, this.y, this.width, this.height);
     }
 }

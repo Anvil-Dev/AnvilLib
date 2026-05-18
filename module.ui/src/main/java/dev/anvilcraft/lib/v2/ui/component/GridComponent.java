@@ -13,20 +13,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * 网格布局。子组件按列数排列，每格大小由最大子组件决定。
- */
 @Accessors(fluent = true)
-@SuppressWarnings(
-    {
-        "unused",
-        "UnusedReturnValue"
-    }
-)
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class GridComponent implements UIComponent {
+
     private final int columns;
-    @Getter
-    @Setter
+    @Getter @Setter
     private Modifier modifier;
     @Getter
     private List<UIComponent> children = Collections.emptyList();
@@ -34,7 +26,6 @@ public class GridComponent implements UIComponent {
     private List<MeasuredSize> childSizes = Collections.emptyList();
     private float hSpacing, vSpacing;
 
-    @Getter
     private float x, y, width, height;
     private float cellW, cellH;
 
@@ -54,13 +45,13 @@ public class GridComponent implements UIComponent {
     }
 
     public MeasuredSize measure(Constraints constraints) {
-        if (children.isEmpty()) return MeasuredSize.ZERO;
+        if (this.children.isEmpty()) return MeasuredSize.ZERO;
 
         float maxW = 0, maxH = 0;
-        List<MeasuredSize> sizes = new ArrayList<>(children.size());
+        List<MeasuredSize> sizes = new ArrayList<>(this.children.size());
         Constraints childC = new Constraints(0, Float.MAX_VALUE, 0, Float.MAX_VALUE);
 
-        for (UIComponent child : children) {
+        for (UIComponent child : this.children) {
             MeasuredSize s = child.measure(childC);
             sizes.add(s);
             maxW = Math.max(maxW, s.width());
@@ -71,9 +62,9 @@ public class GridComponent implements UIComponent {
         this.cellW = maxW;
         this.cellH = maxH;
 
-        int rows = (children.size() + columns - 1) / columns;
-        float totalW = maxW * columns + hSpacing * (columns - 1);
-        float totalH = maxH * rows + vSpacing * (rows - 1);
+        int rows = (this.children.size() + this.columns - 1) / this.columns;
+        float totalW = maxW * this.columns + this.hSpacing * (this.columns - 1);
+        float totalH = maxH * rows + this.vSpacing * (rows - 1);
 
         return MeasuredSize.of(constraints.constrainWidth(totalW), constraints.constrainHeight(totalH));
     }
@@ -84,16 +75,16 @@ public class GridComponent implements UIComponent {
         this.width = width;
         this.height = height;
 
-        for (int i = 0; i < children.size(); i++) {
-            int col = i % columns;
-            int row = i / columns;
-            float cx = x + col * (cellW + hSpacing);
-            float cy = y + row * (cellH + vSpacing);
-            children.get(i).layout(cx, cy, cellW, cellH);
+        for (int i = 0; i < this.children.size(); i++) {
+            int col = i % this.columns;
+            int row = i / this.columns;
+            float cx = this.x + col * (this.cellW + this.hSpacing);
+            float cy = this.y + row * (this.cellH + this.vSpacing);
+            this.children.get(i).layout(cx, cy, this.cellW, this.cellH);
         }
     }
 
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        for (UIComponent child : children) child.extractRenderState(extractor);
+        for (UIComponent child : this.children) child.extractRenderState(extractor);
     }
 }

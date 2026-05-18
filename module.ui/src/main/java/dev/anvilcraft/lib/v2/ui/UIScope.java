@@ -46,21 +46,21 @@ public abstract class UIScope {
      * 向当前 scope 添加一个子组件。
      */
     public void addChild(UIComponent child) {
-        children.add(child);
+        this.children.add(child);
     }
 
     /**
      * 返回当前 scope 中已收集的子组件列表（只读）。
      */
     public List<UIComponent> getChildren() {
-        return Collections.unmodifiableList(children);
+        return Collections.unmodifiableList(this.children);
     }
 
     /**
      * 内部方法：recompose 前清空子组件。
      */
     void clearChildren() {
-        children.clear();
+        this.children.clear();
     }
 
     // ── 组件构建器 ──
@@ -73,7 +73,7 @@ public abstract class UIScope {
      */
     public TextComponent Text(String text) {
         TextComponent c = new TextComponent(Modifier.NONE, text);
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -86,7 +86,7 @@ public abstract class UIScope {
      */
     public SpacerComponent Spacer(float width, float height) {
         SpacerComponent c = new SpacerComponent(Modifier.NONE, width, height);
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -100,7 +100,7 @@ public abstract class UIScope {
      */
     public ImageComponent Image(Identifier sprite, float width, float height) {
         ImageComponent c = new ImageComponent(Modifier.NONE, sprite, width, height);
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -113,7 +113,7 @@ public abstract class UIScope {
      */
     public CheckboxComponent Checkbox(String label, boolean checked) {
         CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, checked);
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -127,7 +127,7 @@ public abstract class UIScope {
     public CheckboxComponent Checkbox(String label, Ref<Boolean> vModel) {
         CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, vModel.getValue() != null && vModel.getValue());
         c.onToggle(() -> vModel.setValue(!vModel.getValue()));
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -141,7 +141,7 @@ public abstract class UIScope {
      */
     public DropdownComponent Dropdown(String[] options, int selectedIndex, float maxPopupHeight) {
         DropdownComponent c = new DropdownComponent(Modifier.NONE, options, selectedIndex, maxPopupHeight);
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -156,7 +156,7 @@ public abstract class UIScope {
      */
     public SliderComponent Slider(float value, float min, float max, float width) {
         SliderComponent c = new SliderComponent(Modifier.NONE, value, min, max, width);
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -172,7 +172,7 @@ public abstract class UIScope {
     public SliderComponent Slider(float min, float max, float width, Ref<Float> vModel) {
         SliderComponent c = new SliderComponent(Modifier.NONE, vModel.getValue() == null ? 0 : vModel.getValue(), min, max, width);
         c.onChange(vModel::setValue);
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -184,7 +184,7 @@ public abstract class UIScope {
      */
     public TextInputComponent TextInput(String placeholder) {
         TextInputComponent c = new TextInputComponent(Modifier.NONE, placeholder);
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -198,7 +198,7 @@ public abstract class UIScope {
     public TextInputComponent TextInput(String placeholder, Ref<String> vModel) {
         TextInputComponent c = new TextInputComponent(Modifier.NONE, placeholder);
         c.onChange(vModel::setValue);
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -210,7 +210,7 @@ public abstract class UIScope {
      */
     public ButtonComponent Button(String label) {
         ButtonComponent c = new ButtonComponent(Modifier.NONE, label);
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -226,7 +226,7 @@ public abstract class UIScope {
         ColumnScope inner = new ColumnScope();
         content.accept(inner);
         c.setChildren(inner.getChildren());
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -242,7 +242,7 @@ public abstract class UIScope {
         RowScope inner = new RowScope();
         content.accept(inner);
         c.setChildren(inner.getChildren());
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -257,7 +257,7 @@ public abstract class UIScope {
         BoxScope inner = new BoxScope();
         content.accept(inner);
         c.setChildren(inner.getChildren());
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -274,7 +274,7 @@ public abstract class UIScope {
         GridScope inner = new GridScope();
         content.accept(inner);
         c.setChildren(inner.getChildren());
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }
@@ -290,7 +290,7 @@ public abstract class UIScope {
         ScrollableScope inner = new ScrollableScope();
         content.accept(inner);
         c.setChildren(inner.getChildren());
-        addChild(c);
+        this.addChild(c);
         Composition.current().emit(c);
         return c;
     }

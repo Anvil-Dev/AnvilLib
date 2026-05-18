@@ -15,26 +15,17 @@ import org.jspecify.annotations.Nullable;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * 可点击按钮。原版 fill() 背景 + 手动居中 text() 文字。
- */
 @Accessors(fluent = true)
-@SuppressWarnings(
-    {
-        "unused",
-        "UnusedReturnValue"
-    }
-)
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class ButtonComponent implements UIComponent {
-    // 原版按钮配色
-    private static final int BG_COLOR = 0xFF404040;
-    private static final int BG_HOVER_COLOR = 0xFF606060;
-    private static final int TEXT_COLOR = 0xFFFFFFFF;
-    private static final float PADDING_H = 12;
-    private static final float PADDING_V = 6;
 
-    @Getter
-    @Setter
+    private static final int BG_COLOR       = 0xFF404040;
+    private static final int BG_HOVER_COLOR = 0xFF606060;
+    private static final int TEXT_COLOR     = 0xFFFFFFFF;
+    private static final float PADDING_H    = 12;
+    private static final float PADDING_V    = 6;
+
+    @Getter @Setter
     private Modifier modifier;
     @Setter
     private String label;
@@ -42,7 +33,6 @@ public class ButtonComponent implements UIComponent {
     private Runnable onClick;
     private boolean hovered;
 
-    @Getter
     private float x, y, width, height;
 
     public ButtonComponent(Modifier modifier, String label) {
@@ -50,24 +40,15 @@ public class ButtonComponent implements UIComponent {
         this.label = label;
     }
 
-    public ButtonComponent onClick(@Nullable Runnable onClick) {
-        this.onClick = onClick;
-        return this;
-    }
+    public ButtonComponent onClick(@Nullable Runnable onClick) { this.onClick = onClick; return this; }
+    public void setHovered(boolean hovered) { this.hovered = hovered; }
 
-    public void setHovered(boolean hovered) {
-        this.hovered = hovered;
-    }
-
-    @Override
-    public List<UIComponent> children() {
-        return Collections.emptyList();
-    }
+    @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
         var font = Minecraft.getInstance().font;
-        float textW = font.width(label);
+        float textW = font.width(this.label);
         float textH = font.lineHeight;
         return MeasuredSize.of(
             constraints.constrainWidth(textW + PADDING_H * 2),
@@ -85,34 +66,22 @@ public class ButtonComponent implements UIComponent {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        int bg = hovered ? BG_HOVER_COLOR : BG_COLOR;
-        int ix = (int) x, iy = (int) y, iw = (int) width, ih = (int) height;
-
-        // 背景 — 用原版 fill，精确定位
+        int bg = this.hovered ? BG_HOVER_COLOR : BG_COLOR;
+        int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
         extractor.fill(ix, iy, ix + iw, iy + ih, bg);
 
-        // 文字 — text() 手动居中
         var font = Minecraft.getInstance().font;
-        String txt = label;
-        float textW = font.width(txt);
-        int textX = (int) (x + (width - textW) / 2f);
-        int textY = (int) (y + (height - font.lineHeight) / 2f);
-
-        extractor.text(font, txt, textX, textY, TEXT_COLOR, true);
+        float textW = font.width(this.label);
+        int textX = (int) (this.x + (this.width - textW) / 2f);
+        int textY = (int) (this.y + (this.height - font.lineHeight) / 2f);
+        extractor.text(font, this.label, textX, textY, TEXT_COLOR, true);
     }
 
-    /**
-     * 按钮包围盒，用于命中测试。
-     */
     public LayoutRect hitRect() {
-        return LayoutRect.of(x, y, width, height);
+        return LayoutRect.of(this.x, this.y, this.width, this.height);
     }
 
-    /**
-     * 触发点击回调。
-     */
     public void click() {
-        if (onClick != null) onClick.run();
+        if (this.onClick != null) this.onClick.run();
     }
 }
-

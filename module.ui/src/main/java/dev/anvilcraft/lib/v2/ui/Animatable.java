@@ -55,19 +55,19 @@ public class Animatable {
      * 每 tick 调用一次以推进动画。返回 true 表示动画进行中。
      */
     public boolean tick() {
-        if (elapsed >= durationTicks) return false;
-        elapsed++;
-        float t = durationTicks > 0 ? (float) elapsed / durationTicks : 1f;
+        if (this.elapsed >= this.durationTicks) return false;
+        this.elapsed++;
+        float t = this.durationTicks > 0 ? (float) this.elapsed / this.durationTicks : 1f;
         // 缓入缓出
         float eased = t < 0.5f ? 2f * t * t : -1f + (4f - 2f * t) * t;
-        this.value = Mth.lerp(eased, startValue, targetValue);
-        return elapsed < durationTicks;
+        this.value = Mth.lerp(eased, this.startValue, this.targetValue);
+        return this.elapsed < this.durationTicks;
     }
 
     /**
      * 动画是否进行中。
      */
     public boolean isRunning() {
-        return elapsed < durationTicks;
+        return this.elapsed < this.durationTicks;
     }
 }

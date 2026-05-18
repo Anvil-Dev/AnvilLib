@@ -81,15 +81,15 @@ public class Composition {
      * 标记组合需要在下一帧 recompose。
      */
     public void invalidate() {
-        dirty = true;
+        this.dirty = true;
     }
 
     /**
      * 注册动画值，每帧自动 tick。动画进行中时自动触发 recompose。
      */
     public void watch(Animatable anim) {
-        if (!animatables.contains(anim)) {
-            animatables.add(anim);
+        if (!this.animatables.contains(anim)) {
+            this.animatables.add(anim);
         }
     }
 
@@ -100,13 +100,13 @@ public class Composition {
      */
     @SuppressWarnings("unchecked")
     public <T> T remember(Supplier<T> init) {
-        int key = currentRememberKey++;
-        Object existing = rememberedValues.get(key);
+        int key = this.currentRememberKey++;
+        Object existing = this.rememberedValues.get(key);
         if (existing != null) {
             return (T) existing;
         }
         T value = init.get();
-        rememberedValues.put(key, value);
+        this.rememberedValues.put(key, value);
         return value;
     }
 
@@ -114,7 +114,7 @@ public class Composition {
      * {@code comp.ref(0)} 等价于 {@code comp.remember(() -> new Ref<>(0))}。
      */
     public <T> Ref<T> ref(T initialValue) {
-        return remember(() -> new Ref<>(initialValue));
+        return this.remember(() -> new Ref<>(initialValue));
     }
 
     // ── emit ──
@@ -124,21 +124,20 @@ public class Composition {
      */
     public void emit(UIComponent component) {
         Slot slot;
-        if (currentIndex < slots.size()) {
-            slot = slots.get(currentIndex);
-            // 同类型组件保留运行时状态（如滚动位置）
+        if (this.currentIndex < this.slots.size()) {
+            slot = this.slots.get(this.currentIndex);
             UIComponent old = slot.component;
             if (old != null && old.getClass() == component.getClass()) {
-                copyRuntimeState(old, component);
+                this.copyRuntimeState(old, component);
             }
             slot.component = component;
         } else {
             slot = new Slot();
             slot.component = component;
-            slots.add(slot);
+            this.slots.add(slot);
         }
-        currentSlot = slot;
-        currentIndex++;
+        this.currentSlot = slot;
+        this.currentIndex++;
     }
 
     /**
@@ -171,17 +170,17 @@ public class Composition {
     public void renderFrame(GuiGraphicsExtractor extractor, float screenWidth, float screenHeight) {
         CURRENT.set(this);
         try {
-            for (Animatable anim : animatables) {
-                if (anim.tick()) dirty = true;
+            for (Animatable anim : this.animatables) {
+                if (anim.tick()) this.dirty = true;
             }
-            if (dirty || hasDirtySlots()) {
-                recompose();
-                dirty = false;
+            if (this.dirty || this.hasDirtySlots()) {
+                this.recompose();
+                this.dirty = false;
             }
             Constraints rootConstraints = new Constraints(0, screenWidth, 0, screenHeight);
-            if (rootScope != null) {
-                for (UIComponent child : rootScope.getChildren()) {
-                    renderTree(child, extractor, rootConstraints);
+            if (this.rootScope != null) {
+                for (UIComponent child : this.rootScope.getChildren()) {
+                    this.renderTree(child, extractor, rootConstraints);
                 }
             }
         } finally {
@@ -192,25 +191,24 @@ public class Composition {
     // ── recompose ──
 
     private void recompose() {
-        if (rootScope != null) {
-            rootScope.clearChildren();
+        if (this.rootScope != null) {
+            this.rootScope.clearChildren();
         }
-        currentIndex = 0;
-        currentRememberKey = 0;
-        // recompose 前清除 slot 脏标记
-        for (Slot slot : slots) {
+        this.currentIndex = 0;
+        this.currentRememberKey = 0;
+        for (Slot slot : this.slots) {
             slot.dirty = false;
         }
-        if (content != null && rootScope != null) {
-            content.accept(rootScope);
+        if (this.content != null && this.rootScope != null) {
+            this.content.accept(this.rootScope);
         }
-        while (slots.size() > currentIndex) {
-            slots.removeLast();
+        while (this.slots.size() > this.currentIndex) {
+            this.slots.removeLast();
         }
     }
 
     private boolean hasDirtySlots() {
-        for (Slot slot : slots) {
+        for (Slot slot : this.slots) {
             if (slot.dirty) return true;
         }
         return false;
@@ -277,11 +275,11 @@ public class Composition {
         boolean dirty = true;
 
         void addReadState(Ref<?> state) {
-            readStates.add(state);
+            this.readStates.add(state);
         }
 
         void markDirty() {
-            dirty = true;
+            this.dirty = true;
         }
     }
 }

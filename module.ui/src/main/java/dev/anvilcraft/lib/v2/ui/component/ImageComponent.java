@@ -57,8 +57,8 @@ public class ImageComponent implements UIComponent {
     @Override
     public MeasuredSize measure(Constraints constraints) {
         return MeasuredSize.of(
-            constraints.constrainWidth(imageWidth),
-            constraints.constrainHeight(imageHeight)
+            constraints.constrainWidth(this.imageWidth),
+            constraints.constrainHeight(this.imageHeight)
         );
     }
 
@@ -74,9 +74,9 @@ public class ImageComponent implements UIComponent {
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         extractor.blitSprite(
             RenderPipelines.GUI_TEXTURED,
-            sprite,
-            (int) x, (int) y,
-            (int) width, (int) height
+            this.sprite,
+            (int) this.x, (int) this.y,
+            (int) this.width, (int) this.height
         );
     }
 }

@@ -15,19 +15,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * 横向线性布局。子组件自左而右排列。主轴=水平，交叉轴=垂直。
- */
 @Accessors(fluent = true)
-@SuppressWarnings(
-    {
-        "unused",
-        "UnusedReturnValue"
-    }
-)
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class RowComponent implements UIComponent {
-    @Getter
-    @Setter
+
+    @Getter @Setter
     private Modifier modifier;
     @Getter
     private List<UIComponent> children = Collections.emptyList();
@@ -40,7 +32,6 @@ public class RowComponent implements UIComponent {
     @Setter
     private float spacing;
 
-    @Getter
     private float x, y, width, height;
 
     public RowComponent(Modifier modifier) {
@@ -51,26 +42,25 @@ public class RowComponent implements UIComponent {
         this.children = List.copyOf(children);
     }
 
-
     public MeasuredSize measure(Constraints constraints) {
-        if (children.isEmpty()) return MeasuredSize.ZERO;
+        if (this.children.isEmpty()) return MeasuredSize.ZERO;
 
         float totalWidth = 0;
         float maxHeight = 0;
-        List<MeasuredSize> sizes = new ArrayList<>(children.size());
+        List<MeasuredSize> sizes = new ArrayList<>(this.children.size());
 
         Constraints childConstraints = new Constraints(
             0, Float.MAX_VALUE,
             constraints.minHeight(), constraints.maxHeight()
         );
 
-        for (UIComponent child : children) {
+        for (UIComponent child : this.children) {
             MeasuredSize size = child.measure(childConstraints);
             sizes.add(size);
             totalWidth += size.width();
             maxHeight = Math.max(maxHeight, size.height());
         }
-        totalWidth += spacing * (children.size() - 1);
+        totalWidth += this.spacing * (this.children.size() - 1);
 
         this.childSizes = sizes;
         return MeasuredSize.of(
@@ -85,20 +75,20 @@ public class RowComponent implements UIComponent {
         this.width = width;
         this.height = height;
 
-        List<Float> widths = new ArrayList<>(childSizes.size());
-        for (MeasuredSize s : childSizes) widths.add(s.width());
+        List<Float> widths = new ArrayList<>(this.childSizes.size());
+        for (MeasuredSize s : this.childSizes) widths.add(s.width());
 
-        float[] xOffsets = horizontalArrangement.arrange(width, widths, spacing);
-        for (int i = 0; i < children.size(); i++) {
-            UIComponent child = children.get(i);
-            MeasuredSize size = childSizes.get(i);
-            float childY = y + verticalAlignment.align(height, size.height());
-            child.layout(x + xOffsets[i], childY, size.width(), size.height());
+        float[] xOffsets = this.horizontalArrangement.arrange(this.width, widths, this.spacing);
+        for (int i = 0; i < this.children.size(); i++) {
+            UIComponent child = this.children.get(i);
+            MeasuredSize size = this.childSizes.get(i);
+            float childY = this.y + this.verticalAlignment.align(this.height, size.height());
+            child.layout(this.x + xOffsets[i], childY, size.width(), size.height());
         }
     }
 
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        for (UIComponent child : children) {
+        for (UIComponent child : this.children) {
             child.extractRenderState(extractor);
         }
     }

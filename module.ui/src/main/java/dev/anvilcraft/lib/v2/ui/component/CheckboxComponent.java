@@ -57,7 +57,7 @@ public class CheckboxComponent implements UIComponent {
     @Override
     public MeasuredSize measure(Constraints constraints) {
         // 方框 + 间距 + 标签文字宽度（简化：估算每字符 7px 宽）
-        float labelW = label.length() * 7f;
+        float labelW = this.label.length() * 7f;
         return MeasuredSize.of(
             constraints.constrainWidth(SIZE + 4 + labelW),
             constraints.constrainHeight(SIZE)
@@ -74,13 +74,13 @@ public class CheckboxComponent implements UIComponent {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        int ix = (int) x, iy = (int) y;
+        int ix = (int) this.x, iy = (int) this.y;
 
         // 外层深灰方块（始终显示）
         extractor.fill(ix, iy, ix + (int) SIZE, iy + (int) SIZE, BOX_COLOR);
 
         // 选中时中间白色小方块
-        if (checked) {
+        if (this.checked) {
             int iix = ix + (int) INSET;
             int iiy = iy + (int) INSET;
             int iiw = (int) SIZE - (int) INSET * 2;
@@ -96,8 +96,8 @@ public class CheckboxComponent implements UIComponent {
      * 切换状态。
      */
     public void toggle() {
-        checked = !checked;
-        if (onToggle != null) onToggle.run();
+        this.checked = !this.checked;
+        if (this.onToggle != null) this.onToggle.run();
     }
 
     /**

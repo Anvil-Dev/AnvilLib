@@ -54,7 +54,7 @@ public class TextComponent implements UIComponent {
     @Override
     public MeasuredSize measure(Constraints constraints) {
         var font = Minecraft.getInstance().font;
-        float w = font.width(Component.literal(text));
+        float w = font.width(Component.literal(this.text));
         float h = font.lineHeight;
         return MeasuredSize.of(constraints.constrainWidth(w), constraints.constrainHeight(h));
     }
@@ -70,16 +70,16 @@ public class TextComponent implements UIComponent {
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         var font = Minecraft.getInstance().font;
-        Component component = Component.literal(text);
+        Component component = Component.literal(this.text);
         float textW = font.width(component);
 
-        float renderX = switch (align) {
-            case LEFT -> x;
-            case CENTER -> x + (width - textW) / 2f;
-            case RIGHT -> x + width - textW;
+        float renderX = switch (this.align) {
+            case LEFT -> this.x;
+            case CENTER -> this.x + (this.width - textW) / 2f;
+            case RIGHT -> this.x + this.width - textW;
         };
 
-        extractor.text(font, text, (int) renderX, (int) y, color, this.shadow);
+        extractor.text(font, this.text, (int) renderX, (int) this.y, this.color, this.shadow);
     }
 
     /**
