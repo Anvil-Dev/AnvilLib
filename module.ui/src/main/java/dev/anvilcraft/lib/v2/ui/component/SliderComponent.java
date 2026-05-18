@@ -10,6 +10,7 @@ import net.minecraft.util.Mth;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * 滑块。水平拖拽选择范围内的值。
@@ -27,12 +28,12 @@ public class SliderComponent implements UIComponent {
     private float value;
     private final float min, max;
     private final float trackWidth;
-    private java.util.function.Consumer<Float> onChange;
+    private Consumer<Float> onChange;
 
     private float x, y, width, height;
 
     public SliderComponent(Modifier modifier, float value, float min, float max, float trackWidth,
-                           java.util.function.Consumer<Float> onChange) {
+                           Consumer<Float> onChange) {
         this.modifier = modifier;
         this.value = Mth.clamp(value, min, max);
         this.min = min;

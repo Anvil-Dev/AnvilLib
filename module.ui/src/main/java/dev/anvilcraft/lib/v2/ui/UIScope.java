@@ -82,7 +82,7 @@ public abstract class UIScope {
     }
 
     public SliderComponent Slider(float value, float min, float max, float width,
-                                   java.util.function.Consumer<Float> onChange) {
+                                   Consumer<Float> onChange) {
         SliderComponent c = new SliderComponent(Modifier.NONE, value, min, max, width, onChange);
         addChild(c);
         Composition.current().emit(c);
@@ -90,7 +90,7 @@ public abstract class UIScope {
     }
 
     public TextFieldComponent TextField(String initialText,
-                                         java.util.function.Consumer<String> onChange) {
+                                         Consumer<String> onChange) {
         TextFieldComponent c = new TextFieldComponent(Modifier.NONE, initialText, onChange);
         addChild(c);
         Composition.current().emit(c);

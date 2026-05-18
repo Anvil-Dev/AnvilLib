@@ -2,6 +2,8 @@ package dev.anvilcraft.lib.v2.ui;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
+import java.util.List;
+
 /**
  * Core interface for all UI components.
  * <p>
@@ -18,7 +20,7 @@ public interface UIComponent {
     Modifier modifier();
 
     /** Children of this component, or empty list for leaf components. */
-    java.util.List<UIComponent> children();
+    List<UIComponent> children();
 
     /**
      * Measure this component given parent constraints.

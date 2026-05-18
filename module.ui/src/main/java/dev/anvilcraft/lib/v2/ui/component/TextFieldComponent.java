@@ -13,6 +13,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * 单行文本输入框。支持键盘输入、光标、Backspace/Delete、Home/End。
@@ -31,12 +32,12 @@ public class TextFieldComponent implements UIComponent, KeyInputHandler {
     private final StringBuilder buffer = new StringBuilder();
     private int cursorPos;
     private boolean focused;
-    private java.util.function.Consumer<String> onChange;
+    private Consumer<String> onChange;
 
     private float x, y, width, height;
 
     public TextFieldComponent(Modifier modifier, String initialText,
-                               java.util.function.Consumer<String> onChange) {
+                               Consumer<String> onChange) {
         this.modifier = modifier;
         this.buffer.append(initialText != null ? initialText : "");
         this.cursorPos = this.buffer.length();
