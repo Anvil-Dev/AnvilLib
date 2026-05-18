@@ -216,7 +216,7 @@ public abstract class DeclarativeScreen extends Screen {
         }
     }
 
-    // ── internal ──
+    // ── 内部类 ──
 
     private static class RootScope extends UIScope {
     }

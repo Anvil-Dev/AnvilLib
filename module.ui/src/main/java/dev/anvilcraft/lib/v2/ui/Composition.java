@@ -11,28 +11,26 @@ import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The composition engine that drives recomposition, state tracking, and rendering.
+ * 组合引擎，驱动 recompose、状态追踪和渲染。
  * <p>
- * One Composition is created per {@link DeclarativeScreen}.
- * It manages a flat slot table indexed by call-site position.
- * During recomposition, the content lambda replays and each
- * {@link #emit(UIComponent)} call diffs against the slot at the
- * same index.
+ * 每个 {@link DeclarativeScreen} 创建一个 Composition。
+ * 它维护一个按调用位置索引的扁平 slot table。
+ * recompose 时内容 lambda 重执行，每次 {@link #emit(UIComponent)} 调用
+ * 与同索引的 slot 做 diff。
  * <p>
- * State reads are tracked per slot so that writes only mark
- * affected slots dirty — not the entire tree.
+ * 状态读取按 slot 追踪，写入只标记受影响 slot 为脏——不会波及整棵树。
  */
 public class Composition {
 
     private static final ThreadLocal<Composition> CURRENT = new ThreadLocal<>();
 
-    /** Returns the composition active on this thread, or null. */
+    /** 返回当前线程上的组合实例，可能为 null。 */
     @Nullable
     public static Composition currentOrNull() {
         return CURRENT.get();
     }
 
-    /** Returns the composition active on this thread, throwing if absent. */
+    /** 返回当前线程上的组合实例，不存在则抛出异常。 */
     public static Composition current() {
         Composition c = CURRENT.get();
         if (c == null) {
@@ -48,11 +46,11 @@ public class Composition {
     private int currentRememberKey;
     private final Map<Integer, Object> rememberedValues = new HashMap<>();
 
-    /** The slot currently being emitted (set during {@link #emit}). */
+    /** 当前正在 emit 的 slot（在 {@link #emit} 期间设置）。 */
     @Nullable
     Slot currentSlot;
 
-    // ── state ──
+    // ── 状态 ──
 
     private boolean dirty = true;
     private Consumer<UIScope> content;
@@ -67,7 +65,7 @@ public class Composition {
         this.content = content;
     }
 
-    /** Mark the composition as needing recomposition next frame. */
+    /** 标记组合需要在下一帧 recompose。 */
     public void invalidate() {
         dirty = true;
     }
@@ -82,9 +80,7 @@ public class Composition {
     // ── remember / ref ──
 
     /**
-     * Persist a value across recompositions.
-     * The init supplier is only called on first composition;
-     * subsequent recompositions return the existing value.
+     * 在多次 recompose 间持久化一个值。init supplier 只在首次组合时调用。
      */
     @SuppressWarnings("unchecked")
     public <T> T remember(Supplier<T> init) {
@@ -106,8 +102,7 @@ public class Composition {
     // ── emit ──
 
     /**
-     * Emit a component to the current call-site position in the slot table.
-     * Called by component factory functions.
+     * 向当前调用位置的 slot 中 emit 一个组件。由组件工厂函数调用。
      */
     public void emit(UIComponent component) {
         Slot slot;
@@ -142,11 +137,11 @@ public class Composition {
         }
     }
 
-    // ── frame entry point ──
+    // ── 每帧入口 ──
 
     /**
-     * Called every frame from {@link DeclarativeScreen#extractRenderState}.
-     * Runs recomposition if dirty, then measure → layout → render.
+     * 每帧从 {@link DeclarativeScreen#extractRenderState} 调用。
+     * 若脏则 recompose，然后 measure → layout → render。
      */
     public void renderFrame(GuiGraphicsExtractor extractor, float screenWidth, float screenHeight) {
         CURRENT.set(this);
@@ -173,7 +168,7 @@ public class Composition {
         rootScope.clearChildren();
         currentIndex = 0;
         currentRememberKey = 0;
-        // Clear slot dirty flags before recompose
+        // recompose 前清除 slot 脏标记
         for (Slot slot : slots) {
             slot.dirty = false;
         }
@@ -190,7 +185,14 @@ public class Composition {
         return false;
     }
 
-    // ── measure → layout → render walk ──
+    // ── measure → layout → render 遍历 ──
+
+    // 1. 修饰符作用于约束
+    // 2. 测量
+    // 3. 布局
+    // 4. 发射修饰符渲染状态（背景、边框等）
+    // 5. 发射组件自身渲染状态
+    // 6. 递归子组件（容器组件的 measure/layout/extractRenderState 自行处理）
 
     private void renderTree(UIComponent component, GuiGraphicsExtractor extractor, Constraints constraints) {
         // 1. Apply modifier to constraints
@@ -235,8 +237,8 @@ public class Composition {
     // ── slot ──
 
     /**
-     * A position in the slot table. Each slot holds a component and
-     * tracks which states it reads for precise dirty marking.
+     * slot table 中的一个位置。每个 slot 持有一个组件，
+     * 并追踪它读取了哪些状态，以便精确标记脏。
      */
     public static class Slot {
         UIComponent component;

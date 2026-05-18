@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.ui;
 
 /**
- * A positioned rectangle after the layout pass.
+ * 布局阶段之后的定位矩形。
  */
 public record LayoutRect(float x, float y, float width, float height) {
 

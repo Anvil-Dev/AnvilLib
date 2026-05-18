@@ -50,7 +50,7 @@ public class Animatable {
         if (elapsed >= durationTicks) return false;
         elapsed++;
         float t = durationTicks > 0 ? (float) elapsed / durationTicks : 1f;
-        // ease-in-out
+        // 缓入缓出
         float eased = t < 0.5f ? 2f * t * t : -1f + (4f - 2f * t) * t;
         this.value = Mth.lerp(eased, startValue, targetValue);
         return elapsed < durationTicks;

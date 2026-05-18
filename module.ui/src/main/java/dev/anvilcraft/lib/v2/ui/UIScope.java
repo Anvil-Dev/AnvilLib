@@ -28,33 +28,39 @@ import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Base scope for building component trees.
+ * 组件树的构建作用域。
  * <p>
- * Container components (Column, Row, Box) create a scope,
- * run their content lambda against it, then collect the children.
+ * 容器组件（Column、Row、Box 等）创建一个 scope，
+ * 对其执行内容 lambda，然后收集子组件。
  * <p>
- * Component builders are defined here as concrete methods
- * so all scope subclasses inherit them.
+ * 组件构建器在此定义为具体方法，所有 scope 子类自动继承。
  */
 public abstract class UIScope {
 
     final List<UIComponent> children = new ArrayList<>();
 
+    /** 向当前 scope 添加一个子组件。 */
     public void addChild(UIComponent child) {
         children.add(child);
     }
 
+    /** 返回当前 scope 中已收集的子组件列表（只读）。 */
     public List<UIComponent> getChildren() {
         return Collections.unmodifiableList(children);
     }
 
-    /** Internal: clear children before recomposition. */
+    /** 内部方法：recompose 前清空子组件。 */
     void clearChildren() {
         children.clear();
     }
 
-    // ── component builders ──
+    // ── 组件构建器 ──
 
+    /**
+     * 创建一行文字。
+     * @param text 显示文本
+     * @return TextComponent 实例，可链式设置颜色、对齐、阴影等
+     */
     public TextComponent Text(String text) {
         TextComponent c = new TextComponent(Modifier.NONE, text);
         addChild(c);
@@ -62,6 +68,11 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建固定尺寸的空白占位。
+     * @param width 宽度（像素）
+     * @param height 高度（像素）
+     */
     public SpacerComponent Spacer(float width, float height) {
         SpacerComponent c = new SpacerComponent(Modifier.NONE, width, height);
         addChild(c);
@@ -69,6 +80,12 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建一个纹理精灵图片。
+     * @param sprite 纹理标识符
+     * @param width 显示宽度
+     * @param height 显示高度
+     */
     public ImageComponent Image(Identifier sprite, float width, float height) {
         ImageComponent c = new ImageComponent(Modifier.NONE, sprite, width, height);
         addChild(c);
@@ -76,6 +93,12 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建复选框。
+     * @param label 标签文字
+     * @param checked 初始选中状态
+     * @param onToggle 切换时的回调
+     */
     public CheckboxComponent Checkbox(String label, boolean checked, Runnable onToggle) {
         CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, checked, onToggle);
         addChild(c);
@@ -83,6 +106,14 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建滑块。
+     * @param value 初始值
+     * @param min 最小值
+     * @param max 最大值
+     * @param width 轨道宽度（像素）
+     * @param onChange 值变化回调，接收新值
+     */
     public SliderComponent Slider(float value, float min, float max, float width,
                                    Consumer<Float> onChange) {
         SliderComponent c = new SliderComponent(Modifier.NONE, value, min, max, width, onChange);
@@ -91,6 +122,11 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建单行文本输入框。
+     * @param initialText 初始文字
+     * @param onChange 文字变化回调，接收完整文本
+     */
     public TextFieldComponent TextField(String initialText,
                                          Consumer<String> onChange) {
         TextFieldComponent c = new TextFieldComponent(Modifier.NONE, initialText, onChange);
@@ -99,6 +135,11 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建可点击按钮。
+     * @param label 按钮文字
+     * @param onClick 点击回调（可为 null）
+     */
     public ButtonComponent Button(String label, @Nullable Runnable onClick) {
         ButtonComponent c = new ButtonComponent(Modifier.NONE, label, onClick);
         addChild(c);
@@ -106,6 +147,11 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建纵向线性布局容器。
+     * @param content 子组件声明 lambda
+     * @return ColumnComponent 实例，可链式设置 spacing、alignment 等
+     */
     public ColumnComponent Column(Consumer<ColumnScope> content) {
         ColumnComponent c = new ColumnComponent(Modifier.NONE);
         ColumnScope inner = new ColumnScope();
@@ -116,6 +162,11 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建横向线性布局容器。
+     * @param content 子组件声明 lambda
+     * @return RowComponent 实例，可链式设置 spacing、alignment 等
+     */
     public RowComponent Row(Consumer<RowScope> content) {
         RowComponent c = new RowComponent(Modifier.NONE);
         RowScope inner = new RowScope();
@@ -126,6 +177,10 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建层叠布局容器。子组件按声明顺序从底到顶重叠。
+     * @param content 子组件声明 lambda
+     */
     public BoxComponent Box(Consumer<BoxScope> content) {
         BoxComponent c = new BoxComponent(Modifier.NONE);
         BoxScope inner = new BoxScope();
@@ -136,6 +191,12 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建网格布局容器。
+     * @param columns 列数
+     * @param content 子组件声明 lambda
+     * @return GridComponent 实例，可链式设置 spacing
+     */
     public GridComponent Grid(int columns, Consumer<GridScope> content) {
         GridComponent c = new GridComponent(Modifier.NONE, columns);
         GridScope inner = new GridScope();
@@ -146,6 +207,11 @@ public abstract class UIScope {
         return c;
     }
 
+    /**
+     * 创建可滚动容器。内容超过 maxHeight 时可垂直滚动，自动裁剪并显示滚动条。
+     * @param maxHeight 容器最大可见高度（像素）
+     * @param content 子组件声明 lambda
+     */
     public ScrollableComponent Scrollable(float maxHeight, Consumer<ScrollableScope> content) {
         ScrollableComponent c = new ScrollableComponent(Modifier.NONE, maxHeight);
         ScrollableScope inner = new ScrollableScope();

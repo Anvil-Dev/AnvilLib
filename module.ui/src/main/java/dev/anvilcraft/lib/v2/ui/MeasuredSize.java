@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.ui;
 
 /**
- * Result of a component's measure pass.
+ * 组件 measure 阶段的结果。
  */
 public record MeasuredSize(float width, float height) {
 

@@ -5,38 +5,36 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import java.util.List;
 
 /**
- * Core interface for all UI components.
+ * 所有 UI 组件的核心接口。
  * <p>
- * Components participate in three phases each frame:
+ * 组件每帧参与三个阶段：
  * <ol>
- *   <li>{@link #measure(Constraints)} — determine desired size given parent constraints</li>
- *   <li>{@link #layout(float, float, float, float)} — receive final position from parent</li>
- *   <li>{@link #extractRenderState(GuiGraphicsExtractor)} — submit render states for GPU rendering</li>
+ *   <li>{@link #measure(Constraints)} — 根据父容器约束确定期望尺寸</li>
+ *   <li>{@link #layout(float, float, float, float)} — 接收父容器分配的最终位置</li>
+ *   <li>{@link #extractRenderState(GuiGraphicsExtractor)} — 提交渲染状态给 GPU</li>
  * </ol>
  */
 public interface UIComponent {
 
-    /** The modifier chain applied to this component. */
+    /** 应用于此组件的修饰符链。 */
     Modifier modifier();
 
-    /** Children of this component, or empty list for leaf components. */
+    /** 子组件列表，叶子组件返回空列表。 */
     List<UIComponent> children();
 
     /**
-     * Measure this component given parent constraints.
-     * Container components recursively measure children.
+     * 根据父容器约束测量此组件。容器组件递归测量子组件。
      */
     MeasuredSize measure(Constraints constraints);
 
     /**
-     * Set final position after layout pass.
-     * Container components position their children.
+     * 布局阶段后设置最终位置。容器组件在此方法内定位子组件。
      */
     void layout(float x, float y, float width, float height);
 
     /**
-     * Submit render states to the Minecraft GUI render pipeline.
-     * Called after measure+layout, once per frame.
+     * 提交渲染状态到 Minecraft GUI 渲染管线。
+     * 在 measure+layout 之后调用，每帧一次。
      */
     void extractRenderState(GuiGraphicsExtractor extractor);
 }

@@ -7,12 +7,12 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * An observable state holder.
+ * 可观察状态持有者。
  * <p>
- * Reads are tracked against the current composition slot.
- * Writes mark all reader slots dirty so recomposition is scoped.
+ * 读取时追踪当前 composition slot，写入时标记所有 reader slot 为脏，
+ * 从而实现精确范围的 recompose。
  *
- * @param <T> the type of value held
+ * @param <T> 持有值的类型
  */
 public class Ref<T> {
 
@@ -24,8 +24,7 @@ public class Ref<T> {
     }
 
     /**
-     * Read the current value, recording this slot as a reader
-     * if called within a composition emission.
+     * 读取当前值。若在 composition emission 期间调用，记录此 slot 为 reader。
      */
     @Nullable
     public T getValue() {
@@ -37,9 +36,7 @@ public class Ref<T> {
         return value;
     }
 
-    /**
-     * Set a new value. If changed, marks all reader slots dirty.
-     */
+    /** 设置新值。若值发生变化，标记所有 reader slot 为脏。 */
     public void setValue(@Nullable T newValue) {
         if (!Objects.equals(value, newValue)) {
             value = newValue;

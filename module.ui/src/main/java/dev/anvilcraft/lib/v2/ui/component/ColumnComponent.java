@@ -20,7 +20,7 @@ public class ColumnComponent implements UIComponent {
     private Alignment.Horizontal horizontalAlignment = Alignment.Horizontal.Start;
     private float spacing;
 
-    // layout state
+    // 布局状态
     private float x, y, width, height;
 
     public ColumnComponent(Modifier modifier) {
@@ -31,7 +31,7 @@ public class ColumnComponent implements UIComponent {
         this.children = List.copyOf(children);
     }
 
-    // ── chained setters ──
+    // ── 链式 setter ──
 
     public ColumnComponent verticalArrangement(Arrangement.Vertical va) {
         this.verticalArrangement = va;

@@ -6,10 +6,10 @@ import dev.anvilcraft.lib.v2.ui.modifier.SingleElementModifier;
 import java.util.function.BiFunction;
 
 /**
- * Chainable modifier API. Modifiers form a linked list via {@link #then}.
+ * 链式修饰符 API。修饰符通过 {@link #then} 形成链表。
  * <p>
- * Each modifier element can participate in measure, layout, and render phases.
- * Callers fold over the chain with {@link #foldIn} / {@link #foldOut}.
+ * 每个修饰符元素可参与 measure、layout、render 阶段。
+ * 调用方通过 {@link #foldIn} / {@link #foldOut} 遍历链。
  */
 public interface Modifier {
 
@@ -19,12 +19,12 @@ public interface Modifier {
 
     <R> R foldOut(R initial, BiFunction<ModifierElement, R, R> operation);
 
-    /** Return a new chain with the given element prepended. */
+    /** 返回一个前置了给定元素的新链。 */
     default Modifier prepend(ModifierElement element) {
         return then(new SingleElementModifier(element));
     }
 
-    // ── factory shortcuts ──
+    // ── 工厂快捷方法 ──
 
     default Modifier size(float width, float height) {
         return prepend(ModifierElement.size(width, height));

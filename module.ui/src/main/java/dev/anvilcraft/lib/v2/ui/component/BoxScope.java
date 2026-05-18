@@ -3,7 +3,7 @@ package dev.anvilcraft.lib.v2.ui.component;
 import dev.anvilcraft.lib.v2.ui.UIScope;
 
 /**
- * Scope for children inside a {@link BoxComponent}.
+ * {@link BoxComponent} 的子级作用域。
  */
 public class BoxScope extends UIScope {
 }

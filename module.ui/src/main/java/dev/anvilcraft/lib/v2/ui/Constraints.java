@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.ui;
 
 /**
- * Min/max bounds passed from parent to child during measure.
+ * 父容器传给子组件的 min/max 尺寸约束。
  */
 public record Constraints(float minWidth, float maxWidth, float minHeight, float maxHeight) {
 

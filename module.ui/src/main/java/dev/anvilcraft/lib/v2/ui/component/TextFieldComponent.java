@@ -93,7 +93,7 @@ public class TextFieldComponent implements UIComponent, KeyInputHandler {
         }
     }
 
-    // ── KeyInputHandler ──
+    // ── 键盘输入处理 ──
 
     @Override
     public boolean onKeyPressed(KeyEvent event) {
@@ -101,7 +101,7 @@ public class TextFieldComponent implements UIComponent, KeyInputHandler {
         int mods = event.modifiers();
 
         // 控制键
-        if (key == 259) { // Backspace
+        if (key == 259) { // 退格
             if (cursorPos > 0) { buffer.deleteCharAt(cursorPos - 1); cursorPos--; fireChange(); }
             return true;
         }
@@ -109,8 +109,8 @@ public class TextFieldComponent implements UIComponent, KeyInputHandler {
             if (cursorPos < buffer.length()) { buffer.deleteCharAt(cursorPos); fireChange(); }
             return true;
         }
-        if (key == 263) { if (cursorPos > 0) cursorPos--; return true; } // Left
-        if (key == 262) { if (cursorPos < buffer.length()) cursorPos++; return true; } // Right
+        if (key == 263) { if (cursorPos > 0) cursorPos--; return true; } // ←
+        if (key == 262) { if (cursorPos < buffer.length()) cursorPos++; return true; } // →
         if (key == 268) { cursorPos = 0; return true; } // Home
         if (key == 269) { cursorPos = buffer.length(); return true; } // End
 

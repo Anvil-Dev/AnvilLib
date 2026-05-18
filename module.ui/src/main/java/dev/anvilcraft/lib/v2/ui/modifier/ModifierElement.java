@@ -7,8 +7,8 @@ import dev.anvilcraft.lib.v2.ui.UIComponent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
- * A single node in a {@link dev.anvilcraft.lib.v2.ui.Modifier} chain.
- * Each element can intercept measure, layout, and render phases.
+ * {@link dev.anvilcraft.lib.v2.ui.Modifier} 链中的单个节点。
+ * 每个元素可拦截 measure、layout、render 阶段。
  */
 public interface ModifierElement {
 
@@ -27,7 +27,7 @@ public interface ModifierElement {
     default void emitRenderState(GuiGraphicsExtractor extractor, LayoutRect bounds) {
     }
 
-    // ── factory methods ──
+    // ── 工厂方法 ──
 
     static ModifierElement size(float width, float height) {
         return new SizeElement(width, width, height, height);
