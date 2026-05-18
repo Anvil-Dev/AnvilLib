@@ -88,7 +88,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     col.Spacer(0, 4);
 
                     // ── 6. Slider ──
-                    Ref<Float> sliderVal = comp.remember(() -> new Ref<>(50f));
+                    Ref<Float> sliderVal = comp.ref(50f);
                     col.Text("6) Slider:");
                     col.Row(row -> {
                         row.Slider(sliderVal.getValue(), 0, 100, 100)
