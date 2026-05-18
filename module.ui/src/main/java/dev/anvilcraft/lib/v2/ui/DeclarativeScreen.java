@@ -29,6 +29,7 @@ public abstract class DeclarativeScreen extends Screen {
     private final UIScope rootScope = new RootScope();
     @Nullable
     private KeyInputHandler focusOwner;
+    private float scrollY;
 
     protected DeclarativeScreen(Component title) {
         super(title);
@@ -49,7 +50,7 @@ public abstract class DeclarativeScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(extractor, mouseX, mouseY, partialTick);
         if (composition != null) {
-            composition.renderFrame(extractor, this.width, this.height);
+            composition.renderFrame(extractor, this.width, this.height, scrollY);
             updateHover(mouseX, mouseY);
         }
     }
@@ -90,8 +91,8 @@ public abstract class DeclarativeScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        // 后续 Phase: 路由到 ScrollComponent
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        this.scrollY += (float) (scrollY * 20); // 每格滚轮 20px
+        return true;
     }
 
     // ── 键盘输入 ──

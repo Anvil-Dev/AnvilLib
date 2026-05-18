@@ -122,10 +122,9 @@ public class Composition {
      * Called every frame from {@link DeclarativeScreen#extractRenderState}.
      * Runs recomposition if dirty, then measure → layout → render.
      */
-    public void renderFrame(GuiGraphicsExtractor extractor, float screenWidth, float screenHeight) {
+    public void renderFrame(GuiGraphicsExtractor extractor, float screenWidth, float screenHeight, float scrollY) {
         CURRENT.set(this);
         try {
-            // Tick animations — if any running, mark dirty
             for (Animatable anim : animatables) {
                 if (anim.tick()) dirty = true;
             }
@@ -133,9 +132,17 @@ public class Composition {
                 recompose();
                 dirty = false;
             }
-            Constraints rootConstraints = new Constraints(0, screenWidth, 0, screenHeight);
+            Constraints rootConstraints = new Constraints(0, screenWidth, 0, Float.MAX_VALUE);
+            // 先 measure 获取内容高度，再 layout 应用滚动偏移
+            float contentHeight = 0;
             for (UIComponent child : rootScope.getChildren()) {
-                renderTree(child, extractor, rootConstraints);
+                MeasuredSize size = child.measure(rootConstraints);
+                contentHeight = Math.max(contentHeight, size.height());
+            }
+            float maxScroll = Math.max(0, contentHeight - screenHeight);
+            float clampedScroll = Math.clamp(scrollY, -maxScroll, 0);
+            for (UIComponent child : rootScope.getChildren()) {
+                renderTree(child, extractor, rootConstraints, clampedScroll);
             }
         } finally {
             CURRENT.set(null);
@@ -167,7 +174,7 @@ public class Composition {
 
     // ── measure → layout → render walk ──
 
-    private void renderTree(UIComponent component, GuiGraphicsExtractor extractor, Constraints constraints) {
+    private void renderTree(UIComponent component, GuiGraphicsExtractor extractor, Constraints constraints, float scrollY) {
         // 1. Apply modifier to constraints
         Constraints modConstraints = component.modifier().foldIn(
                 constraints,
@@ -181,8 +188,8 @@ public class Composition {
                 (el, s) -> el.modifyMeasuredSize(component, modConstraints, s)
         );
 
-        // 3. Layout
-        LayoutRect rect = LayoutRect.of(0, 0, size.width(), size.height());
+        // 3. Layout — 应用滚动偏移
+        LayoutRect rect = LayoutRect.of(0, scrollY, size.width(), size.height());
         rect = component.modifier().foldOut(
                 rect,
                 (el, r) -> el.modifyLayout(r)
