@@ -15,9 +15,12 @@ import java.util.function.BiConsumer;
  */
 public final class ForEach {
 
-    private ForEach() {}
+    private ForEach() {
+    }
 
-    /** 对列表中的每个元素执行内容函数。 */
+    /**
+     * 对列表中的每个元素执行内容函数。
+     */
     public static <T> void of(UIScope scope, List<T> items, BiConsumer<UIScope, T> content) {
         for (T item : items) {
             content.accept(scope, item);

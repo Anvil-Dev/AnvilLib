@@ -1,14 +1,13 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
 
@@ -28,13 +27,13 @@ public class SliderComponent implements UIComponent {
     private static final float TRACK_H = 4;
     private static final float THUMB_W = 8;
     private static final float THUMB_H = 16;
-
-    @Getter @Setter
+    private final float min, max;
+    private final float trackWidth;
+    @Getter
+    @Setter
     private Modifier modifier;
     @Getter
     private float value;
-    private final float min, max;
-    private final float trackWidth;
     @Setter
     private Consumer<Float> onChange;
 
@@ -49,14 +48,17 @@ public class SliderComponent implements UIComponent {
         this.onChange = onChange;
     }
 
-        
-    @Override public List<UIComponent> children() { return Collections.emptyList(); }
+
+    @Override
+    public List<UIComponent> children() {
+        return Collections.emptyList();
+    }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
         return MeasuredSize.of(
-                constraints.constrainWidth(trackWidth),
-                constraints.constrainHeight(THUMB_H)
+            constraints.constrainWidth(trackWidth),
+            constraints.constrainHeight(THUMB_H)
         );
     }
 
@@ -84,7 +86,9 @@ public class SliderComponent implements UIComponent {
         extractor.fill(tix, tiy, tix + (int) THUMB_W, tiy + (int) THUMB_H, THUMB_COLOR);
     }
 
-    /** 根据鼠标 X 坐标更新值。 */
+    /**
+     * 根据鼠标 X 坐标更新值。
+     */
     public void setValueFromMouse(float mouseX) {
         float ratio = Mth.clamp((mouseX - x) / Math.max(width - 1, 1), 0f, 1f);
         float newValue = min + ratio * (max - min);
@@ -94,7 +98,9 @@ public class SliderComponent implements UIComponent {
         }
     }
 
-    /** 命中测试包围盒（整个轨道+滑块区域）。 */
+    /**
+     * 命中测试包围盒（整个轨道+滑块区域）。
+     */
     public LayoutRect hitRect() {
         return LayoutRect.of(x, y, width, height);
     }

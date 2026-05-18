@@ -16,10 +16,14 @@ import java.util.List;
  */
 public interface UIComponent {
 
-    /** 应用于此组件的修饰符链。 */
+    /**
+     * 应用于此组件的修饰符链。
+     */
     Modifier modifier();
 
-    /** 子组件列表，叶子组件返回空列表。 */
+    /**
+     * 子组件列表，叶子组件返回空列表。
+     */
     List<UIComponent> children();
 
     /**

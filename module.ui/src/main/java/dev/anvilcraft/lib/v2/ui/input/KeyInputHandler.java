@@ -9,7 +9,9 @@ import net.minecraft.client.input.KeyEvent;
  */
 public interface KeyInputHandler {
 
-    /** 控制键按下时调用。返回 true 表示已处理。 */
+    /**
+     * 控制键按下时调用。返回 true 表示已处理。
+     */
     boolean onKeyPressed(KeyEvent event);
 
     /**

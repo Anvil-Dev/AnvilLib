@@ -19,12 +19,25 @@ public class Animatable {
         this.targetValue = initialValue;
     }
 
-    /** 获取当前动画值。 */
+    /**
+     * 获取当前动画值。
+     */
     public float getValue() {
         return value;
     }
 
-    /** 动画到目标值，durationTicks 帧内完成。 */
+    /**
+     * 直接设置值（无动画）。
+     */
+    public void setValue(float value) {
+        this.value = value;
+        this.targetValue = value;
+        this.elapsed = 0;
+    }
+
+    /**
+     * 动画到目标值，durationTicks 帧内完成。
+     */
     public void animateTo(float target, int durationTicks) {
         if (durationTicks <= 0) {
             this.value = target;
@@ -38,14 +51,9 @@ public class Animatable {
         this.elapsed = 0;
     }
 
-    /** 直接设置值（无动画）。 */
-    public void setValue(float value) {
-        this.value = value;
-        this.targetValue = value;
-        this.elapsed = 0;
-    }
-
-    /** 每 tick 调用一次以推进动画。返回 true 表示动画进行中。 */
+    /**
+     * 每 tick 调用一次以推进动画。返回 true 表示动画进行中。
+     */
     public boolean tick() {
         if (elapsed >= durationTicks) return false;
         elapsed++;
@@ -56,7 +64,9 @@ public class Animatable {
         return elapsed < durationTicks;
     }
 
-    /** 动画是否进行中。 */
+    /**
+     * 动画是否进行中。
+     */
     public boolean isRunning() {
         return elapsed < durationTicks;
     }

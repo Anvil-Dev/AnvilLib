@@ -12,23 +12,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
  */
 public interface ModifierElement {
 
-    default Constraints modifyConstraints(Constraints constraints) {
-        return constraints;
-    }
-
-    default MeasuredSize modifyMeasuredSize(UIComponent component, Constraints constraints, MeasuredSize childSize) {
-        return childSize;
-    }
-
-    default LayoutRect modifyLayout(LayoutRect rect) {
-        return rect;
-    }
-
-    default void emitRenderState(GuiGraphicsExtractor extractor, LayoutRect bounds) {
-    }
-
-    // ── 工厂方法 ──
-
     static ModifierElement size(float width, float height) {
         return new SizeElement(width, width, height, height);
     }
@@ -44,6 +27,8 @@ public interface ModifierElement {
     static ModifierElement fillMaxWidth() {
         return new SizeElement(0, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
     }
+
+    // ── 工厂方法 ──
 
     static ModifierElement fillMaxHeight() {
         return new SizeElement(Float.MAX_VALUE, Float.MAX_VALUE, 0, Float.MAX_VALUE);
@@ -75,5 +60,20 @@ public interface ModifierElement {
 
     static ModifierElement border(float width, int color, float round) {
         return new BorderElement(width, color, round);
+    }
+
+    default Constraints modifyConstraints(Constraints constraints) {
+        return constraints;
+    }
+
+    default MeasuredSize modifyMeasuredSize(UIComponent component, Constraints constraints, MeasuredSize childSize) {
+        return childSize;
+    }
+
+    default LayoutRect modifyLayout(LayoutRect rect) {
+        return rect;
+    }
+
+    default void emitRenderState(GuiGraphicsExtractor extractor, LayoutRect bounds) {
     }
 }

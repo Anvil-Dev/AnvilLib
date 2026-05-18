@@ -1,13 +1,12 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -21,12 +20,9 @@ import java.util.List;
 @Accessors(fluent = true)
 public class TextComponent implements UIComponent {
 
-    /** 文字水平对齐方式 */
-    public enum Align { LEFT, CENTER, RIGHT }
-
     private static final int VANILLA_TEXT_COLOR = 0xFFFFFFFF;
-
-    @Getter @Setter
+    @Getter
+    @Setter
     private Modifier modifier;
     @Setter
     private String text;
@@ -36,7 +32,6 @@ public class TextComponent implements UIComponent {
     private boolean shadow;
     @Setter
     private Align align = Align.LEFT;
-
     private float x, y, width, height;
 
     public TextComponent(Modifier modifier, String text) {
@@ -44,8 +39,10 @@ public class TextComponent implements UIComponent {
         this.text = text;
     }
 
-                
-    @Override public List<UIComponent> children() { return Collections.emptyList(); }
+    @Override
+    public List<UIComponent> children() {
+        return Collections.emptyList();
+    }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
@@ -77,5 +74,10 @@ public class TextComponent implements UIComponent {
 
         extractor.text(font, text, (int) renderX, (int) y, color, this.shadow);
     }
+
+    /**
+     * 文字水平对齐方式
+     */
+    public enum Align {LEFT, CENTER, RIGHT}
 }
 

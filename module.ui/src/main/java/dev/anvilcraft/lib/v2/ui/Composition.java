@@ -4,12 +4,16 @@ import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
 import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import org.jspecify.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
-import org.jspecify.annotations.Nullable;
 
 /**
  * 组合引擎，驱动 recompose、状态追踪和渲染。
@@ -24,14 +28,38 @@ import org.jspecify.annotations.Nullable;
 public class Composition {
 
     private static final ThreadLocal<Composition> CURRENT = new ThreadLocal<>();
+    private final List<Slot> slots = new ArrayList<>();
+    private final Map<Integer, Object> rememberedValues = new HashMap<>();
 
-    /** 返回当前线程上的组合实例，可能为 null。 */
+    // ── slot table ──
+    private final List<Animatable> animatables = new ArrayList<>();
+    /**
+     * 当前正在 emit 的 slot（在 {@link #emit} 期间设置）。
+     */
+    @Nullable
+    Slot currentSlot;
+    private int currentIndex;
+    private int currentRememberKey;
+    private boolean dirty = true;
+
+    // ── 状态 ──
+    private Consumer<UIScope> content;
+    private UIScope rootScope;
+    public Composition(UIScope rootScope) {
+        this.rootScope = rootScope;
+    }
+
+    /**
+     * 返回当前线程上的组合实例，可能为 null。
+     */
     @Nullable
     public static Composition currentOrNull() {
         return CURRENT.get();
     }
 
-    /** 返回当前线程上的组合实例，不存在则抛出异常。 */
+    /**
+     * 返回当前线程上的组合实例，不存在则抛出异常。
+     */
     public static Composition current() {
         Composition c = CURRENT.get();
         if (c == null) {
@@ -40,38 +68,20 @@ public class Composition {
         return c;
     }
 
-    // ── slot table ──
-
-    private final List<Slot> slots = new ArrayList<>();
-    private int currentIndex;
-    private int currentRememberKey;
-    private final Map<Integer, Object> rememberedValues = new HashMap<>();
-
-    /** 当前正在 emit 的 slot（在 {@link #emit} 期间设置）。 */
-    @Nullable
-    Slot currentSlot;
-
-    // ── 状态 ──
-
-    private boolean dirty = true;
-    private Consumer<UIScope> content;
-    private UIScope rootScope;
-    private final List<Animatable> animatables = new ArrayList<>();
-
-    public Composition(UIScope rootScope) {
-        this.rootScope = rootScope;
-    }
-
     public void setContent(Consumer<UIScope> content) {
         this.content = content;
     }
 
-    /** 标记组合需要在下一帧 recompose。 */
+    /**
+     * 标记组合需要在下一帧 recompose。
+     */
     public void invalidate() {
         dirty = true;
     }
 
-    /** 注册动画值，每帧自动 tick。动画进行中时自动触发 recompose。 */
+    /**
+     * 注册动画值，每帧自动 tick。动画进行中时自动触发 recompose。
+     */
     public void watch(Animatable anim) {
         if (!animatables.contains(anim)) {
             animatables.add(anim);
@@ -95,7 +105,9 @@ public class Composition {
         return value;
     }
 
-    /** {@code comp.ref(0)} 等价于 {@code comp.remember(() -> new Ref<>(0))}。 */
+    /**
+     * {@code comp.ref(0)} 等价于 {@code comp.remember(() -> new Ref<>(0))}。
+     */
     public <T> Ref<T> ref(T initialValue) {
         return remember(() -> new Ref<>(initialValue));
     }
@@ -124,20 +136,22 @@ public class Composition {
         currentIndex++;
     }
 
-    /** 将旧组件的运行时状态复制到新组件。 */
+    /**
+     * 将旧组件的运行时状态复制到新组件。
+     */
     private void copyRuntimeState(UIComponent old, UIComponent replacement) {
         if (old instanceof ScrollableComponent oldSc
-                && replacement instanceof ScrollableComponent newSc) {
+            && replacement instanceof ScrollableComponent newSc) {
             newSc.setScrollY(oldSc.scrollY());
         }
         if (old instanceof TextInputComponent oldTi
-                && replacement instanceof TextInputComponent newTi) {
+            && replacement instanceof TextInputComponent newTi) {
             newTi.setValue(oldTi.value());
             newTi.setCursorPos(oldTi.cursorPos());
             newTi.setFocused(oldTi.focused());
         }
         if (old instanceof DropdownComponent oldDd
-                && replacement instanceof DropdownComponent newDd) {
+            && replacement instanceof DropdownComponent newDd) {
             newDd.setOpen(oldDd.open());
             newDd.setPopupScrollY(oldDd.popupScrollY());
         }
@@ -203,33 +217,33 @@ public class Composition {
     private void renderTree(UIComponent component, GuiGraphicsExtractor extractor, Constraints constraints) {
         // 1. Apply modifier to constraints
         Constraints modConstraints = component.modifier().foldIn(
-                constraints,
-                (c, el) -> el.modifyConstraints(c)
+            constraints,
+            (c, el) -> el.modifyConstraints(c)
         );
 
         // 2. Measure
         MeasuredSize size = component.measure(modConstraints);
         size = component.modifier().foldOut(
-                size,
-                (el, s) -> el.modifyMeasuredSize(component, modConstraints, s)
+            size,
+            (el, s) -> el.modifyMeasuredSize(component, modConstraints, s)
         );
 
         // 3. Layout
         LayoutRect rect = LayoutRect.of(0, 0, size.width(), size.height());
         rect = component.modifier().foldOut(
-                rect,
-                (el, r) -> el.modifyLayout(r)
+            rect,
+            (el, r) -> el.modifyLayout(r)
         );
         component.layout(rect.x(), rect.y(), rect.width(), rect.height());
 
         // 4. Emit modifier render states (background, border, etc.)
         final LayoutRect finalRect = rect;
         component.modifier().foldOut(
-                extractor,
-                (el, e) -> {
-                    el.emitRenderState(e, finalRect);
-                    return e;
-                }
+            extractor,
+            (el, e) -> {
+                el.emitRenderState(e, finalRect);
+                return e;
+            }
         );
 
         // 5. Emit component's own render states
@@ -247,9 +261,9 @@ public class Composition {
      * 并追踪它读取了哪些状态，以便精确标记脏。
      */
     public static class Slot {
+        final Set<Ref<?>> readStates = new HashSet<>();
         UIComponent component;
         boolean dirty = true;
-        final Set<Ref<?>> readStates = new HashSet<>();
 
         void addReadState(Ref<?> state) {
             readStates.add(state);

@@ -7,16 +7,19 @@ import java.util.List;
  */
 public final class Arrangement {
 
-    private Arrangement() {}
+    private Arrangement() {
+    }
 
-    /** 纵向排列（Column 主轴）。 */
+    /**
+     * 纵向排列（Column 主轴）。
+     */
     public enum Vertical {
         Top, Center, Bottom, SpaceBetween, SpaceAround, SpaceEvenly;
 
         /**
-         * @param totalHeight 可用总高度
+         * @param totalHeight  可用总高度
          * @param childHeights 各子组件高度
-         * @param spacing 间距
+         * @param spacing      间距
          * @return 各子组件的 y 偏移
          */
         public float[] arrange(float totalHeight, List<Float> childHeights, float spacing) {
@@ -80,14 +83,16 @@ public final class Arrangement {
         }
     }
 
-    /** 横向排列（Row 主轴）。 */
+    /**
+     * 横向排列（Row 主轴）。
+     */
     public enum Horizontal {
         Start, Center, End, SpaceBetween, SpaceAround, SpaceEvenly;
 
         /**
-         * @param totalWidth 可用总宽度
+         * @param totalWidth  可用总宽度
          * @param childWidths 各子组件宽度
-         * @param spacing 间距
+         * @param spacing     间距
          * @return 各子组件的 x 偏移
          */
         public float[] arrange(float totalWidth, List<Float> childWidths, float spacing) {

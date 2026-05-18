@@ -1,19 +1,17 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,25 +24,25 @@ import java.util.function.Consumer;
 @Accessors(fluent = true)
 public class DropdownComponent implements UIComponent {
 
-    private static final int BG_COLOR       = 0xFF404040;
-    private static final int HOVER_COLOR    = 0xFF606060;
-    private static final int TEXT_COLOR     = 0xFFFFFFFF;
-    private static final int POPUP_BG       = 0xFF303030;
-    private static final int POPUP_HOVER    = 0xFF505050;
+    private static final int BG_COLOR = 0xFF404040;
+    private static final int HOVER_COLOR = 0xFF606060;
+    private static final int TEXT_COLOR = 0xFFFFFFFF;
+    private static final int POPUP_BG = 0xFF303030;
+    private static final int POPUP_HOVER = 0xFF505050;
     private static final int SCROLLBAR_COLOR = 0xFF888888;
-    private static final int SCROLLBAR_BG   = 0xFF222222;
-    private static final int SCROLLBAR_W    = 4;
-    private static final float PADDING_H    = 8;
-    private static final float PADDING_V    = 4;
-    private static final float ARROW_SIZE   = 6;
-
-    @Getter @Setter
-    private Modifier modifier;
+    private static final int SCROLLBAR_BG = 0xFF222222;
+    private static final int SCROLLBAR_W = 4;
+    private static final float PADDING_H = 8;
+    private static final float PADDING_V = 4;
+    private static final float ARROW_SIZE = 6;
     private final String[] options;
+    private final float maxPopupHeight;
+    @Getter
+    @Setter
+    private Modifier modifier;
     private int selectedIndex;
     @Getter
     private boolean open;
-    private final float maxPopupHeight;
     @Getter
     private float popupScrollY;
     @Setter
@@ -64,12 +62,24 @@ public class DropdownComponent implements UIComponent {
         this.maxPopupHeight = maxPopupHeight;
     }
 
-    
-    public String selectedOption() { return options.length > 0 ? options[selectedIndex] : ""; }
-    public void setOpen(boolean open) { this.open = open; if (!open) popupScrollY = 0; }
-            public void setPopupScrollY(float y) { this.popupScrollY = y; }
 
-    @Override public List<UIComponent> children() { return Collections.emptyList(); }
+    public String selectedOption() {
+        return options.length > 0 ? options[selectedIndex] : "";
+    }
+
+    public void setOpen(boolean open) {
+        this.open = open;
+        if (!open) popupScrollY = 0;
+    }
+
+    public void setPopupScrollY(float y) {
+        this.popupScrollY = y;
+    }
+
+    @Override
+    public List<UIComponent> children() {
+        return Collections.emptyList();
+    }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
@@ -83,7 +93,10 @@ public class DropdownComponent implements UIComponent {
 
     @Override
     public void layout(float x, float y, float width, float height) {
-        this.x = x; this.y = y; this.width = width; this.height = height;
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
     }
 
     // ── 触发器渲染 ──
@@ -110,43 +123,55 @@ public class DropdownComponent implements UIComponent {
         float hs = ARROW_SIZE / 2f;
         if (open) {
             SdfGraphics.instance
-                    .triangle(arrowCx - hs, arrowCy + hs * 0.6f,
-                              arrowCx + hs, arrowCy + hs * 0.6f,
-                              arrowCx, arrowCy - hs * 0.8f)
-                    .color(TEXT_COLOR)
-                    .fill()
-                    .draw(extractor);
+                .triangle(
+                    arrowCx - hs, arrowCy + hs * 0.6f,
+                    arrowCx + hs, arrowCy + hs * 0.6f,
+                    arrowCx, arrowCy - hs * 0.8f
+                )
+                .color(TEXT_COLOR)
+                .fill()
+                .draw(extractor);
         } else {
             SdfGraphics.instance
-                    .triangle(arrowCx - hs, arrowCy - hs * 0.6f,
-                              arrowCx + hs, arrowCy - hs * 0.6f,
-                              arrowCx, arrowCy + hs * 0.8f)
-                    .color(TEXT_COLOR)
-                    .fill()
-                    .draw(extractor);
+                .triangle(
+                    arrowCx - hs, arrowCy - hs * 0.6f,
+                    arrowCx + hs, arrowCy - hs * 0.6f,
+                    arrowCx, arrowCy + hs * 0.8f
+                )
+                .color(TEXT_COLOR)
+                .fill()
+                .draw(extractor);
         }
     }
 
     // ── 弹出层渲染（延迟调用，确保 z-order） ──
 
-    /** 弹出层 item 高度。 */
+    /**
+     * 弹出层 item 高度。
+     */
     public float itemHeight() {
         return Minecraft.getInstance().font.lineHeight + 4;
     }
 
-    /** 实际弹出层高度（min 内容高度, maxPopupHeight）。 */
+    /**
+     * 实际弹出层高度（min 内容高度, maxPopupHeight）。
+     */
     public float popupHeight() {
         if (options.length == 0) return 0;
         return Math.min(options.length * itemHeight(), maxPopupHeight);
     }
 
-    /** 弹出层包围盒。 */
+    /**
+     * 弹出层包围盒。
+     */
     public LayoutRect popupRect() {
         float ph = popupHeight();
         return LayoutRect.of(x, y + height, width, ph);
     }
 
-    /** 延迟渲染弹出层（在所有组件之后调用）。 */
+    /**
+     * 延迟渲染弹出层（在所有组件之后调用）。
+     */
     public void renderPopup(GuiGraphicsExtractor extractor) {
         if (!open || options.length == 0) return;
 
@@ -189,7 +214,9 @@ public class DropdownComponent implements UIComponent {
 
     // ── 交互 ──
 
-    /** 点击触发器区域 → 切换展开。 */
+    /**
+     * 点击触发器区域 → 切换展开。
+     */
     public boolean clickTrigger(float px, float py) {
         if (triggerRect().contains(px, py)) {
             open = !open;
@@ -199,7 +226,9 @@ public class DropdownComponent implements UIComponent {
         return false;
     }
 
-    /** 点击弹出层选项 → 选中并收起。返回 true 表示命中。 */
+    /**
+     * 点击弹出层选项 → 选中并收起。返回 true 表示命中。
+     */
     public boolean clickPopup(float px, float py) {
         if (!open || options.length == 0) return false;
         float ph = popupHeight();
@@ -215,7 +244,9 @@ public class DropdownComponent implements UIComponent {
         return false;
     }
 
-    /** 滚轮滚动弹出层。 */
+    /**
+     * 滚轮滚动弹出层。
+     */
     public boolean onPopupScroll(float amount) {
         if (!open) return false;
         float ph = popupHeight();
@@ -226,7 +257,9 @@ public class DropdownComponent implements UIComponent {
         return true;
     }
 
-    /** 弹出层滚动条命中测试。 */
+    /**
+     * 弹出层滚动条命中测试。
+     */
     public boolean isOnPopupScrollbar(float mx, float my) {
         if (!open) return false;
         float ph = popupHeight();
@@ -260,8 +293,10 @@ public class DropdownComponent implements UIComponent {
         popupScrollY = -(ratio * maxScroll);
     }
 
-    public void stopPopupScrollbarDrag() { scrollbarDragging = false; }
-    
+    public void stopPopupScrollbarDrag() {
+        scrollbarDragging = false;
+    }
+
     private void select(int idx) {
         if (idx != selectedIndex) {
             selectedIndex = idx;

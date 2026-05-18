@@ -1,14 +1,13 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.Collections;
@@ -21,12 +20,13 @@ import java.util.List;
 @Accessors(fluent = true)
 public class CheckboxComponent implements UIComponent {
 
-    private static final int BOX_COLOR       = 0xFF404040;
-    private static final int CHECKED_COLOR   = 0xFFFFFFFF;
-    private static final float SIZE          = 16;
-    private static final float INSET         = 3;
+    private static final int BOX_COLOR = 0xFF404040;
+    private static final int CHECKED_COLOR = 0xFFFFFFFF;
+    private static final float SIZE = 16;
+    private static final float INSET = 3;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private Modifier modifier;
     private String label;
     private boolean checked;
@@ -41,16 +41,19 @@ public class CheckboxComponent implements UIComponent {
         this.checked = checked;
     }
 
-    
-    @Override public List<UIComponent> children() { return Collections.emptyList(); }
+
+    @Override
+    public List<UIComponent> children() {
+        return Collections.emptyList();
+    }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
         // 方框 + 间距 + 标签文字宽度（简化：估算每字符 7px 宽）
         float labelW = label.length() * 7f;
         return MeasuredSize.of(
-                constraints.constrainWidth(SIZE + 4 + labelW),
-                constraints.constrainHeight(SIZE)
+            constraints.constrainWidth(SIZE + 4 + labelW),
+            constraints.constrainHeight(SIZE)
         );
     }
 
@@ -82,13 +85,17 @@ public class CheckboxComponent implements UIComponent {
         // TODO: 用 font.text() 渲染标签
     }
 
-    /** 切换状态。 */
+    /**
+     * 切换状态。
+     */
     public void toggle() {
         checked = !checked;
         if (onToggle != null) onToggle.run();
     }
 
-    /** 命中测试包围盒。 */
+    /**
+     * 命中测试包围盒。
+     */
     public LayoutRect hitRect() {
         return LayoutRect.of(x, y, SIZE, SIZE);
     }

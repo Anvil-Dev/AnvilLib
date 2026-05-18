@@ -1,15 +1,14 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
-import net.minecraft.client.renderer.RenderPipelines;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
 import java.util.Collections;
@@ -22,7 +21,8 @@ import java.util.List;
 @Accessors(fluent = true)
 public class ImageComponent implements UIComponent {
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private Modifier modifier;
     @Setter
     private Identifier sprite;
@@ -40,14 +40,17 @@ public class ImageComponent implements UIComponent {
         this.imageHeight = imageHeight;
     }
 
-    
-    @Override public List<UIComponent> children() { return Collections.emptyList(); }
+
+    @Override
+    public List<UIComponent> children() {
+        return Collections.emptyList();
+    }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
         return MeasuredSize.of(
-                constraints.constrainWidth(imageWidth),
-                constraints.constrainHeight(imageHeight)
+            constraints.constrainWidth(imageWidth),
+            constraints.constrainHeight(imageHeight)
         );
     }
 
@@ -62,10 +65,10 @@ public class ImageComponent implements UIComponent {
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         extractor.blitSprite(
-                RenderPipelines.GUI_TEXTURED,
-                sprite,
-                (int) x, (int) y,
-                (int) width, (int) height
+            RenderPipelines.GUI_TEXTURED,
+            sprite,
+            (int) x, (int) y,
+            (int) width, (int) height
         );
     }
 }

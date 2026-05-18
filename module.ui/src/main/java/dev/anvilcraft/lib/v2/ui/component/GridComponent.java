@@ -1,13 +1,12 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.ArrayList;
@@ -20,9 +19,10 @@ import java.util.List;
 @Accessors(fluent = true)
 public class GridComponent implements UIComponent {
 
-    @Getter @Setter
-    private Modifier modifier;
     private final int columns;
+    @Getter
+    @Setter
+    private Modifier modifier;
     @Getter
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
@@ -40,7 +40,11 @@ public class GridComponent implements UIComponent {
         this.children = List.copyOf(children);
     }
 
-    public GridComponent spacing(float h, float v) { this.hSpacing = h; this.vSpacing = v; return this; }
+    public GridComponent spacing(float h, float v) {
+        this.hSpacing = h;
+        this.vSpacing = v;
+        return this;
+    }
 
     public MeasuredSize measure(Constraints constraints) {
         if (children.isEmpty()) return MeasuredSize.ZERO;
@@ -68,7 +72,10 @@ public class GridComponent implements UIComponent {
     }
 
     public void layout(float x, float y, float width, float height) {
-        this.x = x; this.y = y; this.width = width; this.height = height;
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
 
         for (int i = 0; i < children.size(); i++) {
             int col = i % columns;

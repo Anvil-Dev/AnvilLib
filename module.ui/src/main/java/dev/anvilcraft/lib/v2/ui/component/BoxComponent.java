@@ -1,10 +1,13 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import dev.anvilcraft.lib.v2.ui.Alignment;
+import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.MeasuredSize;
+import dev.anvilcraft.lib.v2.ui.Modifier;
+import dev.anvilcraft.lib.v2.ui.UIComponent;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-
-import dev.anvilcraft.lib.v2.ui.*;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.ArrayList;
@@ -18,7 +21,8 @@ import java.util.List;
 @Accessors(fluent = true)
 public class BoxComponent implements UIComponent {
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private Modifier modifier;
     @Getter
     private List<UIComponent> children = Collections.emptyList();
@@ -61,8 +65,8 @@ public class BoxComponent implements UIComponent {
 
         this.childSizes = sizes;
         return MeasuredSize.of(
-                constraints.constrainWidth(maxWidth),
-                constraints.constrainHeight(maxHeight)
+            constraints.constrainWidth(maxWidth),
+            constraints.constrainHeight(maxHeight)
         );
     }
 

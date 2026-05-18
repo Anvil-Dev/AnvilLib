@@ -1,10 +1,14 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import dev.anvilcraft.lib.v2.ui.Alignment;
+import dev.anvilcraft.lib.v2.ui.Arrangement;
+import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.MeasuredSize;
+import dev.anvilcraft.lib.v2.ui.Modifier;
+import dev.anvilcraft.lib.v2.ui.UIComponent;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-
-import dev.anvilcraft.lib.v2.ui.*;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.ArrayList;
@@ -17,7 +21,8 @@ import java.util.List;
 @Accessors(fluent = true)
 public class RowComponent implements UIComponent {
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private Modifier modifier;
     @Getter
     private List<UIComponent> children = Collections.emptyList();
@@ -40,10 +45,6 @@ public class RowComponent implements UIComponent {
         this.children = List.copyOf(children);
     }
 
-    
-    
-    
-
 
     public MeasuredSize measure(Constraints constraints) {
         if (children.isEmpty()) return MeasuredSize.ZERO;
@@ -53,8 +54,8 @@ public class RowComponent implements UIComponent {
         List<MeasuredSize> sizes = new ArrayList<>(children.size());
 
         Constraints childConstraints = new Constraints(
-                0, Float.MAX_VALUE,
-                constraints.minHeight(), constraints.maxHeight()
+            0, Float.MAX_VALUE,
+            constraints.minHeight(), constraints.maxHeight()
         );
 
         for (UIComponent child : children) {
@@ -67,8 +68,8 @@ public class RowComponent implements UIComponent {
 
         this.childSizes = sizes;
         return MeasuredSize.of(
-                constraints.constrainWidth(totalWidth),
-                constraints.constrainHeight(maxHeight)
+            constraints.constrainWidth(totalWidth),
+            constraints.constrainHeight(maxHeight)
         );
     }
 

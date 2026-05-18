@@ -1,14 +1,13 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
 
@@ -24,12 +23,12 @@ import java.util.List;
 public class ScrollableComponent implements UIComponent {
 
     private static final int SCROLLBAR_COLOR = 0xFF888888;
-    private static final int SCROLLBAR_BG    = 0xFF333333;
-    private static final int SCROLLBAR_W     = 4;
-
-    @Getter @Setter
-    private Modifier modifier;
+    private static final int SCROLLBAR_BG = 0xFF333333;
+    private static final int SCROLLBAR_W = 4;
     private final float maxHeight;
+    @Getter
+    @Setter
+    private Modifier modifier;
     @Getter
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
@@ -64,8 +63,10 @@ public class ScrollableComponent implements UIComponent {
         for (UIComponent child : children) {
             MeasuredSize s = child.measure(childC);
             // 修饰符会扩展尺寸（如 padding），需要计入内容高度
-            s = child.modifier().foldOut(s,
-                    (el, sz) -> el.modifyMeasuredSize(child, childC, sz));
+            s = child.modifier().foldOut(
+                s,
+                (el, sz) -> el.modifyMeasuredSize(child, childC, sz)
+            );
             sizes.add(s);
             totalH += s.height();
             maxW = Math.max(maxW, s.width());
@@ -74,8 +75,8 @@ public class ScrollableComponent implements UIComponent {
         this.contentHeight = totalH;
 
         return MeasuredSize.of(
-                constraints.constrainWidth(maxW),
-                constraints.constrainHeight(Math.min(totalH, maxHeight))
+            constraints.constrainWidth(maxW),
+            constraints.constrainHeight(Math.min(totalH, maxHeight))
         );
     }
 
@@ -126,7 +127,9 @@ public class ScrollableComponent implements UIComponent {
         return true;
     }
 
-    /** 鼠标是否在滚动条滑块上。 */
+    /**
+     * 鼠标是否在滚动条滑块上。
+     */
     public boolean isOnScrollbar(float mx, float my) {
         if (contentHeight <= height) return false;
         float bh = barH();
@@ -135,13 +138,17 @@ public class ScrollableComponent implements UIComponent {
         return mx >= bx && mx < bx + SCROLLBAR_W && my >= by && my < by + bh;
     }
 
-    /** 开始拖拽滚动条。 */
+    /**
+     * 开始拖拽滚动条。
+     */
     public void startScrollbarDrag(float my) {
         scrollbarDragging = true;
         dragAnchorY = my - barY();
     }
 
-    /** 拖拽滚动条时更新位置。 */
+    /**
+     * 拖拽滚动条时更新位置。
+     */
     public void onScrollbarDrag(float my) {
         if (!scrollbarDragging) return;
         float bh = barH();
@@ -151,12 +158,14 @@ public class ScrollableComponent implements UIComponent {
         scrollY = -(ratio * maxScroll);
     }
 
-    /** 停止拖拽。 */
+    /**
+     * 停止拖拽。
+     */
     public void stopScrollbarDrag() {
         scrollbarDragging = false;
     }
 
-    
+
     private float barH() {
         return Math.max(16, height * height / contentHeight);
     }
@@ -166,9 +175,13 @@ public class ScrollableComponent implements UIComponent {
         return y + (-scrollY / maxScroll) * (height - barH());
     }
 
-        public void setScrollY(float scrollY) { this.scrollY = scrollY; }
+    public void setScrollY(float scrollY) {
+        this.scrollY = scrollY;
+    }
 
-    /** 命中测试包围盒。 */
+    /**
+     * 命中测试包围盒。
+     */
     public LayoutRect hitRect() {
         return LayoutRect.of(x, y, width, height);
     }

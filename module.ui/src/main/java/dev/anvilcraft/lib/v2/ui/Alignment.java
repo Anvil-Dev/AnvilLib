@@ -5,9 +5,12 @@ package dev.anvilcraft.lib.v2.ui;
  */
 public final class Alignment {
 
-    private Alignment() {}
+    private Alignment() {
+    }
 
-    /** 水平对齐（Column 中每个子组件的 X 定位）。 */
+    /**
+     * 水平对齐（Column 中每个子组件的 X 定位）。
+     */
     public enum Horizontal {
         Start, Center, End;
 
@@ -25,7 +28,9 @@ public final class Alignment {
         }
     }
 
-    /** 垂直对齐（Row 中每个子组件的 Y 定位）。 */
+    /**
+     * 垂直对齐（Row 中每个子组件的 Y 定位）。
+     */
     public enum Vertical {
         Top, Center, Bottom;
 

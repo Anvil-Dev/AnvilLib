@@ -1,22 +1,19 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
 import dev.anvilcraft.lib.v2.ui.input.KeyInputHandler;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
-import net.minecraft.network.chat.Style;
 import net.minecraft.util.StringUtil;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,19 +28,19 @@ import java.util.function.Consumer;
 @Accessors(fluent = true)
 public class TextInputComponent implements UIComponent, KeyInputHandler {
 
-    private static final int BG_COLOR        = 0xFF202020;
-    private static final int TEXT_COLOR      = 0xFFFFFFFF;
+    private static final int BG_COLOR = 0xFF202020;
+    private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int PLACEHOLDER_COLOR = 0xFF555555;
-    private static final int CURSOR_COLOR    = 0xFFFFFFFF;
-    private static final float PADDING_H     = 4;
-    private static final float PADDING_V     = 4;
-    private static final float WIDTH         = 160;
-
-    @Getter @Setter
+    private static final int CURSOR_COLOR = 0xFFFFFFFF;
+    private static final float PADDING_H = 4;
+    private static final float PADDING_V = 4;
+    private static final float WIDTH = 160;
+    private final String placeholder;
+    @Getter
+    @Setter
     private Modifier modifier;
     @Getter
     private String value = "";
-    private final String placeholder;
     @Getter
     private boolean focused;
     @Setter
@@ -59,18 +56,30 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
         this.placeholder = placeholder != null ? placeholder : "";
     }
 
-            public void setValue(String value) { this.value = value != null ? value : ""; this.cursorPos = this.value.length(); }
-        public void setCursorPos(int pos) { this.cursorPos = Math.clamp(pos, 0, value.length()); }
-    public void setFocused(boolean focused) { this.focused = focused; }
-    
-    @Override public List<UIComponent> children() { return Collections.emptyList(); }
+    public void setValue(String value) {
+        this.value = value != null ? value : "";
+        this.cursorPos = this.value.length();
+    }
+
+    public void setCursorPos(int pos) {
+        this.cursorPos = Math.clamp(pos, 0, value.length());
+    }
+
+    public void setFocused(boolean focused) {
+        this.focused = focused;
+    }
+
+    @Override
+    public List<UIComponent> children() {
+        return Collections.emptyList();
+    }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
         var font = Minecraft.getInstance().font;
         return MeasuredSize.of(
-                constraints.constrainWidth(WIDTH),
-                constraints.constrainHeight(font.lineHeight + PADDING_V * 2)
+            constraints.constrainWidth(WIDTH),
+            constraints.constrainHeight(font.lineHeight + PADDING_V * 2)
         );
     }
 
@@ -109,21 +118,42 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     public boolean onKeyPressed(KeyEvent event) {
         int key = event.key();
         if (key == 259) { // 退格
-            if (cursorPos > 0) { value = new StringBuilder(value).deleteCharAt(cursorPos - 1).toString(); cursorPos--; fireChange(); }
+            if (cursorPos > 0) {
+                value = new StringBuilder(value).deleteCharAt(cursorPos - 1).toString();
+                cursorPos--;
+                fireChange();
+            }
             return true;
         }
         if (key == 261) { // Delete
-            if (cursorPos < value.length()) { value = new StringBuilder(value).deleteCharAt(cursorPos).toString(); fireChange(); }
+            if (cursorPos < value.length()) {
+                value = new StringBuilder(value).deleteCharAt(cursorPos).toString();
+                fireChange();
+            }
             return true;
         }
-        if (key == 263) { if (cursorPos > 0) cursorPos--; return true; } // ←
-        if (key == 262) { if (cursorPos < value.length()) cursorPos++; return true; } // →
-        if (key == 268) { cursorPos = 0; return true; } // Home
-        if (key == 269) { cursorPos = value.length(); return true; } // End
+        if (key == 263) {
+            if (cursorPos > 0) cursorPos--;
+            return true;
+        } // ←
+        if (key == 262) {
+            if (cursorPos < value.length()) cursorPos++;
+            return true;
+        } // →
+        if (key == 268) {
+            cursorPos = 0;
+            return true;
+        } // Home
+        if (key == 269) {
+            cursorPos = value.length();
+            return true;
+        } // End
         return false;
     }
 
-    /** 字符输入——支持所有语言、输入法、小键盘。参照原版 {@code EditBox.charTyped}。 */
+    /**
+     * 字符输入——支持所有语言、输入法、小键盘。参照原版 {@code EditBox.charTyped}。
+     */
     @Override
     public boolean onCharTyped(CharacterEvent event) {
         if (!event.isAllowedChatCharacter()) return false;

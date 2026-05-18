@@ -3,7 +3,7 @@ package dev.anvilcraft.lib.v2.ui.modifier;
 import dev.anvilcraft.lib.v2.ui.Constraints;
 
 public record SizeElement(float minWidthHint, float maxWidthHint, float minHeightHint, float maxHeightHint)
-        implements ModifierElement {
+    implements ModifierElement {
 
     @Override
     public Constraints modifyConstraints(Constraints constraints) {

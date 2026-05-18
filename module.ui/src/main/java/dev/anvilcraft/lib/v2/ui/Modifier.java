@@ -13,18 +13,37 @@ import java.util.function.BiFunction;
  */
 public interface Modifier {
 
+    Modifier NONE = new Modifier() {
+        @Override
+        public Modifier then(Modifier other) {
+            return other;
+        }
+
+        @Override
+        public <R> R foldIn(R initial, BiFunction<R, ModifierElement, R> operation) {
+            return initial;
+        }
+
+        @Override
+        public <R> R foldOut(R initial, BiFunction<ModifierElement, R, R> operation) {
+            return initial;
+        }
+    };
+
     Modifier then(Modifier other);
 
     <R> R foldIn(R initial, BiFunction<R, ModifierElement, R> operation);
 
     <R> R foldOut(R initial, BiFunction<ModifierElement, R, R> operation);
 
-    /** 返回一个前置了给定元素的新链。 */
+    // ── 工厂快捷方法 ──
+
+    /**
+     * 返回一个前置了给定元素的新链。
+     */
     default Modifier prepend(ModifierElement element) {
         return then(new SingleElementModifier(element));
     }
-
-    // ── 工厂快捷方法 ──
 
     default Modifier size(float width, float height) {
         return prepend(ModifierElement.size(width, height));
@@ -69,21 +88,4 @@ public interface Modifier {
     default Modifier border(float width, int color, float round) {
         return prepend(ModifierElement.border(width, color, round));
     }
-
-    Modifier NONE = new Modifier() {
-        @Override
-        public Modifier then(Modifier other) {
-            return other;
-        }
-
-        @Override
-        public <R> R foldIn(R initial, BiFunction<R, ModifierElement, R> operation) {
-            return initial;
-        }
-
-        @Override
-        public <R> R foldOut(R initial, BiFunction<ModifierElement, R, R> operation) {
-            return initial;
-        }
-    };
 }

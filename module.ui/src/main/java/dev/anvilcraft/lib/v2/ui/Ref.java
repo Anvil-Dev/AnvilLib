@@ -1,10 +1,10 @@
 package dev.anvilcraft.lib.v2.ui;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-
-import org.jspecify.annotations.Nullable;
 
 /**
  * 可观察状态持有者。
@@ -16,8 +16,8 @@ import org.jspecify.annotations.Nullable;
  */
 public class Ref<T> {
 
-    private T value;
     final Set<Composition.Slot> readers = new HashSet<>();
+    private T value;
 
     public Ref(@Nullable T initialValue) {
         this.value = initialValue;
@@ -36,7 +36,9 @@ public class Ref<T> {
         return value;
     }
 
-    /** 设置新值。若值发生变化，标记所有 reader slot 为脏。 */
+    /**
+     * 设置新值。若值发生变化，标记所有 reader slot 为脏。
+     */
     public void setValue(@Nullable T newValue) {
         if (!Objects.equals(value, newValue)) {
             value = newValue;
