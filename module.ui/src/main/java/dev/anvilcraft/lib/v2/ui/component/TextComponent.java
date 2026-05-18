@@ -71,10 +71,7 @@ public class TextComponent implements UIComponent {
             case RIGHT -> x + width - textW;
         };
 
-        if (dropShadow) {
-            extractor.text(font, text, (int) renderX + 1, (int) y + 1, 0x33000000);
-        }
-        extractor.text(font, text, (int) renderX, (int) y, color);
+        extractor.text(font, text, (int) renderX, (int) y, color, dropShadow);
     }
 }
 

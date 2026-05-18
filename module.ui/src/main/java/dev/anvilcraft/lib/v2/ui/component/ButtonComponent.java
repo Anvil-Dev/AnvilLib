@@ -81,7 +81,7 @@ public class ButtonComponent implements UIComponent {
         int textX = (int) (x + (width - textW) / 2f);
         int textY = (int) (y + (height - font.lineHeight) / 2f);
 
-        extractor.text(font, txt, textX, textY, TEXT_COLOR);
+        extractor.text(font, txt, textX, textY, TEXT_COLOR, true);
     }
 
     /** 按钮包围盒，用于命中测试。 */
