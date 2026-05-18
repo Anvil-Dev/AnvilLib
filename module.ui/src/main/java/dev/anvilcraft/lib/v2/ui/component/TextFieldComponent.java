@@ -45,7 +45,10 @@ public class TextFieldComponent implements UIComponent, KeyInputHandler {
     }
 
     public TextFieldComponent modifier(Modifier m) { this.modifier = m; return this; }
-    public String text() { return buffer.toString(); }
+    public String getBufferText() { return buffer.toString(); }
+    public void setBufferText(String text) { buffer.setLength(0); buffer.append(text); }
+    public int getCursorPos() { return cursorPos; }
+    public void setCursorPos(int pos) { this.cursorPos = Math.clamp(pos, 0, buffer.length()); }
     public void setFocused(boolean focused) { this.focused = focused; }
     public boolean isFocused() { return focused; }
 

@@ -52,7 +52,30 @@ public abstract class DeclarativeScreen extends Screen {
         if (composition != null) {
             composition.renderFrame(extractor, this.width, this.height);
             updateHover(mouseX, mouseY);
+            refreshFocus();
         }
+    }
+
+    /** recompose 后重新绑定 focusOwner（旧实例可能已被替换）。 */
+    private void refreshFocus() {
+        if (focusOwner == null) return;
+        for (UIComponent child : rootScope.getChildren()) {
+            KeyInputHandler found = findFocused(child);
+            if (found != null) {
+                focusOwner = found;
+                return;
+            }
+        }
+        focusOwner = null;
+    }
+
+    private KeyInputHandler findFocused(UIComponent component) {
+        if (component instanceof TextFieldComponent tf && tf.isFocused()) return tf;
+        for (UIComponent child : component.children()) {
+            KeyInputHandler found = findFocused(child);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     // ── 鼠标输入 ──
