@@ -12,13 +12,14 @@ import java.util.List;
 
 /**
  * 复选框。点击切换 boolean 状态。
- * 原版风格：16x16 方框 + 选中时内部对勾。
+ * 16x16 方框，未选中=深色空心，选中=浅色填充。
  */
 public class CheckboxComponent implements UIComponent {
 
-    private static final int BOX_COLOR   = 0xFF404040;
-    private static final int CHECK_COLOR = 0xFFFFFFFF;
-    private static final float SIZE      = 16;
+    private static final int BOX_COLOR       = 0xFF404040;
+    private static final int CHECKED_COLOR   = 0xFFFFFFFF;
+    private static final float SIZE          = 16;
+    private static final float INSET         = 3;
 
     private Modifier modifier;
     private String label;
@@ -61,15 +62,16 @@ public class CheckboxComponent implements UIComponent {
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         int ix = (int) x, iy = (int) y;
 
-        // 方框背景
+        // 外层深灰方块（始终显示）
         extractor.fill(ix, iy, ix + (int) SIZE, iy + (int) SIZE, BOX_COLOR);
 
-        // 选中对勾（简化：十字线）
+        // 选中时中间白色小方块
         if (checked) {
-            int cx = ix + (int) SIZE / 2, cy = iy + (int) SIZE / 2;
-            int s = 4;
-            extractor.fill(cx - s, cy, cx, cy + s, CHECK_COLOR); // 左下-中心
-            extractor.fill(cx, cy, cx + s + 2, cy - s, CHECK_COLOR); // 中心-右上
+            int iix = ix + (int) INSET;
+            int iiy = iy + (int) INSET;
+            int iiw = (int) SIZE - (int) INSET * 2;
+            int iih = (int) SIZE - (int) INSET * 2;
+            extractor.fill(iix, iiy, iix + iiw, iiy + iih, CHECKED_COLOR);
         }
 
         // 标签文字
