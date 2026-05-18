@@ -3,6 +3,12 @@ package dev.anvilcraft.lib.v2.ui;
 /**
  * 子组件在交叉轴上的对齐方式。
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public final class Alignment {
     private Alignment() {
     }

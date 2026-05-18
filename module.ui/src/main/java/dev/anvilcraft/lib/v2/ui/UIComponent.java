@@ -14,6 +14,12 @@ import java.util.List;
  *   <li>{@link #extractRenderState(GuiGraphicsExtractor)} — 提交渲染状态给 GPU</li>
  * </ol>
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public interface UIComponent {
     /**
      * 应用于此组件的修饰符链。

@@ -3,6 +3,12 @@ package dev.anvilcraft.lib.v2.ui;
 /**
  * 布局阶段之后的定位矩形。
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public record LayoutRect(float x, float y, float width, float height) {
     public static LayoutRect of(float x, float y, float width, float height) {
         return new LayoutRect(x, y, width, height);

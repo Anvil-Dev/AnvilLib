@@ -4,6 +4,12 @@ import net.minecraft.resources.Identifier;
 import net.neoforged.fml.common.Mod;
 
 @Mod(AnvilLibUi.MOD_ID)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class AnvilLibUi {
     public static final String MOD_ID = "anvillib_ui";
 

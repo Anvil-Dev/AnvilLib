@@ -14,6 +14,12 @@ import java.util.Set;
  *
  * @param <T> 持有值的类型
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class Ref<T> {
     final Set<Composition.Slot> readers = new HashSet<>();
     private @Nullable T value;

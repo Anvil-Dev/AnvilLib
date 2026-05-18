@@ -7,6 +7,12 @@ import net.minecraft.util.Mth;
  * 基于游戏 tick 的动画值。从当前值平滑过渡到目标值。
  * 每 tick 调用 {@link #tick()} 推进动画。
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class Animatable {
     @Getter
     private float value;

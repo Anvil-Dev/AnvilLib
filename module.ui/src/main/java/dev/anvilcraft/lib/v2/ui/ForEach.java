@@ -13,6 +13,12 @@ import java.util.function.BiConsumer;
  * });
  * }</pre>
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public final class ForEach {
     private ForEach() {
     }

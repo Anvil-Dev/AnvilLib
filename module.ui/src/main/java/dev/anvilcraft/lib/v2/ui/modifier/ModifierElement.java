@@ -10,6 +10,12 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
  * {@link dev.anvilcraft.lib.v2.ui.Modifier} 链中的单个节点。
  * 每个元素可拦截 measure、layout、render 阶段。
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public interface ModifierElement {
     static ModifierElement size(float width, float height) {
         return new SizeElement(width, width, height, height);

@@ -22,6 +22,12 @@ import java.util.function.Consumer;
  * 弹出层延迟渲染以确保 z-order 正确，支持最大高度 + 滚动。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class DropdownComponent implements UIComponent {
     private static final int BG_COLOR = 0xFF404040;
     private static final int HOVER_COLOR = 0xFF606060;
@@ -52,6 +58,7 @@ public class DropdownComponent implements UIComponent {
     private boolean scrollbarDragging;
     private float dragAnchorY;
 
+    @Getter
     private float x, y, width, height;
 
     public DropdownComponent(Modifier modifier, String[] options, int selectedIndex, float maxPopupHeight) {

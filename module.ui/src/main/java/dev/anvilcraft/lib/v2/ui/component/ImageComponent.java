@@ -19,6 +19,12 @@ import java.util.List;
  * 通过 {@code GuiGraphicsExtractor#blitSprite} 使用原版纹理管线。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class ImageComponent implements UIComponent {
     @Getter
     @Setter
@@ -32,6 +38,7 @@ public class ImageComponent implements UIComponent {
     @Setter
     private float imageHeight;
 
+    @Getter
     private float x, y, width, height;
 
     public ImageComponent(Modifier modifier, Identifier sprite, float imageWidth, float imageHeight) {

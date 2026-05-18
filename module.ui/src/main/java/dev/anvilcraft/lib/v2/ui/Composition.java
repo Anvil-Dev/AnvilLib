@@ -27,6 +27,12 @@ import java.util.function.Supplier;
  * <p>
  * 状态读取按 slot 追踪，写入只标记受影响 slot 为脏——不会波及整棵树。
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class Composition {
     private static final ThreadLocal<@Nullable Composition> CURRENT = new ThreadLocal<>();
     private final List<Slot> slots = new ArrayList<>();

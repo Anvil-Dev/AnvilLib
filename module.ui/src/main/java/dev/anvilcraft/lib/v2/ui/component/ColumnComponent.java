@@ -19,6 +19,12 @@ import java.util.List;
  * 纵向线性布局。子组件自上而下排列。主轴=垂直，交叉轴=水平。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class ColumnComponent implements UIComponent {
     @Getter
     @Setter
@@ -35,6 +41,7 @@ public class ColumnComponent implements UIComponent {
     private float spacing;
 
     // 布局状态
+    @Getter
     private float x, y, width, height;
 
     public ColumnComponent(Modifier modifier) {

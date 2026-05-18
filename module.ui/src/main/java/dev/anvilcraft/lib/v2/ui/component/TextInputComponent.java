@@ -27,6 +27,12 @@ import java.util.function.Consumer;
  * 字符输入通过 {@link CharacterEvent} 处理，支持所有语言和输入法。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class TextInputComponent implements UIComponent, KeyInputHandler {
     private static final int BG_COLOR = 0xFF202020;
     private static final int TEXT_COLOR = 0xFFFFFFFF;
@@ -49,6 +55,7 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     @Getter
     private int cursorPos;
 
+    @Getter
     private float x, y, width, height;
 
     public TextInputComponent(Modifier modifier, @Nullable String placeholder) {

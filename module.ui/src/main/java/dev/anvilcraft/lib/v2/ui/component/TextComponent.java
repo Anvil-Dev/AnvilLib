@@ -18,6 +18,12 @@ import java.util.List;
  * 单行文字渲染。默认样式与原版一致：白色带阴影、左对齐。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class TextComponent implements UIComponent {
     private static final int VANILLA_TEXT_COLOR = 0xFFFFFFFF;
     @Getter
@@ -31,6 +37,8 @@ public class TextComponent implements UIComponent {
     private boolean shadow;
     @Setter
     private Align align = Align.LEFT;
+
+    @Getter
     private float x, y, width, height;
 
     public TextComponent(Modifier modifier, String text) {

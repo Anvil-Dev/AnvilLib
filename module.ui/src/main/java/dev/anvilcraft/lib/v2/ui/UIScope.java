@@ -33,6 +33,12 @@ import java.util.function.Consumer;
  * <p>
  * 组件构建器在此定义为具体方法，所有 scope 子类自动继承。
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public abstract class UIScope {
     final List<UIComponent> children = new ArrayList<>();
 

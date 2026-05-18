@@ -4,6 +4,12 @@ import dev.anvilcraft.lib.v2.ui.Modifier;
 
 import java.util.function.BiFunction;
 
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public record CombinedModifier(ModifierElement outer, Modifier inner) implements Modifier {
     @Override
     public Modifier then(Modifier other) {

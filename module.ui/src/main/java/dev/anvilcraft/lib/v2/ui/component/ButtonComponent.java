@@ -19,6 +19,12 @@ import java.util.List;
  * 可点击按钮。原版 fill() 背景 + 手动居中 text() 文字。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class ButtonComponent implements UIComponent {
     // 原版按钮配色
     private static final int BG_COLOR = 0xFF404040;
@@ -36,6 +42,7 @@ public class ButtonComponent implements UIComponent {
     private Runnable onClick;
     private boolean hovered;
 
+    @Getter
     private float x, y, width, height;
 
     public ButtonComponent(Modifier modifier, String label) {

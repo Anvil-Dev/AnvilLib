@@ -18,6 +18,12 @@ import java.util.List;
  * 16x16 方框，未选中=深色空心，选中=浅色填充。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class CheckboxComponent implements UIComponent {
     private static final int BOX_COLOR = 0xFF404040;
     private static final int CHECKED_COLOR = 0xFFFFFFFF;
@@ -33,6 +39,7 @@ public class CheckboxComponent implements UIComponent {
     @Setter
     private Runnable onToggle;
 
+    @Getter
     private float x, y, width, height;
 
     public CheckboxComponent(Modifier modifier, String label, boolean checked) {

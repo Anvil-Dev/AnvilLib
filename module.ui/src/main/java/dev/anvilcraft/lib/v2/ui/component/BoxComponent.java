@@ -19,6 +19,12 @@ import java.util.List;
  * Box 本身的大小由最大的子组件决定。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class BoxComponent implements UIComponent {
     @Getter
     @Setter
@@ -30,6 +36,7 @@ public class BoxComponent implements UIComponent {
     private Alignment.Horizontal contentAlignmentH = Alignment.Horizontal.Start;
     private Alignment.Vertical contentAlignmentV = Alignment.Vertical.Top;
 
+    @Getter
     private float x, y, width, height;
 
     public BoxComponent(Modifier modifier) {

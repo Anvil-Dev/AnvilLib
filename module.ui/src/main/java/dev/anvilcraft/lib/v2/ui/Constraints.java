@@ -3,6 +3,12 @@ package dev.anvilcraft.lib.v2.ui;
 /**
  * 父容器传给子组件的 min/max 尺寸约束。
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public record Constraints(float minWidth, float maxWidth, float minHeight, float maxHeight) {
     public static final Constraints NONE = new Constraints(0, Float.MAX_VALUE, 0, Float.MAX_VALUE);
 

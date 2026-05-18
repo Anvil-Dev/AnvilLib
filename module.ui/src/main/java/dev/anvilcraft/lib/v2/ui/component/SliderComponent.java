@@ -21,6 +21,12 @@ import java.util.function.Consumer;
  * 原版风格：深色轨道 + 浅色滑块按钮。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class SliderComponent implements UIComponent {
     private static final int TRACK_COLOR = 0xFF404040;
     private static final int THUMB_COLOR = 0xFFAAAAAA;
@@ -37,6 +43,7 @@ public class SliderComponent implements UIComponent {
     @Setter
     private @Nullable Consumer<Float> onChange;
 
+    @Getter
     private float x, y, width, height;
 
     public SliderComponent(Modifier modifier, float value, float min, float max, float trackWidth) {

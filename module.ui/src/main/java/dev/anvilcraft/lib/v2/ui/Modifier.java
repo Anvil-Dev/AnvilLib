@@ -11,6 +11,12 @@ import java.util.function.BiFunction;
  * 每个修饰符元素可参与 measure、layout、render 阶段。
  * 调用方通过 {@link #foldIn} / {@link #foldOut} 遍历链。
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public interface Modifier {
     Modifier NONE = new Modifier() {
         @Override

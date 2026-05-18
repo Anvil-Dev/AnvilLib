@@ -16,6 +16,12 @@ import java.util.List;
  * 固定尺寸的空白占位组件，不渲染任何内容。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class SpacerComponent implements UIComponent {
     private final float spacerWidth;
     private final float spacerHeight;

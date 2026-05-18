@@ -17,6 +17,12 @@ import java.util.List;
  * 网格布局。子组件按列数排列，每格大小由最大子组件决定。
  */
 @Accessors(fluent = true)
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class GridComponent implements UIComponent {
     private final int columns;
     @Getter
@@ -24,9 +30,11 @@ public class GridComponent implements UIComponent {
     private Modifier modifier;
     @Getter
     private List<UIComponent> children = Collections.emptyList();
+    @SuppressWarnings("FieldCanBeLocal")
     private List<MeasuredSize> childSizes = Collections.emptyList();
     private float hSpacing, vSpacing;
 
+    @Getter
     private float x, y, width, height;
     private float cellW, cellH;
 

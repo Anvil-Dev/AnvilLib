@@ -25,6 +25,12 @@ import org.jspecify.annotations.Nullable;
  * 每帧自动完成：dirty check → recompose → measure → layout → render states。
  * 输入事件（点击、按键、滚轮）通过命中测试路由到对应组件。
  */
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public abstract class DeclarativeScreen extends Screen {
     private final UIScope rootScope = new RootScope();
     @Nullable
