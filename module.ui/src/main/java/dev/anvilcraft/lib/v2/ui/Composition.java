@@ -55,6 +55,7 @@ public class Composition {
     private boolean dirty = true;
     private Consumer<UIScope> content;
     private UIScope rootScope;
+    private final List<Animatable> animatables = new ArrayList<>();
 
     public Composition(UIScope rootScope) {
         this.rootScope = rootScope;
@@ -67,6 +68,13 @@ public class Composition {
     /** Mark the composition as needing recomposition next frame. */
     public void invalidate() {
         dirty = true;
+    }
+
+    /** 注册动画值，每帧自动 tick。动画进行中时自动触发 recompose。 */
+    public void watch(Animatable anim) {
+        if (!animatables.contains(anim)) {
+            animatables.add(anim);
+        }
     }
 
     // ── remember ──
@@ -117,6 +125,10 @@ public class Composition {
     public void renderFrame(GuiGraphicsExtractor extractor, float screenWidth, float screenHeight) {
         CURRENT.set(this);
         try {
+            // Tick animations — if any running, mark dirty
+            for (Animatable anim : animatables) {
+                if (anim.tick()) dirty = true;
+            }
             if (dirty || hasDirtySlots()) {
                 recompose();
                 dirty = false;

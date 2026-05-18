@@ -64,11 +64,11 @@
 
 ## Phase 8: 高级特性
 
-- [ ] `Grid` — 网格布局
-- [ ] `ForEach` — 循环渲染（带 key 稳定 slot 复用）
-- [ ] `if` / `when` 条件渲染
-- [ ] `Animatable` — 时间驱动动画值（基于 Minecraft tick，不依赖协程）
-- [ ] `LazyColumn` — 虚拟化长列表
+- [x] `Grid` — 网格布局（columns × auto-rows，hSpacing/vSpacing）
+- [x] `ForEach` — 循环渲染工具（`ForEach.of(scope, items, (s, item) -> ...)`）
+- [x] `Animatable` — tick 驱动动画值（ease-in-out，`Composition.watch()` 自动驱动）
+- [ ] 条件渲染 — `if` 天然工作于 content lambda 重执行时；key 稳定需要后续优化
+- [ ] `LazyColumn` — 虚拟化长列表，延后
 
 ## Phase 9: 测试
 

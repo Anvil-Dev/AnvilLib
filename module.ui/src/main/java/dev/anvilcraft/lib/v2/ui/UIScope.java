@@ -8,6 +8,8 @@ import dev.anvilcraft.lib.v2.ui.component.BoxComponent;
 import dev.anvilcraft.lib.v2.ui.component.BoxScope;
 import dev.anvilcraft.lib.v2.ui.component.ColumnComponent;
 import dev.anvilcraft.lib.v2.ui.component.ColumnScope;
+import dev.anvilcraft.lib.v2.ui.component.GridComponent;
+import dev.anvilcraft.lib.v2.ui.component.GridScope;
 import dev.anvilcraft.lib.v2.ui.component.ImageComponent;
 import dev.anvilcraft.lib.v2.ui.component.RowComponent;
 import dev.anvilcraft.lib.v2.ui.component.RowScope;
@@ -123,6 +125,16 @@ public abstract class UIScope {
     public BoxComponent Box(Consumer<BoxScope> content) {
         BoxComponent c = new BoxComponent(Modifier.NONE);
         BoxScope inner = new BoxScope();
+        content.accept(inner);
+        c.setChildren(inner.getChildren());
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    public GridComponent Grid(int columns, Consumer<GridScope> content) {
+        GridComponent c = new GridComponent(Modifier.NONE, columns);
+        GridScope inner = new GridScope();
         content.accept(inner);
         c.setChildren(inner.getChildren());
         addChild(c);
