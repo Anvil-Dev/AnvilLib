@@ -1,12 +1,12 @@
 package dev.anvilcraft.lib.v2.test.client.screen;
 
 import dev.anvilcraft.lib.v2.ui.*;
+import dev.anvilcraft.lib.v2.ui.component.TextComponent;
 import net.minecraft.network.chat.Component;
 
 /**
- * End-to-end test screen for the declarative UI system.
- * Demonstrates state management, recomposition, Column layout,
- * Text rendering, and Button interaction.
+ * 端到端测试 Screen，展示声明式 UI 的全部 Phase 3+4 功能：
+ * Column / Row / Box 布局，Text / Button / Spacer 组件，状态管理。
  */
 public class DeclarativeTestScreen extends DeclarativeScreen {
 
@@ -16,25 +16,38 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
 
     @Override
     protected void content(UIScope scope) {
-        // State that survives recomposition
         MutableState<Integer> counter = Composition.current()
                 .remember(() -> new MutableState<>(0));
 
         scope.Column(col -> {
-            col.Text("AnvilLib Declarative UI")
-                    .color(0xFFFFFF00);
+            col.Text("Declarative UI Demo")
+                    .color(0xFFFFFF00)
+                    .shadow(false);
 
-            col.Text("")
-                    .text("Counter: " + counter.getValue());
+            col.Spacer(0, 4);
 
-            col.Button("Increment", () ->
-                    counter.setValue(counter.getValue() + 1));
+            // Row: 横向按钮栏
+            col.Row(row -> {
+                row.Button("-", () -> counter.setValue(counter.getValue() - 1));
+                row.Text("  " + counter.getValue() + "  ")
+                        .align(TextComponent.Align.CENTER);
+                row.Button("+", () -> counter.setValue(counter.getValue() + 1));
+            }).spacing(4);
 
-            col.Button("Decrement", () ->
-                    counter.setValue(counter.getValue() - 1));
+            col.Spacer(0, 8);
 
-            col.Button("Reset", () ->
-                    counter.setValue(0));
-        });
+            // Box: 叠加
+            col.Box(box -> {
+                box.Text("          ");
+                box.Text("Count: " + counter.getValue())
+                        .color(0xFF00FF00)
+                        .shadow(false);
+            }).contentAlignment(Alignment.Horizontal.Center, Alignment.Vertical.Center);
+
+            col.Spacer(0, 8);
+
+            col.Button("Reset", () -> counter.setValue(0));
+        }).spacing(8);
     }
 }
+

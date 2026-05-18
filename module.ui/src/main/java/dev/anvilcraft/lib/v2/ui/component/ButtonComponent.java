@@ -8,6 +8,7 @@ import dev.anvilcraft.lib.v2.ui.UIComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.ARGB;
 
 import java.util.Collections;
 import java.util.List;
@@ -15,21 +16,25 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A clickable button with background and label.
+ * 可点击按钮。默认样式与原版一致：深灰背景、白色带阴影文字、微圆角。
  */
 public class ButtonComponent implements UIComponent {
 
-    private static final int BG_COLOR = 0xFF555555;
-    private static final int TEXT_COLOR = 0xFFFFFFFF;
-    private static final float PADDING_H = 12;
-    private static final float PADDING_V = 6;
+    // 原版按钮配色
+    private static final int BG_COLOR       = 0xFF404040;
+    private static final int BG_HOVER_COLOR = 0xFF606060;
+    private static final int TEXT_COLOR     = 0xFFFFFFFF;
+    private static final int SHADOW_COLOR   = 0x33000000;
+    private static final float PADDING_H    = 12;
+    private static final float PADDING_V    = 6;
+    private static final float ROUND_RADIUS = 2;
 
     private final Modifier modifier;
     private String label;
     @Nullable
     private Runnable onClick;
+    private boolean hovered;
 
-    // layout state
     private float x, y, width, height;
 
     public ButtonComponent(Modifier modifier, String label, @Nullable Runnable onClick) {
@@ -38,25 +43,12 @@ public class ButtonComponent implements UIComponent {
         this.onClick = onClick;
     }
 
-    public ButtonComponent label(String label) {
-        this.label = label;
-        return this;
-    }
+    public ButtonComponent label(String label) { this.label = label; return this; }
+    public ButtonComponent onClick(@Nullable Runnable onClick) { this.onClick = onClick; return this; }
+    void setHovered(boolean hovered) { this.hovered = hovered; }
 
-    public ButtonComponent onClick(@Nullable Runnable onClick) {
-        this.onClick = onClick;
-        return this;
-    }
-
-    @Override
-    public Modifier modifier() {
-        return modifier;
-    }
-
-    @Override
-    public List<UIComponent> children() {
-        return Collections.emptyList();
-    }
+    @Override public Modifier modifier() { return modifier; }
+    @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
@@ -80,21 +72,28 @@ public class ButtonComponent implements UIComponent {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
+        int bg = hovered ? BG_HOVER_COLOR : BG_COLOR;
+
+        // 背景
         SdfGraphics.instance
                 .box(x, y, width, height)
-                .color(BG_COLOR)
-                .round(4)
+                .color(bg)
+                .round(ROUND_RADIUS)
                 .fill()
                 .draw(extractor);
 
+        // 文字（带阴影，原版风格）
         var font = Minecraft.getInstance().font;
         Component comp = Component.literal(label);
-        extractor.centeredText(font, comp, (int) (x + width / 2), (int) (y + (height - font.lineHeight) / 2), TEXT_COLOR);
+        int centerX = (int) (x + width / 2f);
+        int textY = (int) (y + (height - font.lineHeight) / 2f);
+
+        extractor.centeredText(font, comp, centerX + 1, textY + 1, SHADOW_COLOR);
+        extractor.centeredText(font, comp, centerX, textY, TEXT_COLOR);
     }
 
     void click() {
-        if (onClick != null) {
-            onClick.run();
-        }
+        if (onClick != null) onClick.run();
     }
 }
+

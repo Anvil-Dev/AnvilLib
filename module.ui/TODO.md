@@ -32,10 +32,10 @@
 
 ## Phase 4: 基础组件
 
-- [ ] `Text` — 文字渲染（Minecraft font）
-- [ ] `Button` — 可点击矩形按钮（SdfGraphics 背景 + 文字）
-- [ ] `Spacer` — 固定尺寸空白
-- [ ] `Image` — 材质渲染
+- [x] `Text` — 重构：加 shadow（默认开启）、Align LEFT/CENTER/RIGHT、原版默认色
+- [x] `Button` — 重构：原版配色（0xFF404040 / hover 0xFF606060）、shadow 文字、hover 状态预留
+- [x] `Spacer` — 新建：固定尺寸空白占位
+- [x] `Image` — 新建：`blitSprite` 渲染 `Identifier` 纹理
 
 ## Phase 5: Modifier Elements
 

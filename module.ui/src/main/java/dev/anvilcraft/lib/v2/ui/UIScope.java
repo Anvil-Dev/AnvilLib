@@ -5,9 +5,13 @@ import dev.anvilcraft.lib.v2.ui.component.BoxComponent;
 import dev.anvilcraft.lib.v2.ui.component.BoxScope;
 import dev.anvilcraft.lib.v2.ui.component.ColumnComponent;
 import dev.anvilcraft.lib.v2.ui.component.ColumnScope;
+import dev.anvilcraft.lib.v2.ui.component.ImageComponent;
 import dev.anvilcraft.lib.v2.ui.component.RowComponent;
 import dev.anvilcraft.lib.v2.ui.component.RowScope;
+import dev.anvilcraft.lib.v2.ui.component.SpacerComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextComponent;
+
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +50,20 @@ public abstract class UIScope {
 
     public TextComponent Text(String text) {
         TextComponent c = new TextComponent(Modifier.NONE, text);
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    public SpacerComponent Spacer(float width, float height) {
+        SpacerComponent c = new SpacerComponent(Modifier.NONE, width, height);
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    public ImageComponent Image(Identifier sprite, float width, float height) {
+        ImageComponent c = new ImageComponent(Modifier.NONE, sprite, width, height);
         addChild(c);
         Composition.current().emit(c);
         return c;
