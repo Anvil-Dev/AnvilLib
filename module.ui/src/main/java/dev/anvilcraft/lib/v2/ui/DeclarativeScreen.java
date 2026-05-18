@@ -1,11 +1,14 @@
 package dev.anvilcraft.lib.v2.ui;
 
 import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 
 import org.jspecify.annotations.Nullable;
 
@@ -20,7 +23,6 @@ public abstract class DeclarativeScreen extends Screen {
     @Nullable
     private Composition composition;
     private final UIScope rootScope = new RootScope();
-    private int lastMouseX, lastMouseY;
 
     protected DeclarativeScreen(Component title) {
         super(title);
@@ -40,8 +42,6 @@ public abstract class DeclarativeScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(extractor, mouseX, mouseY, partialTick);
-        lastMouseX = mouseX;
-        lastMouseY = mouseY;
         if (composition != null) {
             composition.renderFrame(extractor, this.width, this.height);
             updateHover(mouseX, mouseY);
@@ -53,8 +53,12 @@ public abstract class DeclarativeScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
         if (event.button() == 0) {
+            var mc = Minecraft.getInstance();
+            int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+            int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
             for (UIComponent child : rootScope.getChildren()) {
-                if (hitTestClick(child, lastMouseX, lastMouseY)) {
+                if (hitTestClick(child, mx, my)) {
+                    mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
                     return true;
                 }
             }

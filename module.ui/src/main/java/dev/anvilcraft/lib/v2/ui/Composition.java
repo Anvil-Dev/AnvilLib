@@ -117,7 +117,7 @@ public class Composition {
     public void renderFrame(GuiGraphicsExtractor extractor, float screenWidth, float screenHeight) {
         CURRENT.set(this);
         try {
-            if (dirty) {
+            if (dirty || hasDirtySlots()) {
                 recompose();
                 dirty = false;
             }
@@ -136,15 +136,21 @@ public class Composition {
         rootScope.clearChildren();
         currentIndex = 0;
         currentRememberKey = 0;
-        content.accept(rootScope);
-        // Remove slots beyond currentIndex (conditionally removed components)
-        while (slots.size() > currentIndex) {
-            Slot removed = slots.remove(slots.size() - 1);
-            // Purge remembered values that belong to removed slots.
-            // A simple approach: remembered values for keys beyond
-            // currentRememberKey are dead; we leave them as they'll
-            // be overwritten on next composition anyway.
+        // Clear slot dirty flags before recompose
+        for (Slot slot : slots) {
+            slot.dirty = false;
         }
+        content.accept(rootScope);
+        while (slots.size() > currentIndex) {
+            slots.remove(slots.size() - 1);
+        }
+    }
+
+    private boolean hasDirtySlots() {
+        for (Slot slot : slots) {
+            if (slot.dirty) return true;
+        }
+        return false;
     }
 
     // ── measure → layout → render walk ──
