@@ -1,6 +1,9 @@
 package dev.anvilcraft.lib.v2.ui;
 
 import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
+import dev.anvilcraft.lib.v2.ui.component.CheckboxComponent;
+import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
+import dev.anvilcraft.lib.v2.ui.component.TextFieldComponent;
 import dev.anvilcraft.lib.v2.ui.component.BoxComponent;
 import dev.anvilcraft.lib.v2.ui.component.BoxScope;
 import dev.anvilcraft.lib.v2.ui.component.ColumnComponent;
@@ -64,6 +67,27 @@ public abstract class UIScope {
 
     public ImageComponent Image(Identifier sprite, float width, float height) {
         ImageComponent c = new ImageComponent(Modifier.NONE, sprite, width, height);
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    public CheckboxComponent Checkbox(String label, boolean checked, Runnable onToggle) {
+        CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, checked, onToggle);
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    public SliderComponent Slider(float value, float min, float max, float width, Runnable onChange) {
+        SliderComponent c = new SliderComponent(Modifier.NONE, value, min, max, width, onChange);
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    public TextFieldComponent TextField(String initialText, @Nullable Runnable onChange) {
+        TextFieldComponent c = new TextFieldComponent(Modifier.NONE, initialText, onChange);
         addChild(c);
         Composition.current().emit(c);
         return c;

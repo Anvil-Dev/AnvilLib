@@ -56,9 +56,11 @@
 
 ## Phase 7: 输入组件
 
-- [ ] `TextField` — 文本输入
-- [ ] `Checkbox` — 布尔切换
-- [ ] `Slider` — 连续范围选择
+- [x] `TextField` — 单行文本输入（Backspace/Delete/光标移动/Home/End，GLFW 按键→字符映射）
+- [x] `Checkbox` — 16x16 方框 + 选中对勾，点击切换
+- [x] `Slider` — 轨道 + 滑块，点击/拖拽设值
+- [x] `KeyInputHandler` 接口 + DeclarativeScreen 焦点系统（focusOwner）
+- [x] 键盘路由：keyPressed → 焦点组件；鼠标：drag → Slider
 
 ## Phase 8: 高级特性
 

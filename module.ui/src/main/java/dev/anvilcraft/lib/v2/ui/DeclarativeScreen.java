@@ -1,6 +1,10 @@
 package dev.anvilcraft.lib.v2.ui;
 
 import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
+import dev.anvilcraft.lib.v2.ui.component.CheckboxComponent;
+import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
+import dev.anvilcraft.lib.v2.ui.component.TextFieldComponent;
+import dev.anvilcraft.lib.v2.ui.input.KeyInputHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -23,6 +27,8 @@ public abstract class DeclarativeScreen extends Screen {
     @Nullable
     private Composition composition;
     private final UIScope rootScope = new RootScope();
+    @Nullable
+    private KeyInputHandler focusOwner;
 
     protected DeclarativeScreen(Component title) {
         super(title);
@@ -56,6 +62,11 @@ public abstract class DeclarativeScreen extends Screen {
             var mc = Minecraft.getInstance();
             int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
             int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+            // 点击空白处清除焦点
+            focusOwner = null;
+            for (UIComponent child : rootScope.getChildren()) {
+                clearFocusRecursive(child);
+            }
             for (UIComponent child : rootScope.getChildren()) {
                 if (hitTestClick(child, mx, my)) {
                     mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
@@ -64,6 +75,17 @@ public abstract class DeclarativeScreen extends Screen {
             }
         }
         return super.mouseClicked(event, isDoubleClick);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        for (UIComponent child : rootScope.getChildren()) {
+            if (hitTestDrag(child, mx, my)) return true;
+        }
+        return super.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
@@ -76,8 +98,11 @@ public abstract class DeclarativeScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == 256) { // ESC — 关闭 Screen
+        if (event.key() == 256) {
             onClose();
+            return true;
+        }
+        if (focusOwner != null && focusOwner.onKeyPressed(event)) {
             return true;
         }
         return super.keyPressed(event);
@@ -90,7 +115,7 @@ public abstract class DeclarativeScreen extends Screen {
 
     // ── 命中测试 ──
 
-    /** 命中测试 + 点击触发。子组件优先（后绘制在上层）。 */
+    /** 命中测试 + 点击触发。子组件优先。 */
     private boolean hitTestClick(UIComponent component, float px, float py) {
         var children = component.children();
         for (int i = children.size() - 1; i >= 0; i--) {
@@ -100,7 +125,39 @@ public abstract class DeclarativeScreen extends Screen {
             btn.click();
             return true;
         }
+        if (component instanceof CheckboxComponent cb && cb.hitRect().contains(px, py)) {
+            cb.toggle();
+            return true;
+        }
+        if (component instanceof SliderComponent sl && sl.hitRect().contains(px, py)) {
+            sl.setValueFromMouse(px);
+            return true;
+        }
+        if (component instanceof TextFieldComponent tf && tf.hitRect().contains(px, py)) {
+            tf.setFocused(true);
+            focusOwner = tf;
+            return true;
+        }
         return false;
+    }
+
+    /** 拖拽命中测试（仅 Slider 响应）。 */
+    private boolean hitTestDrag(UIComponent component, float px, float py) {
+        var children = component.children();
+        for (int i = children.size() - 1; i >= 0; i--) {
+            if (hitTestDrag(children.get(i), px, py)) return true;
+        }
+        if (component instanceof SliderComponent sl && sl.hitRect().contains(px, py)) {
+            sl.setValueFromMouse(px);
+            return true;
+        }
+        return false;
+    }
+
+    /** 清除组件树中所有 TextField 的焦点。 */
+    private void clearFocusRecursive(UIComponent component) {
+        if (component instanceof TextFieldComponent tf) tf.setFocused(false);
+        for (UIComponent child : component.children()) clearFocusRecursive(child);
     }
 
     /** 遍历组件树，更新 ButtonComponent 的 hover 状态。 */
