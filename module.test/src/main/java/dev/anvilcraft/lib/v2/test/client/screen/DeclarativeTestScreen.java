@@ -21,8 +21,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
 
         scope.Column(col -> {
             col.Text("Declarative UI Demo")
-                    .color(0xFFFFFF00)
-                    .shadow(false);
+                    .color(0xFFFFFF00);
 
             col.Spacer(0, 4);
 
@@ -40,8 +39,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
             col.Box(box -> {
                 box.Text("          ");
                 box.Text("Count: " + counter.getValue())
-                        .color(0xFF00FF00)
-                        .shadow(false);
+                        .color(0xFF00FF00);
             }).contentAlignment(Alignment.Horizontal.Center, Alignment.Vertical.Center);
 
             col.Spacer(0, 8);

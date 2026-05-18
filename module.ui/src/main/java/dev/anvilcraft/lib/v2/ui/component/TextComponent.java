@@ -24,7 +24,7 @@ public class TextComponent implements UIComponent {
     private Modifier modifier;
     private String text;
     private int color = VANILLA_TEXT_COLOR;
-    private boolean dropShadow = true;
+    private boolean dropShadow;
     private Align align = Align.LEFT;
 
     private float x, y, width, height;

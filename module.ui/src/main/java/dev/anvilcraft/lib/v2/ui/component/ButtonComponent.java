@@ -1,14 +1,12 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
-import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.network.chat.Component;
-import net.minecraft.util.ARGB;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +14,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
- * 可点击按钮。默认样式与原版一致：深灰背景、白色带阴影文字、微圆角。
+ * 可点击按钮。原版 fill() 背景 + 手动居中 text() 文字。
  */
 public class ButtonComponent implements UIComponent {
 
@@ -24,10 +22,8 @@ public class ButtonComponent implements UIComponent {
     private static final int BG_COLOR       = 0xFF404040;
     private static final int BG_HOVER_COLOR = 0xFF606060;
     private static final int TEXT_COLOR     = 0xFFFFFFFF;
-    private static final int SHADOW_COLOR   = 0x33000000;
     private static final float PADDING_H    = 12;
     private static final float PADDING_V    = 6;
-    private static final float ROUND_RADIUS = 2;
 
     private Modifier modifier;
     private String label;
@@ -54,8 +50,7 @@ public class ButtonComponent implements UIComponent {
     @Override
     public MeasuredSize measure(Constraints constraints) {
         var font = Minecraft.getInstance().font;
-        Component comp = Component.literal(label);
-        float textW = font.width(comp);
+        float textW = font.width(label);
         float textH = font.lineHeight;
         return MeasuredSize.of(
                 constraints.constrainWidth(textW + PADDING_H * 2),
@@ -74,26 +69,28 @@ public class ButtonComponent implements UIComponent {
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         int bg = hovered ? BG_HOVER_COLOR : BG_COLOR;
+        int ix = (int) x, iy = (int) y, iw = (int) width, ih = (int) height;
 
-        // 背景
-        SdfGraphics.instance
-                .box(x, y, width, height)
-                .color(bg)
-                .round(ROUND_RADIUS)
-                .fill()
-                .draw(extractor);
+        // 背景 — 用原版 fill，精确定位
+        extractor.fill(ix, iy, ix + iw, iy + ih, bg);
 
-        // 文字（带阴影，原版风格）
+        // 文字 — text() 手动居中
         var font = Minecraft.getInstance().font;
-        Component comp = Component.literal(label);
-        int centerX = (int) (x + width / 2f);
-        int textY = (int) (y + (height - font.lineHeight) / 2f);
+        String txt = label;
+        float textW = font.width(txt);
+        int textX = (int) (x + (width - textW) / 2f);
+        int textY = (int) (y + (height + font.lineHeight) / 2f - 1);
 
-        extractor.centeredText(font, comp, centerX + 1, textY + 1, SHADOW_COLOR);
-        extractor.centeredText(font, comp, centerX, textY, TEXT_COLOR);
+        extractor.text(font, txt, textX, textY, TEXT_COLOR);
     }
 
-    void click() {
+    /** 按钮包围盒，用于命中测试。 */
+    public LayoutRect hitRect() {
+        return LayoutRect.of(x, y, width, height);
+    }
+
+    /** 触发点击回调。 */
+    public void click() {
         if (onClick != null) onClick.run();
     }
 }
