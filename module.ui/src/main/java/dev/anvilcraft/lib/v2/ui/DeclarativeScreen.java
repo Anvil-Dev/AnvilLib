@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.ui;
 
 import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
 import dev.anvilcraft.lib.v2.ui.component.CheckboxComponent;
+import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
 import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextFieldComponent;
 import dev.anvilcraft.lib.v2.ui.input.KeyInputHandler;
@@ -29,7 +30,6 @@ public abstract class DeclarativeScreen extends Screen {
     private final UIScope rootScope = new RootScope();
     @Nullable
     private KeyInputHandler focusOwner;
-    private float scrollY;
 
     protected DeclarativeScreen(Component title) {
         super(title);
@@ -50,7 +50,7 @@ public abstract class DeclarativeScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(extractor, mouseX, mouseY, partialTick);
         if (composition != null) {
-            composition.renderFrame(extractor, this.width, this.height, scrollY);
+            composition.renderFrame(extractor, this.width, this.height);
             updateHover(mouseX, mouseY);
         }
     }
@@ -91,8 +91,12 @@ public abstract class DeclarativeScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        this.scrollY += (float) (scrollY * 20); // 每格滚轮 20px
-        return true;
+        for (UIComponent child : rootScope.getChildren()) {
+            if (hitTestScroll(child, (float) mouseX, (float) mouseY, (float) scrollY)) {
+                return true;
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     // ── 键盘输入 ──
@@ -151,6 +155,18 @@ public abstract class DeclarativeScreen extends Screen {
         if (component instanceof SliderComponent sl && sl.hitRect().contains(px, py)) {
             sl.setValueFromMouse(px);
             return true;
+        }
+        return false;
+    }
+
+    /** 滚轮命中测试（仅 ScrollableComponent 响应）。 */
+    private boolean hitTestScroll(UIComponent component, float px, float py, float amount) {
+        var children = component.children();
+        for (int i = children.size() - 1; i >= 0; i--) {
+            if (hitTestScroll(children.get(i), px, py, amount)) return true;
+        }
+        if (component instanceof ScrollableComponent sc && sc.hitRect().contains(px, py)) {
+            return sc.onScroll(amount);
         }
         return false;
     }

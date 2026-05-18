@@ -13,6 +13,8 @@ import dev.anvilcraft.lib.v2.ui.component.GridScope;
 import dev.anvilcraft.lib.v2.ui.component.ImageComponent;
 import dev.anvilcraft.lib.v2.ui.component.RowComponent;
 import dev.anvilcraft.lib.v2.ui.component.RowScope;
+import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
+import dev.anvilcraft.lib.v2.ui.component.ScrollableScope;
 import dev.anvilcraft.lib.v2.ui.component.SpacerComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextComponent;
 
@@ -137,6 +139,16 @@ public abstract class UIScope {
     public GridComponent Grid(int columns, Consumer<GridScope> content) {
         GridComponent c = new GridComponent(Modifier.NONE, columns);
         GridScope inner = new GridScope();
+        content.accept(inner);
+        c.setChildren(inner.getChildren());
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    public ScrollableComponent Scrollable(float maxHeight, Consumer<ScrollableScope> content) {
+        ScrollableComponent c = new ScrollableComponent(Modifier.NONE, maxHeight);
+        ScrollableScope inner = new ScrollableScope();
         content.accept(inner);
         c.setChildren(inner.getChildren());
         addChild(c);
