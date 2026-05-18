@@ -14,12 +14,12 @@ import org.jspecify.annotations.Nullable;
  *
  * @param <T> the type of value held
  */
-public class MutableState<T> {
+public class Ref<T> {
 
     private T value;
     final Set<Composition.Slot> readers = new HashSet<>();
 
-    public MutableState(@Nullable T initialValue) {
+    public Ref(@Nullable T initialValue) {
         this.value = initialValue;
     }
 

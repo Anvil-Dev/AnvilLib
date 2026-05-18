@@ -79,7 +79,7 @@ public class Composition {
         }
     }
 
-    // ── remember ──
+    // ── remember / ref ──
 
     /**
      * Persist a value across recompositions.
@@ -96,6 +96,11 @@ public class Composition {
         T value = init.get();
         rememberedValues.put(key, value);
         return value;
+    }
+
+    /** {@code comp.ref(0)} 等价于 {@code comp.remember(() -> new Ref<>(0))}。 */
+    public <T> Ref<T> ref(T initialValue) {
+        return remember(() -> new Ref<>(initialValue));
     }
 
     // ── emit ──
@@ -236,9 +241,9 @@ public class Composition {
     public static class Slot {
         UIComponent component;
         boolean dirty = true;
-        final Set<MutableState<?>> readStates = new HashSet<>();
+        final Set<Ref<?>> readStates = new HashSet<>();
 
-        void addReadState(MutableState<?> state) {
+        void addReadState(Ref<?> state) {
             readStates.add(state);
         }
 

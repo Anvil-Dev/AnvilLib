@@ -5,7 +5,7 @@ import dev.anvilcraft.lib.v2.ui.Composition;
 import dev.anvilcraft.lib.v2.ui.DeclarativeScreen;
 import dev.anvilcraft.lib.v2.ui.ForEach;
 import dev.anvilcraft.lib.v2.ui.Modifier;
-import dev.anvilcraft.lib.v2.ui.MutableState;
+import dev.anvilcraft.lib.v2.ui.Ref;
 import dev.anvilcraft.lib.v2.ui.UIScope;
 import dev.anvilcraft.lib.v2.ui.component.TextComponent;
 import net.minecraft.network.chat.Component;
@@ -24,9 +24,9 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
     @Override
     protected void content(UIScope scope) {
         Composition comp = Composition.current();
-        MutableState<Integer> counter = comp.remember(() -> new MutableState<>(0));
-        MutableState<Boolean> checked = comp.remember(() -> new MutableState<>(false));
-        MutableState<String> text = comp.remember(() -> new MutableState<>(""));
+        Ref<Integer> counter = comp.ref(0);
+        Ref<Boolean> checked = comp.ref(false);
+        Ref<String> text = comp.ref("");
 
         scope.Scrollable(
             this.height, scroll -> {
@@ -90,7 +90,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     col.Spacer(0, 4);
 
                     // ── 6. Slider ──
-                    MutableState<Float> sliderVal = comp.remember(() -> new MutableState<>(50f));
+                    Ref<Float> sliderVal = comp.remember(() -> new Ref<>(50f));
                     col.Text("6) Slider:");
                     col.Row(row -> {
                         row.Slider(sliderVal.getValue(), 0, 100, 100, v -> sliderVal.setValue(v));
