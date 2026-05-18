@@ -31,12 +31,12 @@ public class TextFieldComponent implements UIComponent, KeyInputHandler {
     private final StringBuilder buffer = new StringBuilder();
     private int cursorPos;
     private boolean focused;
-    @Nullable
-    private Runnable onChange;
+    private java.util.function.Consumer<String> onChange;
 
     private float x, y, width, height;
 
-    public TextFieldComponent(Modifier modifier, String initialText, @Nullable Runnable onChange) {
+    public TextFieldComponent(Modifier modifier, String initialText,
+                               java.util.function.Consumer<String> onChange) {
         this.modifier = modifier;
         this.buffer.append(initialText != null ? initialText : "");
         this.cursorPos = this.buffer.length();
@@ -134,7 +134,7 @@ public class TextFieldComponent implements UIComponent, KeyInputHandler {
     }
 
     private void fireChange() {
-        if (onChange != null) onChange.run();
+        if (onChange != null) onChange.accept(buffer.toString());
     }
 
     /** 命中测试包围盒。 */

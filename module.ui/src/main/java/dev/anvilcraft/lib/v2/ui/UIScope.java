@@ -81,14 +81,16 @@ public abstract class UIScope {
         return c;
     }
 
-    public SliderComponent Slider(float value, float min, float max, float width, Runnable onChange) {
+    public SliderComponent Slider(float value, float min, float max, float width,
+                                   java.util.function.Consumer<Float> onChange) {
         SliderComponent c = new SliderComponent(Modifier.NONE, value, min, max, width, onChange);
         addChild(c);
         Composition.current().emit(c);
         return c;
     }
 
-    public TextFieldComponent TextField(String initialText, @Nullable Runnable onChange) {
+    public TextFieldComponent TextField(String initialText,
+                                         java.util.function.Consumer<String> onChange) {
         TextFieldComponent c = new TextFieldComponent(Modifier.NONE, initialText, onChange);
         addChild(c);
         Composition.current().emit(c);

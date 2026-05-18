@@ -27,11 +27,12 @@ public class SliderComponent implements UIComponent {
     private float value;
     private final float min, max;
     private final float trackWidth;
-    private Runnable onChange;
+    private java.util.function.Consumer<Float> onChange;
 
     private float x, y, width, height;
 
-    public SliderComponent(Modifier modifier, float value, float min, float max, float trackWidth, Runnable onChange) {
+    public SliderComponent(Modifier modifier, float value, float min, float max, float trackWidth,
+                           java.util.function.Consumer<Float> onChange) {
         this.modifier = modifier;
         this.value = Mth.clamp(value, min, max);
         this.min = min;
@@ -84,7 +85,7 @@ public class SliderComponent implements UIComponent {
         float newValue = min + ratio * (max - min);
         if (newValue != value) {
             value = newValue;
-            if (onChange != null) onChange.run();
+            if (onChange != null) onChange.accept(value);
         }
     }
 
