@@ -53,7 +53,7 @@ public class ScrollableComponent implements UIComponent {
         float maxW = 0;
         float totalH = 0;
         List<MeasuredSize> sizes = new ArrayList<>(children.size());
-        Constraints childC = new Constraints(0, constraints.maxWidth(), 0, Float.MAX_VALUE);
+        Constraints childC = new Constraints(0, constraints.maxWidth() - SCROLLBAR_W - 1, 0, Float.MAX_VALUE);
 
         for (UIComponent child : children) {
             MeasuredSize s = child.measure(childC);
@@ -81,10 +81,11 @@ public class ScrollableComponent implements UIComponent {
         this.height = height;
 
         float currentY = y + scrollY;
+        float childW = width - SCROLLBAR_W - 1;
         for (int i = 0; i < children.size(); i++) {
             UIComponent child = children.get(i);
             MeasuredSize size = childSizes.get(i);
-            child.layout(x, currentY, width, size.height());
+            child.layout(x, currentY, childW, size.height());
             currentY += size.height();
         }
     }
