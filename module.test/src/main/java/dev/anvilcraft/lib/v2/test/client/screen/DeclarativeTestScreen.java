@@ -93,7 +93,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     Ref<Float> sliderVal = comp.remember(() -> new Ref<>(50f));
                     col.Text("6) Slider:");
                     col.Row(row -> {
-                        row.Slider(sliderVal.getValue(), 0, 100, 100, v -> sliderVal.setValue(v));
+                        row.Slider(sliderVal.getValue(), 0, 100, 100, sliderVal::setValue);
                         row.Text(" " + sliderVal.getValue().intValue() + "%");
                     }).spacing(4);
 
@@ -102,7 +102,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     // ── 7. TextField ──
                     col.Text("7) TextField:");
                     col.Row(row -> {
-                        row.TextField("Type here...", v -> text.setValue(v));
+                        row.TextField("Type here...", text::setValue);
                         row.Text("  Value: '" + text.getValue() + "'");
                     }).spacing(4);
 
