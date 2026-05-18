@@ -79,7 +79,7 @@ public class ButtonComponent implements UIComponent {
         String txt = label;
         float textW = font.width(txt);
         int textX = (int) (x + (width - textW) / 2f);
-        int textY = (int) (y + (height + font.lineHeight) / 2f - 1);
+        int textY = (int) (y + (height - font.lineHeight) / 2f);
 
         extractor.text(font, txt, textX, textY, TEXT_COLOR);
     }
