@@ -42,7 +42,7 @@ public class ButtonComponent implements UIComponent {
     public ButtonComponent label(String label) { this.label = label; return this; }
     public ButtonComponent onClick(@Nullable Runnable onClick) { this.onClick = onClick; return this; }
     public ButtonComponent modifier(Modifier m) { this.modifier = m; return this; }
-    void setHovered(boolean hovered) { this.hovered = hovered; }
+    public void setHovered(boolean hovered) { this.hovered = hovered; }
 
     @Override public Modifier modifier() { return modifier; }
     @Override public List<UIComponent> children() { return Collections.emptyList(); }

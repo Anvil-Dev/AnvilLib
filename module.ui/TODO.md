@@ -48,9 +48,11 @@
 
 ## Phase 6: 屏幕集成
 
-- [ ] `DeclarativeScreen` — `Screen` 子类，宿主组件树
-- [ ] `extractRenderState()` — dirty check → recompose → measure → layout → submit render states
-- [ ] 输入事件路由 — `mouseClicked` / `keyPressed` hit testing + dispatch
+- [x] `DeclarativeScreen` — Screen 子类，每帧 dirty check → recompose → measure → layout → render
+- [x] `extractRenderState()` — 整合 Composition.renderFrame + hover 更新
+- [x] 鼠标事件 — `mouseClicked` 命中测试 + 点击分发；hover 遍历更新 ButtonComponent
+- [x] 键盘事件 — `keyPressed` (ESC 关闭)
+- [x] 滚轮事件 — `mouseScrolled` 预留接口
 
 ## Phase 7: 输入组件
 
