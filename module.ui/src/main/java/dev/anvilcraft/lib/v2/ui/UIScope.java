@@ -1,8 +1,12 @@
 package dev.anvilcraft.lib.v2.ui;
 
 import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
+import dev.anvilcraft.lib.v2.ui.component.BoxComponent;
+import dev.anvilcraft.lib.v2.ui.component.BoxScope;
 import dev.anvilcraft.lib.v2.ui.component.ColumnComponent;
 import dev.anvilcraft.lib.v2.ui.component.ColumnScope;
+import dev.anvilcraft.lib.v2.ui.component.RowComponent;
+import dev.anvilcraft.lib.v2.ui.component.RowScope;
 import dev.anvilcraft.lib.v2.ui.component.TextComponent;
 
 import java.util.ArrayList;
@@ -55,6 +59,26 @@ public abstract class UIScope {
     public ColumnComponent Column(Consumer<ColumnScope> content) {
         ColumnComponent c = new ColumnComponent(Modifier.NONE);
         ColumnScope inner = new ColumnScope();
+        content.accept(inner);
+        c.setChildren(inner.getChildren());
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    public RowComponent Row(Consumer<RowScope> content) {
+        RowComponent c = new RowComponent(Modifier.NONE);
+        RowScope inner = new RowScope();
+        content.accept(inner);
+        c.setChildren(inner.getChildren());
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    public BoxComponent Box(Consumer<BoxScope> content) {
+        BoxComponent c = new BoxComponent(Modifier.NONE);
+        BoxScope inner = new BoxScope();
         content.accept(inner);
         c.setChildren(inner.getChildren());
         addChild(c);

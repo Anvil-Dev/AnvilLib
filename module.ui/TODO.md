@@ -23,12 +23,12 @@
 
 ## Phase 3: 布局容器
 
-- [ ] `Column` + `ColumnScope` — 纵向排列
-- [ ] `Row` + `RowScope` — 横向排列
-- [ ] `Box` + `BoxScope` — 层叠
-- [ ] `ColumnMeasurePolicy` / `RowMeasurePolicy` / `BoxMeasurePolicy`
-- [ ] `Arrangement.Vertical` / `Arrangement.Horizontal` — SpaceBetween / SpaceAround / SpaceEvenly
-- [ ] `Alignment` — Start / Center / End
+- [x] `Column` + `ColumnScope` — 纵向排列（重构：spacing / verticalArrangement / horizontalAlignment）
+- [x] `Row` + `RowScope` — 横向排列（horizontalArrangement / verticalAlignment / spacing）
+- [x] `Box` + `BoxScope` — 层叠（contentAlignment）
+- [x] MeasurePolicy 内联实现（随组件复杂度提升再提取为策略对象）
+- [x] `Arrangement.Vertical` / `Arrangement.Horizontal` — Top/Center/Bottom, Start/Center/End, SpaceBetween/SpaceAround/SpaceEvenly
+- [x] `Alignment.Horizontal` / `Alignment.Vertical` — Start/Center/End, Top/Center/Bottom
 
 ## Phase 4: 基础组件
 

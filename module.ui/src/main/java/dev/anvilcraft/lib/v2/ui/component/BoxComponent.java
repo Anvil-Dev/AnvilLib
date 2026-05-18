@@ -8,22 +8,21 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 纵向线性布局。子组件自上而下排列。主轴=垂直，交叉轴=水平。
+ * 层叠布局。所有子组件重叠于同一区域，按声明顺序从底到顶绘制。
+ * Box 本身的大小由最大的子组件决定。
  */
-public class ColumnComponent implements UIComponent {
+public class BoxComponent implements UIComponent {
 
     private final Modifier modifier;
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
 
-    private Arrangement.Vertical verticalArrangement = Arrangement.Vertical.Top;
-    private Alignment.Horizontal horizontalAlignment = Alignment.Horizontal.Start;
-    private float spacing;
+    private Alignment.Horizontal contentAlignmentH = Alignment.Horizontal.Start;
+    private Alignment.Vertical contentAlignmentV = Alignment.Vertical.Top;
 
-    // layout state
     private float x, y, width, height;
 
-    public ColumnComponent(Modifier modifier) {
+    public BoxComponent(Modifier modifier) {
         this.modifier = modifier;
     }
 
@@ -31,20 +30,9 @@ public class ColumnComponent implements UIComponent {
         this.children = List.copyOf(children);
     }
 
-    // ── chained setters ──
-
-    public ColumnComponent verticalArrangement(Arrangement.Vertical va) {
-        this.verticalArrangement = va;
-        return this;
-    }
-
-    public ColumnComponent horizontalAlignment(Alignment.Horizontal ha) {
-        this.horizontalAlignment = ha;
-        return this;
-    }
-
-    public ColumnComponent spacing(float spacing) {
-        this.spacing = spacing;
+    public BoxComponent contentAlignment(Alignment.Horizontal h, Alignment.Vertical v) {
+        this.contentAlignmentH = h;
+        this.contentAlignmentV = v;
         return this;
     }
 
@@ -58,27 +46,21 @@ public class ColumnComponent implements UIComponent {
     public MeasuredSize measure(Constraints constraints) {
         if (children.isEmpty()) return MeasuredSize.ZERO;
 
-        float totalHeight = 0;
         float maxWidth = 0;
+        float maxHeight = 0;
         List<MeasuredSize> sizes = new ArrayList<>(children.size());
 
-        Constraints childConstraints = new Constraints(
-                constraints.minWidth(), constraints.maxWidth(),
-                0, Float.MAX_VALUE
-        );
-
         for (UIComponent child : children) {
-            MeasuredSize size = child.measure(childConstraints);
+            MeasuredSize size = child.measure(constraints);
             sizes.add(size);
-            totalHeight += size.height();
             maxWidth = Math.max(maxWidth, size.width());
+            maxHeight = Math.max(maxHeight, size.height());
         }
-        totalHeight += spacing * (children.size() - 1);
 
         this.childSizes = sizes;
         return MeasuredSize.of(
                 constraints.constrainWidth(maxWidth),
-                constraints.constrainHeight(totalHeight)
+                constraints.constrainHeight(maxHeight)
         );
     }
 
@@ -89,15 +71,12 @@ public class ColumnComponent implements UIComponent {
         this.width = width;
         this.height = height;
 
-        List<Float> heights = new ArrayList<>(childSizes.size());
-        for (MeasuredSize s : childSizes) heights.add(s.height());
-
-        float[] yOffsets = verticalArrangement.arrange(height, heights, spacing);
         for (int i = 0; i < children.size(); i++) {
             UIComponent child = children.get(i);
             MeasuredSize size = childSizes.get(i);
-            float childX = x + horizontalAlignment.align(width, size.width());
-            child.layout(childX, y + yOffsets[i], size.width(), size.height());
+            float childX = x + contentAlignmentH.align(width, size.width());
+            float childY = y + contentAlignmentV.align(height, size.height());
+            child.layout(childX, childY, size.width(), size.height());
         }
     }
 
@@ -108,4 +87,3 @@ public class ColumnComponent implements UIComponent {
         }
     }
 }
-

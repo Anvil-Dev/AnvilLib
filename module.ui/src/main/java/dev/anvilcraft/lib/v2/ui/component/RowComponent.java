@@ -8,22 +8,21 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 纵向线性布局。子组件自上而下排列。主轴=垂直，交叉轴=水平。
+ * 横向线性布局。子组件自左而右排列。主轴=水平，交叉轴=垂直。
  */
-public class ColumnComponent implements UIComponent {
+public class RowComponent implements UIComponent {
 
     private final Modifier modifier;
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
 
-    private Arrangement.Vertical verticalArrangement = Arrangement.Vertical.Top;
-    private Alignment.Horizontal horizontalAlignment = Alignment.Horizontal.Start;
+    private Arrangement.Horizontal horizontalArrangement = Arrangement.Horizontal.Start;
+    private Alignment.Vertical verticalAlignment = Alignment.Vertical.Top;
     private float spacing;
 
-    // layout state
     private float x, y, width, height;
 
-    public ColumnComponent(Modifier modifier) {
+    public RowComponent(Modifier modifier) {
         this.modifier = modifier;
     }
 
@@ -31,19 +30,17 @@ public class ColumnComponent implements UIComponent {
         this.children = List.copyOf(children);
     }
 
-    // ── chained setters ──
-
-    public ColumnComponent verticalArrangement(Arrangement.Vertical va) {
-        this.verticalArrangement = va;
+    public RowComponent horizontalArrangement(Arrangement.Horizontal ha) {
+        this.horizontalArrangement = ha;
         return this;
     }
 
-    public ColumnComponent horizontalAlignment(Alignment.Horizontal ha) {
-        this.horizontalAlignment = ha;
+    public RowComponent verticalAlignment(Alignment.Vertical va) {
+        this.verticalAlignment = va;
         return this;
     }
 
-    public ColumnComponent spacing(float spacing) {
+    public RowComponent spacing(float spacing) {
         this.spacing = spacing;
         return this;
     }
@@ -58,27 +55,27 @@ public class ColumnComponent implements UIComponent {
     public MeasuredSize measure(Constraints constraints) {
         if (children.isEmpty()) return MeasuredSize.ZERO;
 
-        float totalHeight = 0;
-        float maxWidth = 0;
+        float totalWidth = 0;
+        float maxHeight = 0;
         List<MeasuredSize> sizes = new ArrayList<>(children.size());
 
         Constraints childConstraints = new Constraints(
-                constraints.minWidth(), constraints.maxWidth(),
-                0, Float.MAX_VALUE
+                0, Float.MAX_VALUE,
+                constraints.minHeight(), constraints.maxHeight()
         );
 
         for (UIComponent child : children) {
             MeasuredSize size = child.measure(childConstraints);
             sizes.add(size);
-            totalHeight += size.height();
-            maxWidth = Math.max(maxWidth, size.width());
+            totalWidth += size.width();
+            maxHeight = Math.max(maxHeight, size.height());
         }
-        totalHeight += spacing * (children.size() - 1);
+        totalWidth += spacing * (children.size() - 1);
 
         this.childSizes = sizes;
         return MeasuredSize.of(
-                constraints.constrainWidth(maxWidth),
-                constraints.constrainHeight(totalHeight)
+                constraints.constrainWidth(totalWidth),
+                constraints.constrainHeight(maxHeight)
         );
     }
 
@@ -89,15 +86,15 @@ public class ColumnComponent implements UIComponent {
         this.width = width;
         this.height = height;
 
-        List<Float> heights = new ArrayList<>(childSizes.size());
-        for (MeasuredSize s : childSizes) heights.add(s.height());
+        List<Float> widths = new ArrayList<>(childSizes.size());
+        for (MeasuredSize s : childSizes) widths.add(s.width());
 
-        float[] yOffsets = verticalArrangement.arrange(height, heights, spacing);
+        float[] xOffsets = horizontalArrangement.arrange(width, widths, spacing);
         for (int i = 0; i < children.size(); i++) {
             UIComponent child = children.get(i);
             MeasuredSize size = childSizes.get(i);
-            float childX = x + horizontalAlignment.align(width, size.width());
-            child.layout(childX, y + yOffsets[i], size.width(), size.height());
+            float childY = y + verticalAlignment.align(height, size.height());
+            child.layout(x + xOffsets[i], childY, size.width(), size.height());
         }
     }
 
@@ -108,4 +105,3 @@ public class ColumnComponent implements UIComponent {
         }
     }
 }
-
