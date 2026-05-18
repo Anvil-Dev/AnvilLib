@@ -16,11 +16,10 @@ import java.util.List;
 
 /**
  * 渲染一个材质精灵（sprite）。
- * 通过 {@link GuiGraphicsExtractor#blitSprite} 使用原版纹理管线。
+ * 通过 {@code GuiGraphicsExtractor#blitSprite} 使用原版纹理管线。
  */
 @Accessors(fluent = true)
 public class ImageComponent implements UIComponent {
-
     @Getter
     @Setter
     private Modifier modifier;

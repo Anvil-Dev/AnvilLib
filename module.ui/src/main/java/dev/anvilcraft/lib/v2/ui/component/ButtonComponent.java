@@ -20,7 +20,6 @@ import java.util.List;
  */
 @Accessors(fluent = true)
 public class ButtonComponent implements UIComponent {
-
     // 原版按钮配色
     private static final int BG_COLOR = 0xFF404040;
     private static final int BG_HOVER_COLOR = 0xFF606060;

@@ -27,7 +27,6 @@ import java.util.function.Consumer;
  */
 @Accessors(fluent = true)
 public class TextInputComponent implements UIComponent, KeyInputHandler {
-
     private static final int BG_COLOR = 0xFF202020;
     private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int PLACEHOLDER_COLOR = 0xFF555555;
@@ -77,10 +76,7 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     @Override
     public MeasuredSize measure(Constraints constraints) {
         var font = Minecraft.getInstance().font;
-        return MeasuredSize.of(
-            constraints.constrainWidth(WIDTH),
-            constraints.constrainHeight(font.lineHeight + PADDING_V * 2)
-        );
+        return MeasuredSize.of(constraints.constrainWidth(WIDTH), constraints.constrainHeight(font.lineHeight + PADDING_V * 2));
     }
 
     @Override

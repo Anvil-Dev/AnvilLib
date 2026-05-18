@@ -18,7 +18,6 @@ import java.util.List;
  */
 @Accessors(fluent = true)
 public class GridComponent implements UIComponent {
-
     private final int columns;
     @Getter
     @Setter

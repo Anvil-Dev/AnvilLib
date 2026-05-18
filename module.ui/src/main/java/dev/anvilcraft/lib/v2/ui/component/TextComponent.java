@@ -19,7 +19,6 @@ import java.util.List;
  */
 @Accessors(fluent = true)
 public class TextComponent implements UIComponent {
-
     private static final int VANILLA_TEXT_COLOR = 0xFFFFFFFF;
     @Getter
     @Setter

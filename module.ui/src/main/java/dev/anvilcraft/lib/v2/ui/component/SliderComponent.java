@@ -21,7 +21,6 @@ import java.util.function.Consumer;
  */
 @Accessors(fluent = true)
 public class SliderComponent implements UIComponent {
-
     private static final int TRACK_COLOR = 0xFF404040;
     private static final int THUMB_COLOR = 0xFFAAAAAA;
     private static final float TRACK_H = 4;

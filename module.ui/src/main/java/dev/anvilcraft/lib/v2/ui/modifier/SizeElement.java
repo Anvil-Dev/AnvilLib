@@ -4,7 +4,6 @@ import dev.anvilcraft.lib.v2.ui.Constraints;
 
 public record SizeElement(float minWidthHint, float maxWidthHint, float minHeightHint, float maxHeightHint)
     implements ModifierElement {
-
     @Override
     public Constraints modifyConstraints(Constraints constraints) {
         float minW = minWidthHint > 0 ? Math.max(constraints.minWidth(), minWidthHint) : constraints.minWidth();

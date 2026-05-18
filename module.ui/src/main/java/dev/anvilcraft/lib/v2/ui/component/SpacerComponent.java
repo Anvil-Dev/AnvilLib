@@ -17,7 +17,6 @@ import java.util.List;
  */
 @Accessors(fluent = true)
 public class SpacerComponent implements UIComponent {
-
     private final float spacerWidth;
     private final float spacerHeight;
     @Getter

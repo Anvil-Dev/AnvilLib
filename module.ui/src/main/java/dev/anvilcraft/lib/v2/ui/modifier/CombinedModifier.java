@@ -5,7 +5,6 @@ import dev.anvilcraft.lib.v2.ui.Modifier;
 import java.util.function.BiFunction;
 
 public record CombinedModifier(ModifierElement outer, Modifier inner) implements Modifier {
-
     @Override
     public Modifier then(Modifier other) {
         return new CombinedModifier(outer, inner.then(other));

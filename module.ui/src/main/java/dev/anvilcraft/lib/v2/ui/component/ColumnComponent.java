@@ -20,7 +20,6 @@ import java.util.List;
  */
 @Accessors(fluent = true)
 public class ColumnComponent implements UIComponent {
-
     @Getter
     @Setter
     private Modifier modifier;

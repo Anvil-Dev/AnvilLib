@@ -14,7 +14,6 @@ import java.util.function.BiConsumer;
  * }</pre>
  */
 public final class ForEach {
-
     private ForEach() {
     }
 

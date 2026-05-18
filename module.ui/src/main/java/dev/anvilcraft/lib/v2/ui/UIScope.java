@@ -34,7 +34,6 @@ import java.util.function.Consumer;
  * 组件构建器在此定义为具体方法，所有 scope 子类自动继承。
  */
 public abstract class UIScope {
-
     final List<UIComponent> children = new ArrayList<>();
 
     /**

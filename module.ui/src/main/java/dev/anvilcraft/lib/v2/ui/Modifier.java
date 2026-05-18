@@ -12,7 +12,6 @@ import java.util.function.BiFunction;
  * 调用方通过 {@link #foldIn} / {@link #foldOut} 遍历链。
  */
 public interface Modifier {
-
     Modifier NONE = new Modifier() {
         @Override
         public Modifier then(Modifier other) {

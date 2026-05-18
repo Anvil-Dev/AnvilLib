@@ -19,7 +19,6 @@ import java.util.List;
  */
 @Accessors(fluent = true)
 public class CheckboxComponent implements UIComponent {
-
     private static final int BOX_COLOR = 0xFF404040;
     private static final int CHECKED_COLOR = 0xFFFFFFFF;
     private static final float SIZE = 16;

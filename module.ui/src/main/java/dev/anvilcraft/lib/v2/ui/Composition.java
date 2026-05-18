@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.ui;
 import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
 import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
+import lombok.Setter;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.jspecify.annotations.Nullable;
 
@@ -26,8 +27,7 @@ import java.util.function.Supplier;
  * 状态读取按 slot 追踪，写入只标记受影响 slot 为脏——不会波及整棵树。
  */
 public class Composition {
-
-    private static final ThreadLocal<Composition> CURRENT = new ThreadLocal<>();
+    private static final ThreadLocal<@Nullable Composition> CURRENT = new ThreadLocal<>();
     private final List<Slot> slots = new ArrayList<>();
     private final Map<Integer, Object> rememberedValues = new HashMap<>();
 
@@ -43,8 +43,9 @@ public class Composition {
     private boolean dirty = true;
 
     // ── 状态 ──
-    private Consumer<UIScope> content;
-    private UIScope rootScope;
+    @Setter
+    private @Nullable Consumer<UIScope> content;
+    private @Nullable UIScope rootScope;
     public Composition(UIScope rootScope) {
         this.rootScope = rootScope;
     }
@@ -66,10 +67,6 @@ public class Composition {
             throw new IllegalStateException("Not inside a composition frame");
         }
         return c;
-    }
-
-    public void setContent(Consumer<UIScope> content) {
-        this.content = content;
     }
 
     /**

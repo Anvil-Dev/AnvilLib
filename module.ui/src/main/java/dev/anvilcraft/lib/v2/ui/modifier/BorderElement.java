@@ -8,7 +8,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
  * 渲染描边圆角矩形边框。
  */
 public record BorderElement(float width, int color, float round) implements ModifierElement {
-
     public BorderElement(float width, int color) {
         this(width, color, 0);
     }

@@ -26,7 +26,6 @@ import org.jspecify.annotations.Nullable;
  * 输入事件（点击、按键、滚轮）通过命中测试路由到对应组件。
  */
 public abstract class DeclarativeScreen extends Screen {
-
     private final UIScope rootScope = new RootScope();
     @Nullable
     private Composition composition;

@@ -11,7 +11,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
  * 每个元素可拦截 measure、layout、render 阶段。
  */
 public interface ModifierElement {
-
     static ModifierElement size(float width, float height) {
         return new SizeElement(width, width, height, height);
     }

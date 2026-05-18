@@ -23,7 +23,6 @@ import java.util.function.Consumer;
  */
 @Accessors(fluent = true)
 public class DropdownComponent implements UIComponent {
-
     private static final int BG_COLOR = 0xFF404040;
     private static final int HOVER_COLOR = 0xFF606060;
     private static final int TEXT_COLOR = 0xFFFFFFFF;

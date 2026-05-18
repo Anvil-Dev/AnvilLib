@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.ui;
 
+import lombok.Getter;
 import net.minecraft.util.Mth;
 
 /**
@@ -7,7 +8,7 @@ import net.minecraft.util.Mth;
  * 每 tick 调用 {@link #tick()} 推进动画。
  */
 public class Animatable {
-
+    @Getter
     private float value;
     private float startValue;
     private float targetValue;
@@ -17,13 +18,6 @@ public class Animatable {
     public Animatable(float initialValue) {
         this.value = initialValue;
         this.targetValue = initialValue;
-    }
-
-    /**
-     * 获取当前动画值。
-     */
-    public float getValue() {
-        return value;
     }
 
     /**

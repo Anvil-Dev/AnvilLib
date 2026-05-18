@@ -21,7 +21,6 @@ import java.util.List;
  */
 @Accessors(fluent = true)
 public class ScrollableComponent implements UIComponent {
-
     private static final int SCROLLBAR_COLOR = 0xFF888888;
     private static final int SCROLLBAR_BG = 0xFF333333;
     private static final int SCROLLBAR_W = 4;

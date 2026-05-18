@@ -6,7 +6,6 @@ import java.util.List;
  * 子组件在主轴上的分布方式。
  */
 public final class Arrangement {
-
     private Arrangement() {
     }
 

@@ -15,7 +15,6 @@ import java.util.List;
  * </ol>
  */
 public interface UIComponent {
-
     /**
      * 应用于此组件的修饰符链。
      */
