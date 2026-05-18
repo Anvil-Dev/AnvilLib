@@ -97,10 +97,9 @@ public abstract class UIScope {
      * 创建复选框。
      * @param label 标签文字
      * @param checked 初始选中状态
-     * @param onToggle 切换时的回调
      */
-    public CheckboxComponent Checkbox(String label, boolean checked, Runnable onToggle) {
-        CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, checked, onToggle);
+    public CheckboxComponent Checkbox(String label, boolean checked) {
+        CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, checked);
         addChild(c);
         Composition.current().emit(c);
         return c;
@@ -112,11 +111,9 @@ public abstract class UIScope {
      * @param min 最小值
      * @param max 最大值
      * @param width 轨道宽度（像素）
-     * @param onChange 值变化回调，接收新值
      */
-    public SliderComponent Slider(float value, float min, float max, float width,
-                                   Consumer<Float> onChange) {
-        SliderComponent c = new SliderComponent(Modifier.NONE, value, min, max, width, onChange);
+    public SliderComponent Slider(float value, float min, float max, float width) {
+        SliderComponent c = new SliderComponent(Modifier.NONE, value, min, max, width);
         addChild(c);
         Composition.current().emit(c);
         return c;
@@ -125,10 +122,9 @@ public abstract class UIScope {
     /**
      * 创建单行文本输入框。
      * @param placeholder 占位提示文字（灰色，仅在无输入时显示）
-     * @param onChange 文字变化回调，接收当前完整文本
      */
-    public TextInputComponent TextInput(String placeholder, Consumer<String> onChange) {
-        TextInputComponent c = new TextInputComponent(Modifier.NONE, placeholder, onChange);
+    public TextInputComponent TextInput(String placeholder) {
+        TextInputComponent c = new TextInputComponent(Modifier.NONE, placeholder);
         addChild(c);
         Composition.current().emit(c);
         return c;
@@ -137,10 +133,9 @@ public abstract class UIScope {
     /**
      * 创建可点击按钮。
      * @param label 按钮文字
-     * @param onClick 点击回调（可为 null）
      */
-    public ButtonComponent Button(String label, @Nullable Runnable onClick) {
-        ButtonComponent c = new ButtonComponent(Modifier.NONE, label, onClick);
+    public ButtonComponent Button(String label) {
+        ButtonComponent c = new ButtonComponent(Modifier.NONE, label);
         addChild(c);
         Composition.current().emit(c);
         return c;

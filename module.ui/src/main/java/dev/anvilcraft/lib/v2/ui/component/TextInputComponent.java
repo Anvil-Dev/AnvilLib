@@ -44,13 +44,13 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
 
     private float x, y, width, height;
 
-    public TextInputComponent(Modifier modifier, String placeholder, Consumer<String> onChange) {
+    public TextInputComponent(Modifier modifier, String placeholder) {
         this.modifier = modifier;
         this.placeholder = placeholder != null ? placeholder : "";
-        this.onChange = onChange;
     }
 
     public TextInputComponent modifier(Modifier m) { this.modifier = m; return this; }
+    public TextInputComponent onChange(Consumer<String> onChange) { this.onChange = onChange; return this; }
     public String getValue() { return value; }
     public void setValue(String value) { this.value = value != null ? value : ""; this.cursorPos = this.value.length(); }
     public int getCursorPos() { return cursorPos; }

@@ -28,14 +28,14 @@ public class CheckboxComponent implements UIComponent {
 
     private float x, y, width, height;
 
-    public CheckboxComponent(Modifier modifier, String label, boolean checked, Runnable onToggle) {
+    public CheckboxComponent(Modifier modifier, String label, boolean checked) {
         this.modifier = modifier;
         this.label = label;
         this.checked = checked;
-        this.onToggle = onToggle;
     }
 
     public CheckboxComponent modifier(Modifier m) { this.modifier = m; return this; }
+    public CheckboxComponent onToggle(Runnable onToggle) { this.onToggle = onToggle; return this; }
 
     @Override public Modifier modifier() { return modifier; }
     @Override public List<UIComponent> children() { return Collections.emptyList(); }

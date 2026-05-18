@@ -33,10 +33,9 @@ public class ButtonComponent implements UIComponent {
 
     private float x, y, width, height;
 
-    public ButtonComponent(Modifier modifier, String label, @Nullable Runnable onClick) {
+    public ButtonComponent(Modifier modifier, String label) {
         this.modifier = modifier;
         this.label = label;
-        this.onClick = onClick;
     }
 
     public ButtonComponent label(String label) { this.label = label; return this; }

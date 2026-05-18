@@ -48,10 +48,10 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     // ── 2. Button + 状态 ──
                     col.Text("2) Button + state (Counter):");
                     col.Row(row -> {
-                        row.Button("-", () -> counter.setValue(counter.getValue() - 1));
+                        row.Button("-").onClick(() -> counter.setValue(counter.getValue() - 1));
                         row.Text("  " + counter.getValue() + "  ").align(TextComponent.Align.CENTER);
-                        row.Button("+", () -> counter.setValue(counter.getValue() + 1));
-                        row.Button("Reset", () -> counter.setValue(0));
+                        row.Button("+").onClick(() -> counter.setValue(counter.getValue() + 1));
+                        row.Button("Reset").onClick(() -> counter.setValue(0));
                     }).spacing(4);
 
                     col.Spacer(0, 4);
@@ -70,10 +70,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     col.Grid(
                         3, grid -> {
                             for (int i = 0; i < 6; i++) {
-                                grid.Button(
-                                    "G" + i, () -> {
-                                    }
-                                );
+                                grid.Button("G" + i);
                             }
                         }
                     ).spacing(2, 2);
@@ -83,7 +80,8 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     // ── 5. Checkbox ──
                     col.Text("5) Checkbox:");
                     col.Row(row -> {
-                        row.Checkbox("Enable feature", checked.getValue(), () -> checked.setValue(!checked.getValue()));
+                        row.Checkbox("Enable feature", checked.getValue())
+                                .onToggle(() -> checked.setValue(!checked.getValue()));
                         row.Text("  Enabled: " + checked.getValue());
                     }).spacing(4);
 
@@ -93,7 +91,8 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     Ref<Float> sliderVal = comp.remember(() -> new Ref<>(50f));
                     col.Text("6) Slider:");
                     col.Row(row -> {
-                        row.Slider(sliderVal.getValue(), 0, 100, 100, sliderVal::setValue);
+                        row.Slider(sliderVal.getValue(), 0, 100, 100)
+                                .onChange(sliderVal::setValue);
                         row.Text(" " + sliderVal.getValue().intValue() + "%");
                     }).spacing(4);
 
@@ -102,7 +101,8 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     // ── 7. TextInput ──
                     col.Text("7) TextInput:");
                     col.Row(row -> {
-                        row.TextInput("Enter text...", text::setValue);
+                        row.TextInput("Enter text...")
+                                .onChange(text::setValue);
                         row.Text("  Value: '" + text.getValue() + "'");
                     }).spacing(4);
 
@@ -117,10 +117,8 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                     // ── 9. Modifier 样式 ──
                     col.Text("9) Modifiers:");
                     col.Row(row -> {
-                        row.Button(
-                            "Styled", () -> {
-                            }
-                        ).modifier(Modifier.NONE.background(0xFF884444).border(1, 0xFFFF8888));
+                        row.Button("Styled")
+                                .modifier(Modifier.NONE.background(0xFF884444).border(1, 0xFFFF8888));
                         row.Text("  ");
                         row.Text("Padded").modifier(Modifier.NONE.padding(8).background(0xFF444488));
                     }).spacing(4);

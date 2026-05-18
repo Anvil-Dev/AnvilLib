@@ -32,8 +32,7 @@ public class SliderComponent implements UIComponent {
 
     private float x, y, width, height;
 
-    public SliderComponent(Modifier modifier, float value, float min, float max, float trackWidth,
-                           Consumer<Float> onChange) {
+    public SliderComponent(Modifier modifier, float value, float min, float max, float trackWidth) {
         this.modifier = modifier;
         this.value = Mth.clamp(value, min, max);
         this.min = min;
@@ -43,6 +42,7 @@ public class SliderComponent implements UIComponent {
     }
 
     public SliderComponent modifier(Modifier m) { this.modifier = m; return this; }
+    public SliderComponent onChange(Consumer<Float> onChange) { this.onChange = onChange; return this; }
     public float value() { return value; }
 
     @Override public Modifier modifier() { return modifier; }
