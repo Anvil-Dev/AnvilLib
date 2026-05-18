@@ -1,23 +1,23 @@
 package dev.anvilcraft.lib.v2.ui;
 
 import dev.anvilcraft.lib.v2.ui.component.BoxComponent;
-import dev.anvilcraft.lib.v2.ui.component.scope.BoxScope;
 import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
 import dev.anvilcraft.lib.v2.ui.component.CheckboxComponent;
 import dev.anvilcraft.lib.v2.ui.component.ColumnComponent;
-import dev.anvilcraft.lib.v2.ui.component.scope.ColumnScope;
 import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
 import dev.anvilcraft.lib.v2.ui.component.GridComponent;
-import dev.anvilcraft.lib.v2.ui.component.scope.GridScope;
 import dev.anvilcraft.lib.v2.ui.component.ImageComponent;
 import dev.anvilcraft.lib.v2.ui.component.RowComponent;
-import dev.anvilcraft.lib.v2.ui.component.scope.RowScope;
 import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
-import dev.anvilcraft.lib.v2.ui.component.scope.ScrollableScope;
 import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
 import dev.anvilcraft.lib.v2.ui.component.SpacerComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
+import dev.anvilcraft.lib.v2.ui.component.scope.BoxScope;
+import dev.anvilcraft.lib.v2.ui.component.scope.ColumnScope;
+import dev.anvilcraft.lib.v2.ui.component.scope.GridScope;
+import dev.anvilcraft.lib.v2.ui.component.scope.RowScope;
+import dev.anvilcraft.lib.v2.ui.component.scope.ScrollableScope;
 import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
@@ -117,7 +117,7 @@ public abstract class UIScope {
      * 创建复选框（vModel 双向绑定）。
      *
      * @param label  标签文字
-     * @param vModel {@link Ref}<{@link Boolean}>，点击时自动同步值，无需手动 onToggle
+     * @param vModel {@code Ref<Boolean>}，点击时自动同步值，无需手动 onToggle
      */
     public CheckboxComponent Checkbox(String label, Ref<Boolean> vModel) {
         CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, vModel.getValue());
@@ -162,7 +162,7 @@ public abstract class UIScope {
      * @param min    最小值
      * @param max    最大值
      * @param width  轨道宽度（像素）
-     * @param vModel {@link Ref}<{@link Float}>，拖拽时自动同步值
+     * @param vModel {@code Ref<Float>}，拖拽时自动同步值
      */
     public SliderComponent Slider(float min, float max, float width, Ref<Float> vModel) {
         SliderComponent c = new SliderComponent(Modifier.NONE, vModel.getValue(), min, max, width);
@@ -188,7 +188,7 @@ public abstract class UIScope {
      * 创建单行文本输入框（vModel 双向绑定）。
      *
      * @param placeholder 占位提示文字
-     * @param vModel      {@link Ref}<{@link String}>，输入时自动同步值
+     * @param vModel      {@code Ref<String>}，输入时自动同步值
      */
     public TextInputComponent TextInput(String placeholder, Ref<String> vModel) {
         TextInputComponent c = new TextInputComponent(Modifier.NONE, placeholder);
