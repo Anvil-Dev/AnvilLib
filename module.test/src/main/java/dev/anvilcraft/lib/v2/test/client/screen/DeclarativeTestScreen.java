@@ -105,14 +105,22 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
 
                     col.Spacer(0, 4);
 
-                    // ── 8. ForEach ──
-                    col.Text("8) ForEach (list of 4 items):");
+                    // ── 8. Dropdown ──
+                    col.Text("8) Dropdown:");
+                    col.Dropdown(new String[]{"Option A", "Option B", "Option C"}, 0)
+                            .onChange(v -> {});
+                    col.Text("  (click to open)");
+
+                    col.Spacer(0, 4);
+
+                    // ── 9. ForEach ──
+                    col.Text("9) ForEach (list of 4 items):");
                     ForEach.of(col, List.of("Apple", "Banana", "Cherry", "Date"), (s, item) -> s.Text("  - " + item));
 
                     col.Spacer(0, 4);
 
-                    // ── 9. Modifier 样式 ──
-                    col.Text("9) Modifiers:");
+                    // ── 10. Modifier 样式 ──
+                    col.Text("10) Modifiers:");
                     col.Row(row -> {
                         row.Button("Styled")
                                 .modifier(Modifier.NONE.background(0xFF884444).border(1, 0xFFFF8888));

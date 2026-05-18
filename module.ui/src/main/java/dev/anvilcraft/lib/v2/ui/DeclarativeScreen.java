@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.ui;
 
 import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
 import dev.anvilcraft.lib.v2.ui.component.CheckboxComponent;
+import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
 import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
 import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
@@ -87,7 +88,11 @@ public abstract class DeclarativeScreen extends Screen {
             var mc = Minecraft.getInstance();
             int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
             int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-            // 点击空白处清除焦点
+            // 先关闭所有下拉菜单，命中后再由 hitTestClick 重新打开
+            for (UIComponent child : rootScope.getChildren()) {
+                closeDropdownsRecursive(child);
+            }
+            // 清除焦点
             focusOwner = null;
             for (UIComponent child : rootScope.getChildren()) {
                 clearFocusRecursive(child);
@@ -183,6 +188,11 @@ public abstract class DeclarativeScreen extends Screen {
             focusOwner = tf;
             return true;
         }
+        if (component instanceof DropdownComponent dd) {
+            if (dd.clickPopup(px, py)) return true;
+            if (dd.clickTrigger(px, py)) return true;
+            return false;
+        }
         if (component instanceof ScrollableComponent sc && sc.isOnScrollbar(px, py)) {
             sc.startScrollbarDrag(py);
             return true;
@@ -205,6 +215,12 @@ public abstract class DeclarativeScreen extends Screen {
             return true;
         }
         return false;
+    }
+
+    /** 递归关闭所有 Dropdown。 */
+    private void closeDropdownsRecursive(UIComponent component) {
+        if (component instanceof DropdownComponent dd) dd.setOpen(false);
+        for (UIComponent child : component.children()) closeDropdownsRecursive(child);
     }
 
     /** 递归停止拖拽状态。 */

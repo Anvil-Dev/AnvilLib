@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.ui;
 
+import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
 import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -134,6 +135,10 @@ public class Composition {
             newTi.setValue(oldTi.getValue());
             newTi.setCursorPos(oldTi.getCursorPos());
             newTi.setFocused(oldTi.isFocused());
+        }
+        if (old instanceof DropdownComponent oldDd
+                && replacement instanceof DropdownComponent newDd) {
+            newDd.setOpen(oldDd.isOpen());
         }
     }
 

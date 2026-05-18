@@ -8,6 +8,7 @@ import dev.anvilcraft.lib.v2.ui.component.BoxComponent;
 import dev.anvilcraft.lib.v2.ui.component.BoxScope;
 import dev.anvilcraft.lib.v2.ui.component.ColumnComponent;
 import dev.anvilcraft.lib.v2.ui.component.ColumnScope;
+import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
 import dev.anvilcraft.lib.v2.ui.component.GridComponent;
 import dev.anvilcraft.lib.v2.ui.component.GridScope;
 import dev.anvilcraft.lib.v2.ui.component.ImageComponent;
@@ -113,6 +114,18 @@ public abstract class UIScope {
     public CheckboxComponent Checkbox(String label, Ref<Boolean> vModel) {
         CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, vModel.getValue());
         c.onToggle(() -> vModel.setValue(!vModel.getValue()));
+        addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    /**
+     * 创建下拉菜单。
+     * @param options 选项列表
+     * @param selectedIndex 初始选中索引
+     */
+    public DropdownComponent Dropdown(String[] options, int selectedIndex) {
+        DropdownComponent c = new DropdownComponent(Modifier.NONE, options, selectedIndex);
         addChild(c);
         Composition.current().emit(c);
         return c;
