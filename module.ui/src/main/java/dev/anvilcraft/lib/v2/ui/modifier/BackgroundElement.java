@@ -22,8 +22,8 @@ public record BackgroundElement(int color, float round) implements ModifierEleme
     public void emitRenderState(GuiGraphicsExtractor extractor, LayoutRect bounds) {
         SdfGraphics.instance
             .box(bounds.x(), bounds.y(), bounds.width(), bounds.height())
-            .color(color)
-            .round(round)
+            .color(this.color())
+            .round(this.round())
             .fill()
             .draw(extractor);
     }

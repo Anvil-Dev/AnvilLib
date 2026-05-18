@@ -12,10 +12,10 @@ public record SizeElement(float minWidthHint, float maxWidthHint, float minHeigh
     implements ModifierElement {
     @Override
     public Constraints modifyConstraints(Constraints constraints) {
-        float minW = minWidthHint > 0 ? Math.max(constraints.minWidth(), minWidthHint) : constraints.minWidth();
-        float maxW = maxWidthHint < Float.MAX_VALUE ? Math.min(constraints.maxWidth(), maxWidthHint) : constraints.maxWidth();
-        float minH = minHeightHint > 0 ? Math.max(constraints.minHeight(), minHeightHint) : constraints.minHeight();
-        float maxH = maxHeightHint < Float.MAX_VALUE ? Math.min(constraints.maxHeight(), maxHeightHint) : constraints.maxHeight();
+        float minW = this.minWidthHint() > 0 ? Math.max(constraints.minWidth(), this.minWidthHint()) : constraints.minWidth();
+        float maxW = this.maxWidthHint() < Float.MAX_VALUE ? Math.min(constraints.maxWidth(), this.maxWidthHint()) : constraints.maxWidth();
+        float minH = this.minHeightHint() > 0 ? Math.max(constraints.minHeight(), this.minHeightHint()) : constraints.minHeight();
+        float maxH = this.maxHeightHint() < Float.MAX_VALUE ? Math.min(constraints.maxHeight(), this.maxHeightHint()) : constraints.maxHeight();
         return constraints.copy(minW, maxW, minH, maxH);
     }
 }

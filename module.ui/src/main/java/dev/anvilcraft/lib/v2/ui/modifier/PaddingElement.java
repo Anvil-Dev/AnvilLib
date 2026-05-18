@@ -15,18 +15,18 @@ public record PaddingElement(float left, float top, float right, float bottom) i
     @Override
     public MeasuredSize modifyMeasuredSize(UIComponent component, Constraints constraints, MeasuredSize childSize) {
         return MeasuredSize.of(
-            childSize.width() + left + right,
-            childSize.height() + top + bottom
+            childSize.width() + this.left() + this.right(),
+            childSize.height() + this.top() + this.bottom()
         );
     }
 
     @Override
     public LayoutRect modifyLayout(LayoutRect rect) {
         return LayoutRect.of(
-            rect.x() + left,
-            rect.y() + top,
-            rect.width() - left - right,
-            rect.height() - top - bottom
+            rect.x() + this.left(),
+            rect.y() + this.top(),
+            rect.width() - this.left() - this.right(),
+            rect.height() - this.top() - this.bottom()
         );
     }
 }

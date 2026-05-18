@@ -26,6 +26,7 @@ public class GridComponent implements UIComponent {
     private List<MeasuredSize> childSizes = Collections.emptyList();
     private float hSpacing, vSpacing;
 
+    @Getter
     private float x, y, width, height;
     private float cellW, cellH;
 

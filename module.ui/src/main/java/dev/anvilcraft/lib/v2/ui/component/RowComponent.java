@@ -32,6 +32,7 @@ public class RowComponent implements UIComponent {
     @Setter
     private float spacing;
 
+    @Getter
     private float x, y, width, height;
 
     public RowComponent(Modifier modifier) {

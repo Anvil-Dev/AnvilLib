@@ -38,28 +38,28 @@ public final class Arrangement {
 
             float[] offsets = new float[n];
             switch (this) {
-                case Top -> {
+                case Vertical.Top -> {
                     float y = 0;
                     for (int i = 0; i < n; i++) {
                         offsets[i] = y;
                         y += childHeights.get(i) + spacing;
                     }
                 }
-                case Center -> {
+                case Vertical.Center -> {
                     float y = Math.max(0, extra / 2);
                     for (int i = 0; i < n; i++) {
                         offsets[i] = y;
                         y += childHeights.get(i) + spacing;
                     }
                 }
-                case Bottom -> {
+                case Vertical.Bottom -> {
                     float y = Math.max(0, extra);
                     for (int i = 0; i < n; i++) {
                         offsets[i] = y;
                         y += childHeights.get(i) + spacing;
                     }
                 }
-                case SpaceBetween -> {
+                case Vertical.SpaceBetween -> {
                     float gap = n > 1 ? (extra + gapTotal) / (n - 1) : 0;
                     float y = 0;
                     for (int i = 0; i < n; i++) {
@@ -67,7 +67,7 @@ public final class Arrangement {
                         y += childHeights.get(i) + gap;
                     }
                 }
-                case SpaceAround -> {
+                case Vertical.SpaceAround -> {
                     float halfGap = n > 0 ? (extra + gapTotal) / (n * 2f) : 0;
                     float y = halfGap;
                     for (int i = 0; i < n; i++) {
@@ -75,7 +75,7 @@ public final class Arrangement {
                         y += childHeights.get(i) + spacing + halfGap * 2 - spacing;
                     }
                 }
-                case SpaceEvenly -> {
+                case Vertical.SpaceEvenly -> {
                     float gap = n > 0 ? (extra + gapTotal) / (n + 1) : 0;
                     float y = gap;
                     for (int i = 0; i < n; i++) {
@@ -111,28 +111,28 @@ public final class Arrangement {
 
             float[] offsets = new float[n];
             switch (this) {
-                case Start -> {
+                case Horizontal.Start -> {
                     float x = 0;
                     for (int i = 0; i < n; i++) {
                         offsets[i] = x;
                         x += childWidths.get(i) + spacing;
                     }
                 }
-                case Center -> {
+                case Horizontal.Center -> {
                     float x = Math.max(0, extra / 2);
                     for (int i = 0; i < n; i++) {
                         offsets[i] = x;
                         x += childWidths.get(i) + spacing;
                     }
                 }
-                case End -> {
+                case Horizontal.End -> {
                     float x = Math.max(0, extra);
                     for (int i = 0; i < n; i++) {
                         offsets[i] = x;
                         x += childWidths.get(i) + spacing;
                     }
                 }
-                case SpaceBetween -> {
+                case Horizontal.SpaceBetween -> {
                     float gap = n > 1 ? (extra + gapTotal) / (n - 1) : 0;
                     float x = 0;
                     for (int i = 0; i < n; i++) {
@@ -140,7 +140,7 @@ public final class Arrangement {
                         x += childWidths.get(i) + gap;
                     }
                 }
-                case SpaceAround -> {
+                case Horizontal.SpaceAround -> {
                     float halfGap = n > 0 ? (extra + gapTotal) / (n * 2f) : 0;
                     float x = halfGap;
                     for (int i = 0; i < n; i++) {
@@ -148,7 +148,7 @@ public final class Arrangement {
                         x += childWidths.get(i) + spacing + halfGap * 2 - spacing;
                     }
                 }
-                case SpaceEvenly -> {
+                case Horizontal.SpaceEvenly -> {
                     float gap = n > 0 ? (extra + gapTotal) / (n + 1) : 0;
                     float x = gap;
                     for (int i = 0; i < n; i++) {

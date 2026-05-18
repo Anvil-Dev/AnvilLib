@@ -13,19 +13,19 @@ public record Constraints(float minWidth, float maxWidth, float minHeight, float
     public static final Constraints NONE = new Constraints(0, Float.MAX_VALUE, 0, Float.MAX_VALUE);
 
     public float constrainWidth(float w) {
-        return Math.clamp(w, minWidth, maxWidth);
+        return Math.clamp(w, this.minWidth(), this.maxWidth());
     }
 
     public float constrainHeight(float h) {
-        return Math.clamp(h, minHeight, maxHeight);
+        return Math.clamp(h, this.minHeight(), this.maxHeight());
     }
 
     public Constraints withWidth(float width) {
-        return new Constraints(width, width, minHeight, maxHeight);
+        return new Constraints(width, width, this.minHeight(), this.maxHeight());
     }
 
     public Constraints withHeight(float height) {
-        return new Constraints(minWidth, maxWidth, height, height);
+        return new Constraints(this.minWidth(), this.maxWidth(), height, height);
     }
 
     public Constraints copy(float minW, float maxW, float minH, float maxH) {

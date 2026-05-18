@@ -32,6 +32,7 @@ public class ColumnComponent implements UIComponent {
     @Setter
     private float spacing;
 
+    @Getter
     private float x, y, width, height;
 
     public ColumnComponent(Modifier modifier) {

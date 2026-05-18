@@ -12,6 +12,7 @@ import lombok.experimental.Accessors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,7 +52,7 @@ public class DropdownComponent implements UIComponent {
     @Getter
     private float popupScrollY;
     @Setter
-    private Consumer<String> onChange;
+    private @Nullable Consumer<String> onChange;
 
     // popup 拖拽
     @Getter
@@ -70,12 +71,12 @@ public class DropdownComponent implements UIComponent {
 
 
     public String selectedOption() {
-        return options.length > 0 ? options[selectedIndex] : "";
+        return this.options.length > 0 ? this.options[this.selectedIndex] : "";
     }
 
     public void setOpen(boolean open) {
         this.open = open;
-        if (!open) popupScrollY = 0;
+        if (!open) this.popupScrollY = 0;
     }
 
     public void setPopupScrollY(float y) {
@@ -91,9 +92,9 @@ public class DropdownComponent implements UIComponent {
     public MeasuredSize measure(Constraints constraints) {
         var font = Minecraft.getInstance().font;
         float maxTextW = 0;
-        for (String opt : options) maxTextW = Math.max(maxTextW, font.width(opt));
-        float w = maxTextW + PADDING_H * 2 + ARROW_SIZE + 8;
-        float h = font.lineHeight + PADDING_V * 2;
+        for (String opt : this.options) maxTextW = Math.max(maxTextW, font.width(opt));
+        float w = maxTextW + DropdownComponent.PADDING_H * 2 + DropdownComponent.ARROW_SIZE + 8;
+        float h = font.lineHeight + DropdownComponent.PADDING_V * 2;
         return MeasuredSize.of(constraints.constrainWidth(w), constraints.constrainHeight(h));
     }
 
@@ -109,32 +110,32 @@ public class DropdownComponent implements UIComponent {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        renderTrigger(extractor);
+        this.renderTrigger(extractor);
         // 弹出层由 DeclarativeScreen 在最后统一渲染
     }
 
     private void renderTrigger(GuiGraphicsExtractor extractor) {
         var font = Minecraft.getInstance().font;
-        int ix = (int) x, iy = (int) y, iw = (int) width, ih = (int) height;
-        int bg = open ? HOVER_COLOR : BG_COLOR;
+        int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
+        int bg = this.open ? DropdownComponent.HOVER_COLOR : DropdownComponent.BG_COLOR;
         extractor.fill(ix, iy, ix + iw, iy + ih, bg);
 
-        String label = options.length > 0 ? options[selectedIndex] : "";
-        int textY = (int) (y + (height + font.lineHeight) / 2f - font.lineHeight);
-        extractor.text(font, label, ix + (int) PADDING_H, textY, TEXT_COLOR);
+        String label = this.options.length > 0 ? this.options[this.selectedIndex] : "";
+        int textY = (int) (this.y + (this.height + font.lineHeight) / 2f - font.lineHeight);
+        extractor.text(font, label, ix + (int) DropdownComponent.PADDING_H, textY, DropdownComponent.TEXT_COLOR);
 
         // SDF 三角箭头
-        float arrowCx = x + width - PADDING_H - ARROW_SIZE / 2f;
-        float arrowCy = y + height / 2f;
-        float hs = ARROW_SIZE / 2f;
-        if (open) {
+        float arrowCx = this.x + this.width - DropdownComponent.PADDING_H - DropdownComponent.ARROW_SIZE / 2f;
+        float arrowCy = this.y + this.height / 2f;
+        float hs = DropdownComponent.ARROW_SIZE / 2f;
+        if (this.open) {
             SdfGraphics.instance
                 .triangle(
                     arrowCx - hs, arrowCy + hs * 0.6f,
                     arrowCx + hs, arrowCy + hs * 0.6f,
                     arrowCx, arrowCy - hs * 0.8f
                 )
-                .color(TEXT_COLOR)
+                .color(DropdownComponent.TEXT_COLOR)
                 .fill()
                 .draw(extractor);
         } else {
@@ -144,7 +145,7 @@ public class DropdownComponent implements UIComponent {
                     arrowCx + hs, arrowCy - hs * 0.6f,
                     arrowCx, arrowCy + hs * 0.8f
                 )
-                .color(TEXT_COLOR)
+                .color(DropdownComponent.TEXT_COLOR)
                 .fill()
                 .draw(extractor);
         }
@@ -163,58 +164,58 @@ public class DropdownComponent implements UIComponent {
      * 实际弹出层高度（min 内容高度, maxPopupHeight）。
      */
     public float popupHeight() {
-        if (options.length == 0) return 0;
-        return Math.min(options.length * itemHeight(), maxPopupHeight);
+        if (this.options.length == 0) return 0;
+        return Math.min(this.options.length * this.itemHeight(), this.maxPopupHeight);
     }
 
     /**
      * 弹出层包围盒。
      */
     public LayoutRect popupRect() {
-        float ph = popupHeight();
-        return LayoutRect.of(x, y + height, width, ph);
+        float ph = this.popupHeight();
+        return LayoutRect.of(this.x, this.y + this.height, this.width, ph);
     }
 
     /**
      * 延迟渲染弹出层（在所有组件之后调用）。
      */
     public void renderPopup(GuiGraphicsExtractor extractor) {
-        if (!open || options.length == 0) return;
+        if (!this.open || this.options.length == 0) return;
 
         var font = Minecraft.getInstance().font;
-        float itemH = itemHeight();
-        float ph = popupHeight();
-        float totalH = options.length * itemH;
+        float itemH = this.itemHeight();
+        float ph = this.popupHeight();
+        float totalH = this.options.length * itemH;
         float maxScroll = Math.max(0, totalH - ph);
-        popupScrollY = Mth.clamp(popupScrollY, -maxScroll, 0);
+        this.popupScrollY = Mth.clamp(this.popupScrollY, -maxScroll, 0);
 
-        int px = (int) x, py = (int) (y + height), pw = (int) width;
+        int px = (int) this.x, py = (int) (this.y + this.height), pw = (int) this.width;
 
         extractor.enableScissor(px, py, px + pw, py + (int) ph);
-        extractor.fill(px, py, px + pw, py + (int) ph, POPUP_BG);
+        extractor.fill(px, py, px + pw, py + (int) ph, DropdownComponent.POPUP_BG);
 
-        float startY = y + height + popupScrollY;
-        for (int i = 0; i < options.length; i++) {
+        float startY = this.y + this.height + this.popupScrollY;
+        for (int i = 0; i < this.options.length; i++) {
             float iy = startY + i * itemH;
             float bottom = iy + itemH;
             // 跳过完全不可见的项
-            if (bottom <= y + height || iy >= y + height + ph) continue;
+            if (bottom <= this.y + this.height || iy >= this.y + this.height + ph) continue;
 
-            int bg = (i == selectedIndex) ? POPUP_HOVER : POPUP_BG;
+            int bg = (i == this.selectedIndex) ? DropdownComponent.POPUP_HOVER : DropdownComponent.POPUP_BG;
             int fillTop = Math.max((int) iy, py);
             int fillBot = Math.min((int) bottom, py + (int) ph);
             extractor.fill(px, fillTop, px + pw, fillBot, bg);
-            extractor.text(font, options[i], px + (int) PADDING_H, (int) iy + 2, TEXT_COLOR);
+            extractor.text(font, this.options[i], px + (int) DropdownComponent.PADDING_H, (int) iy + 2, DropdownComponent.TEXT_COLOR);
         }
         extractor.disableScissor();
 
         // 滚动条
         if (totalH > ph) {
             float bh = Math.max(12, ph * ph / totalH);
-            float by = py + (-popupScrollY / maxScroll) * (ph - bh);
-            int bx = px + pw - SCROLLBAR_W - 1;
-            extractor.fill(bx, py, bx + SCROLLBAR_W, py + (int) ph, SCROLLBAR_BG);
-            extractor.fill(bx, (int) by, bx + SCROLLBAR_W, (int) (by + bh), SCROLLBAR_COLOR);
+            float by = py + (-this.popupScrollY / maxScroll) * (ph - bh);
+            int bx = px + pw - DropdownComponent.SCROLLBAR_W - 1;
+            extractor.fill(bx, py, bx + DropdownComponent.SCROLLBAR_W, py + (int) ph, DropdownComponent.SCROLLBAR_BG);
+            extractor.fill(bx, (int) by, bx + DropdownComponent.SCROLLBAR_W, (int) (by + bh), DropdownComponent.SCROLLBAR_COLOR);
         }
     }
 
@@ -224,9 +225,9 @@ public class DropdownComponent implements UIComponent {
      * 点击触发器区域 → 切换展开。
      */
     public boolean clickTrigger(float px, float py) {
-        if (triggerRect().contains(px, py)) {
-            open = !open;
-            if (!open) popupScrollY = 0;
+        if (this.triggerRect().contains(px, py)) {
+            this.open = !this.open;
+            if (!this.open) this.popupScrollY = 0;
             return true;
         }
         return false;
@@ -236,15 +237,15 @@ public class DropdownComponent implements UIComponent {
      * 点击弹出层选项 → 选中并收起。返回 true 表示命中。
      */
     public boolean clickPopup(float px, float py) {
-        if (!open || options.length == 0) return false;
-        float ph = popupHeight();
-        if (px < x || px > x + width || py < y + height || py > y + height + ph) return false;
+        if (!this.open || this.options.length == 0) return false;
+        float ph = this.popupHeight();
+        if (px < this.x || px > this.x + this.width || py < this.y + this.height || py > this.y + this.height + ph) return false;
 
-        float itemH = itemHeight();
-        float idxF = (py - y - height - popupScrollY) / itemH;
+        float itemH = this.itemHeight();
+        float idxF = (py - this.y - this.height - this.popupScrollY) / itemH;
         int idx = (int) idxF;
-        if (idx >= 0 && idx < options.length) {
-            select(idx);
+        if (idx >= 0 && idx < this.options.length) {
+            this.select(idx);
             return true;
         }
         return false;
@@ -254,12 +255,12 @@ public class DropdownComponent implements UIComponent {
      * 滚轮滚动弹出层。
      */
     public boolean onPopupScroll(float amount) {
-        if (!open) return false;
-        float ph = popupHeight();
-        float totalH = options.length * itemHeight();
+        if (!this.open) return false;
+        float ph = this.popupHeight();
+        float totalH = this.options.length * this.itemHeight();
         if (totalH <= ph) return false;
         float maxScroll = totalH - ph;
-        popupScrollY = Mth.clamp(popupScrollY + amount * 20, -maxScroll, 0);
+        this.popupScrollY = Mth.clamp(this.popupScrollY + amount * 20, -maxScroll, 0);
         return true;
     }
 
@@ -267,56 +268,56 @@ public class DropdownComponent implements UIComponent {
      * 弹出层滚动条命中测试。
      */
     public boolean isOnPopupScrollbar(float mx, float my) {
-        if (!open) return false;
-        float ph = popupHeight();
-        float totalH = options.length * itemHeight();
+        if (!this.open) return false;
+        float ph = this.popupHeight();
+        float totalH = this.options.length * this.itemHeight();
         if (totalH <= ph) return false;
         float bh = Math.max(12, ph * ph / totalH);
         float maxScroll = totalH - ph;
-        float by = y + height + (-popupScrollY / maxScroll) * (ph - bh);
-        int bx = (int) (x + width - SCROLLBAR_W - 1);
-        return mx >= bx && mx < bx + SCROLLBAR_W && my >= by && my < by + bh;
+        float by = this.y + this.height + (-this.popupScrollY / maxScroll) * (ph - bh);
+        int bx = (int) (this.x + this.width - DropdownComponent.SCROLLBAR_W - 1);
+        return mx >= bx && mx < bx + DropdownComponent.SCROLLBAR_W && my >= by && my < by + bh;
     }
 
     public void startPopupScrollbarDrag(float my) {
-        scrollbarDragging = true;
-        float ph = popupHeight();
-        float totalH = options.length * itemHeight();
+        this.scrollbarDragging = true;
+        float ph = this.popupHeight();
+        float totalH = this.options.length * this.itemHeight();
         float bh = Math.max(12, ph * ph / totalH);
         float maxScroll = totalH - ph;
-        float by = y + height + (-popupScrollY / maxScroll) * (ph - bh);
-        dragAnchorY = my - by;
+        float by = this.y + this.height + (-this.popupScrollY / maxScroll) * (ph - bh);
+        this.dragAnchorY = my - by;
     }
 
     public void onPopupScrollbarDrag(float my) {
-        if (!scrollbarDragging) return;
-        float ph = popupHeight();
-        float totalH = options.length * itemHeight();
+        if (!this.scrollbarDragging) return;
+        float ph = this.popupHeight();
+        float totalH = this.options.length * this.itemHeight();
         float bh = Math.max(12, ph * ph / totalH);
         float maxScroll = totalH - ph;
-        float newBarY = my - dragAnchorY;
+        float newBarY = my - this.dragAnchorY;
         float ratio = Mth.clamp(newBarY / (ph - bh), 0f, 1f);
-        popupScrollY = -(ratio * maxScroll);
+        this.popupScrollY = -(ratio * maxScroll);
     }
 
     public void stopPopupScrollbarDrag() {
-        scrollbarDragging = false;
+        this.scrollbarDragging = false;
     }
 
     private void select(int idx) {
-        if (idx != selectedIndex) {
-            selectedIndex = idx;
-            if (onChange != null) onChange.accept(options[idx]);
+        if (idx != this.selectedIndex) {
+            this.selectedIndex = idx;
+            if (this.onChange != null) this.onChange.accept(this.options[idx]);
         }
-        open = false;
-        popupScrollY = 0;
+        this.open = false;
+        this.popupScrollY = 0;
     }
 
     private LayoutRect triggerRect() {
-        return LayoutRect.of(x, y, width, height);
+        return LayoutRect.of(this.x, this.y, this.width, this.height);
     }
 
     public LayoutRect hitRect() {
-        return triggerRect();
+        return this.triggerRect();
     }
 }

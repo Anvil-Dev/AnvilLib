@@ -26,9 +26,9 @@ public final class Alignment {
          */
         public float align(float totalWidth, float childWidth) {
             return switch (this) {
-                case Start -> 0;
-                case Center -> (totalWidth - childWidth) / 2;
-                case End -> totalWidth - childWidth;
+                case Horizontal.Start -> 0;
+                case Horizontal.Center -> (totalWidth - childWidth) / 2;
+                case Horizontal.End -> totalWidth - childWidth;
             };
         }
     }
@@ -46,9 +46,9 @@ public final class Alignment {
          */
         public float align(float totalHeight, float childHeight) {
             return switch (this) {
-                case Top -> 0;
-                case Center -> (totalHeight - childHeight) / 2;
-                case Bottom -> totalHeight - childHeight;
+                case Vertical.Top -> 0;
+                case Vertical.Center -> (totalHeight - childHeight) / 2;
+                case Vertical.Bottom -> totalHeight - childHeight;
             };
         }
     }

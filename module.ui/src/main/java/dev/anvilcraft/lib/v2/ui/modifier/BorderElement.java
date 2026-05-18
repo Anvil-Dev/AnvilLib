@@ -22,9 +22,9 @@ public record BorderElement(float width, int color, float round) implements Modi
     public void emitRenderState(GuiGraphicsExtractor extractor, LayoutRect bounds) {
         SdfGraphics.instance
             .box(bounds.x(), bounds.y(), bounds.width(), bounds.height())
-            .color(color)
-            .round(round)
-            .stroke(width)
+            .color(this.color())
+            .round(this.round())
+            .stroke(this.width())
             .draw(extractor);
     }
 }

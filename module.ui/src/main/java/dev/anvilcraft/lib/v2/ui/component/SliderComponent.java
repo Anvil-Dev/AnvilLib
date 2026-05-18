@@ -64,7 +64,7 @@ public class SliderComponent implements UIComponent {
     public MeasuredSize measure(Constraints constraints) {
         return MeasuredSize.of(
             constraints.constrainWidth(this.trackWidth),
-            constraints.constrainHeight(THUMB_H)
+            constraints.constrainHeight(SliderComponent.THUMB_H)
         );
     }
 
@@ -82,14 +82,14 @@ public class SliderComponent implements UIComponent {
         int iw = (int) this.width;
 
         // 轨道 — 居中画在 THUMB_H 中间
-        int trackY = (int) (this.y + (THUMB_H - TRACK_H) / 2f);
-        extractor.fill(ix, trackY, ix + iw, (int) (trackY + TRACK_H), TRACK_COLOR);
+        int trackY = (int) (this.y + (SliderComponent.THUMB_H - SliderComponent.TRACK_H) / 2f);
+        extractor.fill(ix, trackY, ix + iw, (int) (trackY + SliderComponent.TRACK_H), SliderComponent.TRACK_COLOR);
 
         // 滑块 — 按比例定位
         float ratio = (this.value - this.min) / (this.max - this.min);
-        float thumbX = this.x + ratio * (this.width - THUMB_W);
+        float thumbX = this.x + ratio * (this.width - SliderComponent.THUMB_W);
         int tix = (int) thumbX, tiy = (int) this.y;
-        extractor.fill(tix, tiy, tix + (int) THUMB_W, tiy + (int) THUMB_H, THUMB_COLOR);
+        extractor.fill(tix, tiy, tix + (int) SliderComponent.THUMB_W, tiy + (int) THUMB_H, THUMB_COLOR);
     }
 
     /**

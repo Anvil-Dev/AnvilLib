@@ -21,9 +21,13 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @Accessors(fluent = true)
-@SuppressWarnings({"unused", "UnusedReturnValue"})
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class TextInputComponent implements UIComponent, KeyInputHandler {
-
     private static final int BG_COLOR = 0xFF202020;
     private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int PLACEHOLDER_COLOR = 0xFF555555;
@@ -32,7 +36,8 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     private static final float PADDING_V = 4;
     private static final float WIDTH = 160;
     private final String placeholder;
-    @Getter @Setter
+    @Getter
+    @Setter
     private Modifier modifier;
     @Getter
     private String value = "";
@@ -64,12 +69,18 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
         this.focused = focused;
     }
 
-    @Override public List<UIComponent> children() { return Collections.emptyList(); }
+    @Override
+    public List<UIComponent> children() {
+        return Collections.emptyList();
+    }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
         var font = Minecraft.getInstance().font;
-        return MeasuredSize.of(constraints.constrainWidth(WIDTH), constraints.constrainHeight(font.lineHeight + PADDING_V * 2));
+        return MeasuredSize.of(
+            constraints.constrainWidth(TextInputComponent.WIDTH),
+            constraints.constrainHeight(font.lineHeight + PADDING_V * 2)
+        );
     }
 
     @Override
@@ -83,21 +94,21 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
-        extractor.fill(ix, iy, ix + iw, iy + ih, BG_COLOR);
+        extractor.fill(ix, iy, ix + iw, iy + ih, TextInputComponent.BG_COLOR);
 
         var font = Minecraft.getInstance().font;
-        int textX = ix + (int) PADDING_H;
+        int textX = ix + (int) TextInputComponent.PADDING_H;
         int textY = (int) (this.y + (this.height + font.lineHeight) / 2f - font.lineHeight);
         boolean hasText = !this.value.isEmpty();
 
         String display = hasText ? this.value : this.placeholder;
-        int color = hasText ? TEXT_COLOR : PLACEHOLDER_COLOR;
+        int color = hasText ? TextInputComponent.TEXT_COLOR : TextInputComponent.PLACEHOLDER_COLOR;
         extractor.text(font, display, textX, textY, color);
 
         if (this.focused && hasText) {
             String before = this.value.substring(0, Math.min(this.cursorPos, this.value.length()));
-            int cursorX = (int) (this.x + PADDING_H + font.width(before));
-            extractor.fill(cursorX, iy + 2, cursorX + 1, iy + ih - 2, CURSOR_COLOR);
+            int cursorX = (int) (this.x + TextInputComponent.PADDING_H + font.width(before));
+            extractor.fill(cursorX, iy + 2, cursorX + 1, iy + ih - 2, TextInputComponent.CURSOR_COLOR);
         }
     }
 
@@ -119,10 +130,22 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
             }
             return true;
         }
-        if (key == 263) { if (this.cursorPos > 0) this.cursorPos--; return true; }
-        if (key == 262) { if (this.cursorPos < this.value.length()) this.cursorPos++; return true; }
-        if (key == 268) { this.cursorPos = 0; return true; }
-        if (key == 269) { this.cursorPos = this.value.length(); return true; }
+        if (key == 263) {
+            if (this.cursorPos > 0) this.cursorPos--;
+            return true;
+        }
+        if (key == 262) {
+            if (this.cursorPos < this.value.length()) this.cursorPos++;
+            return true;
+        }
+        if (key == 268) {
+            this.cursorPos = 0;
+            return true;
+        }
+        if (key == 269) {
+            this.cursorPos = this.value.length();
+            return true;
+        }
         return false;
     }
 

@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +38,7 @@ public class CheckboxComponent implements UIComponent {
     private String label;
     private boolean checked;
     @Setter
-    private Runnable onToggle;
+    private @Nullable Runnable onToggle;
 
     @Getter
     private float x, y, width, height;
@@ -59,8 +60,8 @@ public class CheckboxComponent implements UIComponent {
         // 方框 + 间距 + 标签文字宽度（简化：估算每字符 7px 宽）
         float labelW = this.label.length() * 7f;
         return MeasuredSize.of(
-            constraints.constrainWidth(SIZE + 4 + labelW),
-            constraints.constrainHeight(SIZE)
+            constraints.constrainWidth(CheckboxComponent.SIZE + 4 + labelW),
+            constraints.constrainHeight(CheckboxComponent.SIZE)
         );
     }
 
@@ -77,15 +78,15 @@ public class CheckboxComponent implements UIComponent {
         int ix = (int) this.x, iy = (int) this.y;
 
         // 外层深灰方块（始终显示）
-        extractor.fill(ix, iy, ix + (int) SIZE, iy + (int) SIZE, BOX_COLOR);
+        extractor.fill(ix, iy, ix + (int) CheckboxComponent.SIZE, iy + (int) CheckboxComponent.SIZE, CheckboxComponent.BOX_COLOR);
 
         // 选中时中间白色小方块
         if (this.checked) {
-            int iix = ix + (int) INSET;
-            int iiy = iy + (int) INSET;
-            int iiw = (int) SIZE - (int) INSET * 2;
-            int iih = (int) SIZE - (int) INSET * 2;
-            extractor.fill(iix, iiy, iix + iiw, iiy + iih, CHECKED_COLOR);
+            int iix = ix + (int) CheckboxComponent.INSET;
+            int iiy = iy + (int) CheckboxComponent.INSET;
+            int iiw = (int) CheckboxComponent.SIZE - (int) CheckboxComponent.INSET * 2;
+            int iih = (int) CheckboxComponent.SIZE - (int) CheckboxComponent.INSET * 2;
+            extractor.fill(iix, iiy, iix + iiw, iiy + iih, CheckboxComponent.CHECKED_COLOR);
         }
 
         // 标签文字

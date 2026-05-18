@@ -45,7 +45,7 @@ public class Animatable {
             this.elapsed = 0;
             return;
         }
-        this.startValue = this.value;
+        this.startValue = this.getValue();
         this.targetValue = target;
         this.durationTicks = durationTicks;
         this.elapsed = 0;

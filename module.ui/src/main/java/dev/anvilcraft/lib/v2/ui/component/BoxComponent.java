@@ -56,13 +56,13 @@ public class BoxComponent implements UIComponent {
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
-        if (children.isEmpty()) return MeasuredSize.ZERO;
+        if (this.children.isEmpty()) return MeasuredSize.ZERO;
 
         float maxWidth = 0;
         float maxHeight = 0;
-        List<MeasuredSize> sizes = new ArrayList<>(children.size());
+        List<MeasuredSize> sizes = new ArrayList<>(this.children.size());
 
-        for (UIComponent child : children) {
+        for (UIComponent child : this.children) {
             MeasuredSize size = child.measure(constraints);
             sizes.add(size);
             maxWidth = Math.max(maxWidth, size.width());
@@ -83,18 +83,18 @@ public class BoxComponent implements UIComponent {
         this.width = width;
         this.height = height;
 
-        for (int i = 0; i < children.size(); i++) {
-            UIComponent child = children.get(i);
-            MeasuredSize size = childSizes.get(i);
-            float childX = x + contentAlignmentH.align(width, size.width());
-            float childY = y + contentAlignmentV.align(height, size.height());
+        for (int i = 0; i < this.children.size(); i++) {
+            UIComponent child = this.children.get(i);
+            MeasuredSize size = this.childSizes.get(i);
+            float childX = x + this.contentAlignmentH.align(width, size.width());
+            float childY = y + this.contentAlignmentV.align(height, size.height());
             child.layout(childX, childY, size.width(), size.height());
         }
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        for (UIComponent child : children) {
+        for (UIComponent child : this.children) {
             child.extractRenderState(extractor);
         }
     }

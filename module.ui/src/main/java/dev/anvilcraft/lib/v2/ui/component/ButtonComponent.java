@@ -51,8 +51,8 @@ public class ButtonComponent implements UIComponent {
         float textW = font.width(this.label);
         float textH = font.lineHeight;
         return MeasuredSize.of(
-            constraints.constrainWidth(textW + PADDING_H * 2),
-            constraints.constrainHeight(textH + PADDING_V * 2)
+            constraints.constrainWidth(textW + ButtonComponent.PADDING_H * 2),
+            constraints.constrainHeight(textH + ButtonComponent.PADDING_V * 2)
         );
     }
 
@@ -66,7 +66,7 @@ public class ButtonComponent implements UIComponent {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        int bg = this.hovered ? BG_HOVER_COLOR : BG_COLOR;
+        int bg = this.hovered ? ButtonComponent.BG_HOVER_COLOR : ButtonComponent.BG_COLOR;
         int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
         extractor.fill(ix, iy, ix + iw, iy + ih, bg);
 
@@ -74,7 +74,7 @@ public class ButtonComponent implements UIComponent {
         float textW = font.width(this.label);
         int textX = (int) (this.x + (this.width - textW) / 2f);
         int textY = (int) (this.y + (this.height - font.lineHeight) / 2f);
-        extractor.text(font, this.label, textX, textY, TEXT_COLOR, true);
+        extractor.text(font, this.label, textX, textY, ButtonComponent.TEXT_COLOR, true);
     }
 
     public LayoutRect hitRect() {

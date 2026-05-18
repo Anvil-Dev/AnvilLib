@@ -32,7 +32,7 @@ public class TextComponent implements UIComponent {
     @Setter
     private String text;
     @Setter
-    private int color = VANILLA_TEXT_COLOR;
+    private int color = TextComponent.VANILLA_TEXT_COLOR;
     @Setter
     private boolean shadow;
     @Setter
@@ -74,9 +74,9 @@ public class TextComponent implements UIComponent {
         float textW = font.width(component);
 
         float renderX = switch (this.align) {
-            case LEFT -> this.x;
-            case CENTER -> this.x + (this.width - textW) / 2f;
-            case RIGHT -> this.x + this.width - textW;
+            case Align.LEFT -> this.x;
+            case Align.CENTER -> this.x + (this.width - textW) / 2f;
+            case Align.RIGHT -> this.x + this.width - textW;
         };
 
         extractor.text(font, this.text, (int) renderX, (int) this.y, this.color, this.shadow);

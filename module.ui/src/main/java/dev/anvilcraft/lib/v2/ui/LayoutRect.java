@@ -15,14 +15,14 @@ public record LayoutRect(float x, float y, float width, float height) {
     }
 
     public float right() {
-        return x + width;
+        return this.x() + this.width();
     }
 
     public float bottom() {
-        return y + height;
+        return this.y() + this.height();
     }
 
     public boolean contains(float px, float py) {
-        return px >= x && px < x + width && py >= y && py < y + height;
+        return px >= this.x() && px < this.x() + this.width() && py >= this.y() && py < this.y() + this.height();
     }
 }
