@@ -29,7 +29,7 @@ public class ButtonComponent implements UIComponent {
     private static final float PADDING_V    = 6;
     private static final float ROUND_RADIUS = 2;
 
-    private final Modifier modifier;
+    private Modifier modifier;
     private String label;
     @Nullable
     private Runnable onClick;
@@ -45,6 +45,7 @@ public class ButtonComponent implements UIComponent {
 
     public ButtonComponent label(String label) { this.label = label; return this; }
     public ButtonComponent onClick(@Nullable Runnable onClick) { this.onClick = onClick; return this; }
+    public ButtonComponent modifier(Modifier m) { this.modifier = m; return this; }
     void setHovered(boolean hovered) { this.hovered = hovered; }
 
     @Override public Modifier modifier() { return modifier; }

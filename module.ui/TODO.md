@@ -39,12 +39,12 @@
 
 ## Phase 5: Modifier Elements
 
-- [ ] `SizeModifier` — `.size(width, height)` `.fillMaxWidth()` `.fillMaxSize()`
-- [ ] `PaddingModifier` — `.padding(all)` `.padding(horizontal, vertical)`
-- [ ] `BackgroundModifier` — `.background(color)` → SdfGraphics.box
-- [ ] `BorderModifier` — `.border(width, color)` → SdfGraphics.stroke
-- [ ] `RoundedCornerModifier` — `.roundedCorner(radius)` → SdfGraphics.round
-- [ ] `ClickModifier` — `.onClick { }` + hit testing
+- [x] `SizeElement` — `.size()` `.fillMaxWidth()` `.fillMaxHeight()` `.fillMaxSize()`
+- [x] `PaddingElement` — `.padding(all)` `.padding(horizontal, vertical)`
+- [x] `BackgroundElement` — `.background(color)` → SdfGraphics.box（支持 round）
+- [x] `BorderElement` — `.border(width, color)` → SdfGraphics.stroke（支持 round）
+- [x] 所有组件增加 `.modifier(Modifier)` setter（`modifier` 字段改为可变）
+- [x] `ClickElement` — 推迟到 Phase 6 与输入路由一起实现
 
 ## Phase 6: 屏幕集成
 

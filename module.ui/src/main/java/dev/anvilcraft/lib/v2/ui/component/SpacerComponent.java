@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class SpacerComponent implements UIComponent {
 
-    private final Modifier modifier;
+    private Modifier modifier;
     private final float spacerWidth;
     private final float spacerHeight;
 
@@ -26,6 +26,8 @@ public class SpacerComponent implements UIComponent {
 
     @Override public Modifier modifier() { return modifier; }
     @Override public List<UIComponent> children() { return Collections.emptyList(); }
+
+    public SpacerComponent modifier(Modifier m) { this.modifier = m; return this; }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {

@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class ImageComponent implements UIComponent {
 
-    private final Modifier modifier;
+    private Modifier modifier;
     private Identifier sprite;
     private float imageWidth;
     private float imageHeight;
@@ -32,6 +32,7 @@ public class ImageComponent implements UIComponent {
     }
 
     public ImageComponent sprite(Identifier sprite) { this.sprite = sprite; return this; }
+    public ImageComponent modifier(Modifier m) { this.modifier = m; return this; }
 
     @Override public Modifier modifier() { return modifier; }
     @Override public List<UIComponent> children() { return Collections.emptyList(); }

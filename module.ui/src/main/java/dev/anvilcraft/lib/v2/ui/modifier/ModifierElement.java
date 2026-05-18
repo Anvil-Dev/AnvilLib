@@ -62,6 +62,18 @@ public interface ModifierElement {
     }
 
     static ModifierElement background(int color) {
-        return new BackgroundElement(color);
+        return new BackgroundElement(color, 0);
+    }
+
+    static ModifierElement background(int color, float round) {
+        return new BackgroundElement(color, round);
+    }
+
+    static ModifierElement border(float width, int color) {
+        return new BorderElement(width, color, 0);
+    }
+
+    static ModifierElement border(float width, int color, float round) {
+        return new BorderElement(width, color, round);
     }
 }

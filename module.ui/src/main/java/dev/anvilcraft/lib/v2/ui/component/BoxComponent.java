@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class BoxComponent implements UIComponent {
 
-    private final Modifier modifier;
+    private Modifier modifier;
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
 
@@ -35,6 +35,7 @@ public class BoxComponent implements UIComponent {
         this.contentAlignmentV = v;
         return this;
     }
+    public BoxComponent modifier(Modifier m) { this.modifier = m; return this; }
 
     @Override
     public Modifier modifier() { return modifier; }

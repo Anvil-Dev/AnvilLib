@@ -21,7 +21,7 @@ public class TextComponent implements UIComponent {
 
     private static final int VANILLA_TEXT_COLOR = 0xFFFFFFFF;
 
-    private final Modifier modifier;
+    private Modifier modifier;
     private String text;
     private int color = VANILLA_TEXT_COLOR;
     private boolean dropShadow = true;
@@ -38,6 +38,7 @@ public class TextComponent implements UIComponent {
     public TextComponent color(int color) { this.color = color; return this; }
     public TextComponent shadow(boolean enable) { this.dropShadow = enable; return this; }
     public TextComponent align(Align align) { this.align = align; return this; }
+    public TextComponent modifier(Modifier m) { this.modifier = m; return this; }
 
     @Override public Modifier modifier() { return modifier; }
     @Override public List<UIComponent> children() { return Collections.emptyList(); }

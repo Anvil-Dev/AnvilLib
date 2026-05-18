@@ -4,11 +4,11 @@ import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
-/** 渲染填充圆角矩形背景。 */
-public record BackgroundElement(int color, float round) implements ModifierElement {
+/** 渲染描边圆角矩形边框。 */
+public record BorderElement(float width, int color, float round) implements ModifierElement {
 
-    public BackgroundElement(int color) {
-        this(color, 0);
+    public BorderElement(float width, int color) {
+        this(width, color, 0);
     }
 
     @Override
@@ -17,7 +17,7 @@ public record BackgroundElement(int color, float round) implements ModifierEleme
                 .box(bounds.x(), bounds.y(), bounds.width(), bounds.height())
                 .color(color)
                 .round(round)
-                .fill()
+                .stroke(width)
                 .draw(extractor);
     }
 }

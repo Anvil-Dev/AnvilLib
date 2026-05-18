@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class ColumnComponent implements UIComponent {
 
-    private final Modifier modifier;
+    private Modifier modifier;
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
 
@@ -45,6 +45,11 @@ public class ColumnComponent implements UIComponent {
 
     public ColumnComponent spacing(float spacing) {
         this.spacing = spacing;
+        return this;
+    }
+
+    public ColumnComponent modifier(Modifier m) {
+        this.modifier = m;
         return this;
     }
 

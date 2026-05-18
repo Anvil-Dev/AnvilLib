@@ -62,6 +62,14 @@ public interface Modifier {
         return prepend(ModifierElement.background(color));
     }
 
+    default Modifier border(float width, int color) {
+        return prepend(ModifierElement.border(width, color));
+    }
+
+    default Modifier border(float width, int color, float round) {
+        return prepend(ModifierElement.border(width, color, round));
+    }
+
     Modifier NONE = new Modifier() {
         @Override
         public Modifier then(Modifier other) {
