@@ -356,6 +356,31 @@ jobs:
       signing_key: ${{ secrets.SIGNING_KEY }}
       signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
+  ui:
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: ui
+      module_id: anvillib-ui
+      mod_id: anvillib_ui
+      ci_build: false
+      pr_build: false
+    secrets:
+      maven_url: ${{ secrets.MAVEN_URL }}
+      maven_user: ${{ secrets.MAVEN_USER }}
+      maven_pass: ${{ secrets.MAVEN_PASS }}
+  ui-maven-central-deploy:
+    uses: ./.github/workflows/publish_maven_central.yml
+    needs:
+      - ui
+    with:
+      module: ui
+      module_id: anvillib-ui
+    secrets:
+      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      signing_key: ${{ secrets.SIGNING_KEY }}
+      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
+      signing_password: ${{ secrets.SIGNING_PASSWORD }}
   util:
     uses: ./.github/workflows/build_and_test.yml
     needs:
@@ -426,6 +451,7 @@ jobs:
       - rendering
       - space-select
       - sync
+      - ui
       - util
       - wheel
     uses: ./.github/workflows/build_and_test.yml

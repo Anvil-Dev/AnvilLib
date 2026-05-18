@@ -135,6 +135,14 @@ jobs:
       mod_id: anvillib_sync
       ci_build: true
       pr_build: true
+  ui:
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      module: ui
+      module_id: anvillib-ui
+      mod_id: anvillib_ui
+      ci_build: true
+      pr_build: true
   util:
     uses: ./.github/workflows/build_and_test.yml
     needs:
@@ -171,6 +179,7 @@ jobs:
       - rendering
       - space-select
       - sync
+      - ui
       - util
       - wheel
     uses: ./.github/workflows/build_and_test.yml
