@@ -128,18 +128,18 @@ public class Composition {
     private void copyRuntimeState(UIComponent old, UIComponent replacement) {
         if (old instanceof ScrollableComponent oldSc
                 && replacement instanceof ScrollableComponent newSc) {
-            newSc.setScrollY(oldSc.getScrollY());
+            newSc.setScrollY(oldSc.scrollY());
         }
         if (old instanceof TextInputComponent oldTi
                 && replacement instanceof TextInputComponent newTi) {
-            newTi.setValue(oldTi.getValue());
-            newTi.setCursorPos(oldTi.getCursorPos());
-            newTi.setFocused(oldTi.isFocused());
+            newTi.setValue(oldTi.value());
+            newTi.setCursorPos(oldTi.cursorPos());
+            newTi.setFocused(oldTi.focused());
         }
         if (old instanceof DropdownComponent oldDd
                 && replacement instanceof DropdownComponent newDd) {
-            newDd.setOpen(oldDd.isOpen());
-            newDd.setPopupScrollY(oldDd.getPopupScrollY());
+            newDd.setOpen(oldDd.open());
+            newDd.setPopupScrollY(oldDd.popupScrollY());
         }
     }
 

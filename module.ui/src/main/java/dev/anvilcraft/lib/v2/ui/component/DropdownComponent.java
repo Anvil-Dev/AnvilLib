@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
@@ -19,6 +23,7 @@ import java.util.function.Consumer;
  * 下拉菜单。点击展开选项列表，选择后收起。
  * 弹出层延迟渲染以确保 z-order 正确，支持最大高度 + 滚动。
  */
+@Accessors(fluent = true)
 public class DropdownComponent implements UIComponent {
 
     private static final int BG_COLOR       = 0xFF404040;
@@ -33,15 +38,20 @@ public class DropdownComponent implements UIComponent {
     private static final float PADDING_V    = 4;
     private static final float ARROW_SIZE   = 6;
 
+    @Getter @Setter
     private Modifier modifier;
     private final String[] options;
     private int selectedIndex;
+    @Getter
     private boolean open;
     private final float maxPopupHeight;
+    @Getter
     private float popupScrollY;
+    @Setter
     private Consumer<String> onChange;
 
     // popup 拖拽
+    @Getter
     private boolean scrollbarDragging;
     private float dragAnchorY;
 
@@ -54,16 +64,11 @@ public class DropdownComponent implements UIComponent {
         this.maxPopupHeight = maxPopupHeight;
     }
 
-    public DropdownComponent modifier(Modifier m) { this.modifier = m; return this; }
-    public DropdownComponent onChange(Consumer<String> onChange) { this.onChange = onChange; return this; }
-
+    
     public String selectedOption() { return options.length > 0 ? options[selectedIndex] : ""; }
     public void setOpen(boolean open) { this.open = open; if (!open) popupScrollY = 0; }
-    public boolean isOpen() { return open; }
-    public float getPopupScrollY() { return popupScrollY; }
-    public void setPopupScrollY(float y) { this.popupScrollY = y; }
+            public void setPopupScrollY(float y) { this.popupScrollY = y; }
 
-    @Override public Modifier modifier() { return modifier; }
     @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override
@@ -256,8 +261,7 @@ public class DropdownComponent implements UIComponent {
     }
 
     public void stopPopupScrollbarDrag() { scrollbarDragging = false; }
-    public boolean isScrollbarDragging() { return scrollbarDragging; }
-
+    
     private void select(int idx) {
         if (idx != selectedIndex) {
             selectedIndex = idx;

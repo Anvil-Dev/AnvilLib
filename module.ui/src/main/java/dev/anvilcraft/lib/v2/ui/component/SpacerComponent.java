@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
@@ -12,8 +16,10 @@ import java.util.List;
 /**
  * 固定尺寸的空白占位组件，不渲染任何内容。
  */
+@Accessors(fluent = true)
 public class SpacerComponent implements UIComponent {
 
+    @Getter @Setter
     private Modifier modifier;
     private final float spacerWidth;
     private final float spacerHeight;
@@ -24,10 +30,8 @@ public class SpacerComponent implements UIComponent {
         this.spacerHeight = height;
     }
 
-    @Override public Modifier modifier() { return modifier; }
     @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
-    public SpacerComponent modifier(Modifier m) { this.modifier = m; return this; }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {

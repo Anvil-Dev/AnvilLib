@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
@@ -14,6 +18,7 @@ import java.util.List;
 /**
  * 单行文字渲染。默认样式与原版一致：白色带阴影、左对齐。
  */
+@Accessors(fluent = true)
 public class TextComponent implements UIComponent {
 
     /** 文字水平对齐方式 */
@@ -21,10 +26,15 @@ public class TextComponent implements UIComponent {
 
     private static final int VANILLA_TEXT_COLOR = 0xFFFFFFFF;
 
+    @Getter @Setter
     private Modifier modifier;
+    @Setter
     private String text;
+    @Setter
     private int color = VANILLA_TEXT_COLOR;
-    private boolean dropShadow;
+    @Setter
+    private boolean shadow;
+    @Setter
     private Align align = Align.LEFT;
 
     private float x, y, width, height;
@@ -34,13 +44,7 @@ public class TextComponent implements UIComponent {
         this.text = text;
     }
 
-    public TextComponent text(String text) { this.text = text; return this; }
-    public TextComponent color(int color) { this.color = color; return this; }
-    public TextComponent shadow(boolean enable) { this.dropShadow = enable; return this; }
-    public TextComponent align(Align align) { this.align = align; return this; }
-    public TextComponent modifier(Modifier m) { this.modifier = m; return this; }
-
-    @Override public Modifier modifier() { return modifier; }
+                
     @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override
@@ -71,7 +75,7 @@ public class TextComponent implements UIComponent {
             case RIGHT -> x + width - textW;
         };
 
-        extractor.text(font, text, (int) renderX, (int) y, color, dropShadow);
+        extractor.text(font, text, (int) renderX, (int) y, color, this.shadow);
     }
 }
 

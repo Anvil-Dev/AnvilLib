@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.*;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
@@ -10,14 +14,20 @@ import java.util.List;
 /**
  * 横向线性布局。子组件自左而右排列。主轴=水平，交叉轴=垂直。
  */
+@Accessors(fluent = true)
 public class RowComponent implements UIComponent {
 
+    @Getter @Setter
     private Modifier modifier;
+    @Getter
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
 
+    @Setter
     private Arrangement.Horizontal horizontalArrangement = Arrangement.Horizontal.Start;
+    @Setter
     private Alignment.Vertical verticalAlignment = Alignment.Vertical.Top;
+    @Setter
     private float spacing;
 
     private float x, y, width, height;
@@ -30,33 +40,11 @@ public class RowComponent implements UIComponent {
         this.children = List.copyOf(children);
     }
 
-    public RowComponent horizontalArrangement(Arrangement.Horizontal ha) {
-        this.horizontalArrangement = ha;
-        return this;
-    }
+    
+    
+    
 
-    public RowComponent verticalAlignment(Alignment.Vertical va) {
-        this.verticalAlignment = va;
-        return this;
-    }
 
-    public RowComponent spacing(float spacing) {
-        this.spacing = spacing;
-        return this;
-    }
-
-    public RowComponent modifier(Modifier m) {
-        this.modifier = m;
-        return this;
-    }
-
-    @Override
-    public Modifier modifier() { return modifier; }
-
-    @Override
-    public List<UIComponent> children() { return children; }
-
-    @Override
     public MeasuredSize measure(Constraints constraints) {
         if (children.isEmpty()) return MeasuredSize.ZERO;
 
@@ -84,7 +72,6 @@ public class RowComponent implements UIComponent {
         );
     }
 
-    @Override
     public void layout(float x, float y, float width, float height) {
         this.x = x;
         this.y = y;
@@ -103,7 +90,6 @@ public class RowComponent implements UIComponent {
         }
     }
 
-    @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         for (UIComponent child : children) {
             child.extractRenderState(extractor);

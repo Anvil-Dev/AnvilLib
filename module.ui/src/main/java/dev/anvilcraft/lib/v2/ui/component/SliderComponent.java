@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
@@ -16,6 +20,7 @@ import java.util.function.Consumer;
  * 滑块。水平拖拽选择范围内的值。
  * 原版风格：深色轨道 + 浅色滑块按钮。
  */
+@Accessors(fluent = true)
 public class SliderComponent implements UIComponent {
 
     private static final int TRACK_COLOR = 0xFF404040;
@@ -24,10 +29,13 @@ public class SliderComponent implements UIComponent {
     private static final float THUMB_W = 8;
     private static final float THUMB_H = 16;
 
+    @Getter @Setter
     private Modifier modifier;
+    @Getter
     private float value;
     private final float min, max;
     private final float trackWidth;
+    @Setter
     private Consumer<Float> onChange;
 
     private float x, y, width, height;
@@ -41,11 +49,7 @@ public class SliderComponent implements UIComponent {
         this.onChange = onChange;
     }
 
-    public SliderComponent modifier(Modifier m) { this.modifier = m; return this; }
-    public SliderComponent onChange(Consumer<Float> onChange) { this.onChange = onChange; return this; }
-    public float value() { return value; }
-
-    @Override public Modifier modifier() { return modifier; }
+        
     @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override

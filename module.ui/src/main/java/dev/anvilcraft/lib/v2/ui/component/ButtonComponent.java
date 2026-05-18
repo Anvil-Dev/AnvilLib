@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
@@ -16,6 +20,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * 可点击按钮。原版 fill() 背景 + 手动居中 text() 文字。
  */
+@Accessors(fluent = true)
 public class ButtonComponent implements UIComponent {
 
     // 原版按钮配色
@@ -25,7 +30,9 @@ public class ButtonComponent implements UIComponent {
     private static final float PADDING_H    = 12;
     private static final float PADDING_V    = 6;
 
+    @Getter @Setter
     private Modifier modifier;
+    @Setter
     private String label;
     @Nullable
     private Runnable onClick;
@@ -38,12 +45,9 @@ public class ButtonComponent implements UIComponent {
         this.label = label;
     }
 
-    public ButtonComponent label(String label) { this.label = label; return this; }
-    public ButtonComponent onClick(@Nullable Runnable onClick) { this.onClick = onClick; return this; }
-    public ButtonComponent modifier(Modifier m) { this.modifier = m; return this; }
+        public ButtonComponent onClick(@Nullable Runnable onClick) { this.onClick = onClick; return this; }
     public void setHovered(boolean hovered) { this.hovered = hovered; }
 
-    @Override public Modifier modifier() { return modifier; }
     @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override

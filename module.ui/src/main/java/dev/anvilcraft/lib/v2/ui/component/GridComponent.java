@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
@@ -13,10 +17,13 @@ import java.util.List;
 /**
  * 网格布局。子组件按列数排列，每格大小由最大子组件决定。
  */
+@Accessors(fluent = true)
 public class GridComponent implements UIComponent {
 
+    @Getter @Setter
     private Modifier modifier;
     private final int columns;
+    @Getter
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
     private float hSpacing, vSpacing;
@@ -33,13 +40,8 @@ public class GridComponent implements UIComponent {
         this.children = List.copyOf(children);
     }
 
-    public GridComponent modifier(Modifier m) { this.modifier = m; return this; }
     public GridComponent spacing(float h, float v) { this.hSpacing = h; this.vSpacing = v; return this; }
 
-    @Override public Modifier modifier() { return modifier; }
-    @Override public List<UIComponent> children() { return children; }
-
-    @Override
     public MeasuredSize measure(Constraints constraints) {
         if (children.isEmpty()) return MeasuredSize.ZERO;
 
@@ -65,7 +67,6 @@ public class GridComponent implements UIComponent {
         return MeasuredSize.of(constraints.constrainWidth(totalW), constraints.constrainHeight(totalH));
     }
 
-    @Override
     public void layout(float x, float y, float width, float height) {
         this.x = x; this.y = y; this.width = width; this.height = height;
 
@@ -78,7 +79,6 @@ public class GridComponent implements UIComponent {
         }
     }
 
-    @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         for (UIComponent child : children) child.extractRenderState(extractor);
     }

@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
@@ -14,6 +18,7 @@ import java.util.List;
  * 复选框。点击切换 boolean 状态。
  * 16x16 方框，未选中=深色空心，选中=浅色填充。
  */
+@Accessors(fluent = true)
 public class CheckboxComponent implements UIComponent {
 
     private static final int BOX_COLOR       = 0xFF404040;
@@ -21,9 +26,11 @@ public class CheckboxComponent implements UIComponent {
     private static final float SIZE          = 16;
     private static final float INSET         = 3;
 
+    @Getter @Setter
     private Modifier modifier;
     private String label;
     private boolean checked;
+    @Setter
     private Runnable onToggle;
 
     private float x, y, width, height;
@@ -34,10 +41,7 @@ public class CheckboxComponent implements UIComponent {
         this.checked = checked;
     }
 
-    public CheckboxComponent modifier(Modifier m) { this.modifier = m; return this; }
-    public CheckboxComponent onToggle(Runnable onToggle) { this.onToggle = onToggle; return this; }
-
-    @Override public Modifier modifier() { return modifier; }
+    
     @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override

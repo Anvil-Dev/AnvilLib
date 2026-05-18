@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
@@ -24,6 +28,7 @@ import java.util.function.Consumer;
  * placeholder 作为占位提示（灰色），开始输入后直接替换为输入内容。
  * 字符输入通过 {@link CharacterEvent} 处理，支持所有语言和输入法。
  */
+@Accessors(fluent = true)
 public class TextInputComponent implements UIComponent, KeyInputHandler {
 
     private static final int BG_COLOR        = 0xFF202020;
@@ -34,12 +39,17 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     private static final float PADDING_V     = 4;
     private static final float WIDTH         = 160;
 
+    @Getter @Setter
     private Modifier modifier;
+    @Getter
     private String value = "";
     private final String placeholder;
+    @Getter
     private boolean focused;
+    @Setter
     private Consumer<String> onChange;
     private int displayPos;
+    @Getter
     private int cursorPos;
 
     private float x, y, width, height;
@@ -49,16 +59,10 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
         this.placeholder = placeholder != null ? placeholder : "";
     }
 
-    public TextInputComponent modifier(Modifier m) { this.modifier = m; return this; }
-    public TextInputComponent onChange(Consumer<String> onChange) { this.onChange = onChange; return this; }
-    public String getValue() { return value; }
-    public void setValue(String value) { this.value = value != null ? value : ""; this.cursorPos = this.value.length(); }
-    public int getCursorPos() { return cursorPos; }
-    public void setCursorPos(int pos) { this.cursorPos = Math.clamp(pos, 0, value.length()); }
+            public void setValue(String value) { this.value = value != null ? value : ""; this.cursorPos = this.value.length(); }
+        public void setCursorPos(int pos) { this.cursorPos = Math.clamp(pos, 0, value.length()); }
     public void setFocused(boolean focused) { this.focused = focused; }
-    public boolean isFocused() { return focused; }
-
-    @Override public Modifier modifier() { return modifier; }
+    
     @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override

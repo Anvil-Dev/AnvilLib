@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.*;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
@@ -11,9 +15,12 @@ import java.util.List;
  * 层叠布局。所有子组件重叠于同一区域，按声明顺序从底到顶绘制。
  * Box 本身的大小由最大的子组件决定。
  */
+@Accessors(fluent = true)
 public class BoxComponent implements UIComponent {
 
+    @Getter @Setter
     private Modifier modifier;
+    @Getter
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
 
@@ -35,13 +42,7 @@ public class BoxComponent implements UIComponent {
         this.contentAlignmentV = v;
         return this;
     }
-    public BoxComponent modifier(Modifier m) { this.modifier = m; return this; }
 
-    @Override
-    public Modifier modifier() { return modifier; }
-
-    @Override
-    public List<UIComponent> children() { return children; }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {

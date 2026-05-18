@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
@@ -15,11 +19,16 @@ import java.util.List;
  * 渲染一个材质精灵（sprite）。
  * 通过 {@link GuiGraphicsExtractor#blitSprite} 使用原版纹理管线。
  */
+@Accessors(fluent = true)
 public class ImageComponent implements UIComponent {
 
+    @Getter @Setter
     private Modifier modifier;
+    @Setter
     private Identifier sprite;
+    @Getter
     private float imageWidth;
+    @Getter
     private float imageHeight;
 
     private float x, y, width, height;
@@ -31,10 +40,7 @@ public class ImageComponent implements UIComponent {
         this.imageHeight = imageHeight;
     }
 
-    public ImageComponent sprite(Identifier sprite) { this.sprite = sprite; return this; }
-    public ImageComponent modifier(Modifier m) { this.modifier = m; return this; }
-
-    @Override public Modifier modifier() { return modifier; }
+    
     @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override
@@ -62,9 +68,4 @@ public class ImageComponent implements UIComponent {
                 (int) width, (int) height
         );
     }
-
-    /** 获取组件逻辑宽度（可能被 modifier 修改后不同）。 */
-    float imageWidth() { return imageWidth; }
-    /** 获取组件逻辑高度。 */
-    float imageHeight() { return imageHeight; }
 }

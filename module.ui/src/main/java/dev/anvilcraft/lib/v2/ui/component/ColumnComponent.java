@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.*;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
@@ -10,14 +14,20 @@ import java.util.List;
 /**
  * 纵向线性布局。子组件自上而下排列。主轴=垂直，交叉轴=水平。
  */
+@Accessors(fluent = true)
 public class ColumnComponent implements UIComponent {
 
+    @Getter @Setter
     private Modifier modifier;
+    @Getter
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
 
+    @Setter
     private Arrangement.Vertical verticalArrangement = Arrangement.Vertical.Top;
+    @Setter
     private Alignment.Horizontal horizontalAlignment = Alignment.Horizontal.Start;
+    @Setter
     private float spacing;
 
     // 布局状态
@@ -33,33 +43,11 @@ public class ColumnComponent implements UIComponent {
 
     // ── 链式 setter ──
 
-    public ColumnComponent verticalArrangement(Arrangement.Vertical va) {
-        this.verticalArrangement = va;
-        return this;
-    }
+    
+    
+    
 
-    public ColumnComponent horizontalAlignment(Alignment.Horizontal ha) {
-        this.horizontalAlignment = ha;
-        return this;
-    }
 
-    public ColumnComponent spacing(float spacing) {
-        this.spacing = spacing;
-        return this;
-    }
-
-    public ColumnComponent modifier(Modifier m) {
-        this.modifier = m;
-        return this;
-    }
-
-    @Override
-    public Modifier modifier() { return modifier; }
-
-    @Override
-    public List<UIComponent> children() { return children; }
-
-    @Override
     public MeasuredSize measure(Constraints constraints) {
         if (children.isEmpty()) return MeasuredSize.ZERO;
 
@@ -87,7 +75,6 @@ public class ColumnComponent implements UIComponent {
         );
     }
 
-    @Override
     public void layout(float x, float y, float width, float height) {
         this.x = x;
         this.y = y;
@@ -106,7 +93,6 @@ public class ColumnComponent implements UIComponent {
         }
     }
 
-    @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         for (UIComponent child : children) {
             child.extractRenderState(extractor);

@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
@@ -16,19 +20,24 @@ import java.util.List;
  * 可滚动容器。限制最大高度，超出部分可垂直滚动。
  * 渲染时自动裁剪，并绘制滚动条。
  */
+@Accessors(fluent = true)
 public class ScrollableComponent implements UIComponent {
 
     private static final int SCROLLBAR_COLOR = 0xFF888888;
     private static final int SCROLLBAR_BG    = 0xFF333333;
     private static final int SCROLLBAR_W     = 4;
 
+    @Getter @Setter
     private Modifier modifier;
     private final float maxHeight;
+    @Getter
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
 
+    @Getter
     private float scrollY;
     private float contentHeight;
+    @Getter
     private boolean scrollbarDragging;
     private float dragAnchorY;
 
@@ -43,12 +52,7 @@ public class ScrollableComponent implements UIComponent {
         this.children = List.copyOf(children);
     }
 
-    public ScrollableComponent modifier(Modifier m) { this.modifier = m; return this; }
 
-    @Override public Modifier modifier() { return modifier; }
-    @Override public List<UIComponent> children() { return children; }
-
-    @Override
     public MeasuredSize measure(Constraints constraints) {
         if (children.isEmpty()) return MeasuredSize.ZERO;
 
@@ -75,7 +79,6 @@ public class ScrollableComponent implements UIComponent {
         );
     }
 
-    @Override
     public void layout(float x, float y, float width, float height) {
         this.x = x;
         this.y = y;
@@ -92,7 +95,6 @@ public class ScrollableComponent implements UIComponent {
         }
     }
 
-    @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         int ix = (int) x, iy = (int) y, iw = (int) width, ih = (int) height;
 
@@ -154,8 +156,7 @@ public class ScrollableComponent implements UIComponent {
         scrollbarDragging = false;
     }
 
-    public boolean isScrollbarDragging() { return scrollbarDragging; }
-
+    
     private float barH() {
         return Math.max(16, height * height / contentHeight);
     }
@@ -165,8 +166,7 @@ public class ScrollableComponent implements UIComponent {
         return y + (-scrollY / maxScroll) * (height - barH());
     }
 
-    public float getScrollY() { return scrollY; }
-    public void setScrollY(float scrollY) { this.scrollY = scrollY; }
+        public void setScrollY(float scrollY) { this.scrollY = scrollY; }
 
     /** 命中测试包围盒。 */
     public LayoutRect hitRect() {

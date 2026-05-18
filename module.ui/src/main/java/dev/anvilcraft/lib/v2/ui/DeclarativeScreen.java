@@ -81,7 +81,7 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     private KeyInputHandler findFocused(UIComponent component) {
-        if (component instanceof TextInputComponent tf && tf.isFocused()) return tf;
+        if (component instanceof TextInputComponent tf && tf.focused()) return tf;
         for (UIComponent child : component.children()) {
             KeyInputHandler found = findFocused(child);
             if (found != null) return found;
@@ -229,11 +229,11 @@ public abstract class DeclarativeScreen extends Screen {
             sl.setValueFromMouse(px);
             return true;
         }
-        if (component instanceof ScrollableComponent sc && sc.isScrollbarDragging()) {
+        if (component instanceof ScrollableComponent sc && sc.scrollbarDragging()) {
             sc.onScrollbarDrag(py);
             return true;
         }
-        if (component instanceof DropdownComponent dd && dd.isScrollbarDragging()) {
+        if (component instanceof DropdownComponent dd && dd.scrollbarDragging()) {
             dd.onPopupScrollbarDrag(py);
             return true;
         }
@@ -262,7 +262,7 @@ public abstract class DeclarativeScreen extends Screen {
         if (component instanceof ScrollableComponent sc && sc.hitRect().contains(px, py)) {
             return sc.onScroll(amount);
         }
-        if (component instanceof DropdownComponent dd && dd.isOpen()
+        if (component instanceof DropdownComponent dd && dd.open()
                 && dd.popupRect().contains(px, py)) {
             return dd.onPopupScroll(amount);
         }
