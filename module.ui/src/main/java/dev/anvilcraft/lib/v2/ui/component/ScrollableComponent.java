@@ -29,6 +29,8 @@ public class ScrollableComponent implements UIComponent {
 
     private float scrollY;
     private float contentHeight;
+    private boolean scrollbarDragging;
+    private float dragAnchorY;
 
     private float x, y, width, height;
 
@@ -105,23 +107,62 @@ public class ScrollableComponent implements UIComponent {
 
         // 滚动条
         if (contentHeight > height) {
-            float barH = Math.max(16, height * height / contentHeight);
-            float maxScroll = contentHeight - height;
-            float barY = y + (-scrollY / maxScroll) * (height - barH);
+            float bh = barH();
+            float by = barY();
             int bx = (int) (x + width - SCROLLBAR_W - 1);
             extractor.fill(bx, iy, bx + SCROLLBAR_W, iy + ih, SCROLLBAR_BG);
-            extractor.fill(bx, (int) barY, bx + SCROLLBAR_W, (int) (barY + barH), SCROLLBAR_COLOR);
+            extractor.fill(bx, (int) by, bx + SCROLLBAR_W, (int) (by + bh), SCROLLBAR_COLOR);
         }
     }
 
     // ── 滚动 ──
 
-    /** 处理滚轮事件。返回 true 表示已消费。 */
     public boolean onScroll(float amount) {
         if (contentHeight <= height) return false;
         float maxScroll = contentHeight - height;
         scrollY = Mth.clamp(scrollY + amount * 20, -maxScroll, 0);
         return true;
+    }
+
+    /** 鼠标是否在滚动条滑块上。 */
+    public boolean isOnScrollbar(float mx, float my) {
+        if (contentHeight <= height) return false;
+        float bh = barH();
+        float by = barY();
+        int bx = (int) (x + width - SCROLLBAR_W - 1);
+        return mx >= bx && mx < bx + SCROLLBAR_W && my >= by && my < by + bh;
+    }
+
+    /** 开始拖拽滚动条。 */
+    public void startScrollbarDrag(float my) {
+        scrollbarDragging = true;
+        dragAnchorY = my - barY();
+    }
+
+    /** 拖拽滚动条时更新位置。 */
+    public void onScrollbarDrag(float my) {
+        if (!scrollbarDragging) return;
+        float bh = barH();
+        float maxScroll = contentHeight - height;
+        float newBarY = my - dragAnchorY;
+        float ratio = Mth.clamp(newBarY / (height - bh), 0f, 1f);
+        scrollY = -(ratio * maxScroll);
+    }
+
+    /** 停止拖拽。 */
+    public void stopScrollbarDrag() {
+        scrollbarDragging = false;
+    }
+
+    public boolean isScrollbarDragging() { return scrollbarDragging; }
+
+    private float barH() {
+        return Math.max(16, height * height / contentHeight);
+    }
+
+    private float barY() {
+        float maxScroll = contentHeight - height;
+        return y + (-scrollY / maxScroll) * (height - barH());
     }
 
     public float getScrollY() { return scrollY; }

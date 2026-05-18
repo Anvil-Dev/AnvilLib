@@ -114,6 +114,14 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        for (UIComponent child : rootScope.getChildren()) {
+            stopDragRecursive(child);
+        }
+        return super.mouseReleased(event);
+    }
+
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         for (UIComponent child : rootScope.getChildren()) {
             if (hitTestScroll(child, (float) mouseX, (float) mouseY, (float) scrollY)) {
@@ -175,10 +183,14 @@ public abstract class DeclarativeScreen extends Screen {
             focusOwner = tf;
             return true;
         }
+        if (component instanceof ScrollableComponent sc && sc.isOnScrollbar(px, py)) {
+            sc.startScrollbarDrag(py);
+            return true;
+        }
         return false;
     }
 
-    /** 拖拽命中测试（仅 Slider 响应）。 */
+    /** 拖拽命中测试（Slider + Scrollable 滚动条）。 */
     private boolean hitTestDrag(UIComponent component, float px, float py) {
         var children = component.children();
         for (int i = children.size() - 1; i >= 0; i--) {
@@ -188,7 +200,17 @@ public abstract class DeclarativeScreen extends Screen {
             sl.setValueFromMouse(px);
             return true;
         }
+        if (component instanceof ScrollableComponent sc && sc.isScrollbarDragging()) {
+            sc.onScrollbarDrag(py);
+            return true;
+        }
         return false;
+    }
+
+    /** 递归停止拖拽状态。 */
+    private void stopDragRecursive(UIComponent component) {
+        if (component instanceof ScrollableComponent sc) sc.stopScrollbarDrag();
+        for (UIComponent child : component.children()) stopDragRecursive(child);
     }
 
     /** 滚轮命中测试（仅 ScrollableComponent 响应）。 */
