@@ -5,6 +5,7 @@ import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.client.cber.TestCachedRenderer;
 import dev.anvilcraft.lib.v2.test.client.gui.SdfGraphicsLayer;
+import dev.anvilcraft.lib.v2.test.client.screen.DeclarativeTestScreen;
 import dev.anvilcraft.lib.v2.test.client.screen.GuiTestScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.Commands;
@@ -44,6 +45,13 @@ public class AnvilLibTestClient {
                     literal("screen").
                         executes(_ -> {
                             Minecraft.getInstance().setScreen(new GuiTestScreen());
+                            return 1;
+                        })
+                ).
+                then(
+                    literal("declarative").
+                        executes(_ -> {
+                            Minecraft.getInstance().setScreen(new DeclarativeTestScreen());
                             return 1;
                         })
                 )

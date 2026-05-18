@@ -7,18 +7,19 @@
 
 ## Phase 1: 构建系统 + 核心框架
 
-- [ ] `module.ui/build.gradle` — 添加 `implementation project(':anvillib-rendering-neoforge-26.1')`
-- [ ] `Constraints` — min/max width/height 约束
-- [ ] `Modifier` — 链式 API 接口（`then` / `foldIn` / `foldOut`）
-- [ ] `ModifierElement` — 单个修饰符节点接口
-- [ ] `UIComponent` — 核心接口：`measure(Constraints): MeasuredSize` / `layout(...)` / `extractRenderState(GuiGraphicsExtractor)`
-- [ ] `Composition` — slot table + `emit()` / `recompose()` / `invalidate()`
+- [x] `module.ui/build.gradle` — 添加 `implementation project(':anvillib-rendering-neoforge-26.1')`
+- [x] `Constraints` — min/max width/height 约束
+- [x] `Modifier` — 链式 API 接口（`then` / `foldIn` / `foldOut`）
+- [x] `ModifierElement` — 单个修饰符节点接口
+- [x] `UIComponent` — 核心接口：`measure(Constraints): MeasuredSize` / `layout(...)` / `extractRenderState(GuiGraphicsExtractor)`
+- [x] `Composition` — slot table + `emit()` / `recompose()` / `invalidate()`
 
 ## Phase 2: 状态管理
 
-- [ ] `MutableState<T>` — 可观察状态：getter 记录 reader slot，setter 精确 markDirty
-- [ ] `remember { }` — 按 slot 位置持久化，recompose 时回读同一对象
-- [ ] 脏标记传播：只重执行 dirty group，干净子树跳过
+- [x] `MutableState<T>` — 可观察状态：getter 记录 reader slot，setter 精确 markDirty
+- [x] `remember { }` — 按 slot 位置持久化，recompose 时回读同一对象
+- [x] 脏标记传播：只重执行 dirty group，干净子树跳过
+- [x] `DeclarativeTestScreen` — 端到端验证 Screen（`/anvillib_test_client declarative`）
 
 ## Phase 3: 布局容器
 
