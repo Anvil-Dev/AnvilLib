@@ -65,7 +65,7 @@ public class TextComponent implements UIComponent {
         Component component = Component.literal(text);
         float textW = font.width(component);
 
-        float renderX = (float) switch (align) {
+        float renderX = switch (align) {
             case LEFT -> x;
             case CENTER -> x + (width - textW) / 2f;
             case RIGHT -> x + width - textW;

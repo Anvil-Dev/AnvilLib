@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.ui;
 import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
 import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
+import dev.anvilcraft.lib.v2.ui.modifier.ModifierElement;
 import lombok.Setter;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.jspecify.annotations.Nullable;
@@ -45,8 +46,9 @@ public class Composition {
     // ── 状态 ──
     @Setter
     private @Nullable Consumer<UIScope> content;
-    private @Nullable UIScope rootScope;
-    public Composition(UIScope rootScope) {
+    private final @Nullable UIScope rootScope;
+
+    public Composition(@Nullable UIScope rootScope) {
         this.rootScope = rootScope;
     }
 
@@ -171,8 +173,10 @@ public class Composition {
                 dirty = false;
             }
             Constraints rootConstraints = new Constraints(0, screenWidth, 0, screenHeight);
-            for (UIComponent child : rootScope.getChildren()) {
-                renderTree(child, extractor, rootConstraints);
+            if (rootScope != null) {
+                for (UIComponent child : rootScope.getChildren()) {
+                    renderTree(child, extractor, rootConstraints);
+                }
             }
         } finally {
             CURRENT.set(null);
@@ -182,16 +186,20 @@ public class Composition {
     // ── recompose ──
 
     private void recompose() {
-        rootScope.clearChildren();
+        if (rootScope != null) {
+            rootScope.clearChildren();
+        }
         currentIndex = 0;
         currentRememberKey = 0;
         // recompose 前清除 slot 脏标记
         for (Slot slot : slots) {
             slot.dirty = false;
         }
-        content.accept(rootScope);
+        if (content != null && rootScope != null) {
+            content.accept(rootScope);
+        }
         while (slots.size() > currentIndex) {
-            slots.remove(slots.size() - 1);
+            slots.removeLast();
         }
     }
 
@@ -229,7 +237,7 @@ public class Composition {
         LayoutRect rect = LayoutRect.of(0, 0, size.width(), size.height());
         rect = component.modifier().foldOut(
             rect,
-            (el, r) -> el.modifyLayout(r)
+            ModifierElement::modifyLayout
         );
         component.layout(rect.x(), rect.y(), rect.width(), rect.height());
 
@@ -259,7 +267,7 @@ public class Composition {
      */
     public static class Slot {
         final Set<Ref<?>> readStates = new HashSet<>();
-        UIComponent component;
+        @Nullable UIComponent component;
         boolean dirty = true;
 
         void addReadState(Ref<?> state) {

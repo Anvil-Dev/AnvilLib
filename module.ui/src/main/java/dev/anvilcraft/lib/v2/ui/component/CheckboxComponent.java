@@ -27,6 +27,7 @@ public class CheckboxComponent implements UIComponent {
     @Getter
     @Setter
     private Modifier modifier;
+    @Setter
     private String label;
     private boolean checked;
     @Setter

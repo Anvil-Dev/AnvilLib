@@ -16,7 +16,7 @@ import java.util.Set;
  */
 public class Ref<T> {
     final Set<Composition.Slot> readers = new HashSet<>();
-    private T value;
+    private @Nullable T value;
 
     public Ref(@Nullable T initialValue) {
         this.value = initialValue;

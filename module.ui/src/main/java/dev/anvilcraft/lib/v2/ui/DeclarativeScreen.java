@@ -39,7 +39,7 @@ public abstract class DeclarativeScreen extends Screen {
     /**
      * 声明 UI 内容。初始组合和每次 recompose 时调用。
      */
-    protected abstract void content(UIScope scope);
+    protected abstract void content(@Nullable UIScope scope);
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick) {
@@ -102,7 +102,7 @@ public abstract class DeclarativeScreen extends Screen {
         focusOwner = null;
     }
 
-    private KeyInputHandler findFocused(UIComponent component) {
+    private @Nullable KeyInputHandler findFocused(UIComponent component) {
         if (component instanceof TextInputComponent tf && tf.focused()) return tf;
         for (UIComponent child : component.children()) {
             KeyInputHandler found = findFocused(child);
@@ -197,35 +197,38 @@ public abstract class DeclarativeScreen extends Screen {
         for (int i = children.size() - 1; i >= 0; i--) {
             if (hitTestClick(children.get(i), px, py)) return true;
         }
-        if (component instanceof ButtonComponent btn && btn.hitRect().contains(px, py)) {
-            btn.click();
-            return true;
-        }
-        if (component instanceof CheckboxComponent cb && cb.hitRect().contains(px, py)) {
-            cb.toggle();
-            return true;
-        }
-        if (component instanceof SliderComponent sl && sl.hitRect().contains(px, py)) {
-            sl.setValueFromMouse(px);
-            return true;
-        }
-        if (component instanceof TextInputComponent tf && tf.hitRect().contains(px, py)) {
-            tf.setFocused(true);
-            focusOwner = tf;
-            return true;
-        }
-        if (component instanceof DropdownComponent dd) {
-            if (dd.isOnPopupScrollbar(px, py)) {
-                dd.startPopupScrollbarDrag(py);
+        switch (component) {
+            case ButtonComponent btn when btn.hitRect().contains(px, py) -> {
+                btn.click();
                 return true;
             }
-            if (dd.clickPopup(px, py)) return true;
-            if (dd.clickTrigger(px, py)) return true;
-            return false;
-        }
-        if (component instanceof ScrollableComponent sc && sc.isOnScrollbar(px, py)) {
-            sc.startScrollbarDrag(py);
-            return true;
+            case CheckboxComponent cb when cb.hitRect().contains(px, py) -> {
+                cb.toggle();
+                return true;
+            }
+            case SliderComponent sl when sl.hitRect().contains(px, py) -> {
+                sl.setValueFromMouse(px);
+                return true;
+            }
+            case TextInputComponent tf when tf.hitRect().contains(px, py) -> {
+                tf.setFocused(true);
+                focusOwner = tf;
+                return true;
+            }
+            case DropdownComponent dd -> {
+                if (dd.isOnPopupScrollbar(px, py)) {
+                    dd.startPopupScrollbarDrag(py);
+                    return true;
+                }
+                if (dd.clickPopup(px, py)) return true;
+                return dd.clickTrigger(px, py);
+            }
+            case ScrollableComponent sc when sc.isOnScrollbar(px, py) -> {
+                sc.startScrollbarDrag(py);
+                return true;
+            }
+            default -> {
+            }
         }
         return false;
     }
@@ -238,17 +241,21 @@ public abstract class DeclarativeScreen extends Screen {
         for (int i = children.size() - 1; i >= 0; i--) {
             if (hitTestDrag(children.get(i), px, py)) return true;
         }
-        if (component instanceof SliderComponent sl && sl.hitRect().contains(px, py)) {
-            sl.setValueFromMouse(px);
-            return true;
-        }
-        if (component instanceof ScrollableComponent sc && sc.scrollbarDragging()) {
-            sc.onScrollbarDrag(py);
-            return true;
-        }
-        if (component instanceof DropdownComponent dd && dd.scrollbarDragging()) {
-            dd.onPopupScrollbarDrag(py);
-            return true;
+        switch (component) {
+            case SliderComponent sl when sl.hitRect().contains(px, py) -> {
+                sl.setValueFromMouse(px);
+                return true;
+            }
+            case ScrollableComponent sc when sc.scrollbarDragging() -> {
+                sc.onScrollbarDrag(py);
+                return true;
+            }
+            case DropdownComponent dd when dd.scrollbarDragging() -> {
+                dd.onPopupScrollbarDrag(py);
+                return true;
+            }
+            default -> {
+            }
         }
         return false;
     }

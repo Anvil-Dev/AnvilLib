@@ -119,7 +119,7 @@ public abstract class UIScope {
      * @param vModel {@code Ref<Boolean>}，点击时自动同步值，无需手动 onToggle
      */
     public CheckboxComponent Checkbox(String label, Ref<Boolean> vModel) {
-        CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, vModel.getValue());
+        CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, vModel.getValue() != null && vModel.getValue());
         c.onToggle(() -> vModel.setValue(!vModel.getValue()));
         addChild(c);
         Composition.current().emit(c);
@@ -164,7 +164,7 @@ public abstract class UIScope {
      * @param vModel {@code Ref<Float>}，拖拽时自动同步值
      */
     public SliderComponent Slider(float min, float max, float width, Ref<Float> vModel) {
-        SliderComponent c = new SliderComponent(Modifier.NONE, vModel.getValue(), min, max, width);
+        SliderComponent c = new SliderComponent(Modifier.NONE, vModel.getValue() == null ? 0 : vModel.getValue(), min, max, width);
         c.onChange(vModel::setValue);
         addChild(c);
         Composition.current().emit(c);

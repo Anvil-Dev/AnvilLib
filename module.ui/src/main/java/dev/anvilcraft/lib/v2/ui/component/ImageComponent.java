@@ -26,8 +26,10 @@ public class ImageComponent implements UIComponent {
     @Setter
     private Identifier sprite;
     @Getter
+    @Setter
     private float imageWidth;
     @Getter
+    @Setter
     private float imageHeight;
 
     private float x, y, width, height;

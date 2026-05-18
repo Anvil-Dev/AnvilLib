@@ -14,6 +14,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.util.StringUtil;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -43,19 +44,19 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     @Getter
     private boolean focused;
     @Setter
-    private Consumer<String> onChange;
+    private @Nullable Consumer<String> onChange;
     private int displayPos;
     @Getter
     private int cursorPos;
 
     private float x, y, width, height;
 
-    public TextInputComponent(Modifier modifier, String placeholder) {
+    public TextInputComponent(Modifier modifier, @Nullable String placeholder) {
         this.modifier = modifier;
         this.placeholder = placeholder != null ? placeholder : "";
     }
 
-    public void setValue(String value) {
+    public void setValue(@Nullable String value) {
         this.value = value != null ? value : "";
         this.cursorPos = this.value.length();
     }

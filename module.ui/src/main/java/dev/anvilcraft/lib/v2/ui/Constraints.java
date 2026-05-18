@@ -7,11 +7,11 @@ public record Constraints(float minWidth, float maxWidth, float minHeight, float
     public static final Constraints NONE = new Constraints(0, Float.MAX_VALUE, 0, Float.MAX_VALUE);
 
     public float constrainWidth(float w) {
-        return Math.max(minWidth, Math.min(w, maxWidth));
+        return Math.clamp(w, minWidth, maxWidth);
     }
 
     public float constrainHeight(float h) {
-        return Math.max(minHeight, Math.min(h, maxHeight));
+        return Math.clamp(h, minHeight, maxHeight);
     }
 
     public Constraints withWidth(float width) {

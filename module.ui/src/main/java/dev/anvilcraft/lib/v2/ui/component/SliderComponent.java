@@ -10,6 +10,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +35,7 @@ public class SliderComponent implements UIComponent {
     @Getter
     private float value;
     @Setter
-    private Consumer<Float> onChange;
+    private @Nullable Consumer<Float> onChange;
 
     private float x, y, width, height;
 
@@ -44,7 +45,6 @@ public class SliderComponent implements UIComponent {
         this.min = min;
         this.max = max;
         this.trackWidth = trackWidth;
-        this.onChange = onChange;
     }
 
 
