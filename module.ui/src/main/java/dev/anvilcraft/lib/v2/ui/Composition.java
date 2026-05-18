@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.ui;
 
 import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
-import dev.anvilcraft.lib.v2.ui.component.TextFieldComponent;
+import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.*;
@@ -129,11 +129,11 @@ public class Composition {
                 && replacement instanceof ScrollableComponent newSc) {
             newSc.setScrollY(oldSc.getScrollY());
         }
-        if (old instanceof TextFieldComponent oldTf
-                && replacement instanceof TextFieldComponent newTf) {
-            newTf.setBufferText(oldTf.getBufferText());
-            newTf.setCursorPos(oldTf.getCursorPos());
-            newTf.setFocused(oldTf.isFocused());
+        if (old instanceof TextInputComponent oldTi
+                && replacement instanceof TextInputComponent newTi) {
+            newTi.setValue(oldTi.getValue());
+            newTi.setCursorPos(oldTi.getCursorPos());
+            newTi.setFocused(oldTi.isFocused());
         }
     }
 

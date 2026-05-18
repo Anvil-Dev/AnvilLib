@@ -4,11 +4,12 @@ import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
 import dev.anvilcraft.lib.v2.ui.component.CheckboxComponent;
 import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
 import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
-import dev.anvilcraft.lib.v2.ui.component.TextFieldComponent;
+import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
 import dev.anvilcraft.lib.v2.ui.input.KeyInputHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -70,7 +71,7 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     private KeyInputHandler findFocused(UIComponent component) {
-        if (component instanceof TextFieldComponent tf && tf.isFocused()) return tf;
+        if (component instanceof TextInputComponent tf && tf.isFocused()) return tf;
         for (UIComponent child : component.children()) {
             KeyInputHandler found = findFocused(child);
             if (found != null) return found;
@@ -137,6 +138,14 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     @Override
+    public boolean charTyped(CharacterEvent event) {
+        if (focusOwner != null && focusOwner.onCharTyped(event)) {
+            return true;
+        }
+        return super.charTyped(event);
+    }
+
+    @Override
     public void onClose() {
         super.onClose();
     }
@@ -161,7 +170,7 @@ public abstract class DeclarativeScreen extends Screen {
             sl.setValueFromMouse(px);
             return true;
         }
-        if (component instanceof TextFieldComponent tf && tf.hitRect().contains(px, py)) {
+        if (component instanceof TextInputComponent tf && tf.hitRect().contains(px, py)) {
             tf.setFocused(true);
             focusOwner = tf;
             return true;
@@ -196,7 +205,7 @@ public abstract class DeclarativeScreen extends Screen {
 
     /** 清除组件树中所有 TextField 的焦点。 */
     private void clearFocusRecursive(UIComponent component) {
-        if (component instanceof TextFieldComponent tf) tf.setFocused(false);
+        if (component instanceof TextInputComponent tf) tf.setFocused(false);
         for (UIComponent child : component.children()) clearFocusRecursive(child);
     }
 

@@ -3,7 +3,7 @@ package dev.anvilcraft.lib.v2.ui;
 import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
 import dev.anvilcraft.lib.v2.ui.component.CheckboxComponent;
 import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
-import dev.anvilcraft.lib.v2.ui.component.TextFieldComponent;
+import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
 import dev.anvilcraft.lib.v2.ui.component.BoxComponent;
 import dev.anvilcraft.lib.v2.ui.component.BoxScope;
 import dev.anvilcraft.lib.v2.ui.component.ColumnComponent;
@@ -124,12 +124,11 @@ public abstract class UIScope {
 
     /**
      * 创建单行文本输入框。
-     * @param initialText 初始文字
-     * @param onChange 文字变化回调，接收完整文本
+     * @param placeholder 占位提示文字（灰色，仅在无输入时显示）
+     * @param onChange 文字变化回调，接收当前完整文本
      */
-    public TextFieldComponent TextField(String initialText,
-                                         Consumer<String> onChange) {
-        TextFieldComponent c = new TextFieldComponent(Modifier.NONE, initialText, onChange);
+    public TextInputComponent TextInput(String placeholder, Consumer<String> onChange) {
+        TextInputComponent c = new TextInputComponent(Modifier.NONE, placeholder, onChange);
         addChild(c);
         Composition.current().emit(c);
         return c;

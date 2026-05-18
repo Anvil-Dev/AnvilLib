@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.ui.input;
 
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 
 /**
@@ -8,6 +9,12 @@ import net.minecraft.client.input.KeyEvent;
  */
 public interface KeyInputHandler {
 
-    /** 按键按下时调用。返回 true 表示已处理。 */
+    /** 控制键按下时调用。返回 true 表示已处理。 */
     boolean onKeyPressed(KeyEvent event);
+
+    /**
+     * 字符输入时调用（支持所有语言、输入法、小键盘）。
+     * 返回 true 表示已处理。
+     */
+    boolean onCharTyped(CharacterEvent event);
 }

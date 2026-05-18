@@ -40,7 +40,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                         row.Text("Shadow").shadow(true).color(0xFFFFAA00);
                         row.Text(" | Left").align(TextComponent.Align.LEFT);
                         row.Text("Center").align(TextComponent.Align.CENTER).color(0xFF00AAFF);
-                        row.Text("Right|").align(TextComponent.Align.RIGHT);
+                        row.Text("Right |").align(TextComponent.Align.RIGHT);
                     }).spacing(8);
 
                     col.Spacer(0, 4);
@@ -99,10 +99,10 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
 
                     col.Spacer(0, 4);
 
-                    // ── 7. TextField ──
-                    col.Text("7) TextField:");
+                    // ── 7. TextInput ──
+                    col.Text("7) TextInput:");
                     col.Row(row -> {
-                        row.TextField("Type here...", text::setValue);
+                        row.TextInput("Enter text...", text::setValue);
                         row.Text("  Value: '" + text.getValue() + "'");
                     }).spacing(4);
 
