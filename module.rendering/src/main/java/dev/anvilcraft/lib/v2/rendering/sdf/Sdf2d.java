@@ -98,6 +98,14 @@ public class Sdf2d {
                     shape.x, shape.y,
                     shape.z
             );
+
+            case TRIANGLE -> sdTriangle(
+                    px, py,
+                    shape.x, shape.y,
+                    shape.z, shape.w,
+                    Float.intBitsToFloat(params.getTypeParams().w),
+                    params.getSharedParams().w
+            );
         };
 
         if (params.isOnion()) {
@@ -257,6 +265,41 @@ public class Sdf2d {
                             px + ce,
                             py
                         ) - (ce + ra);
+    }
+
+    /**
+     * 三角形 SDF。来自 <a href="https://iquilezles.org/articles/distfunctions2d/">IQ</a>。
+     */
+    public static float sdTriangle(
+            float px, float py,
+            float x0, float y0,
+            float x1, float y1,
+            float x2, float y2
+    ) {
+        float ex0 = x1 - x0, ey0 = y1 - y0;
+        float ex1 = x2 - x1, ey1 = y2 - y1;
+        float ex2 = x0 - x2, ey2 = y0 - y2;
+        float e0x = px - x0, e0y = py - y0;
+        float e1x = px - x1, e1y = py - y1;
+        float e2x = px - x2, e2y = py - y2;
+
+        float v0 = e0x * ey0 - e0y * ex0;
+        float v1 = e1x * ey1 - e1y * ex1;
+        float v2 = e2x * ey2 - e2y * ex2;
+
+        float d;
+        if (v0 * v1 > 0.0f && v1 * v2 > 0.0f) {
+            d = -Math.min(Math.min(
+                    (e0x * ex0 + e0y * ey0) / (float) Math.sqrt(ex0 * ex0 + ey0 * ey0),
+                    (e1x * ex1 + e1y * ey1) / (float) Math.sqrt(ex1 * ex1 + ey1 * ey1)),
+                    (e2x * ex2 + e2y * ey2) / (float) Math.sqrt(ex2 * ex2 + ey2 * ey2));
+        } else {
+            d = (float) Math.sqrt(Math.min(Math.min(
+                    e0x * e0x + e0y * e0y,
+                    e1x * e1x + e1y * e1y),
+                    e2x * e2x + e2y * e2y));
+        }
+        return d;
     }
 
 }

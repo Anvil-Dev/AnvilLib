@@ -74,6 +74,22 @@ public class SdfParameters extends UboObject<SdfParameters> {
         this.shapeParams    .set(height, bottomRadius, topRadius, 0.0f);
     }
 
+    /** 三角形。按逆时针顺序填入三个顶点坐标。顶点自动转为局部坐标。 */
+    public void triangle(float x0, float y0, float x1, float y1, float x2, float y2) {
+        this._renderType(SdfRenderType.TRIANGLE);
+        float minX = Math.min(Math.min(x0, x1), x2);
+        float minY = Math.min(Math.min(y0, y1), y2);
+        float maxX = Math.max(Math.max(x0, x1), x2);
+        float maxY = Math.max(Math.max(y0, y1), y2);
+        float cx = minX + (maxX - minX) / 2f;
+        float cy = minY + (maxY - minY) / 2f;
+        this.rect.set(minX, minY, maxX - minX, maxY - minY);
+        this.shapeParams.set(x0 - cx, y0 - cy, x1 - cx, y1 - cy);
+        this.typeParams.z = 0; // onion off
+        this.typeParams.w = Float.floatToIntBits(x2 - cx);
+        this.sharedParams.w = y2 - cy; // fill 模式下安全
+    }
+
     public void smooth(float smooth) {
         this                ._smooth(smooth);
     }

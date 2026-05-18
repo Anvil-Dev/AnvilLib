@@ -109,6 +109,16 @@ public final class SdfGraphics {
         return          this;
     }
 
+    /** 三角形。按逆时针顺序填入三个顶点坐标。包围盒自动计算。 */
+    public SdfGraphics triangle(
+            float x0, float y0,
+            float x1, float y1,
+            float x2, float y2
+    ) {
+        this.parameters.triangle(x0, y0, x1, y1, x2, y2);
+        return this;
+    }
+
     public SdfGraphics color(int color) {
         this.parameters .color(color);
         return          this;

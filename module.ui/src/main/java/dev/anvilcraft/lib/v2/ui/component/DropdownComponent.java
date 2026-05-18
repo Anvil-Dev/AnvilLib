@@ -102,12 +102,24 @@ public class DropdownComponent implements UIComponent {
         // SDF 三角箭头
         float arrowCx = x + width - PADDING_H - ARROW_SIZE / 2f;
         float arrowCy = y + height / 2f;
-        SdfGraphics.instance
-                .box(arrowCx, arrowCy, ARROW_SIZE, ARROW_SIZE)
-                .color(TEXT_COLOR)
-                .fill()
-                .center(true)
-                .draw(extractor);
+        float hs = ARROW_SIZE / 2f;
+        if (open) {
+            SdfGraphics.instance
+                    .triangle(arrowCx - hs, arrowCy + hs * 0.6f,
+                              arrowCx + hs, arrowCy + hs * 0.6f,
+                              arrowCx, arrowCy - hs * 0.8f)
+                    .color(TEXT_COLOR)
+                    .fill()
+                    .draw(extractor);
+        } else {
+            SdfGraphics.instance
+                    .triangle(arrowCx - hs, arrowCy - hs * 0.6f,
+                              arrowCx + hs, arrowCy - hs * 0.6f,
+                              arrowCx, arrowCy + hs * 0.8f)
+                    .color(TEXT_COLOR)
+                    .fill()
+                    .draw(extractor);
+        }
     }
 
     // ── 弹出层渲染（延迟调用，确保 z-order） ──
