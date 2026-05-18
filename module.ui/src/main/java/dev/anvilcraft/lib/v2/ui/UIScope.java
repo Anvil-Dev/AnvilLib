@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Base scope for building component trees.
  * <p>
@@ -49,7 +51,7 @@ public abstract class UIScope {
         return c;
     }
 
-    public ButtonComponent Button(String label, Runnable onClick) {
+    public ButtonComponent Button(String label, @Nullable Runnable onClick) {
         ButtonComponent c = new ButtonComponent(Modifier.NONE, label, onClick);
         addChild(c);
         Composition.current().emit(c);

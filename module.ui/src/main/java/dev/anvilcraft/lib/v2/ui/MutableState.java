@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * An observable state holder.
  * <p>
@@ -17,7 +19,7 @@ public class MutableState<T> {
     private T value;
     final Set<Composition.Slot> readers = new HashSet<>();
 
-    public MutableState(T initialValue) {
+    public MutableState(@Nullable T initialValue) {
         this.value = initialValue;
     }
 
@@ -25,6 +27,7 @@ public class MutableState<T> {
      * Read the current value, recording this slot as a reader
      * if called within a composition emission.
      */
+    @Nullable
     public T getValue() {
         Composition comp = Composition.currentOrNull();
         if (comp != null && comp.currentSlot != null) {
@@ -37,7 +40,7 @@ public class MutableState<T> {
     /**
      * Set a new value. If changed, marks all reader slots dirty.
      */
-    public void setValue(T newValue) {
+    public void setValue(@Nullable T newValue) {
         if (!Objects.equals(value, newValue)) {
             value = newValue;
             for (Composition.Slot slot : readers) {

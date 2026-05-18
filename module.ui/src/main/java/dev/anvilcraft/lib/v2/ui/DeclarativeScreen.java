@@ -4,6 +4,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * A {@link Screen} that hosts a declarative UI component tree.
  * <p>
@@ -28,6 +30,7 @@ import net.minecraft.network.chat.Component;
  */
 public abstract class DeclarativeScreen extends Screen {
 
+    @Nullable
     private Composition composition;
     private final UIScope rootScope = new RootScope();
 

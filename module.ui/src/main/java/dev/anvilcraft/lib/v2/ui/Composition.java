@@ -6,6 +6,8 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * The composition engine that drives recomposition, state tracking, and rendering.
  * <p>
@@ -23,6 +25,7 @@ public class Composition {
     private static final ThreadLocal<Composition> CURRENT = new ThreadLocal<>();
 
     /** Returns the composition active on this thread, or null. */
+    @Nullable
     public static Composition currentOrNull() {
         return CURRENT.get();
     }
@@ -44,6 +47,7 @@ public class Composition {
     private final Map<Integer, Object> rememberedValues = new HashMap<>();
 
     /** The slot currently being emitted (set during {@link #emit}). */
+    @Nullable
     Slot currentSlot;
 
     // ── state ──

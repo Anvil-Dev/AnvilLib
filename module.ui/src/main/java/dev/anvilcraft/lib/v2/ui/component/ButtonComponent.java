@@ -12,6 +12,8 @@ import net.minecraft.network.chat.Component;
 import java.util.Collections;
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * A clickable button with background and label.
  */
@@ -24,12 +26,13 @@ public class ButtonComponent implements UIComponent {
 
     private final Modifier modifier;
     private String label;
+    @Nullable
     private Runnable onClick;
 
     // layout state
     private float x, y, width, height;
 
-    public ButtonComponent(Modifier modifier, String label, Runnable onClick) {
+    public ButtonComponent(Modifier modifier, String label, @Nullable Runnable onClick) {
         this.modifier = modifier;
         this.label = label;
         this.onClick = onClick;
@@ -40,7 +43,7 @@ public class ButtonComponent implements UIComponent {
         return this;
     }
 
-    public ButtonComponent onClick(Runnable onClick) {
+    public ButtonComponent onClick(@Nullable Runnable onClick) {
         this.onClick = onClick;
         return this;
     }
