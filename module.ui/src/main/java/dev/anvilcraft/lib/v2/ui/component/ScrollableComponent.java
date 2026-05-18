@@ -57,6 +57,9 @@ public class ScrollableComponent implements UIComponent {
 
         for (UIComponent child : children) {
             MeasuredSize s = child.measure(childC);
+            // 修饰符会扩展尺寸（如 padding），需要计入内容高度
+            s = child.modifier().foldOut(s,
+                    (el, sz) -> el.modifyMeasuredSize(child, childC, sz));
             sizes.add(s);
             totalH += s.height();
             maxW = Math.max(maxW, s.width());
