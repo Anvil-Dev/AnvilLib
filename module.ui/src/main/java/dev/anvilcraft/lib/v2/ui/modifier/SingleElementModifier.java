@@ -1,11 +1,10 @@
-package dev.anvilcraft.lib.v2.ui;
+package dev.anvilcraft.lib.v2.ui.modifier;
+
+import dev.anvilcraft.lib.v2.ui.Modifier;
 
 import java.util.function.BiFunction;
 
-/**
- * A modifier chain node wrapping a single {@link ModifierElement}.
- */
-record SingleElementModifier(ModifierElement element) implements Modifier {
+public record SingleElementModifier(ModifierElement element) implements Modifier {
 
     @Override
     public Modifier then(Modifier other) {

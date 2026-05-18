@@ -1,11 +1,10 @@
-package dev.anvilcraft.lib.v2.ui;
+package dev.anvilcraft.lib.v2.ui.modifier;
+
+import dev.anvilcraft.lib.v2.ui.Modifier;
 
 import java.util.function.BiFunction;
 
-/**
- * Two {@link Modifier} chains joined by {@code then()}.
- */
-record CombinedModifier(ModifierElement outer, Modifier inner) implements Modifier {
+public record CombinedModifier(ModifierElement outer, Modifier inner) implements Modifier {
 
     @Override
     public Modifier then(Modifier other) {

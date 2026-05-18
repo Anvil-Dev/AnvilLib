@@ -1,29 +1,29 @@
-package dev.anvilcraft.lib.v2.ui;
+package dev.anvilcraft.lib.v2.ui.modifier;
 
+import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.LayoutRect;
+import dev.anvilcraft.lib.v2.ui.MeasuredSize;
+import dev.anvilcraft.lib.v2.ui.UIComponent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
- * A single node in a {@link Modifier} chain.
+ * A single node in a {@link dev.anvilcraft.lib.v2.ui.Modifier} chain.
  * Each element can intercept measure, layout, and render phases.
  */
 public interface ModifierElement {
 
-    /** Modify constraints during the measure pass (e.g. size). */
     default Constraints modifyConstraints(Constraints constraints) {
         return constraints;
     }
 
-    /** Adjust the measured size for padding/offset effects. */
     default MeasuredSize modifyMeasuredSize(UIComponent component, Constraints constraints, MeasuredSize childSize) {
         return childSize;
     }
 
-    /** Transform the layout rect (e.g. apply padding inset). */
     default LayoutRect modifyLayout(LayoutRect rect) {
         return rect;
     }
 
-    /** Emit additional render states (e.g. background, border). */
     default void emitRenderState(GuiGraphicsExtractor extractor, LayoutRect bounds) {
     }
 

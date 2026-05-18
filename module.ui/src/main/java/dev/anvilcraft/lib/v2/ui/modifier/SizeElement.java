@@ -1,9 +1,8 @@
-package dev.anvilcraft.lib.v2.ui;
+package dev.anvilcraft.lib.v2.ui.modifier;
 
-/**
- * Modifier element that constrains a component's size.
- */
-record SizeElement(float minWidthHint, float maxWidthHint, float minHeightHint, float maxHeightHint)
+import dev.anvilcraft.lib.v2.ui.Constraints;
+
+public record SizeElement(float minWidthHint, float maxWidthHint, float minHeightHint, float maxHeightHint)
         implements ModifierElement {
 
     @Override

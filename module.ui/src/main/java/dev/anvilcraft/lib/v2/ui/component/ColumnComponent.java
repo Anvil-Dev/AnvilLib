@@ -1,5 +1,9 @@
-package dev.anvilcraft.lib.v2.ui;
+package dev.anvilcraft.lib.v2.ui.component;
 
+import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.MeasuredSize;
+import dev.anvilcraft.lib.v2.ui.Modifier;
+import dev.anvilcraft.lib.v2.ui.UIComponent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.ArrayList;
@@ -22,7 +26,7 @@ public class ColumnComponent implements UIComponent {
         this.modifier = modifier;
     }
 
-    void setChildren(List<UIComponent> children) {
+    public void setChildren(List<UIComponent> children) {
         this.children = List.copyOf(children);
     }
 

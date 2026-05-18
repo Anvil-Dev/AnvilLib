@@ -1,5 +1,8 @@
 package dev.anvilcraft.lib.v2.ui;
 
+import dev.anvilcraft.lib.v2.ui.modifier.ModifierElement;
+import dev.anvilcraft.lib.v2.ui.modifier.SingleElementModifier;
+
 import java.util.function.BiFunction;
 
 /**

@@ -1,12 +1,10 @@
-package dev.anvilcraft.lib.v2.ui;
+package dev.anvilcraft.lib.v2.ui.modifier;
 
 import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
+import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
-/**
- * Renders a filled rounded rectangle as the component's background.
- */
-record BackgroundElement(int color) implements ModifierElement {
+public record BackgroundElement(int color) implements ModifierElement {
 
     @Override
     public void emitRenderState(GuiGraphicsExtractor extractor, LayoutRect bounds) {

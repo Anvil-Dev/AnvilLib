@@ -1,6 +1,10 @@
-package dev.anvilcraft.lib.v2.ui;
+package dev.anvilcraft.lib.v2.ui.component;
 
 import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
+import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.MeasuredSize;
+import dev.anvilcraft.lib.v2.ui.Modifier;
+import dev.anvilcraft.lib.v2.ui.UIComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -14,7 +18,6 @@ import java.util.List;
 public class ButtonComponent implements UIComponent {
 
     private static final int BG_COLOR = 0xFF555555;
-    private static final int BG_HOVER_COLOR = 0xFF777777;
     private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final float PADDING_H = 12;
     private static final float PADDING_V = 6;
@@ -32,8 +35,6 @@ public class ButtonComponent implements UIComponent {
         this.onClick = onClick;
     }
 
-    // ── chained setters ──
-
     public ButtonComponent label(String label) {
         this.label = label;
         return this;
@@ -43,8 +44,6 @@ public class ButtonComponent implements UIComponent {
         this.onClick = onClick;
         return this;
     }
-
-    // ── UIComponent ──
 
     @Override
     public Modifier modifier() {
@@ -78,7 +77,6 @@ public class ButtonComponent implements UIComponent {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        // Background
         SdfGraphics.instance
                 .box(x, y, width, height)
                 .color(BG_COLOR)
@@ -86,17 +84,11 @@ public class ButtonComponent implements UIComponent {
                 .fill()
                 .draw(extractor);
 
-        // Label
         var font = Minecraft.getInstance().font;
         Component comp = Component.literal(label);
-        float textW = font.width(comp);
-        float textH = font.lineHeight;
-        float cx = x + (width - textW) / 2;
-        float cy = y + (height - textH) / 2;
-        extractor.centeredText(font, comp, (int) (x + width / 2), (int) cy, TEXT_COLOR);
+        extractor.centeredText(font, comp, (int) (x + width / 2), (int) (y + (height - font.lineHeight) / 2), TEXT_COLOR);
     }
 
-    /** Invoke click handler if clicked. Called by hit-testing. */
     void click() {
         if (onClick != null) {
             onClick.run();

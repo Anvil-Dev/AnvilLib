@@ -1,5 +1,9 @@
-package dev.anvilcraft.lib.v2.ui;
+package dev.anvilcraft.lib.v2.ui.component;
 
+import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.MeasuredSize;
+import dev.anvilcraft.lib.v2.ui.Modifier;
+import dev.anvilcraft.lib.v2.ui.UIComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -24,8 +28,6 @@ public class TextComponent implements UIComponent {
         this.text = text;
     }
 
-    // ── chained setters ──
-
     public TextComponent text(String text) {
         this.text = text;
         return this;
@@ -35,8 +37,6 @@ public class TextComponent implements UIComponent {
         this.color = color;
         return this;
     }
-
-    // ── UIComponent ──
 
     @Override
     public Modifier modifier() {
@@ -68,8 +68,6 @@ public class TextComponent implements UIComponent {
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         var font = Minecraft.getInstance().font;
         Component component = Component.literal(text);
-        int textWidth = font.width(component);
-        int xPos = (int) (x + (width - textWidth) / 2);
         extractor.centeredText(font, component, (int) (x + width / 2), (int) y, color);
     }
 }

@@ -1,9 +1,11 @@
-package dev.anvilcraft.lib.v2.ui;
+package dev.anvilcraft.lib.v2.ui.modifier;
 
-/**
- * Modifier element that insets the component bounds by padding.
- */
-record PaddingElement(float left, float top, float right, float bottom) implements ModifierElement {
+import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.LayoutRect;
+import dev.anvilcraft.lib.v2.ui.MeasuredSize;
+import dev.anvilcraft.lib.v2.ui.UIComponent;
+
+public record PaddingElement(float left, float top, float right, float bottom) implements ModifierElement {
 
     @Override
     public MeasuredSize modifyMeasuredSize(UIComponent component, Constraints constraints, MeasuredSize childSize) {
