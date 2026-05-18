@@ -357,6 +357,8 @@ jobs:
       signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
   ui:
+    needs:
+      - rendering
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: ui

@@ -136,6 +136,8 @@ jobs:
       ci_build: true
       pr_build: true
   ui:
+    needs:
+      - rendering
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: ui
