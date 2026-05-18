@@ -1,0 +1,124 @@
+# module.ui TODO
+
+受 ArkUI 启发的声明式 UI 系统。纯 Java API，Consumer/Runnable 作为尾参，Kotlin SAM 转换自动获得尾随 Lambda DSL。
+状态驱动，与 Minecraft GuiGraphicsExtractor 渲染管线集成。
+
+---
+
+## Phase 1: 构建系统 + 核心框架
+
+- [ ] `module.ui/build.gradle` — 添加 `implementation project(':anvillib-rendering-neoforge-26.1')`
+- [ ] `Constraints` — min/max width/height 约束
+- [ ] `Modifier` — 链式 API 接口（`then` / `foldIn` / `foldOut`）
+- [ ] `ModifierElement` — 单个修饰符节点接口
+- [ ] `UIComponent` — 核心接口：`measure(Constraints): MeasuredSize` / `layout(...)` / `extractRenderState(GuiGraphicsExtractor)`
+- [ ] `Composition` — slot table + `emit()` / `recompose()` / `invalidate()`
+
+## Phase 2: 状态管理
+
+- [ ] `MutableState<T>` — 可观察状态：getter 记录 reader slot，setter 精确 markDirty
+- [ ] `remember { }` — 按 slot 位置持久化，recompose 时回读同一对象
+- [ ] 脏标记传播：只重执行 dirty group，干净子树跳过
+
+## Phase 3: 布局容器
+
+- [ ] `Column` + `ColumnScope` — 纵向排列
+- [ ] `Row` + `RowScope` — 横向排列
+- [ ] `Box` + `BoxScope` — 层叠
+- [ ] `ColumnMeasurePolicy` / `RowMeasurePolicy` / `BoxMeasurePolicy`
+- [ ] `Arrangement.Vertical` / `Arrangement.Horizontal` — SpaceBetween / SpaceAround / SpaceEvenly
+- [ ] `Alignment` — Start / Center / End
+
+## Phase 4: 基础组件
+
+- [ ] `Text` — 文字渲染（Minecraft font）
+- [ ] `Button` — 可点击矩形按钮（SdfGraphics 背景 + 文字）
+- [ ] `Spacer` — 固定尺寸空白
+- [ ] `Image` — 材质渲染
+
+## Phase 5: Modifier Elements
+
+- [ ] `SizeModifier` — `.size(width, height)` `.fillMaxWidth()` `.fillMaxSize()`
+- [ ] `PaddingModifier` — `.padding(all)` `.padding(horizontal, vertical)`
+- [ ] `BackgroundModifier` — `.background(color)` → SdfGraphics.box
+- [ ] `BorderModifier` — `.border(width, color)` → SdfGraphics.stroke
+- [ ] `RoundedCornerModifier` — `.roundedCorner(radius)` → SdfGraphics.round
+- [ ] `ClickModifier` — `.onClick { }` + hit testing
+
+## Phase 6: 屏幕集成
+
+- [ ] `DeclarativeScreen` — `Screen` 子类，宿主组件树
+- [ ] `extractRenderState()` — dirty check → recompose → measure → layout → submit render states
+- [ ] 输入事件路由 — `mouseClicked` / `keyPressed` hit testing + dispatch
+
+## Phase 7: 输入组件
+
+- [ ] `TextField` — 文本输入
+- [ ] `Checkbox` — 布尔切换
+- [ ] `Slider` — 连续范围选择
+
+## Phase 8: 高级特性
+
+- [ ] `Grid` — 网格布局
+- [ ] `ForEach` — 循环渲染（带 key 稳定 slot 复用）
+- [ ] `if` / `when` 条件渲染
+- [ ] `Animatable` — 时间驱动动画值（基于 Minecraft tick，不依赖协程）
+- [ ] `LazyColumn` — 虚拟化长列表
+
+## Phase 9: 测试
+
+- [ ] 布局算法单元测试（Column/Row/Box measure + layout）
+- [ ] Slot diffing 单元测试（recompose 后 slot table 正确性）
+- [ ] State 传播单元测试（精确 markDirty 范围）
+- [ ] `module.test` 中创建示例 `DeclarativeScreen` 验证端到端
+
+---
+
+## 设计笔记：组件扩展方式
+
+组件 = 工厂函数 + 实现类，两者并存：
+
+- **工厂函数** — DSL 入口。创建实例 → 注册到父容器 + Slot Table → 返回实例（链式调用）
+- **实现类** — 可继承、可覆盖 `measure()` / `layout()` / `extractRenderState()`
+
+三种扩展方式：
+
+### 1. 组合（90% 场景）
+
+已有组件拼出新组件，不改内部实现。
+
+```java
+public static TextComponent FancyLabel(ColumnScope scope, String text) {
+    return scope.Text(text).fontSize(24).color(0xFFAAAAFF);
+}
+```
+
+### 2. 继承实现类（需要新行为时）
+
+extends 现有组件或 implements `UIComponent`，覆盖核心方法，再提供配套工厂函数。
+
+```java
+public class RainbowText extends TextComponent {
+    @Override
+    public void extractRenderState(GuiGraphicsExtractor e) {
+        this.color = Color.HSBtoRGB(...);
+        super.extractRenderState(e);
+    }
+}
+```
+
+### 3. Modifier 扩展（可复用样式/行为）
+
+封装常用样式为 Modifier 工厂方法，与具体组件解耦。
+
+```java
+public static Modifier cardStyle(Modifier m) {
+    return m.background(0xFF333333).roundedCorner(8).padding(12, 8);
+}
+```
+
+| 方式       | 适用                       | 耦合       |
+|----------|--------------------------|----------|
+| 组合       | 拼装现有组件                   | 无        |
+| 继承       | 全新 measure/layout/render | 与父类耦合    |
+| Modifier | 可复用样式/行为                 | 无，任何组件通用 |
