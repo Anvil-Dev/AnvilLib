@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.ui;
 
+import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.*;
@@ -106,6 +107,11 @@ public class Composition {
         Slot slot;
         if (currentIndex < slots.size()) {
             slot = slots.get(currentIndex);
+            // 同类型组件保留运行时状态（如滚动位置）
+            UIComponent old = slot.component;
+            if (old != null && old.getClass() == component.getClass()) {
+                copyRuntimeState(old, component);
+            }
             slot.component = component;
         } else {
             slot = new Slot();
@@ -114,6 +120,14 @@ public class Composition {
         }
         currentSlot = slot;
         currentIndex++;
+    }
+
+    /** 将旧组件的运行时状态复制到新组件。 */
+    private void copyRuntimeState(UIComponent old, UIComponent replacement) {
+        if (old instanceof ScrollableComponent oldSc
+                && replacement instanceof ScrollableComponent newSc) {
+            newSc.setScrollY(oldSc.getScrollY());
+        }
     }
 
     // ── frame entry point ──

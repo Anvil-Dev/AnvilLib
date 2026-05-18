@@ -123,6 +123,9 @@ public class ScrollableComponent implements UIComponent {
         return true;
     }
 
+    public float getScrollY() { return scrollY; }
+    public void setScrollY(float scrollY) { this.scrollY = scrollY; }
+
     /** 命中测试包围盒。 */
     public LayoutRect hitRect() {
         return LayoutRect.of(x, y, width, height);
