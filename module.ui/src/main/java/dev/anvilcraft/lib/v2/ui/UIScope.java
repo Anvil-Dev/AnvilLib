@@ -123,9 +123,10 @@ public abstract class UIScope {
      * 创建下拉菜单。
      * @param options 选项列表
      * @param selectedIndex 初始选中索引
+     * @param maxPopupHeight 弹出层最大高度
      */
-    public DropdownComponent Dropdown(String[] options, int selectedIndex) {
-        DropdownComponent c = new DropdownComponent(Modifier.NONE, options, selectedIndex);
+    public DropdownComponent Dropdown(String[] options, int selectedIndex, float maxPopupHeight) {
+        DropdownComponent c = new DropdownComponent(Modifier.NONE, options, selectedIndex, maxPopupHeight);
         addChild(c);
         Composition.current().emit(c);
         return c;

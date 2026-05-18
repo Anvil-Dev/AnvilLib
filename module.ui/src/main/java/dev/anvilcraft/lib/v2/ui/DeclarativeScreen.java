@@ -55,7 +55,16 @@ public abstract class DeclarativeScreen extends Screen {
             composition.renderFrame(extractor, this.width, this.height);
             updateHover(mouseX, mouseY);
             refreshFocus();
+            // 延迟渲染下拉弹出层（确保 z-order 正确）
+            for (UIComponent child : rootScope.getChildren()) {
+                renderPopups(child, extractor);
+            }
         }
+    }
+
+    private void renderPopups(UIComponent component, GuiGraphicsExtractor extractor) {
+        if (component instanceof DropdownComponent dd) dd.renderPopup(extractor);
+        for (UIComponent child : component.children()) renderPopups(child, extractor);
     }
 
     /** recompose 后重新绑定 focusOwner（旧实例可能已被替换）。 */
@@ -88,20 +97,29 @@ public abstract class DeclarativeScreen extends Screen {
             var mc = Minecraft.getInstance();
             int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
             int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-            // 先关闭所有下拉菜单，命中后再由 hitTestClick 重新打开
-            for (UIComponent child : rootScope.getChildren()) {
-                closeDropdownsRecursive(child);
-            }
+
             // 清除焦点
             focusOwner = null;
             for (UIComponent child : rootScope.getChildren()) {
                 clearFocusRecursive(child);
             }
+
+            // 命中测试
+            boolean hit = false;
             for (UIComponent child : rootScope.getChildren()) {
-                if (hitTestClick(child, mx, my)) {
-                    mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
-                    return true;
+                if (hitTestClick(child, mx, my)) { hit = true; break; }
+            }
+
+            // 未命中任何 dropdown 时关闭所有
+            if (!hit) {
+                for (UIComponent child : rootScope.getChildren()) {
+                    closeDropdownsRecursive(child);
                 }
+            }
+
+            if (hit) {
+                mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+                return true;
             }
         }
         return super.mouseClicked(event, isDoubleClick);
@@ -189,6 +207,7 @@ public abstract class DeclarativeScreen extends Screen {
             return true;
         }
         if (component instanceof DropdownComponent dd) {
+            if (dd.isOnPopupScrollbar(px, py)) { dd.startPopupScrollbarDrag(py); return true; }
             if (dd.clickPopup(px, py)) return true;
             if (dd.clickTrigger(px, py)) return true;
             return false;
@@ -214,6 +233,10 @@ public abstract class DeclarativeScreen extends Screen {
             sc.onScrollbarDrag(py);
             return true;
         }
+        if (component instanceof DropdownComponent dd && dd.isScrollbarDragging()) {
+            dd.onPopupScrollbarDrag(py);
+            return true;
+        }
         return false;
     }
 
@@ -226,10 +249,11 @@ public abstract class DeclarativeScreen extends Screen {
     /** 递归停止拖拽状态。 */
     private void stopDragRecursive(UIComponent component) {
         if (component instanceof ScrollableComponent sc) sc.stopScrollbarDrag();
+        if (component instanceof DropdownComponent dd) dd.stopPopupScrollbarDrag();
         for (UIComponent child : component.children()) stopDragRecursive(child);
     }
 
-    /** 滚轮命中测试（仅 ScrollableComponent 响应）。 */
+    /** 滚轮命中测试（ScrollableComponent + Dropdown 弹出层）。 */
     private boolean hitTestScroll(UIComponent component, float px, float py, float amount) {
         var children = component.children();
         for (int i = children.size() - 1; i >= 0; i--) {
@@ -237,6 +261,10 @@ public abstract class DeclarativeScreen extends Screen {
         }
         if (component instanceof ScrollableComponent sc && sc.hitRect().contains(px, py)) {
             return sc.onScroll(amount);
+        }
+        if (component instanceof DropdownComponent dd && dd.isOpen()
+                && dd.popupRect().contains(px, py)) {
+            return dd.onPopupScroll(amount);
         }
         return false;
     }

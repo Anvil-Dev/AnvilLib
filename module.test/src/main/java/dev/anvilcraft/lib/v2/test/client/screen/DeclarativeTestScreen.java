@@ -107,7 +107,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
 
                     // ── 8. Dropdown ──
                     col.Text("8) Dropdown:");
-                    col.Dropdown(new String[]{"Option A", "Option B", "Option C"}, 0)
+                    col.Dropdown(new String[]{"Option A", "Option B", "Option C"}, 0, 80)
                             .onChange(v -> {});
                     col.Text("  (click to open)");
 

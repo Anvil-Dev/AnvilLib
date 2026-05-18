@@ -139,6 +139,7 @@ public class Composition {
         if (old instanceof DropdownComponent oldDd
                 && replacement instanceof DropdownComponent newDd) {
             newDd.setOpen(oldDd.isOpen());
+            newDd.setPopupScrollY(oldDd.getPopupScrollY());
         }
     }
 
