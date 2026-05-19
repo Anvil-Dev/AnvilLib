@@ -52,4 +52,10 @@ public interface UIComponent {
 
     /** 字符输入。返回 true 表示已消费。 */
     default boolean charTyped(CharacterEvent event) { return false; }
+
+    /**
+     * 事件优先级。值越大越先处理。
+     * 默认 0。弹出层等需要优先拦截事件的组件可覆写为更高值。
+     */
+    default int eventPriority() { return 0; }
 }

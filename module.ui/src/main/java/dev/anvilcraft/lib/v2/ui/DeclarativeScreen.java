@@ -92,10 +92,10 @@ public abstract class DeclarativeScreen extends Screen {
         if (event.button() != 0) return super.mouseClicked(event, isDoubleClick);
 
         this.clearAllFocus();
+
+        if (this.dispatchMouseClicked(event, isDoubleClick)) return true;
+
         this.closeAllDropdowns();
-
-        if (dispatchMouseClicked(event, isDoubleClick)) return true;
-
         return super.mouseClicked(event, isDoubleClick);
     }
 
@@ -126,9 +126,11 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     private boolean dispatchMouseClickedRecursive(UIComponent component, MouseButtonEvent event, boolean isDouble) {
-        var children = component.children();
-        for (int i = children.size() - 1; i >= 0; i--) {
-            if (dispatchMouseClickedRecursive(children.get(i), event, isDouble)) return true;
+        var sorted = component.children().stream()
+                .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
+                .toList();
+        for (UIComponent child : sorted) {
+            if (dispatchMouseClickedRecursive(child, event, isDouble)) return true;
         }
         if (component.mouseClicked(event, isDouble)) {
             if (component instanceof Focusable) this.focusOwner = component;
@@ -148,9 +150,11 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     private boolean dispatchMouseDragged(UIComponent component, MouseButtonEvent event, double dx, double dy) {
-        var children = component.children();
-        for (int i = children.size() - 1; i >= 0; i--) {
-            if (dispatchMouseDragged(children.get(i), event, dx, dy)) return true;
+        var sorted = component.children().stream()
+                .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
+                .toList();
+        for (UIComponent child : sorted) {
+            if (dispatchMouseDragged(child, event, dx, dy)) return true;
         }
         return component.mouseDragged(event, dx, dy);
     }
@@ -166,8 +170,10 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     private void dispatchMouseReleased(UIComponent component, MouseButtonEvent event) {
-        var children = component.children();
-        for (int i = children.size() - 1; i >= 0; i--) dispatchMouseReleased(children.get(i), event);
+        var sorted = component.children().stream()
+                .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
+                .toList();
+        for (UIComponent child : sorted) dispatchMouseReleased(child, event);
         component.mouseReleased(event);
     }
 
@@ -182,9 +188,11 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     private boolean dispatchMouseScrolled(UIComponent component, double mx, double my, double sx, double sy) {
-        var children = component.children();
-        for (int i = children.size() - 1; i >= 0; i--) {
-            if (dispatchMouseScrolled(children.get(i), mx, my, sx, sy)) return true;
+        var sorted = component.children().stream()
+                .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
+                .toList();
+        for (UIComponent child : sorted) {
+            if (dispatchMouseScrolled(child, mx, my, sx, sy)) return true;
         }
         return component.mouseScrolled(mx, my, sx, sy);
     }
