@@ -1,8 +1,6 @@
 package dev.anvilcraft.lib.v2.ui;
 
-import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
 import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
-import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
@@ -217,9 +215,7 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     private void updateHoverRecursive(UIComponent component, float mx, float my) {
-        if (component instanceof ButtonComponent btn) btn.setHovered(btn.hitRect().contains(mx, my));
-        if (component instanceof SliderComponent sl) sl.setHovered(sl.hitRect().contains(mx, my));
-        if (component instanceof DropdownComponent dd) dd.setHovered(dd.hitRect().contains(mx, my));
+        component.updateHover(mx, my);
         for (UIComponent child : component.children()) updateHoverRecursive(child, mx, my);
     }
 

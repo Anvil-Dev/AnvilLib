@@ -53,6 +53,9 @@ public interface UIComponent {
     /** 字符输入。返回 true 表示已消费。 */
     default boolean charTyped(CharacterEvent event) { return false; }
 
+    /** 每帧更新 hover 状态。默认空实现。 */
+    default void updateHover(float mouseX, float mouseY) {}
+
     /**
      * 事件优先级。值越大越先处理。默认 0。
      */

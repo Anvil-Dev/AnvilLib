@@ -46,6 +46,9 @@ public class ButtonComponent implements UIComponent {
     public ButtonComponent onClick(@Nullable Runnable onClick) { this.onClick = onClick; return this; }
     public void setHovered(boolean hovered) { this.hovered = hovered; }
 
+    @Override
+    public void updateHover(float mx, float my) { this.hovered = this.hitRect().contains(mx, my); }
+
     @Override public List<UIComponent> children() { return Collections.emptyList(); }
 
     @Override

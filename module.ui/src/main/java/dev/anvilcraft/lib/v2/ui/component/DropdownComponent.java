@@ -84,6 +84,9 @@ public class DropdownComponent implements UIComponent {
     }
     public void setHovered(boolean hovered) { this.hovered = hovered; }
 
+    @Override
+    public void updateHover(float mx, float my) { this.hovered = this.hitRect().contains(mx, my); }
+
     public void setPopupScrollY(float y) {
         this.popupScrollY = y;
     }

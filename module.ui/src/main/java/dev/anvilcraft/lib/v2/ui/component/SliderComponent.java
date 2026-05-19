@@ -60,6 +60,9 @@ public class SliderComponent implements UIComponent {
     }
     public void setHovered(boolean hovered) { this.hovered = hovered; }
 
+    @Override
+    public void updateHover(float mx, float my) { this.hovered = this.hitRect().contains(mx, my); }
+
 
     @Override
     public List<UIComponent> children() {
