@@ -9,6 +9,7 @@ import dev.anvilcraft.lib.v2.ui.component.FlexComponent;
 import dev.anvilcraft.lib.v2.ui.component.FlexScope;
 import dev.anvilcraft.lib.v2.ui.component.GridComponent;
 import dev.anvilcraft.lib.v2.ui.component.ImageComponent;
+import dev.anvilcraft.lib.v2.ui.component.LazyColumnComponent;
 import dev.anvilcraft.lib.v2.ui.component.RowComponent;
 import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
 import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
@@ -310,6 +311,22 @@ public abstract class UIScope {
         ScrollableScope inner = new ScrollableScope();
         content.accept(inner);
         c.setChildren(inner.getChildren());
+        this.addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    /**
+     * 创建虚拟化纵向列表。仅渲染可见区域，支持滚轮和滚动条拖拽。
+     *
+     * @param itemHeight 单项高度（像素）
+     * @param maxHeight  列表最大可见高度
+     * @param items      数据源列表
+     * @param builder    列表项构建函数
+     */
+    public <T> LazyColumnComponent LazyColumn(float itemHeight, float maxHeight,
+                                               List<T> items, LazyColumnComponent.ItemBuilder<T> builder) {
+        LazyColumnComponent c = new LazyColumnComponent(Modifier.NONE, itemHeight, maxHeight, items, builder);
         this.addChild(c);
         Composition.current().emit(c);
         return c;
