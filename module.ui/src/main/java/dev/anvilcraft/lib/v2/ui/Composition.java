@@ -1,9 +1,5 @@
 package dev.anvilcraft.lib.v2.ui;
 
-import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
-import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
-import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
-import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
 import dev.anvilcraft.lib.v2.ui.modifier.ModifierElement;
 import lombok.Setter;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -127,7 +123,7 @@ public class Composition {
             slot = this.slots.get(this.currentIndex);
             UIComponent old = slot.component;
             if (old != null && old.getClass() == component.getClass()) {
-                this.copyRuntimeState(old, component);
+                component.copyRuntimeState(old);
             }
             slot.component = component;
         } else {
@@ -137,27 +133,6 @@ public class Composition {
         }
         this.currentSlot = slot;
         this.currentIndex++;
-    }
-
-    /**
-     * 将旧组件的运行时状态复制到新组件。
-     */
-    private void copyRuntimeState(UIComponent old, UIComponent replacement) {
-        if (old instanceof ScrollableComponent oldSc && replacement instanceof ScrollableComponent newSc) {
-            newSc.setScrollY(oldSc.scrollY());
-        }
-        if (old instanceof TextInputComponent oldTi && replacement instanceof TextInputComponent newTi) {
-            newTi.setValue(oldTi.value());
-            newTi.setCursorPos(oldTi.cursorPos());
-            newTi.setFocused(oldTi.focused());
-        }
-        if (old instanceof DropdownComponent oldDd && replacement instanceof DropdownComponent newDd) {
-            newDd.setOpen(oldDd.open());
-            newDd.setPopupScrollY(oldDd.popupScrollY());
-        }
-        if (old instanceof SliderComponent oldSl && replacement instanceof SliderComponent newSl) {
-            newSl.setDragging(oldSl.dragging());
-        }
     }
 
     // ── 每帧入口 ──

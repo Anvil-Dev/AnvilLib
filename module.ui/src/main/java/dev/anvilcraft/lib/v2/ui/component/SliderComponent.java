@@ -160,4 +160,11 @@ public class SliderComponent implements UIComponent {
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, this.width, this.height);
     }
+
+    @Override
+    public void copyRuntimeState(UIComponent old) {
+        if (old instanceof SliderComponent oldSl) {
+            this.setDragging(oldSl.dragging());
+        }
+    }
 }

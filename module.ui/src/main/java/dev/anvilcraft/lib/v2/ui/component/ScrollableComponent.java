@@ -222,4 +222,11 @@ public class ScrollableComponent implements UIComponent {
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, this.width, this.height);
     }
+
+    @Override
+    public void copyRuntimeState(UIComponent old) {
+        if (old instanceof ScrollableComponent oldSc) {
+            this.setScrollY(oldSc.scrollY());
+        }
+    }
 }

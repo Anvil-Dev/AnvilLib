@@ -119,4 +119,10 @@ public interface UIComponent {
     default List<UIComponent> sortedChildren() {
         return this.children().stream().sorted(java.util.Comparator.comparingInt(UIComponent::renderingPriority)).toList();
     }
+
+    /**
+     * 将旧组件的运行时状态复制到新组件。
+     */
+    default void copyRuntimeState(UIComponent old) {
+    }
 }

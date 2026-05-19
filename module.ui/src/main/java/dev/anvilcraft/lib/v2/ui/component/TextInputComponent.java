@@ -188,4 +188,13 @@ public class TextInputComponent implements UIComponent, Focusable {
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, this.width, this.height);
     }
+
+    @Override
+    public void copyRuntimeState(UIComponent old) {
+        if (old instanceof TextInputComponent oldTi) {
+            this.setValue(oldTi.value());
+            this.setCursorPos(oldTi.cursorPos());
+            this.setFocused(oldTi.focused());
+        }
+    }
 }

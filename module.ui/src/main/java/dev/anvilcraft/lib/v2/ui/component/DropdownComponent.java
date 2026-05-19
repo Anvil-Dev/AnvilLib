@@ -400,4 +400,12 @@ public class DropdownComponent implements UIComponent {
     public LayoutRect hitRect() {
         return this.triggerRect();
     }
+
+    @Override
+    public void copyRuntimeState(UIComponent old) {
+        if (old instanceof DropdownComponent oldDd) {
+            this.setOpen(oldDd.open());
+            this.setPopupScrollY(oldDd.popupScrollY());
+        }
+    }
 }
