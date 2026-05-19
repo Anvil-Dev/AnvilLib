@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.ui;
 
 import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
 import dev.anvilcraft.lib.v2.ui.component.ScrollableComponent;
+import dev.anvilcraft.lib.v2.ui.component.SliderComponent;
 import dev.anvilcraft.lib.v2.ui.component.TextInputComponent;
 import dev.anvilcraft.lib.v2.ui.modifier.ModifierElement;
 import lombok.Setter;
@@ -153,6 +154,9 @@ public class Composition {
         if (old instanceof DropdownComponent oldDd && replacement instanceof DropdownComponent newDd) {
             newDd.setOpen(oldDd.open());
             newDd.setPopupScrollY(oldDd.popupScrollY());
+        }
+        if (old instanceof SliderComponent oldSl && replacement instanceof SliderComponent newSl) {
+            newSl.setDragging(oldSl.dragging());
         }
     }
 

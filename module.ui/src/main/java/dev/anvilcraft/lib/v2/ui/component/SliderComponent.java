@@ -45,6 +45,8 @@ public class SliderComponent implements UIComponent {
     @Getter
     private float value;
     private boolean hovered;
+    @Getter
+    private boolean dragging;
     @Setter
     private @Nullable Consumer<Float> onChange;
 
@@ -61,6 +63,10 @@ public class SliderComponent implements UIComponent {
 
     public void setHovered(boolean hovered) {
         this.hovered = hovered;
+    }
+
+    public void setDragging(boolean dragging) {
+        this.dragging = dragging;
     }
 
     @Override
@@ -108,6 +114,7 @@ public class SliderComponent implements UIComponent {
         int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
         int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
         if (this.hitRect().contains(mx, my)) {
+            this.dragging = true;
             this.setValueFromMouse(mx);
             mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
             return true;
@@ -117,13 +124,16 @@ public class SliderComponent implements UIComponent {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (!this.dragging) return false;
         var mc = Minecraft.getInstance();
         int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
-        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        if (this.hitRect().contains(mx, my)) {
-            this.setValueFromMouse(mx);
-            return true;
-        }
+        this.setValueFromMouse(mx);
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        this.dragging = false;
         return false;
     }
 
