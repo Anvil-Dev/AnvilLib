@@ -8,7 +8,9 @@ import dev.anvilcraft.lib.v2.ui.UIComponent;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
 import org.jspecify.annotations.Nullable;
 
@@ -109,5 +111,24 @@ public class SliderComponent implements UIComponent {
      */
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, this.width, this.height);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() != 0) return false;
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.hitRect().contains(mx, my)) { this.setValueFromMouse(mx); return true; }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.hitRect().contains(mx, my)) { this.setValueFromMouse(mx); return true; }
+        return false;
     }
 }

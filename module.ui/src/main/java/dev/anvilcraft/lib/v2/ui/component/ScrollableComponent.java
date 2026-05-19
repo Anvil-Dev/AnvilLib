@@ -8,7 +8,9 @@ import dev.anvilcraft.lib.v2.ui.UIComponent;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
@@ -184,5 +186,38 @@ public class ScrollableComponent implements UIComponent {
      */
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, this.width, this.height);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() != 0) return false;
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.isOnScrollbar(mx, my)) { this.startScrollbarDrag(my); return true; }
+        return false;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (this.hitRect().contains((float) mouseX, (float) mouseY)) {
+            return this.onScroll((float) scrollY);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (!this.scrollbarDragging()) return false;
+        var mc = Minecraft.getInstance();
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        this.onScrollbarDrag(my);
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        this.stopScrollbarDrag();
+        return false;
     }
 }

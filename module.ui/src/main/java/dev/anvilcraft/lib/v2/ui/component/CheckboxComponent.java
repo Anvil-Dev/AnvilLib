@@ -8,7 +8,9 @@ import dev.anvilcraft.lib.v2.ui.UIComponent;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
@@ -105,6 +107,16 @@ public class CheckboxComponent implements UIComponent {
      * 命中测试包围盒。
      */
     public LayoutRect hitRect() {
-        return LayoutRect.of(x, y, SIZE, SIZE);
+        return LayoutRect.of(this.x, this.y, SIZE, SIZE);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() != 0) return false;
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.hitRect().contains(mx, my)) { this.toggle(); return true; }
+        return false;
     }
 }

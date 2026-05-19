@@ -4,8 +4,8 @@ import dev.anvilcraft.lib.v2.ui.Constraints;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
+import dev.anvilcraft.lib.v2.ui.Focusable;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
-import dev.anvilcraft.lib.v2.ui.input.KeyInputHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.StringUtil;
 import org.jspecify.annotations.Nullable;
 
@@ -27,7 +28,7 @@ import java.util.function.Consumer;
         "UnusedReturnValue"
     }
 )
-public class TextInputComponent implements UIComponent, KeyInputHandler {
+public class TextInputComponent implements UIComponent, Focusable {
     private static final int BG_COLOR = 0xFF202020;
     private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int PLACEHOLDER_COLOR = 0xFF555555;
@@ -113,7 +114,7 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     }
 
     @Override
-    public boolean onKeyPressed(KeyEvent event) {
+    public boolean keyPressed(KeyEvent event) {
         int key = event.key();
         if (key == 259) {
             if (this.cursorPos > 0) {
@@ -150,7 +151,7 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
     }
 
     @Override
-    public boolean onCharTyped(CharacterEvent event) {
+    public boolean charTyped(CharacterEvent event) {
         if (!event.isAllowedChatCharacter()) return false;
         String text = StringUtil.filterText(event.codepointAsString());
         if (text.isEmpty()) return false;
@@ -170,5 +171,15 @@ public class TextInputComponent implements UIComponent, KeyInputHandler {
 
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, this.width, this.height);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() != 0) return false;
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.hitRect().contains(mx, my)) { this.setFocused(true); return true; }
+        return false;
     }
 }

@@ -11,6 +11,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
 import org.jspecify.annotations.Nullable;
 
@@ -319,5 +320,39 @@ public class DropdownComponent implements UIComponent {
 
     public LayoutRect hitRect() {
         return this.triggerRect();
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() != 0) return false;
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.isOnPopupScrollbar(mx, my)) { this.startPopupScrollbarDrag(my); return true; }
+        if (this.clickPopup(mx, my)) return true;
+        return this.clickTrigger(mx, my);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (this.open() && this.popupRect().contains((float) mouseX, (float) mouseY)) {
+            return this.onPopupScroll((float) scrollY);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (!this.scrollbarDragging()) return false;
+        var mc = Minecraft.getInstance();
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        this.onPopupScrollbarDrag(my);
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        this.stopPopupScrollbarDrag();
+        return false;
     }
 }
