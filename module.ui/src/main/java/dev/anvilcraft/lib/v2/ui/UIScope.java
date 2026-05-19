@@ -5,6 +5,8 @@ import dev.anvilcraft.lib.v2.ui.component.ButtonComponent;
 import dev.anvilcraft.lib.v2.ui.component.CheckboxComponent;
 import dev.anvilcraft.lib.v2.ui.component.ColumnComponent;
 import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
+import dev.anvilcraft.lib.v2.ui.component.FlexComponent;
+import dev.anvilcraft.lib.v2.ui.component.FlexScope;
 import dev.anvilcraft.lib.v2.ui.component.GridComponent;
 import dev.anvilcraft.lib.v2.ui.component.ImageComponent;
 import dev.anvilcraft.lib.v2.ui.component.RowComponent;
@@ -257,6 +259,24 @@ public abstract class UIScope {
         BoxScope inner = new BoxScope();
         content.accept(inner);
         c.setChildren(inner.getChildren());
+        this.addChild(c);
+        Composition.current().emit(c);
+        return c;
+    }
+
+    /**
+     * 创建弹性布局容器。子组件按 flexGrow 权重分配剩余空间。
+     * 用法：{@code scope.Flex(Direction.ROW, f -> { f.flexGrow(2).Text("Wide"); f.Text("Normal"); });}
+     *
+     * @param direction 主轴方向（ROW 或 COLUMN）
+     * @param content   子组件声明 lambda
+     */
+    public FlexComponent Flex(FlexComponent.Direction direction, Consumer<FlexScope> content) {
+        FlexComponent c = new FlexComponent(Modifier.NONE, direction);
+        FlexScope inner = new FlexScope();
+        content.accept(inner);
+        c.setChildren(inner.getChildren());
+        c.setChildFlexGrows(inner.childWeights());
         this.addChild(c);
         Composition.current().emit(c);
         return c;
