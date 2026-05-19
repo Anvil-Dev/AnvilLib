@@ -60,8 +60,18 @@ public abstract class DeclarativeScreen extends Screen {
 
     @Override
     protected void init() {
-        this.composition = new Composition(this.rootScope);
-        this.composition.setContent(this::content);
+        if (this.composition == null) {
+            this.composition = new Composition(this.rootScope);
+            this.composition.setContent(this::content);
+        }
+    }
+
+    /**
+     * 窗口 resize 时不重建组件树，只标记 dirty 用新尺寸 recompose。
+     */
+    @Override
+    protected void repositionElements() {
+        if (this.composition != null) this.composition.invalidate();
     }
 
     private void refreshFocus() {

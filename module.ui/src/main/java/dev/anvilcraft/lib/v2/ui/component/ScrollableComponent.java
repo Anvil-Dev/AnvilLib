@@ -88,6 +88,10 @@ public class ScrollableComponent implements UIComponent {
         this.width = width;
         this.height = height;
 
+        // resize 后重新钳制滚动位置
+        float maxScroll = Math.max(0, this.contentHeight - height);
+        this.scrollY = Mth.clamp(this.scrollY, -maxScroll, 0);
+
         float currentY = y + this.scrollY;
         float childW = width - ScrollableComponent.SCROLLBAR_W - 1;
         for (int i = 0; i < this.children.size(); i++) {
