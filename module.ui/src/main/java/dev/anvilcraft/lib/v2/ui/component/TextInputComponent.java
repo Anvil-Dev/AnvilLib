@@ -14,6 +14,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.StringUtil;
 import org.jspecify.annotations.Nullable;
 
@@ -179,7 +181,7 @@ public class TextInputComponent implements UIComponent, Focusable {
         var mc = Minecraft.getInstance();
         int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
         int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        if (this.hitRect().contains(mx, my)) { this.setFocused(true); return true; }
+        if (this.hitRect().contains(mx, my)) { this.setFocused(true); mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)); return true; }
         return false;
     }
 }

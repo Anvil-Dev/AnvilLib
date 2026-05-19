@@ -12,6 +12,8 @@ import lombok.experimental.Accessors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import org.jspecify.annotations.Nullable;
 
@@ -50,6 +52,7 @@ public class DropdownComponent implements UIComponent {
     private int selectedIndex;
     @Getter
     private boolean open;
+    private boolean hovered;
     @Getter
     private float popupScrollY;
     @Setter
@@ -77,8 +80,9 @@ public class DropdownComponent implements UIComponent {
 
     public void setOpen(boolean open) {
         this.open = open;
-        if (!open) this.popupScrollY = 0;
+        if (!this.open) this.popupScrollY = 0;
     }
+    public void setHovered(boolean hovered) { this.hovered = hovered; }
 
     public void setPopupScrollY(float y) {
         this.popupScrollY = y;
@@ -123,7 +127,7 @@ public class DropdownComponent implements UIComponent {
     private void renderTrigger(GuiGraphicsExtractor extractor) {
         var font = Minecraft.getInstance().font;
         int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
-        int bg = this.open ? DropdownComponent.HOVER_COLOR : DropdownComponent.BG_COLOR;
+        int bg = (this.open || this.hovered) ? DropdownComponent.HOVER_COLOR : DropdownComponent.BG_COLOR;
         extractor.fill(ix, iy, ix + iw, iy + ih, bg);
 
         String label = this.options.length > 0 ? this.options[this.selectedIndex] : "";
@@ -334,8 +338,9 @@ public class DropdownComponent implements UIComponent {
         int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
         int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
         if (this.isOnPopupScrollbar(mx, my)) { this.startPopupScrollbarDrag(my); return true; }
-        if (this.clickPopup(mx, my)) return true;
-        return this.clickTrigger(mx, my);
+        if (this.clickPopup(mx, my)) { mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)); return true; }
+        if (this.clickTrigger(mx, my)) { mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)); return true; }
+        return false;
     }
 
     @Override

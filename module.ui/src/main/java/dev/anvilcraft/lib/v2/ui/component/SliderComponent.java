@@ -11,6 +11,8 @@ import lombok.experimental.Accessors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import org.jspecify.annotations.Nullable;
 
@@ -42,6 +44,7 @@ public class SliderComponent implements UIComponent {
     private Modifier modifier;
     @Getter
     private float value;
+    private boolean hovered;
     @Setter
     private @Nullable Consumer<Float> onChange;
 
@@ -55,6 +58,7 @@ public class SliderComponent implements UIComponent {
         this.max = max;
         this.trackWidth = trackWidth;
     }
+    public void setHovered(boolean hovered) { this.hovered = hovered; }
 
 
     @Override
@@ -91,7 +95,8 @@ public class SliderComponent implements UIComponent {
         float ratio = (this.value - this.min) / (this.max - this.min);
         float thumbX = this.x + ratio * (this.width - SliderComponent.THUMB_W);
         int tix = (int) thumbX, tiy = (int) this.y;
-        extractor.fill(tix, tiy, tix + (int) SliderComponent.THUMB_W, tiy + (int) THUMB_H, THUMB_COLOR);
+        int thumbColor = this.hovered ? 0xFFCCCCCC : SliderComponent.THUMB_COLOR;
+        extractor.fill(tix, tiy, tix + (int) SliderComponent.THUMB_W, tiy + (int) SliderComponent.THUMB_H, thumbColor);
     }
 
     /**
@@ -119,7 +124,7 @@ public class SliderComponent implements UIComponent {
         var mc = Minecraft.getInstance();
         int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
         int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        if (this.hitRect().contains(mx, my)) { this.setValueFromMouse(mx); return true; }
+        if (this.hitRect().contains(mx, my)) { this.setValueFromMouse(mx); mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)); return true; }
         return false;
     }
 

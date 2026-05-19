@@ -11,6 +11,8 @@ import lombok.experimental.Accessors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvents;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
@@ -116,7 +118,7 @@ public class CheckboxComponent implements UIComponent {
         var mc = Minecraft.getInstance();
         int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
         int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        if (this.hitRect().contains(mx, my)) { this.toggle(); return true; }
+        if (this.hitRect().contains(mx, my)) { this.toggle(); mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)); return true; }
         return false;
     }
 }
