@@ -128,8 +128,8 @@ public abstract class UIScope {
      * @param vModel {@code Ref<Boolean>}，点击时自动同步值，无需手动 onToggle
      */
     public CheckboxComponent Checkbox(String label, Ref<Boolean> vModel) {
-        CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, vModel.getValue() != null && vModel.getValue());
-        c.onToggle(() -> vModel.setValue(!vModel.getValue()));
+        CheckboxComponent c = new CheckboxComponent(Modifier.NONE, label, vModel.get() != null && vModel.get());
+        c.onToggle(() -> vModel.accept(!vModel.get()));
         this.addChild(c);
         Composition.current().emit(c);
         return c;
@@ -173,8 +173,8 @@ public abstract class UIScope {
      * @param vModel {@code Ref<Float>}，拖拽时自动同步值
      */
     public SliderComponent Slider(float min, float max, float width, Ref<Float> vModel) {
-        SliderComponent c = new SliderComponent(Modifier.NONE, vModel.getValue() == null ? 0 : vModel.getValue(), min, max, width);
-        c.onChange(vModel::setValue);
+        SliderComponent c = new SliderComponent(Modifier.NONE, vModel.get() == null ? 0 : vModel.get(), min, max, width);
+        c.onChange(vModel::accept);
         this.addChild(c);
         Composition.current().emit(c);
         return c;
@@ -200,7 +200,7 @@ public abstract class UIScope {
      */
     public TextInputComponent TextInput(String placeholder, Ref<String> vModel) {
         TextInputComponent c = new TextInputComponent(Modifier.NONE, placeholder);
-        c.onChange(vModel::setValue);
+        c.onChange(vModel::accept);
         this.addChild(c);
         Composition.current().emit(c);
         return c;

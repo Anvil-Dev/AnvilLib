@@ -2,9 +2,13 @@ package dev.anvilcraft.lib.v2.ui;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * 可观察状态持有者。
@@ -20,8 +24,10 @@ import java.util.Set;
         "UnusedReturnValue"
     }
 )
-public class Ref<T extends @Nullable Object> {
+public class Ref<T extends @Nullable Object> implements Supplier<T>, Consumer<T> {
     final Set<Composition.Slot> readers = new HashSet<>();
+    final Map<Long, Consumer<Ref<T>>> observers = new HashMap<>();
+    private long used = 0;
     private T value;
 
     public Ref(T initialValue) {
@@ -31,7 +37,7 @@ public class Ref<T extends @Nullable Object> {
     /**
      * 读取当前值。若在 composition emission 期间调用，记录此 slot 为 reader。
      */
-    public T getValue() {
+    public T get() {
         Composition comp = Composition.currentOrNull();
         if (comp != null && comp.currentSlot != null) {
             comp.currentSlot.addReadState(this);
@@ -43,7 +49,7 @@ public class Ref<T extends @Nullable Object> {
     /**
      * 设置新值。若值发生变化，标记所有 reader slot 为脏。
      */
-    public void setValue(T newValue) {
+    public void accept(T newValue) {
         if (!Objects.equals(this.value, newValue)) {
             this.value = newValue;
             for (Composition.Slot slot : this.readers) {
@@ -55,5 +61,14 @@ public class Ref<T extends @Nullable Object> {
     @Override
     public String toString() {
         return "State(" + this.value + ")";
+    }
+
+    public Long watch(Consumer<Ref<T>> watcher) {
+        this.observers.put(this.used, watcher);
+        return this.used++;
+    }
+
+    public Consumer<Ref<T>> unwatch(Long id) {
+        return this.observers.remove(id);
     }
 }

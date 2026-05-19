@@ -49,10 +49,10 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                 // ── 2. Button + 状态 ──
                 col.Text("2) Button + state (Counter):");
                 col.Row(row -> {
-                    row.Button("-").onClick(() -> counter.setValue(counter.getValue() - 1));
-                    row.Text("  " + counter.getValue() + "  ").align(TextComponent.Align.CENTER);
-                    row.Button("+").onClick(() -> counter.setValue(counter.getValue() + 1));
-                    row.Button("Reset").onClick(() -> counter.setValue(0));
+                    row.Button("-").onClick(() -> counter.accept(counter.get() - 1));
+                    row.Text("  " + counter.get() + "  ").align(TextComponent.Align.CENTER);
+                    row.Button("+").onClick(() -> counter.accept(counter.get() + 1));
+                    row.Button("Reset").onClick(() -> counter.accept(0));
                 }).spacing(4);
 
                 col.Spacer(0, 4);
@@ -82,7 +82,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                 col.Text("5) Checkbox:");
                 col.Row(row -> {
                     row.Checkbox("Enable feature", checked);
-                    row.Text("  Enabled: " + checked.getValue());
+                    row.Text("  Enabled: " + checked.get());
                 }).spacing(4);
 
                 col.Spacer(0, 4);
@@ -92,7 +92,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                 col.Text("6) Slider:");
                 col.Row(row -> {
                     row.Slider(0, 100, 100, sliderVal);
-                    row.Text(" " + sliderVal.getValue().intValue() + "%");
+                    row.Text(" " + sliderVal.get().intValue() + "%");
                 }).spacing(4);
 
                 col.Spacer(0, 4);
@@ -101,7 +101,7 @@ public class DeclarativeTestScreen extends DeclarativeScreen {
                 col.Text("7) TextInput:");
                 col.Row(row -> {
                     row.TextInput("Enter text...", text);
-                    row.Text("  Value: '" + text.getValue() + "'");
+                    row.Text("  Value: '" + text.get() + "'");
                 }).spacing(4);
 
                 col.Spacer(0, 4);
