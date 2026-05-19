@@ -26,29 +26,29 @@
 
 ## 基础组件
 
-| 组件                      | 状态    | 用途                                     |
-|-------------------------|-------|----------------------------------------|
-| **Text**                | ✅ 已实现 | 单行文字，支持颜色/阴影/对齐(LEFT/CENTER/RIGHT)     |
-| **Button**              | ✅ 已实现 | 可点击按钮，原版配色，hover 状态，点击音效               |
-| **Image**               | ✅ 已实现 | 纹理精灵渲染（`blitSprite`）                   |
-| **Spacer** (≡ Blank)    | ✅ 已实现 | 固定尺寸空白占位                               |
-| **Checkbox**            | ✅ 已实现 | 复选框，16×16 深灰外框 + 选中时白色内填充              |
-| **Slider**              | ✅ 已实现 | 水平滑块，点击/拖拽设值，`Consumer<Float>` 回调      |
-| **TextInput**           | ✅ 已实现 | 单行输入框，placeholder 占位，`charTyped` 多语言输入 |
-| **Divider**             | ❎ 未实现 | 分割线（水平/垂直）                             |
-| **Toggle**              | ❎ 未实现 | 开关切换（不同于 Checkbox 的方块填充风格）             |
-| **Radio**               | ❎ 未实现 | 单选按钮                                   |
-| **Progress**            | ❎ 未实现 | 进度条（线性/圆形）                             |
-| **LoadingProgress**     | ❎ 未实现 | 加载动画                                   |
-| **TextArea**            | ❎ 未实现 | 多行文本输入框                                |
-| **Search**              | ❎ 未实现 | 搜索输入框                                  |
-| **Select**              | ❎ 未实现 | 下拉选择器                                  |
-| **Menu** / **MenuItem** | ❎ 未实现 | 右键菜单 / 弹出菜单                            |
-| **Hyperlink**           | ❎ 未实现 | 超链接文字                                  |
-| **Marquee**             | ❎ 未实现 | 跑马灯滚动文字                                |
-| **Rating**              | ❎ 未实现 | 星级评分                                   |
-| **Badge**               | ❎ 未实现 | 角标/红点提示                                |
-| **QRCode**              | ❎ 未实现 | 二维码显示                                  |
+| 组件                      | 状态    | 用途                                      |
+|-------------------------|-------|-----------------------------------------|
+| **Text**                | ✅ 已实现 | 单行文字，支持颜色/阴影/对齐(LEFT/CENTER/RIGHT)      |
+| **Button**              | ✅ 已实现 | 可点击按钮，原版配色，hover 状态，点击音效                |
+| **Image**               | ✅ 已实现 | 纹理精灵渲染（`blitSprite`）                    |
+| **Spacer** (≡ Blank)    | ✅ 已实现 | 固定尺寸空白占位                                |
+| **Checkbox**            | ✅ 已实现 | 复选框，16×16 深灰外框 + 选中白色内填充，点击音效           |
+| **Slider**              | ✅ 已实现 | 水平滑块，点击/拖拽设值，hover 高亮，点击音效，拖拽出界继续跟随     |
+| **TextInput**           | ✅ 已实现 | 单行输入框，placeholder，选择/复制/粘贴/剪切/全选，光标跟随滚动 |
+| **Dropdown** (≡ Select) | ✅ 已实现 | 下拉菜单，可拖拽滚动条，hover 高亮，SDF 三角箭头           |
+| **Divider**             | ❎ 未实现 | 分割线（水平/垂直）                              |
+| **Toggle**              | ❎ 未实现 | 开关切换（不同于 Checkbox 的方块填充风格）              |
+| **Radio**               | ❎ 未实现 | 单选按钮                                    |
+| **Progress**            | ❎ 未实现 | 进度条（线性/圆形）                              |
+| **LoadingProgress**     | ❎ 未实现 | 加载动画                                    |
+| **TextArea**            | ❎ 未实现 | 多行文本输入框                                 |
+| **Search**              | ❎ 未实现 | 搜索输入框                                   |
+| **Menu** / **MenuItem** | ❎ 未实现 | 右键菜单 / 弹出菜单                             |
+| **Hyperlink**           | ❎ 未实现 | 超链接文字                                   |
+| **Marquee**             | ❎ 未实现 | 跑马灯滚动文字                                 |
+| **Rating**              | ❎ 未实现 | 星级评分                                    |
+| **Badge**               | ❎ 未实现 | 角标/红点提示                                 |
+| **QRCode**              | ❎ 未实现 | 二维码显示                                   |
 
 ---
 
@@ -64,13 +64,13 @@
 
 ## 交互 / 手势
 
-| 组件                      | 状态    | 用途                                           |
-|-------------------------|-------|----------------------------------------------|
-| **onClick** (≡ Gesture) | ✅ 已实现 | 点击事件，命中测试 + Button/Checkbox/Slider/TextInput |
-| **onHover**             | ✅ 已实现 | hover 状态更新（`updateHoverRecursive`）           |
-| **onScroll**            | ✅ 已实现 | 滚轮事件 → Scrollable 路由                         |
-| **onDrag**              | ✅ 已实现 | 拖拽事件 → Slider + Scrollable 滚动条               |
-| **onKey**               | ✅ 已实现 | 键盘事件 → `KeyInputHandler` + `charTyped`       |
+| 组件                      | 状态    | 用途                                                    |
+|-------------------------|-------|-------------------------------------------------------|
+| **onClick** (≡ Gesture) | ✅ 已实现 | 点击事件，全体系统一递归分发，各组件覆写自身逻辑                              |
+| **onHover**             | ✅ 已实现 | `UIComponent.updateHover()`，Button/Slider/Dropdown 覆写 |
+| **onScroll**            | ✅ 已实现 | `UIComponent.mouseScrolled()` 递归分发                    |
+| **onDrag**              | ✅ 已实现 | `UIComponent.mouseDragged()` 递归分发                     |
+| **onKey**               | ✅ 已实现 | `UIComponent.keyPressed()`/`charTyped()` 焦点路由         |
 
 ---
 
@@ -100,15 +100,25 @@
 
 ## 引擎核心
 
-| 组件                    | 状态    | 用途                                                             |
-|-----------------------|-------|----------------------------------------------------------------|
-| **Composition**       | ✅ 已实现 | Slot table 引擎：emit / recompose / invalidate / copyRuntimeState |
-| **DeclarativeScreen** | ✅ 已实现 | Screen 宿主：dirty check → recompose → measure → layout → render  |
+| 组件                    | 状态    | 用途                                                                   |
+|-----------------------|-------|----------------------------------------------------------------------|
+| **Composition**       | ✅ 已实现 | Slot table 引擎：emit / recompose / invalidate / copyRuntimeState / ref |
+| **DeclarativeScreen** | ✅ 已实现 | Screen 宿主：事件递归分发，焦点管理，hover 更新，无 `instanceof` 硬编码                    |
 
 ---
 
 ## 统计
 
 - 总计参考组件：**52**
-- 已实现：**25**（含引擎核心 + 状态管理 + 修饰符）
-- 未实现：**27**
+- 已实现：**26**（含引擎核心 + 状态管理 + 修饰符 + Select/Dropdown）
+- 未实现：**26**
+
+### 近期大更新
+
+- `UIComponent` 事件系统：`mouseClicked`/`mouseDragged`/`mouseScrolled`/`keyPressed`/`charTyped`/`updateHover`/`eventPriority`/
+  `renderingPriority`/`sortedChildren`
+- `DeclarativeScreen` 不再 `instanceof` 硬编码，统一递归分发事件
+- `SdfGraphics.triangle()` — 三角形 SDF 渲染
+- `Scrollable` / `Dropdown` 弹出层滚动条可鼠标拖拽
+- `TextInput` 支持选择/复制/粘贴/剪切/全选/单词跳转，光标自动跟随滚动
+- `copyRuntimeState` 移至各组件覆写，Composition 统一调用
