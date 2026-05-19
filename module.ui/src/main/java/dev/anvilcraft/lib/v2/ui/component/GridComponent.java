@@ -52,7 +52,7 @@ public class GridComponent implements UIComponent {
         List<MeasuredSize> sizes = new ArrayList<>(this.children.size());
         Constraints childC = new Constraints(0, Float.MAX_VALUE, 0, Float.MAX_VALUE);
 
-        for (UIComponent child : this.children) {
+        for (UIComponent child : this.sortedChildren()) {
             MeasuredSize s = child.measure(childC);
             sizes.add(s);
             maxW = Math.max(maxW, s.width());
@@ -86,6 +86,6 @@ public class GridComponent implements UIComponent {
     }
 
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        for (UIComponent child : this.children) child.extractRenderState(extractor);
+        for (UIComponent child : this.sortedChildren()) child.extractRenderState(extractor);
     }
 }

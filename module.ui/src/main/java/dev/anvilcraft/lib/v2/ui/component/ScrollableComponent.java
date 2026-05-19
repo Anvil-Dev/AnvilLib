@@ -68,7 +68,7 @@ public class ScrollableComponent implements UIComponent {
         List<MeasuredSize> sizes = new ArrayList<>(this.children.size());
         Constraints childC = new Constraints(0, constraints.maxWidth() - ScrollableComponent.SCROLLBAR_W - 1, 0, Float.MAX_VALUE);
 
-        for (UIComponent child : this.children) {
+        for (UIComponent child : this.sortedChildren()) {
             MeasuredSize s = child.measure(childC);
             // 修饰符会扩展尺寸（如 padding），需要计入内容高度
             s = child.modifier().foldOut(s, (el, sz) -> el.modifyMeasuredSize(child, childC, sz));
@@ -104,7 +104,7 @@ public class ScrollableComponent implements UIComponent {
         // 裁剪到容器范围
         extractor.enableScissor(ix, iy, ix + iw, iy + ih);
 
-        for (UIComponent child : this.children) {
+        for (UIComponent child : this.sortedChildren()) {
             child.extractRenderState(extractor);
         }
 

@@ -55,7 +55,7 @@ public class ColumnComponent implements UIComponent {
             0, Float.MAX_VALUE
         );
 
-        for (UIComponent child : this.children) {
+        for (UIComponent child : this.sortedChildren()) {
             MeasuredSize size = child.measure(childConstraints);
             sizes.add(size);
             totalHeight += size.height();
@@ -89,7 +89,7 @@ public class ColumnComponent implements UIComponent {
     }
 
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        for (UIComponent child : this.children) {
+        for (UIComponent child : this.sortedChildren()) {
             child.extractRenderState(extractor);
         }
     }

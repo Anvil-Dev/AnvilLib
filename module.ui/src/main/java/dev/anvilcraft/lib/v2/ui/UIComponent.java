@@ -54,8 +54,22 @@ public interface UIComponent {
     default boolean charTyped(CharacterEvent event) { return false; }
 
     /**
-     * 事件优先级。值越大越先处理。
-     * 默认 0。弹出层等需要优先拦截事件的组件可覆写为更高值。
+     * 事件优先级。值越大越先处理。默认 0。
      */
     default int eventPriority() { return 0; }
+
+    /**
+     * 渲染优先级。值越大越后提交渲染状态（上层）。
+     * 默认 0。弹出层等需置于顶层的组件可覆写为更高值。
+     */
+    default int renderingPriority() { return 0; }
+
+    /**
+     * 按渲染优先级排序后的子组件列表（低→高，先渲染的在前）。
+     */
+    default List<UIComponent> sortedChildren() {
+        return this.children().stream()
+                .sorted(java.util.Comparator.comparingInt(UIComponent::renderingPriority))
+                .toList();
+    }
 }

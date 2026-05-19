@@ -110,9 +110,14 @@ public class DropdownComponent implements UIComponent {
     // ── 触发器渲染 ──
 
     @Override
+    public int renderingPriority() {
+        return this.open ? 100 : 0;
+    }
+
+    @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         this.renderTrigger(extractor);
-        // 弹出层由 DeclarativeScreen 在最后统一渲染
+        this.renderPopup(extractor);
     }
 
     private void renderTrigger(GuiGraphicsExtractor extractor) {

@@ -55,7 +55,7 @@ public class RowComponent implements UIComponent {
             constraints.minHeight(), constraints.maxHeight()
         );
 
-        for (UIComponent child : this.children) {
+        for (UIComponent child : this.sortedChildren()) {
             MeasuredSize size = child.measure(childConstraints);
             sizes.add(size);
             totalWidth += size.width();
@@ -89,7 +89,7 @@ public class RowComponent implements UIComponent {
     }
 
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        for (UIComponent child : this.children) {
+        for (UIComponent child : this.sortedChildren()) {
             child.extractRenderState(extractor);
         }
     }

@@ -45,9 +45,6 @@ public abstract class DeclarativeScreen extends Screen {
             this.composition.renderFrame(extractor, this.width, this.height);
             this.updateHover(mouseX, mouseY);
             this.refreshFocus();
-            for (UIComponent child : this.rootScope.getChildren()) {
-                this.renderPopups(child, extractor);
-            }
         }
     }
 
@@ -55,11 +52,6 @@ public abstract class DeclarativeScreen extends Screen {
     protected void init() {
         this.composition = new Composition(this.rootScope);
         this.composition.setContent(this::content);
-    }
-
-    private void renderPopups(UIComponent component, GuiGraphicsExtractor extractor) {
-        if (component instanceof DropdownComponent dd) dd.renderPopup(extractor);
-        for (UIComponent child : component.children()) renderPopups(child, extractor);
     }
 
     // ── 焦点 ──
