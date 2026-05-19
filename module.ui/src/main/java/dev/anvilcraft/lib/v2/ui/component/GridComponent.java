@@ -52,7 +52,7 @@ public class GridComponent implements UIComponent {
         List<MeasuredSize> sizes = new ArrayList<>(this.children.size());
         Constraints childC = new Constraints(0, Float.MAX_VALUE, 0, Float.MAX_VALUE);
 
-        for (UIComponent child : this.sortedChildren()) {
+        for (UIComponent child : this.children) {
             MeasuredSize s = child.measure(childC);
             sizes.add(s);
             maxW = Math.max(maxW, s.width());

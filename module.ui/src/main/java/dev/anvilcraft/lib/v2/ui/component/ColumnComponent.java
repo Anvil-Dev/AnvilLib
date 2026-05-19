@@ -55,7 +55,7 @@ public class ColumnComponent implements UIComponent {
             0, Float.MAX_VALUE
         );
 
-        for (UIComponent child : this.sortedChildren()) {
+        for (UIComponent child : this.children) {
             MeasuredSize size = child.measure(childConstraints);
             sizes.add(size);
             totalHeight += size.height();

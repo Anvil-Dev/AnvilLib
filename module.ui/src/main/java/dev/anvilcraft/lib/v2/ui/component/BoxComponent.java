@@ -62,7 +62,7 @@ public class BoxComponent implements UIComponent {
         float maxHeight = 0;
         List<MeasuredSize> sizes = new ArrayList<>(this.children.size());
 
-        for (UIComponent child : this.sortedChildren()) {
+        for (UIComponent child : this.children) {
             MeasuredSize size = child.measure(constraints);
             sizes.add(size);
             maxWidth = Math.max(maxWidth, size.width());

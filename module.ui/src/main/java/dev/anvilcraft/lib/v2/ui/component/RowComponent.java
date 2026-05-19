@@ -55,7 +55,7 @@ public class RowComponent implements UIComponent {
             constraints.minHeight(), constraints.maxHeight()
         );
 
-        for (UIComponent child : this.sortedChildren()) {
+        for (UIComponent child : this.children) {
             MeasuredSize size = child.measure(childConstraints);
             sizes.add(size);
             totalWidth += size.width();
