@@ -122,6 +122,42 @@ public class ScrollableComponent implements UIComponent {
 
     // ── 滚动 ──
 
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() != 0) return false;
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.isOnScrollbar(mx, my)) {
+            this.startScrollbarDrag(my);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (!this.scrollbarDragging()) return false;
+        var mc = Minecraft.getInstance();
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        this.onScrollbarDrag(my);
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        this.stopScrollbarDrag();
+        return false;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (this.hitRect().contains((float) mouseX, (float) mouseY)) {
+            return this.onScroll((float) scrollY);
+        }
+        return false;
+    }
+
     public boolean onScroll(float amount) {
         if (this.contentHeight <= this.height) return false;
         float maxScroll = this.contentHeight - this.height;
@@ -167,7 +203,6 @@ public class ScrollableComponent implements UIComponent {
         this.scrollbarDragging = false;
     }
 
-
     private float barH() {
         return Math.max(16, this.height * this.height / this.contentHeight);
     }
@@ -186,38 +221,5 @@ public class ScrollableComponent implements UIComponent {
      */
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, this.width, this.height);
-    }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
-        if (event.button() != 0) return false;
-        var mc = Minecraft.getInstance();
-        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
-        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        if (this.isOnScrollbar(mx, my)) { this.startScrollbarDrag(my); return true; }
-        return false;
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (this.hitRect().contains((float) mouseX, (float) mouseY)) {
-            return this.onScroll((float) scrollY);
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        if (!this.scrollbarDragging()) return false;
-        var mc = Minecraft.getInstance();
-        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        this.onScrollbarDrag(my);
-        return true;
-    }
-
-    @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        this.stopScrollbarDrag();
-        return false;
     }
 }

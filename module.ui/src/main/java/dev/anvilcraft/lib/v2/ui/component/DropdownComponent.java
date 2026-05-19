@@ -82,10 +82,10 @@ public class DropdownComponent implements UIComponent {
         this.open = open;
         if (!this.open) this.popupScrollY = 0;
     }
-    public void setHovered(boolean hovered) { this.hovered = hovered; }
 
-    @Override
-    public void updateHover(float mx, float my) { this.hovered = this.hitRect().contains(mx, my); }
+    public void setHovered(boolean hovered) {
+        this.hovered = hovered;
+    }
 
     public void setPopupScrollY(float y) {
         this.popupScrollY = y;
@@ -114,17 +114,68 @@ public class DropdownComponent implements UIComponent {
         this.height = height;
     }
 
-    // ── 触发器渲染 ──
-
-    @Override
-    public int renderingPriority() {
-        return this.open ? 100 : 0;
-    }
-
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         this.renderTrigger(extractor);
         this.renderPopup(extractor);
+    }
+
+    // ── 触发器渲染 ──
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() != 0) return false;
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.isOnPopupScrollbar(mx, my)) {
+            this.startPopupScrollbarDrag(my);
+            return true;
+        }
+        if (this.clickPopup(mx, my)) {
+            mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+            return true;
+        }
+        if (this.clickTrigger(mx, my)) {
+            mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (!this.scrollbarDragging()) return false;
+        var mc = Minecraft.getInstance();
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        this.onPopupScrollbarDrag(my);
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        this.stopPopupScrollbarDrag();
+        return false;
+    }
+
+    // ── 弹出层渲染（延迟调用，确保 z-order） ──
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (this.open() && this.popupRect().contains((float) mouseX, (float) mouseY)) {
+            return this.onPopupScroll((float) scrollY);
+        }
+        return false;
+    }
+
+    @Override
+    public void updateHover(float mx, float my) {
+        this.hovered = this.hitRect().contains(mx, my);
+    }
+
+    @Override
+    public int renderingPriority() {
+        return this.open ? 100 : 0;
     }
 
     private void renderTrigger(GuiGraphicsExtractor extractor) {
@@ -164,7 +215,7 @@ public class DropdownComponent implements UIComponent {
         }
     }
 
-    // ── 弹出层渲染（延迟调用，确保 z-order） ──
+    // ── 交互 ──
 
     /**
      * 弹出层 item 高度。
@@ -213,7 +264,7 @@ public class DropdownComponent implements UIComponent {
         int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
         int hoveredIdx = -1;
         if (mx >= px && mx < px + pw && my >= py && my < py + (int) ph) {
-            hoveredIdx = (int) ((my - py) / itemH);
+            hoveredIdx = (int) ((my - py - this.popupScrollY) / itemH);
         }
 
         float startY = this.y + this.height + this.popupScrollY;
@@ -223,9 +274,13 @@ public class DropdownComponent implements UIComponent {
             if (bottom <= this.y + this.height || iy >= this.y + this.height + ph) continue;
 
             int bg;
-            if (i == this.selectedIndex) bg = DropdownComponent.POPUP_HOVER;
-            else if (i == hoveredIdx) bg = DropdownComponent.SCROLLBAR_COLOR; // 悬停高亮
-            else bg = DropdownComponent.POPUP_BG;
+            if (i == this.selectedIndex) {
+                bg = DropdownComponent.POPUP_HOVER;
+            } else if (i == hoveredIdx) {
+                bg = DropdownComponent.SCROLLBAR_COLOR; // 悬停高亮
+            } else {
+                bg = DropdownComponent.POPUP_BG;
+            }
             int fillTop = Math.max((int) iy, py);
             int fillBot = Math.min((int) bottom, py + (int) ph);
             extractor.fill(px, fillTop, px + pw, fillBot, bg);
@@ -242,8 +297,6 @@ public class DropdownComponent implements UIComponent {
             extractor.fill(bx, (int) by, bx + DropdownComponent.SCROLLBAR_W, (int) (by + bh), DropdownComponent.SCROLLBAR_COLOR);
         }
     }
-
-    // ── 交互 ──
 
     /**
      * 点击触发器区域 → 切换展开。
@@ -343,40 +396,5 @@ public class DropdownComponent implements UIComponent {
 
     public LayoutRect hitRect() {
         return this.triggerRect();
-    }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
-        if (event.button() != 0) return false;
-        var mc = Minecraft.getInstance();
-        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
-        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        if (this.isOnPopupScrollbar(mx, my)) { this.startPopupScrollbarDrag(my); return true; }
-        if (this.clickPopup(mx, my)) { mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)); return true; }
-        if (this.clickTrigger(mx, my)) { mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)); return true; }
-        return false;
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (this.open() && this.popupRect().contains((float) mouseX, (float) mouseY)) {
-            return this.onPopupScroll((float) scrollY);
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        if (!this.scrollbarDragging()) return false;
-        var mc = Minecraft.getInstance();
-        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        this.onPopupScrollbarDrag(my);
-        return true;
-    }
-
-    @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        this.stopPopupScrollbarDrag();
-        return false;
     }
 }

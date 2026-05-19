@@ -58,11 +58,10 @@ public class SliderComponent implements UIComponent {
         this.max = max;
         this.trackWidth = trackWidth;
     }
-    public void setHovered(boolean hovered) { this.hovered = hovered; }
 
-    @Override
-    public void updateHover(float mx, float my) { this.hovered = this.hitRect().contains(mx, my); }
-
+    public void setHovered(boolean hovered) {
+        this.hovered = hovered;
+    }
 
     @Override
     public List<UIComponent> children() {
@@ -102,6 +101,37 @@ public class SliderComponent implements UIComponent {
         extractor.fill(tix, tiy, tix + (int) SliderComponent.THUMB_W, tiy + (int) SliderComponent.THUMB_H, thumbColor);
     }
 
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() != 0) return false;
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.hitRect().contains(mx, my)) {
+            this.setValueFromMouse(mx);
+            mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.hitRect().contains(mx, my)) {
+            this.setValueFromMouse(mx);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void updateHover(float mx, float my) {
+        this.hovered = this.hitRect().contains(mx, my);
+    }
+
     /**
      * 根据鼠标 X 坐标更新值。
      */
@@ -119,24 +149,5 @@ public class SliderComponent implements UIComponent {
      */
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, this.width, this.height);
-    }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
-        if (event.button() != 0) return false;
-        var mc = Minecraft.getInstance();
-        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
-        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        if (this.hitRect().contains(mx, my)) { this.setValueFromMouse(mx); mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)); return true; }
-        return false;
-    }
-
-    @Override
-    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        var mc = Minecraft.getInstance();
-        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
-        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        if (this.hitRect().contains(mx, my)) { this.setValueFromMouse(mx); return true; }
-        return false;
     }
 }

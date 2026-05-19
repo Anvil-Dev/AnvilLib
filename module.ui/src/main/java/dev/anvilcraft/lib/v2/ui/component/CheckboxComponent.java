@@ -97,6 +97,20 @@ public class CheckboxComponent implements UIComponent {
         // TODO: 用 font.text() 渲染标签
     }
 
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() != 0) return false;
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.hitRect().contains(mx, my)) {
+            this.toggle();
+            mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+            return true;
+        }
+        return false;
+    }
+
     /**
      * 切换状态。
      */
@@ -110,15 +124,5 @@ public class CheckboxComponent implements UIComponent {
      */
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, SIZE, SIZE);
-    }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
-        if (event.button() != 0) return false;
-        var mc = Minecraft.getInstance();
-        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
-        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        if (this.hitRect().contains(mx, my)) { this.toggle(); mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)); return true; }
-        return false;
     }
 }

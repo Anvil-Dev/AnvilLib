@@ -19,16 +19,21 @@ import java.util.Collections;
 import java.util.List;
 
 @Accessors(fluent = true)
-@SuppressWarnings({"unused", "UnusedReturnValue"})
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class ButtonComponent implements UIComponent {
-
-    private static final int BG_COLOR       = 0xFF404040;
+    private static final int BG_COLOR = 0xFF404040;
     private static final int BG_HOVER_COLOR = 0xFF606060;
-    private static final int TEXT_COLOR     = 0xFFFFFFFF;
-    private static final float PADDING_H    = 12;
-    private static final float PADDING_V    = 6;
+    private static final int TEXT_COLOR = 0xFFFFFFFF;
+    private static final float PADDING_H = 12;
+    private static final float PADDING_V = 6;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private Modifier modifier;
     @Setter
     private String label;
@@ -43,13 +48,19 @@ public class ButtonComponent implements UIComponent {
         this.label = label;
     }
 
-    public ButtonComponent onClick(@Nullable Runnable onClick) { this.onClick = onClick; return this; }
-    public void setHovered(boolean hovered) { this.hovered = hovered; }
+    public ButtonComponent onClick(@Nullable Runnable onClick) {
+        this.onClick = onClick;
+        return this;
+    }
+
+    public void setHovered(boolean hovered) {
+        this.hovered = hovered;
+    }
 
     @Override
-    public void updateHover(float mx, float my) { this.hovered = this.hitRect().contains(mx, my); }
-
-    @Override public List<UIComponent> children() { return Collections.emptyList(); }
+    public List<UIComponent> children() {
+        return Collections.emptyList();
+    }
 
     @Override
     public MeasuredSize measure(Constraints constraints) {
@@ -83,14 +94,6 @@ public class ButtonComponent implements UIComponent {
         extractor.text(font, this.label, textX, textY, ButtonComponent.TEXT_COLOR, true);
     }
 
-    public LayoutRect hitRect() {
-        return LayoutRect.of(this.x, this.y, this.width, this.height);
-    }
-
-    public void click() {
-        if (this.onClick != null) this.onClick.run();
-    }
-
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
         if (event.button() != 0) return false;
@@ -103,5 +106,18 @@ public class ButtonComponent implements UIComponent {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void updateHover(float mx, float my) {
+        this.hovered = this.hitRect().contains(mx, my);
+    }
+
+    public LayoutRect hitRect() {
+        return LayoutRect.of(this.x, this.y, this.width, this.height);
+    }
+
+    public void click() {
+        if (this.onClick != null) this.onClick.run();
     }
 }

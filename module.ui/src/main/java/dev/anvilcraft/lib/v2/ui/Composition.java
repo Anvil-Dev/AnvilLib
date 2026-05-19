@@ -40,19 +40,17 @@ public class Composition {
 
     // ── slot table ──
     private final List<Animatable> animatables = new ArrayList<>();
+    private final @Nullable UIScope rootScope;
     /**
      * 当前正在 emit 的 slot（在 {@link #emit} 期间设置）。
      */
-    @Nullable
-    Slot currentSlot;
+    @Nullable Slot currentSlot;
     private int currentIndex;
     private int currentRememberKey;
     private boolean dirty = true;
-
     // ── 状态 ──
     @Setter
     private @Nullable Consumer<UIScope> content;
-    private final @Nullable UIScope rootScope;
 
     public Composition(@Nullable UIScope rootScope) {
         this.rootScope = rootScope;
@@ -144,18 +142,15 @@ public class Composition {
      * 将旧组件的运行时状态复制到新组件。
      */
     private void copyRuntimeState(UIComponent old, UIComponent replacement) {
-        if (old instanceof ScrollableComponent oldSc
-            && replacement instanceof ScrollableComponent newSc) {
+        if (old instanceof ScrollableComponent oldSc && replacement instanceof ScrollableComponent newSc) {
             newSc.setScrollY(oldSc.scrollY());
         }
-        if (old instanceof TextInputComponent oldTi
-            && replacement instanceof TextInputComponent newTi) {
+        if (old instanceof TextInputComponent oldTi && replacement instanceof TextInputComponent newTi) {
             newTi.setValue(oldTi.value());
             newTi.setCursorPos(oldTi.cursorPos());
             newTi.setFocused(oldTi.focused());
         }
-        if (old instanceof DropdownComponent oldDd
-            && replacement instanceof DropdownComponent newDd) {
+        if (old instanceof DropdownComponent oldDd && replacement instanceof DropdownComponent newDd) {
             newDd.setOpen(oldDd.open());
             newDd.setPopupScrollY(oldDd.popupScrollY());
         }
@@ -225,31 +220,21 @@ public class Composition {
 
     private void renderTree(UIComponent component, GuiGraphicsExtractor extractor, Constraints constraints) {
         // 1. Apply modifier to constraints
-        Constraints modConstraints = component.modifier().foldIn(
-            constraints,
-            (c, el) -> el.modifyConstraints(c)
-        );
+        Constraints modConstraints = component.modifier().foldIn(constraints, (c, el) -> el.modifyConstraints(c));
 
         // 2. Measure
         MeasuredSize size = component.measure(modConstraints);
-        size = component.modifier().foldOut(
-            size,
-            (el, s) -> el.modifyMeasuredSize(component, modConstraints, s)
-        );
+        size = component.modifier().foldOut(size, (el, s) -> el.modifyMeasuredSize(component, modConstraints, s));
 
         // 3. Layout
         LayoutRect rect = LayoutRect.of(0, 0, size.width(), size.height());
-        rect = component.modifier().foldOut(
-            rect,
-            ModifierElement::modifyLayout
-        );
+        rect = component.modifier().foldOut(rect, ModifierElement::modifyLayout);
         component.layout(rect.x(), rect.y(), rect.width(), rect.height());
 
         // 4. Emit modifier render states (background, border, etc.)
         final LayoutRect finalRect = rect;
         component.modifier().foldOut(
-            extractor,
-            (el, e) -> {
+            extractor, (el, e) -> {
                 el.emitRenderState(e, finalRect);
                 return e;
             }

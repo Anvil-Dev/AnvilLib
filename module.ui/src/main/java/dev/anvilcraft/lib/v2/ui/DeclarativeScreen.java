@@ -22,7 +22,6 @@ import org.jspecify.annotations.Nullable;
     }
 )
 public abstract class DeclarativeScreen extends Screen {
-
     private final UIScope rootScope = new RootScope();
     @Nullable
     private Composition composition;
@@ -48,12 +47,22 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == 256) {
+            this.onClose();
+            return true;
+        }
+        if (this.focusOwner != null && this.focusOwner.keyPressed(event)) return true;
+        return super.keyPressed(event);
+    }
+
+    // ── 焦点 ──
+
+    @Override
     protected void init() {
         this.composition = new Composition(this.rootScope);
         this.composition.setContent(this::content);
     }
-
-    // ── 焦点 ──
 
     private void refreshFocus() {
         if (this.focusOwner == null) return;
@@ -67,6 +76,8 @@ public abstract class DeclarativeScreen extends Screen {
         this.focusOwner = null;
     }
 
+    // ── 鼠标点击 ──
+
     private @Nullable UIComponent findFocused(UIComponent component) {
         if (component instanceof Focusable f && f.focused()) return component;
         for (UIComponent child : component.children()) {
@@ -75,8 +86,6 @@ public abstract class DeclarativeScreen extends Screen {
         }
         return null;
     }
-
-    // ── 鼠标点击 ──
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
@@ -90,10 +99,42 @@ public abstract class DeclarativeScreen extends Screen {
         return super.mouseClicked(event, isDoubleClick);
     }
 
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        for (UIComponent child : this.rootScope.getChildren()) {
+            dispatchMouseReleased(child, event);
+        }
+        return super.mouseReleased(event);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        for (UIComponent child : this.rootScope.getChildren()) {
+            if (dispatchMouseDragged(child, event, deltaX, deltaY)) return true;
+        }
+        return super.mouseDragged(event, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        for (UIComponent child : this.rootScope.getChildren()) {
+            if (dispatchMouseScrolled(child, mouseX, mouseY, scrollX, scrollY)) return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        if (this.focusOwner != null && this.focusOwner.charTyped(event)) return true;
+        return super.charTyped(event);
+    }
+
     private void clearAllFocus() {
         this.focusOwner = null;
         for (UIComponent child : this.rootScope.getChildren()) clearFocusRecursive(child);
     }
+
+    // ── 鼠标拖拽 ──
 
     private void clearFocusRecursive(UIComponent component) {
         if (component instanceof Focusable f) f.setFocused(false);
@@ -103,6 +144,8 @@ public abstract class DeclarativeScreen extends Screen {
     private void closeAllDropdowns() {
         for (UIComponent child : this.rootScope.getChildren()) closeDropdownsRecursive(child);
     }
+
+    // ── 鼠标释放 ──
 
     private void closeDropdownsRecursive(UIComponent component) {
         if (component instanceof DropdownComponent dd) dd.setOpen(false);
@@ -116,10 +159,13 @@ public abstract class DeclarativeScreen extends Screen {
         return false;
     }
 
+    // ── 滚轮 ──
+
     private boolean dispatchMouseClickedRecursive(UIComponent component, MouseButtonEvent event, boolean isDouble) {
-        var sorted = component.children().stream()
-                .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
-                .toList();
+        var sorted = component.children()
+            .stream()
+            .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
+            .toList();
         for (UIComponent child : sorted) {
             if (dispatchMouseClickedRecursive(child, event, isDouble)) return true;
         }
@@ -130,80 +176,37 @@ public abstract class DeclarativeScreen extends Screen {
         return false;
     }
 
-    // ── 鼠标拖拽 ──
-
-    @Override
-    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        for (UIComponent child : this.rootScope.getChildren()) {
-            if (dispatchMouseDragged(child, event, deltaX, deltaY)) return true;
-        }
-        return super.mouseDragged(event, deltaX, deltaY);
-    }
-
     private boolean dispatchMouseDragged(UIComponent component, MouseButtonEvent event, double dx, double dy) {
-        var sorted = component.children().stream()
-                .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
-                .toList();
+        var sorted = component.children()
+            .stream()
+            .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
+            .toList();
         for (UIComponent child : sorted) {
             if (dispatchMouseDragged(child, event, dx, dy)) return true;
         }
         return component.mouseDragged(event, dx, dy);
     }
 
-    // ── 鼠标释放 ──
-
-    @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        for (UIComponent child : this.rootScope.getChildren()) {
-            dispatchMouseReleased(child, event);
-        }
-        return super.mouseReleased(event);
-    }
+    // ── 键盘 ──
 
     private void dispatchMouseReleased(UIComponent component, MouseButtonEvent event) {
-        var sorted = component.children().stream()
-                .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
-                .toList();
+        var sorted = component.children()
+            .stream()
+            .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
+            .toList();
         for (UIComponent child : sorted) dispatchMouseReleased(child, event);
         component.mouseReleased(event);
     }
 
-    // ── 滚轮 ──
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        for (UIComponent child : this.rootScope.getChildren()) {
-            if (dispatchMouseScrolled(child, mouseX, mouseY, scrollX, scrollY)) return true;
-        }
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
-    }
-
     private boolean dispatchMouseScrolled(UIComponent component, double mx, double my, double sx, double sy) {
-        var sorted = component.children().stream()
-                .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
-                .toList();
+        var sorted = component.children()
+            .stream()
+            .sorted(java.util.Comparator.comparingInt(UIComponent::eventPriority).reversed())
+            .toList();
         for (UIComponent child : sorted) {
             if (dispatchMouseScrolled(child, mx, my, sx, sy)) return true;
         }
         return component.mouseScrolled(mx, my, sx, sy);
-    }
-
-    // ── 键盘 ──
-
-    @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (event.key() == 256) {
-            this.onClose();
-            return true;
-        }
-        if (this.focusOwner != null && this.focusOwner.keyPressed(event)) return true;
-        return super.keyPressed(event);
-    }
-
-    @Override
-    public boolean charTyped(CharacterEvent event) {
-        if (this.focusOwner != null && this.focusOwner.charTyped(event)) return true;
-        return super.charTyped(event);
     }
 
     // ── hover ──

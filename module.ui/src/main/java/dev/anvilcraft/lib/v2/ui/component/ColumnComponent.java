@@ -16,10 +16,15 @@ import java.util.Collections;
 import java.util.List;
 
 @Accessors(fluent = true)
-@SuppressWarnings({"unused", "UnusedReturnValue"})
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue"
+    }
+)
 public class ColumnComponent implements UIComponent {
-
-    @Getter @Setter
+    @Getter
+    @Setter
     private Modifier modifier;
     @Getter
     private List<UIComponent> children = Collections.emptyList();

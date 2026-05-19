@@ -1,10 +1,10 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
 import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.Focusable;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
-import dev.anvilcraft.lib.v2.ui.Focusable;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
 import lombok.Getter;
 import lombok.Setter;
@@ -116,6 +116,20 @@ public class TextInputComponent implements UIComponent, Focusable {
     }
 
     @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() != 0) return false;
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        if (this.hitRect().contains(mx, my)) {
+            this.setFocused(true);
+            mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean keyPressed(KeyEvent event) {
         int key = event.key();
         if (key == 259) {
@@ -173,15 +187,5 @@ public class TextInputComponent implements UIComponent, Focusable {
 
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, this.width, this.height);
-    }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
-        if (event.button() != 0) return false;
-        var mc = Minecraft.getInstance();
-        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
-        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
-        if (this.hitRect().contains(mx, my)) { this.setFocused(true); mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)); return true; }
-        return false;
     }
 }
