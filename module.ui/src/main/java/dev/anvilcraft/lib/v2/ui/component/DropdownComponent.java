@@ -204,14 +204,25 @@ public class DropdownComponent implements UIComponent {
         extractor.enableScissor(px, py, px + pw, py + (int) ph);
         extractor.fill(px, py, px + pw, py + (int) ph, DropdownComponent.POPUP_BG);
 
+        // 计算鼠标悬停项
+        var mc = Minecraft.getInstance();
+        int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        int hoveredIdx = -1;
+        if (mx >= px && mx < px + pw && my >= py && my < py + (int) ph) {
+            hoveredIdx = (int) ((my - py) / itemH);
+        }
+
         float startY = this.y + this.height + this.popupScrollY;
         for (int i = 0; i < this.options.length; i++) {
             float iy = startY + i * itemH;
             float bottom = iy + itemH;
-            // 跳过完全不可见的项
             if (bottom <= this.y + this.height || iy >= this.y + this.height + ph) continue;
 
-            int bg = (i == this.selectedIndex) ? DropdownComponent.POPUP_HOVER : DropdownComponent.POPUP_BG;
+            int bg;
+            if (i == this.selectedIndex) bg = DropdownComponent.POPUP_HOVER;
+            else if (i == hoveredIdx) bg = DropdownComponent.SCROLLBAR_COLOR; // 悬停高亮
+            else bg = DropdownComponent.POPUP_BG;
             int fillTop = Math.max((int) iy, py);
             int fillBot = Math.min((int) bottom, py + (int) ph);
             extractor.fill(px, fillTop, px + pw, fillBot, bg);
