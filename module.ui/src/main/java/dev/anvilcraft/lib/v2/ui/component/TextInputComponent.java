@@ -48,6 +48,7 @@ public class TextInputComponent implements UIComponent, Focusable {
     private boolean focused;
     @Setter
     private @Nullable Consumer<String> onChange;
+    @Getter
     private int displayPos;
     @Getter
     private int cursorPos;
@@ -62,10 +63,23 @@ public class TextInputComponent implements UIComponent, Focusable {
     public void setValue(@Nullable String value) {
         this.value = value != null ? value : "";
         this.cursorPos = this.value.length();
+        this.scrollTo(this.cursorPos);
     }
 
     public void setCursorPos(int pos) {
         this.cursorPos = Math.clamp(pos, 0, this.value.length());
+        this.scrollTo(this.cursorPos);
+    }
+
+    private void scrollTo(int pos) {
+        if (pos < this.displayPos) { this.displayPos = pos; return; }
+        var font = Minecraft.getInstance().font;
+        float visibleW = this.width - PADDING_H * 2;
+        while (this.displayPos < pos) {
+            String segment = this.value.substring(this.displayPos, pos);
+            if (font.width(segment) <= visibleW) break;
+            this.displayPos++;
+        }
     }
 
     public void setFocused(boolean focused) {
@@ -97,6 +111,7 @@ public class TextInputComponent implements UIComponent, Focusable {
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
+        extractor.enableScissor(ix, iy, ix + iw, iy + ih);
         extractor.fill(ix, iy, ix + iw, iy + ih, TextInputComponent.BG_COLOR);
 
         var font = Minecraft.getInstance().font;
@@ -104,15 +119,19 @@ public class TextInputComponent implements UIComponent, Focusable {
         int textY = (int) (this.y + (this.height + font.lineHeight) / 2f - font.lineHeight);
         boolean hasText = !this.value.isEmpty();
 
-        String display = hasText ? this.value : this.placeholder;
-        int color = hasText ? TextInputComponent.TEXT_COLOR : TextInputComponent.PLACEHOLDER_COLOR;
-        extractor.text(font, display, textX, textY, color);
+        if (hasText) {
+            String visible = this.value.substring(this.displayPos);
+            extractor.text(font, visible, textX, textY, TextInputComponent.TEXT_COLOR);
 
-        if (this.focused && hasText) {
-            String before = this.value.substring(0, Math.min(this.cursorPos, this.value.length()));
-            int cursorX = (int) (this.x + TextInputComponent.PADDING_H + font.width(before));
-            extractor.fill(cursorX, iy + 2, cursorX + 1, iy + ih - 2, TextInputComponent.CURSOR_COLOR);
+            if (this.focused) {
+                String before = this.value.substring(this.displayPos, Math.min(this.cursorPos, this.value.length()));
+                int cursorX = textX + font.width(before);
+                extractor.fill(cursorX, iy + 2, cursorX + 1, iy + ih - 2, TextInputComponent.CURSOR_COLOR);
+            }
+        } else {
+            extractor.text(font, this.placeholder, textX, textY, TextInputComponent.PLACEHOLDER_COLOR);
         }
+        extractor.disableScissor();
     }
 
     @Override
@@ -123,6 +142,17 @@ public class TextInputComponent implements UIComponent, Focusable {
         int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
         if (this.hitRect().contains(mx, my)) {
             this.setFocused(true);
+            // 根据点击位置设置光标
+            var font = Minecraft.getInstance().font;
+            float relX = mx - (this.x + PADDING_H);
+            String visible = this.value.substring(this.displayPos);
+            int pos = this.displayPos;
+            for (int i = 0; i < visible.length(); i++) {
+                if (font.width(visible.substring(0, i + 1)) > relX) break;
+                pos++;
+            }
+            this.cursorPos = Math.clamp(pos, 0, this.value.length());
+            this.scrollTo(this.cursorPos);
             mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
             return true;
         }
@@ -136,6 +166,7 @@ public class TextInputComponent implements UIComponent, Focusable {
             if (this.cursorPos > 0) {
                 this.value = new StringBuilder(this.value).deleteCharAt(this.cursorPos - 1).toString();
                 this.cursorPos--;
+                this.scrollTo(this.cursorPos);
                 this.fireChange();
             }
             return true;
@@ -143,26 +174,21 @@ public class TextInputComponent implements UIComponent, Focusable {
         if (key == 261) {
             if (this.cursorPos < this.value.length()) {
                 this.value = new StringBuilder(this.value).deleteCharAt(this.cursorPos).toString();
+                this.scrollTo(this.cursorPos);
                 this.fireChange();
             }
             return true;
         }
         if (key == 263) {
-            if (this.cursorPos > 0) this.cursorPos--;
+            if (this.cursorPos > 0) { this.cursorPos--; this.scrollTo(this.cursorPos); }
             return true;
         }
         if (key == 262) {
-            if (this.cursorPos < this.value.length()) this.cursorPos++;
+            if (this.cursorPos < this.value.length()) { this.cursorPos++; this.scrollTo(this.cursorPos); }
             return true;
         }
-        if (key == 268) {
-            this.cursorPos = 0;
-            return true;
-        }
-        if (key == 269) {
-            this.cursorPos = this.value.length();
-            return true;
-        }
+        if (key == 268) { this.cursorPos = 0; this.scrollTo(this.cursorPos); return true; }
+        if (key == 269) { this.cursorPos = this.value.length(); this.scrollTo(this.cursorPos); return true; }
         return false;
     }
 
@@ -178,6 +204,7 @@ public class TextInputComponent implements UIComponent, Focusable {
     private void insertText(String text) {
         this.value = new StringBuilder(this.value).insert(this.cursorPos, text).toString();
         this.cursorPos += text.length();
+        this.scrollTo(this.cursorPos);
         this.fireChange();
     }
 
@@ -189,12 +216,15 @@ public class TextInputComponent implements UIComponent, Focusable {
         return LayoutRect.of(this.x, this.y, this.width, this.height);
     }
 
+    public void setDisplayPos(int pos) { this.displayPos = pos; }
+
     @Override
     public void copyRuntimeState(UIComponent old) {
         if (old instanceof TextInputComponent oldTi) {
             this.setValue(oldTi.value());
             this.setCursorPos(oldTi.cursorPos());
             this.setFocused(oldTi.focused());
+            this.setDisplayPos(oldTi.displayPos());
         }
     }
 }
