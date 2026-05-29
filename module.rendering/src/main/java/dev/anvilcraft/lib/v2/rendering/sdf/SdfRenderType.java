@@ -7,7 +7,9 @@ public enum SdfRenderType {
     SECTOR,
     PIE,
     CAPSULE,
-    EGG;
+    EGG,
+    SEGMENT
+    ;
 
     private static final SdfRenderType[] VALUES = values();
 

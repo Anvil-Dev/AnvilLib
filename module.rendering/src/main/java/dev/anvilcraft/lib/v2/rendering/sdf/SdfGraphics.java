@@ -109,6 +109,26 @@ public final class SdfGraphics {
         return          this;
     }
 
+    public SdfGraphics segment(
+            float x0, float y0,
+            float x1, float y1
+    ) {
+        var left        = Math.min(x0, x1);
+        var top         = Math.min(y0, y1);
+        var width       = Math.abs(x1 - x0);
+        var height      = Math.abs(y1 - y0);
+
+        var halfWidth   = width * 0.5f;
+        var halfHeight  = height * 0.5f;
+
+        this.parameters .getRect()
+                        .set(left, top, width, height);
+
+        this.parameters .segment( -halfWidth, -halfHeight, +halfWidth, +halfHeight);
+
+        return          this;
+    }
+
     public SdfGraphics color(int color) {
         this.parameters .color(color);
         return          this;
@@ -233,10 +253,10 @@ public final class SdfGraphics {
             );
         }
 
-        var x0          = -0.5f;
-        var y0          = -0.5f;
-        var x1          = +0.5f;
-        var y1          = +0.5f;
+        var x0          = rect.x;
+        var y0          = rect.y;
+        var x1          = rect.x + width;
+        var y1          = rect.y + height;
 
         pose            .rotate(Mth.DEG_TO_RAD * parameters.getRotation())
                         .scale(width, height);
@@ -313,10 +333,10 @@ public final class SdfGraphics {
 
         @Override
         public void buildVertices(VertexConsumer consumer) {
-            consumer.addVertexWith2DPose(this.pose(), this.x0(), this.y0()).setUv(0, 0).setUv1(this.index(), 0).setColor(this.color());
-            consumer.addVertexWith2DPose(this.pose(), this.x0(), this.y1()).setUv(0, 1).setUv1(this.index(), 0).setColor(this.color());
-            consumer.addVertexWith2DPose(this.pose(), this.x1(), this.y1()).setUv(1, 1).setUv1(this.index(), 0).setColor(this.color());
-            consumer.addVertexWith2DPose(this.pose(), this.x1(), this.y0()).setUv(1, 0).setUv1(this.index(), 0).setColor(this.color());
+            consumer.addVertexWith2DPose(this.pose(), -0.5f, -0.5f).setUv(0, 0).setUv1(this.index(), 0).setColor(this.color());
+            consumer.addVertexWith2DPose(this.pose(), -0.5f, +0.5f).setUv(0, 1).setUv1(this.index(), 0).setColor(this.color());
+            consumer.addVertexWith2DPose(this.pose(), +0.5f, +0.5f).setUv(1, 1).setUv1(this.index(), 0).setColor(this.color());
+            consumer.addVertexWith2DPose(this.pose(), +0.5f, -0.5f).setUv(1, 0).setUv1(this.index(), 0).setColor(this.color());
         }
 
         @Override

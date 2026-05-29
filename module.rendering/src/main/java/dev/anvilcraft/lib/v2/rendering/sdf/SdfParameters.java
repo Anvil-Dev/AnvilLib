@@ -74,6 +74,11 @@ public class SdfParameters extends UboObject<SdfParameters> {
         this.shapeParams    .set(height, bottomRadius, topRadius, 0.0f);
     }
 
+    public void segment(float x0, float y0, float x1, float y1) {
+        this                ._renderType(SdfRenderType.SEGMENT);
+        this.shapeParams    .set(x0, y0, x1, y1);
+    }
+
     public void smooth(float smooth) {
         this                ._smooth(smooth);
     }

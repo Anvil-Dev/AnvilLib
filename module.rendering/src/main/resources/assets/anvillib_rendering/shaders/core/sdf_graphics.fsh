@@ -20,6 +20,7 @@ layout(std140) uniform SDFParameters {
 #define RT_PIE          4
 #define RT_UCAPSULE     5
 #define RT_EGG          6
+#define RT_SEGMENT      7
 
 #define PASS_FILL       0
 #define PASS_LIGHT      1
@@ -75,13 +76,6 @@ float sdPie(in vec2 p, in vec2 c, in float r) {
 }
 
 // from https://iquilezles.org/articles/distfunctions2d/
-float sdSegment( in vec2 p, in vec2 a, in vec2 b ) {
-    vec2 pa = p-a, ba = b-a;
-    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
-    return length( pa - ba*h );
-}
-
-// from https://iquilezles.org/articles/distfunctions2d/
 float sdUnevenCapsule( vec2 p, float r1, float r2, float h )
 {
     p.x = abs(p.x);
@@ -104,6 +98,15 @@ float sdEgg( in vec2 p, in float he, in float ra, in float rb )
     if( p.y<0.0 )             return length(p)-ra;
     if( p.y*ce-p.x*he>he*ce ) return length(vec2(p.x,p.y-he))-rb;
     return length(vec2(p.x+ce,p.y))-(ce+ra);
+}
+
+// from https://iquilezles.org/articles/distfunctions2d/
+float sdSegment( in vec2 p, in vec2 a, in vec2 b )
+{
+    vec2 ba = b-a;
+    vec2 pa = p-a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+    return length(pa-h*ba);
 }
 
 void main() {
@@ -134,6 +137,9 @@ void main() {
             break;
         case    RT_EGG:
             d   = sdEgg(p, shape.x, shape.y, shape.z);
+            break;
+        case    RT_SEGMENT:
+            d   = sdSegment(p, shape.xy, shape.zw) - uCornerRadius;
             break;
     }
 

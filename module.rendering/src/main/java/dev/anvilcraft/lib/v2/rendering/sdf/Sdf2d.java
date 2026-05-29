@@ -98,6 +98,11 @@ public class Sdf2d {
                     shape.x, shape.y,
                     shape.z
             );
+
+            default -> sdRect(
+                    px, py,
+                    rect.z, rect.w
+            );
         };
 
         if (params.isOnion()) {
