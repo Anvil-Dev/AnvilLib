@@ -117,13 +117,13 @@ public class SdfGraphicsLayer implements GuiLayer {
 
         this.draw(
                 graphics,
-                sdf.capsule(280, 50 + shift, 8, 10, 18),
+                sdf.triangleEquilateral(280, 50 + shift, 20),
                 xMouse, yMouse
         );
 
         this.draw(
                 graphics,
-                sdf.egg(330, 50 + shift, 2, 10, 12),
+                sdf.triangleIsosceles(330, 50 + shift, 20, 40),
                 xMouse, yMouse
         );
     }
