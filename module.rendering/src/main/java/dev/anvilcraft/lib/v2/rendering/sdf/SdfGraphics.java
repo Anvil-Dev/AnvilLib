@@ -126,8 +126,26 @@ public final class SdfGraphics {
 
         this.parameters .getRect()
                         .set(left, top, width, height);
-
         this.parameters .segment( -halfWidth, -halfHeight, +halfWidth, +halfHeight);
+
+        return          this;
+    }
+
+    public SdfGraphics triangleEquilateral(float x, float y, float radius) {
+        var actual      = radius * (1.0f / 1.2f);
+
+        this.parameters .getRect()
+                        .set(x, y, radius * 2, radius * 2);
+        this.parameters .triangleEquilateral(actual);
+
+        return          this;
+    }
+
+    public SdfGraphics triangleIsosceles(float x, float y, float width, float height) {
+        final var factor = 1.0f / 1.2f;
+        this.parameters .getRect()
+                        .set(x, y, width * 2.0f, height);
+        this.parameters .triangleIsosceles(width * factor, height * factor);
 
         return          this;
     }

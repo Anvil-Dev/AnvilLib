@@ -21,6 +21,8 @@ layout(std140) uniform SDFParameters {
 #define RT_UCAPSULE     5
 #define RT_EGG          6
 #define RT_SEGMENT      7
+#define RT_ETRIANGLE    8
+#define RT_ITRIANGLE    9
 
 #define PASS_FILL       0
 #define PASS_LIGHT      1
@@ -109,6 +111,29 @@ float sdSegment( in vec2 p, in vec2 a, in vec2 b )
     return length(pa-h*ba);
 }
 
+// from https://iquilezles.org/articles/distfunctions2d/
+float sdEquilateralTriangle( in vec2 p, in float r )
+{
+    const float k = sqrt(3.0);
+    p.x = abs(p.x) - r;
+    p.y = p.y + r/k;
+    if( p.x+k*p.y>0.0 ) p = vec2(p.x-k*p.y,-k*p.x-p.y)/2.0;
+    p.x -= clamp( p.x, -2.0*r, 0.0 );
+    return -length(p)*sign(p.y);
+}
+
+// from https://iquilezles.org/articles/distfunctions2d/
+float sdIsoscelesTriangle( in vec2 p, in vec2 q )
+{
+    p.x = abs(p.x);
+    vec2 a = p - q*clamp( dot(p,q)/dot(q,q), 0.0, 1.0 );
+    vec2 b = p - q*vec2( clamp( p.x/q.x, 0.0, 1.0 ), 1.0 );
+    float s = -sign( q.y );
+    vec2 d = min( vec2( dot(a,a), s*(p.x*q.y-p.y*q.x) ),
+            vec2( dot(b,b), s*(p.y-q.y)  ));
+    return -sqrt(d.x)*sign(d.y);
+}
+
 void main() {
     Sdf     params          = SDFs[vIndex];
     vec4    shape           = params.Shape;
@@ -116,18 +141,21 @@ void main() {
     float   alpha           = 0.0;
 
     float   d               = 1e5;
+
+    float   r               = uCornerRadius;
+    float   r2              = r + r;
     switch      (uRenderType) {
         case    RT_BOX:
-            d   = sdRect(p, shape.xy - vec2(uCornerRadius)) - uCornerRadius;
+            d   = sdRect(p, shape.xy - vec2(r)) - r;
             break;
         case    RT_CIRCLE:
             d   = sdCircle(p, shape.x);
             break;
         case    RT_ARC:
-            d   = sdArc(p, shape.xy, shape.z, shape.w) - uCornerRadius;
+            d   = sdArc(p, shape.xy, shape.z, shape.w) - r;
             break;
         case    RT_SECTOR:
-            d   = sdRing(p, shape.xy, shape.z, shape.w) - uCornerRadius;
+            d   = sdRing(p, shape.xy, shape.z, shape.w) - r;
             break;
         case    RT_PIE:
             d   = sdPie(p, shape.xy, shape.z);
@@ -139,7 +167,13 @@ void main() {
             d   = sdEgg(p, shape.x, shape.y, shape.z);
             break;
         case    RT_SEGMENT:
-            d   = sdSegment(p, shape.xy, shape.zw) - uCornerRadius;
+            d   = sdSegment(p, shape.xy, shape.zw) - r;
+            break;
+        case    RT_ETRIANGLE:
+            d   = sdEquilateralTriangle(p, shape.x - r2) - r;
+            break;
+        case    RT_ITRIANGLE:
+            d   = sdIsoscelesTriangle(p - vec2(0.0, shape.y * 0.5 - r2), vec2(shape.x - r, r2 - shape.y)) - r;
             break;
     }
 

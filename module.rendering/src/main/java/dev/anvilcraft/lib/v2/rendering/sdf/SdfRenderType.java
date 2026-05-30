@@ -8,7 +8,10 @@ public enum SdfRenderType {
     PIE,
     CAPSULE,
     EGG,
-    SEGMENT
+    SEGMENT,
+
+    TRIANGLE_EQUILATERAL,
+    TRIANGLE_ISOSCELES,
     ;
 
     private static final SdfRenderType[] VALUES = values();
