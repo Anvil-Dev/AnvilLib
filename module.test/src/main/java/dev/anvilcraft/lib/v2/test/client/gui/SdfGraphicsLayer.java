@@ -5,7 +5,9 @@ import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.neoforged.neoforge.client.gui.GuiLayer;
 import org.jspecify.annotations.NonNull;
 
@@ -23,36 +25,11 @@ public class SdfGraphicsLayer implements GuiLayer {
         this.timer += tracker.getGameTimeDeltaTicks();
 
         var minecraft = Minecraft.getInstance();
-        if (minecraft.screen != null) return;
+        if (!(minecraft.screen instanceof ChatScreen)) return;
         int xMouse  = (int)minecraft.mouseHandler.getScaledXPos(minecraft.getWindow());
         int yMouse  = (int)minecraft.mouseHandler.getScaledYPos(minecraft.getWindow());
 
-        /*SdfGraphics.getInstance()
-                .center(true)
-                .color(0xFFFFFFFF)
-                .rotate(this.timer)
-                .stroke(0)
-                .box(32, 40, 40, 20)
-                .fill()
-                .draw(graphics)
-                .box(30, 65, 40, 20)
-                .round(2)
-                .fill()
-                .draw(graphics)
-                .round(0)
-                .circle(80, 50, 20)
-                .fill()
-                .draw(graphics)
-                .arc(130, 50, 45, 20, 5)
-                .fill()
-                .draw(graphics)
-                .sector(180, 50, 45, 20, 5)
-                .fill()
-                .draw(graphics)
-                .pie(230, 50, 45, 20)
-                .fill()
-                .draw(graphics)
-                .reset();*/
+        SdfGraphics.debug(true);
         var sdf     = SdfGraphics.getInstance()
                     .reset()
                     .rotate(this.timer)
@@ -62,15 +39,33 @@ public class SdfGraphicsLayer implements GuiLayer {
                     .fill();
 
         this.draw(graphics, sdf, 0, xMouse, yMouse);
+        SdfGraphics.debug(false);
 
-        sdf.stroke(2);
+        /*sdf.stroke(2);
         this.draw(graphics, sdf, 50, xMouse, yMouse);
 
         sdf.stroke(0).light(5);
         this.draw(graphics, sdf, 100, xMouse, yMouse);
 
         sdf.stroke(2);
-        this.draw(graphics, sdf, 150, xMouse, yMouse);
+        this.draw(graphics, sdf, 150, xMouse, yMouse);*/
+
+        // test segment
+
+        /*var min = 25;
+        var mx  = 75 + Mth.sin(this.timer * 0.05f) * 25.0f;
+        var my  = 75 + Mth.cos(this.timer * 0.05f) * 25.0f;
+
+        if (minecraft.screen != null) {
+            sdf
+                    .segment(min + 5, min + 5, mx + 5, my + 5)
+                    .rotate(0)
+                    .round(2.0f).color(0xFFFFFFFF)
+                    .draw(graphics)
+                    *//*.segment(min, min, mx, my)
+                    .light(5.0f)
+                    .draw(graphics)*//*;
+        }*/
 
         sdf.reset();
     }
