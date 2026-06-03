@@ -1,2 +1,17 @@
 dependencies {
 }
+
+tasks.register('runStd140LayoutRulesTest', JavaExec) {
+    group = 'verification'
+    description = 'Runs lightweight std140 layout rule checks.'
+    classpath = sourceSets.test.runtimeClasspath + sourceSets.main.compileClasspath
+    mainClass = 'dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.Std140LayoutRulesTest'
+}
+
+tasks.named('test') {
+    failOnNoDiscoveredTests = false
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('runStd140LayoutRulesTest')
+}

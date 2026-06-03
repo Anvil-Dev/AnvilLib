@@ -22,6 +22,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
 import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
 import dev.anvilcraft.lib.v2.rendering.foundation.compound.CompoundSubmitNodeStorage;
 import dev.anvilcraft.lib.v2.rendering.foundation.compound.DirtyTracked;
 import lombok.Getter;
@@ -43,9 +44,9 @@ import java.util.OptionalInt;
 
 @SuppressWarnings({"FieldMayBeFinal", "SameParameterValue"})
 public class BloomPostEffect implements DirtyTracked {
-    public static final int UNIFORM_TRANSFORM_SIZE = TransformsUbo.DEFINITION.size();
-    public static final int UNIFORM_BLOOM_SIZE = BloomParametersUbo.DEFINITION.size();
-    public static final int UNIFORM_ENHANCED_BLOOM_SIZE = BloomPipelineParametersUbo.DEFINITION.size();
+    public static final int UNIFORM_TRANSFORM_SIZE = TransformsUbo.DEFINITION.size(BufferLayout.STD140);
+    public static final int UNIFORM_BLOOM_SIZE = BloomParametersUbo.DEFINITION.size(BufferLayout.STD140);
+    public static final int UNIFORM_ENHANCED_BLOOM_SIZE = BloomPipelineParametersUbo.DEFINITION.size(BufferLayout.STD140);
 
     // todo: uses config or options
     private static final int PASSES_AMOUNT = 5;

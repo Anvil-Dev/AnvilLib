@@ -1,21 +1,23 @@
 package dev.anvilcraft.lib.v2.rendering.sdf;
 
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutDefinition;
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutEntry;
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutDefinition;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutEntry;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.ShaderBufferObjectUsage;
 import lombok.Getter;
 import net.minecraft.util.Mth;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
 
 @Getter
-public class SdfParameters extends UboObject<SdfParameters> {
+public class SdfParameters extends BufferObject<SdfParameters> {
 
-    public static final UboLayoutDefinition<SdfParameters> DEFINITION = UboLayoutDefinition.create(
-            UboLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getSharedParams).build(),
-            UboLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getShapeParams).build(),
-            UboLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getRect).build(),
-            UboLayoutEntry.<SdfParameters>ofVec4i().forGetter(SdfParameters::getTypeParams).build()
+    public static final BufferObjectLayoutDefinition<SdfParameters> DEFINITION = BufferObjectLayoutDefinition.create(
+            BufferObjectLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getSharedParams).build(),
+            BufferObjectLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getShapeParams).build(),
+            BufferObjectLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getRect).build(),
+            BufferObjectLayoutEntry.<SdfParameters>ofVec4i().forGetter(SdfParameters::getTypeParams).build()
     );
 
     private final   Vector4f    sharedParams    = new Vector4f();
@@ -26,6 +28,10 @@ public class SdfParameters extends UboObject<SdfParameters> {
     private         int         color           = 0xFFFFFFFF;
     private         float       rotation;
     private         boolean     center;
+
+    protected SdfParameters() {
+        super(BufferLayout.STD140, ShaderBufferObjectUsage.UBO);
+    }
 
     public void box(float width, float height) {
         this                ._renderType(SdfRenderType.BOX);
@@ -184,7 +190,7 @@ public class SdfParameters extends UboObject<SdfParameters> {
     }
 
     @Override
-    protected UboLayoutDefinition<SdfParameters> getDefinition() {
+    protected BufferObjectLayoutDefinition<SdfParameters> getDefinition() {
         return              DEFINITION;
     }
 

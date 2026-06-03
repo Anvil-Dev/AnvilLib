@@ -9,6 +9,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
 import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
 import dev.anvilcraft.lib.v2.rendering.state.LibGuiElementRenderState;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -34,7 +35,7 @@ import java.util.Map;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SdfGraphics {
     private static final int            MAX_SDF_AMOUNT          = 256;
-    private static final long           SDF_PARAMETER_SIZE      = SdfParameters.DEFINITION.size();
+    private static final long           SDF_PARAMETER_SIZE      = SdfParameters.DEFINITION.size(BufferLayout.STD140);
     @Getter
     public static final SdfGraphics     instance                = new SdfGraphics(new SdfParameters());
 
