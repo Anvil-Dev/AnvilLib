@@ -5,12 +5,10 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.ComputeBindingLayout;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.TextureBinding;
-import lombok.Setter;
 
 import java.util.List;
 
 public class ALRComputePass implements AutoCloseable {
-    @Setter
     private ALRComputePipeline pipeline;
     private final ALRComputePassBackend backend;
 
@@ -35,7 +33,9 @@ public class ALRComputePass implements AutoCloseable {
         int groupCountY,
         int groupCountZ
     ) {
+        this.backend.pushDebugGroup("Compute " + pipeline.identifier());
         this.backend.dispatchWorkgroups(groupCountX, groupCountY, groupCountZ);
+        this.backend.popDebugGroup();
     }
 
     public void dispatchWorkgroupsIndirect(
@@ -49,11 +49,16 @@ public class ALRComputePass implements AutoCloseable {
         this.backend.close();
     }
 
+    public void setPipeline(ALRComputePipeline pipeline) {
+        this.pipeline = pipeline;
+        this.backend.setPipeline(pipeline);
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void bindAll(List<?> elements) {
         int bindingPoint = 0;
         for (ComputeBindingLayout binding : pipeline.bindings()) {
-            this.bind(bindingPoint++, binding, elements.get(bindingPoint));
+            this.bind(bindingPoint++, binding, elements.get(bindingPoint - 1));
         }
     }
 

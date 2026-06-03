@@ -61,6 +61,7 @@ neoForge {
                 systemProperty 'anvillib.rendering.debugMode', 'true'
                 systemProperty('neoforge.rendernurse.renderdoc.library', rootProject.file("libs/renderdoc.dll").absolutePath)
                 taskBefore(rootProject.project('renderdoc-loader-internal').tasks.getByName('jar'))
+                programArgument("--renderDebugLabels")
                 jvmArgument("-javaagent:" + rootProject.project('renderdoc-loader-internal').tasks.getByName('jar').archiveFile.get().asFile.absolutePath)
             }
         }

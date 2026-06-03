@@ -1,4 +1,4 @@
-package dev.anvilcraft.lib.v2.rendering.mixins;
+package dev.anvilcraft.lib.v2.test.mixin;
 
 import com.mojang.blaze3d.platform.Window;
 import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
@@ -6,6 +6,7 @@ import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
 import dev.anvilcraft.lib.v2.rendering.bloom.BloomPostEffect;
 import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
+import dev.anvilcraft.lib.v2.test.client.compute.ComputeSupport;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.main.GameConfig;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -28,28 +29,7 @@ public class MinecraftMixin {
         at = @At("RETURN")
     )
     private void onCreateInstance(GameConfig gameConfig, CallbackInfo ci) {
-        ALRPostEffects.createPostEffects();
+        ComputeSupport.init();
     }
 
-//    @Inject(
-//        method = "resizeGui",
-//        at = @At("RETURN")
-//    )
-//    private void onResizeGui(CallbackInfo ci) {
-//        BloomPostEffect bloomPostEffect = ALRPostEffects.getBloomPostEffect();
-//        if (bloomPostEffect != null) {
-//            bloomPostEffect.resize(
-//                this.window.getWidth(),
-//                this.window.getHeight()
-//            );
-//        }
-//    }
-
-    @Inject(
-        method = "updateLevelInEngines(Lnet/minecraft/client/multiplayer/ClientLevel;Z)V",
-        at = @At("RETURN")
-    )
-    private void onUpdateLevel(ClientLevel level, boolean stopSound, CallbackInfo ci) {
-        CachedBlockEntityRenderingPipeline.updateLevel(level);
-    }
 }

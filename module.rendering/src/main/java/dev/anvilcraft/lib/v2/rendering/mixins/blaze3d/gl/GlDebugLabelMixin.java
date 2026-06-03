@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 public class GlDebugLabelMixin {
     @Mixin(GlDebugLabel.class)
-    public class Self implements ALRDebugLabelExtension {
+    public static class Self implements ALRDebugLabelExtension {
 
         @Override
         public void alrApplyLabel(ALRComputeProgramInstance shaderInstance) {
@@ -21,7 +21,7 @@ public class GlDebugLabelMixin {
     }
 
     @Mixin(targets = "com.mojang.blaze3d.opengl.GlDebugLabel$Core")
-    public class Core implements ALRDebugLabelExtension {
+    public static class Core implements ALRDebugLabelExtension {
 
         @Shadow
         @Final
@@ -42,7 +42,7 @@ public class GlDebugLabelMixin {
     }
 
     @Mixin(targets = "com.mojang.blaze3d.opengl.GlDebugLabel$Ext")
-    public class Ext implements ALRDebugLabelExtension {
+    public static class Ext implements ALRDebugLabelExtension {
 
         @Override
         public void alrApplyLabel(ALRComputeProgramInstance shaderInstance) {

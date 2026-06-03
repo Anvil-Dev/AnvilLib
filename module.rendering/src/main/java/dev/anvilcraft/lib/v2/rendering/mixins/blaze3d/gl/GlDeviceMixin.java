@@ -3,8 +3,6 @@ package dev.anvilcraft.lib.v2.rendering.mixins.blaze3d.gl;
 import com.mojang.blaze3d.opengl.GlDebugLabel;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRDebugLabelExtension;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.gl.GlComputePassBackend;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstanceKey;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeShaderManager;

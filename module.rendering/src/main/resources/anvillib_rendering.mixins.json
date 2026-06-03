@@ -13,6 +13,7 @@
     "ItemStackRenderStateMixin",
     "MinecraftMixin",
     "RenderTypeMixin",
+    "blaze3d.CommandEncoderMixin",
     "blaze3d.GpuDeviceMixin",
     "blaze3d.gl.DirectStateAccessMixin$Emulated",
     "blaze3d.gl.GlCommandEncoderMixin",

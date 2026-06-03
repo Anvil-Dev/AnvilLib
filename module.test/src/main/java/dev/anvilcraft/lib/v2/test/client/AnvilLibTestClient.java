@@ -1,11 +1,14 @@
 package dev.anvilcraft.lib.v2.test.client;
 
+import com.mojang.brigadier.arguments.FloatArgumentType;
 import dev.anvilcraft.lib.v2.rendering.cachedber.renderer.CachedBlockEntityRenderDispatcher;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.client.cber.TestCachedRenderer;
+import dev.anvilcraft.lib.v2.test.client.compute.ComputeSupport;
 import dev.anvilcraft.lib.v2.test.client.gui.SdfGraphicsLayer;
 import dev.anvilcraft.lib.v2.test.client.screen.GuiTestScreen;
+import javafx.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.Commands;
 import net.neoforged.api.distmarker.Dist;
@@ -16,6 +19,10 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 
+import java.util.Arrays;
+import java.util.Random;
+
+import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
 @EventBusSubscriber(modid = AnvilLibTest.MOD_ID, value = Dist.CLIENT)
@@ -27,7 +34,10 @@ public class AnvilLibTestClient {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() ->
-            CachedBlockEntityRenderDispatcher.INSTANCE.registerRenderer(TestTiles.TEST_CACHED_RENDERING, new TestCachedRenderer())
+            CachedBlockEntityRenderDispatcher.INSTANCE.registerRenderer(
+                TestTiles.TEST_CACHED_RENDERING,
+                new TestCachedRenderer()
+            )
         );
     }
 
@@ -46,6 +56,35 @@ public class AnvilLibTestClient {
                             Minecraft.getInstance().setScreen(new GuiTestScreen());
                             return 1;
                         })
+                ).
+                then(
+                    literal("compute").
+                        then(
+                            literal("add").
+                                then(
+                                    argument("what", FloatArgumentType.floatArg()).
+                                        executes(
+                                            ctx -> {
+                                                try {
+                                                    float[] fs = new float[32];
+                                                    Random random = new Random(System.nanoTime());
+                                                    for (int i = 0; i < 32; i++) {
+                                                        fs[i] = random.nextInt(0, 10);
+                                                    }
+                                                    float with = ctx.getArgument("what", Float.class);
+                                                    float[] add = ComputeSupport.INSTANCE.add(fs, with);
+                                                    String a = Arrays.toString(fs);
+                                                    String result = Arrays.toString(add);
+                                                    System.out.println("a = " + a);
+                                                    System.out.println("result = " + result);
+                                                }catch (Throwable ex){
+                                                    ex.printStackTrace();
+                                                }
+                                                return 0;
+                                            }
+                                        )
+                                )
+                        )
                 )
         );
     }

@@ -7,6 +7,7 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtens
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 import dev.anvilcraft.lib.v2.rendering.foundation.fakeworld.FakeDisplayLevel;
 import dev.anvilcraft.lib.v2.rendering.gui.GuiRenderExtras;
+import dev.anvilcraft.lib.v2.test.client.compute.ComputeSupport;
 import dev.anvilcraft.lib.v2.test.client.compute.TestPipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -18,6 +19,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
+
+import java.util.Arrays;
+import java.util.Random;
 
 public class GuiTestScreen extends Screen {
 
@@ -195,6 +199,8 @@ public class GuiTestScreen extends Screen {
         );
 
         graphics.pose().popMatrix();
+
+        dispatchComputeTest();
     }
 
     public void dispatchComputeTest() {
@@ -202,6 +208,18 @@ public class GuiTestScreen extends Screen {
         try (ALRComputePass pass = commandEncoder.alrCreateComputePass()) {
             pass.setPipeline(TestPipelines.EMPTY);
             pass.dispatchWorkgroups(16, 16, 1);
+        }
+
+        try {
+            float[] fs = new float[32];
+            Random random = new Random(System.nanoTime());
+            for (int i = 0; i < 32; i++) {
+                fs[i] = random.nextInt(0, 10);
+            }
+            float with = 10;
+            ComputeSupport.INSTANCE.add(fs, with);
+        }catch (Throwable ex){
+            ex.printStackTrace();
         }
     }
 

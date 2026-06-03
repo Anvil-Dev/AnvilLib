@@ -7,7 +7,6 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderBacken
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.gl.GlComputePassBackend;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

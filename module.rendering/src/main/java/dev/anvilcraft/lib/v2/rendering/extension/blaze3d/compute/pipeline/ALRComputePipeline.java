@@ -13,7 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public record ALRComputePipeline(List<ComputeBindingLayout<?>> bindings, Identifier shaderLocation, ShaderDefines defines) {
+public record ALRComputePipeline(
+    Identifier identifier,
+    List<ComputeBindingLayout<?>> bindings,
+    Identifier shaderLocation,
+    ShaderDefines defines
+) {
 
     public static Builder builder() {
         return new Builder();
@@ -25,6 +30,7 @@ public record ALRComputePipeline(List<ComputeBindingLayout<?>> bindings, Identif
 
     public static class Builder {
         private final List<ComputeBindingLayout<?>> bindings = new ArrayList<>();
+        private Identifier name;
         private Identifier shaderLocation;
         private ShaderDefines defines = ShaderDefines.EMPTY;
 
@@ -38,6 +44,11 @@ public record ALRComputePipeline(List<ComputeBindingLayout<?>> bindings, Identif
 
         public Builder withShader(Identifier shaderLocation) {
             this.shaderLocation = shaderLocation;
+            return this;
+        }
+
+        public Builder withName(Identifier name) {
+            this.name = name;
             return this;
         }
 
@@ -89,6 +100,7 @@ public record ALRComputePipeline(List<ComputeBindingLayout<?>> bindings, Identif
 
         public ALRComputePipeline build() {
             return new ALRComputePipeline(
+                Objects.requireNonNull(this.name, "name"),
                 this.bindings,
                 Objects.requireNonNull(this.shaderLocation, "shaderLocation"),
                 this.defines
