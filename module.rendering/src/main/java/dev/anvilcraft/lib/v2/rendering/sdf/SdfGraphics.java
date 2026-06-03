@@ -121,11 +121,11 @@ public final class SdfGraphics {
         var width       = Math.abs(x1 - x0);
         var height      = Math.abs(y1 - y0);
 
-        var halfWidth   = width * 0.5f;
-        var halfHeight  = height * 0.5f;
+        var halfWidth   = (x1 - x0) * 0.5f;
+        var halfHeight  = (y1 - y0) * 0.5f;
 
         this.parameters .getRect()
-                        .set(left, top, width, height);
+                        .set(left + width / 2, top + height / 2, width, height);
         this.parameters .segment( -halfWidth, -halfHeight, +halfWidth, +halfHeight);
 
         return          this;
