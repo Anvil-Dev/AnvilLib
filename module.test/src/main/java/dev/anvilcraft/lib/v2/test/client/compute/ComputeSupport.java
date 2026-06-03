@@ -67,7 +67,7 @@ public class ComputeSupport {
                     addParamUBO.slice()
                 )
             );
-            pass.dispatchWorkgroups((input.length + 16 - 1) / 16, 1, 1);
+            pass.dispatchWorkgroups(Math.ceilDiv(input.length, 16), 1, 1);
             pass.memoryBarrier(MemoryBarrierFlag.SHADER_STORAGE_BARRIER, MemoryBarrierFlag.BUFFER_UPDATE_BARRIER);
         }
         try (GpuFence fence = commandEncoder.createFence()) {
