@@ -1,7 +1,6 @@
 package dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.ComputeBindingLayout;
@@ -14,11 +13,9 @@ public class ALRComputePass implements AutoCloseable {
     @Setter
     private ALRComputePipeline pipeline;
     private final ALRComputePassBackend backend;
-    private final GpuDevice device;
 
-    public ALRComputePass(GpuDevice device, ALRComputePassBackend backend) {
+    public ALRComputePass(ALRComputePassBackend backend) {
         this.backend = backend;
-        this.device = device;
     }
 
     public void pushDebugGroup(String name) {
@@ -26,7 +23,7 @@ public class ALRComputePass implements AutoCloseable {
     }
 
     public void popDebugGroup(String name) {
-        this.backend.popDebugGroup(name);
+        this.backend.popDebugGroup();
     }
 
     public void memoryBarrier(MemoryBarrierFlag... flags) {
@@ -42,14 +39,13 @@ public class ALRComputePass implements AutoCloseable {
     }
 
     public void dispatchWorkgroupsIndirect(
-        GpuBuffer buffer,
-        long offset
+        GpuBufferSlice buffer
     ) {
-        this.backend.dispatchWorkgroupsIndirect(buffer, offset);
+        this.backend.dispatchWorkgroupsIndirect(buffer);
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         this.backend.close();
     }
 
@@ -73,15 +69,15 @@ public class ALRComputePass implements AutoCloseable {
         this.backend.bindImage(bindingPoint, resource, read, write);
     }
 
-    public void bindUniformBlock(int bindingPoint, GpuBuffer resource) {
+    public void bindUniformBlock(int bindingPoint, GpuBufferSlice resource) {
         this.backend.bindUniformBlock(bindingPoint, resource);
     }
 
-    public void bindShaderStorage(int bindingPoint, GpuBuffer resource) {
+    public void bindShaderStorage(int bindingPoint, GpuBufferSlice resource) {
         this.backend.bindShaderStorage(bindingPoint, resource);
     }
 
-    public void bindAtomicCounter(int bindingPoint, GpuBuffer resource) {
+    public void bindAtomicCounter(int bindingPoint, GpuBufferSlice resource) {
         this.backend.bindAtomicCounter(bindingPoint, resource);
     }
 }

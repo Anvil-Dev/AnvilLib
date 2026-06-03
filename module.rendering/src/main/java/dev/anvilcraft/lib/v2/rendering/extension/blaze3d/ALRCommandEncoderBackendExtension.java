@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.extension.blaze3d;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 
 public interface ALRCommandEncoderBackendExtension {
     void alrDispatchWorkgroups(
@@ -10,9 +11,10 @@ public interface ALRCommandEncoderBackendExtension {
     );
 
     void alrDispatchWorkgroupsIndirect(
-        GpuBuffer parameters,
-        long offset
+        GpuBufferSlice parameters
     );
 
     void alrMemoryBarrier(MemoryBarrierFlag... flags);
+
+    ALRComputePass alrCreateComputePass();
 }

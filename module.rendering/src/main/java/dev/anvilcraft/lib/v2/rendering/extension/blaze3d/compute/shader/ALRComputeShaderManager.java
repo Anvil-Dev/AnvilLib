@@ -5,6 +5,7 @@ import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.anvilcraft.lib.v2.rendering.event.RegisterComputePipelinesEvent;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePipeline;
 import lombok.extern.slf4j.Slf4j;
 import net.minecraft.client.renderer.ShaderManager;
@@ -16,6 +17,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.neoforged.fml.ModLoader;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.UnknownNullability;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
@@ -30,10 +32,11 @@ public class ALRComputeShaderManager extends SimplePreparableReloadListener<ALRC
     @UnknownNullability
     private ComputeShaderSource source = null;
 
-    private Map<ALRComputeShaderInstanceKey, ALRComputeShaderInstance> shaderInstanceMap = new HashMap<>();
+    private final Map<ALRComputeProgramInstanceKey, ALRComputeProgramInstance> shaderInstanceMap = new HashMap<>();
+    private final Map<ALRComputePipeline, ALRComputeProgramInstance> pipelineToProgramMap = new HashMap<>();
 
     @Override
-    protected ComputeShaderSource prepare(ResourceManager manager, ProfilerFiller profiler) {
+    protected @NonNull ComputeShaderSource prepare(ResourceManager manager, ProfilerFiller profiler) {
         ImmutableMap.Builder<Identifier, String> sources = new ImmutableMap.Builder<>();
 
         Map<Identifier, Resource> shaders = manager.listResources(
@@ -51,27 +54,50 @@ public class ALRComputeShaderManager extends SimplePreparableReloadListener<ALRC
                 log.error("Failed to load compute shader source at {}", it.getKey(), ex);
             }
         }
-
+        log.info("Loaded {} compute shader.", shaders.size());
         return new ComputeShaderSource(sources.build());
     }
 
     @Override
     protected void apply(ComputeShaderSource preparations, ResourceManager manager, ProfilerFiller profiler) {
+        if (!ALRComputeCapabilities.isComputeSupported()) {
+            return;
+        }
+        ALRGpuDeviceExtension deviceExtension = (ALRGpuDeviceExtension) RenderSystem.getDevice();
+        for (ALRComputeProgramInstance value : shaderInstanceMap.values()) {
+            deviceExtension.alrDestroyComputeShader(value);
+        }
+        shaderInstanceMap.clear();
+        pipelineToProgramMap.clear();
+
         this.source = preparations;
         RegisterComputePipelinesEvent event = new RegisterComputePipelinesEvent();
         ModLoader.postEvent(event);
-        ALRGpuDeviceExtension deviceExtension = (ALRGpuDeviceExtension) RenderSystem.getDevice();
+
         for (ALRComputePipeline pipeline : event.getPipelines()) {
-            ALRComputeShaderInstanceKey key = new ALRComputeShaderInstanceKey(pipeline.shaderLocation(), pipeline.defines());
-
-            ALRComputeShaderInstance instance = deviceExtension.alrCompileComputeShader(key);
+            ALRComputeProgramInstanceKey key = new ALRComputeProgramInstanceKey(
+                pipeline.shaderLocation(),
+                pipeline.defines()
+            );
+            log.debug("Compiled COMPUTE shader {}", pipeline.shaderLocation());
+            ALRComputeProgramInstance instance = deviceExtension.alrCompileComputeShader(key);
+            this.shaderInstanceMap.put(key, instance);
+            this.pipelineToProgramMap.put(pipeline, instance);
         }
+    }
 
+    public String getSource(Identifier location) {
+        return source.source.get(location.withPrefix("shaders/"));
     }
 
     @Nullable
-    public String getSource(Identifier location) {
-        return source.source.get(location);
+    public ALRComputeProgramInstance getShader(ALRComputeProgramInstanceKey location) {
+        return this.shaderInstanceMap.get(location);
+    }
+
+    @Nullable
+    public ALRComputeProgramInstance getShader(ALRComputePipeline pipeline) {
+        return this.pipelineToProgramMap.get(pipeline);
     }
 
     public record ComputeShaderSource(

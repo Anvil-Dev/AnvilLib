@@ -23,7 +23,7 @@ public final class SdfAtlasTexture {
     }
 
     /**
-     * Upload a single atlas page to the GPU, returning its texture identifier.
+     * Upload a single atlas page to the GPU, returning its texture location.
      */
     public static Identifier uploadPage(SdfGlyphAtlas atlas, int pageIndex) {
         SdfGlyphPage page = atlas.page(pageIndex);

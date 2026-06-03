@@ -1,18 +1,21 @@
 package dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.TextureBinding;
 
-public interface ALRComputePassBackend extends AutoCloseable {
+public interface ALRComputePassBackend {
+    void setPipeline(ALRComputePipeline pipeline);
+
     void pushDebugGroup(String name);
 
-    void popDebugGroup(String name);
+    void popDebugGroup();
 
     void dispatchWorkgroups(int groupCountX, int groupCountY, int groupCountZ);
 
-    void dispatchWorkgroupsIndirect(GpuBuffer buffer, long offset);
+    void dispatchWorkgroupsIndirect(GpuBufferSlice buffer);
 
     void memoryBarrier(MemoryBarrierFlag... flags);
 
@@ -20,9 +23,11 @@ public interface ALRComputePassBackend extends AutoCloseable {
 
     void bindImage(int bindingPoint, GpuTexture resource, boolean read, boolean write);
 
-    void bindUniformBlock(int bindingPoint, GpuBuffer resource);
+    void bindUniformBlock(int bindingPoint, GpuBufferSlice resource);
 
-    void bindShaderStorage(int bindingPoint, GpuBuffer resource);
+    void bindShaderStorage(int bindingPoint, GpuBufferSlice resource);
 
-    void bindAtomicCounter(int bindingPoint, GpuBuffer resource);
+    void bindAtomicCounter(int bindingPoint, GpuBufferSlice resource);
+
+    void close();
 }

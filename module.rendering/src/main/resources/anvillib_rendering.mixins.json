@@ -12,7 +12,14 @@
     "GuiRendererMixin",
     "ItemStackRenderStateMixin",
     "MinecraftMixin",
-    "RenderTypeMixin"
+    "RenderTypeMixin",
+    "blaze3d.GpuDeviceMixin",
+    "blaze3d.gl.DirectStateAccessMixin$Emulated",
+    "blaze3d.gl.GlCommandEncoderMixin",
+    "blaze3d.gl.GlDebugLabelMixin$Core",
+    "blaze3d.gl.GlDebugLabelMixin$Ext",
+    "blaze3d.gl.GlDebugLabelMixin$Self",
+    "blaze3d.gl.GlDeviceMixin"
   ],
   "injectors": {
     "defaultRequire": 1

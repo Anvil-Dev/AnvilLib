@@ -1,11 +1,10 @@
 package dev.anvilcraft.lib.v2.rendering.extension.blaze3d;
 
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeShaderInstance;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeShaderInstanceKey;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstanceKey;
 
 public interface ALRGpuDeviceExtension {
-    ALRComputeShaderInstance alrCompileComputeShader(ALRComputeShaderInstanceKey instanceKey);
+    ALRComputeProgramInstance alrCompileComputeShader(ALRComputeProgramInstanceKey instanceKey);
 
-    ALRComputePass alrCreateComputePass();
+    void alrDestroyComputeShader(ALRComputeProgramInstance instance);
 }

@@ -1,9 +1,13 @@
 package dev.anvilcraft.lib.v2.test.client.screen;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 import dev.anvilcraft.lib.v2.rendering.foundation.fakeworld.FakeDisplayLevel;
 import dev.anvilcraft.lib.v2.rendering.gui.GuiRenderExtras;
+import dev.anvilcraft.lib.v2.test.client.compute.TestPipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -191,6 +195,14 @@ public class GuiTestScreen extends Screen {
         );
 
         graphics.pose().popMatrix();
+    }
+
+    public void dispatchComputeTest() {
+        ALRCommandEncoderExtension commandEncoder = ALRCommandEncoderExtension.of(RenderSystem.getDevice().createCommandEncoder());
+        try (ALRComputePass pass = commandEncoder.alrCreateComputePass()) {
+            pass.setPipeline(TestPipelines.EMPTY);
+            pass.dispatchWorkgroups(16, 16, 1);
+        }
     }
 
     @Override

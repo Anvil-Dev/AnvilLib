@@ -28,4 +28,12 @@ public enum MemoryBarrierFlag {
     public int glEnum() {
         return glEnum;
     }
+
+    public static int compound(MemoryBarrierFlag... flags){
+        int i = 0;
+        for (MemoryBarrierFlag flag : flags) {
+            i |= flag.glEnum;
+        }
+        return i;
+    }
 }
