@@ -10,7 +10,6 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexSorting;
 import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
 import dev.anvilcraft.lib.v2.rendering.extension.ALRRenderTypeExtension;
 import dev.anvilcraft.lib.v2.rendering.foundation.ALRMeshSorting;
@@ -20,7 +19,6 @@ import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.experimental.ExtensionMethod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -34,12 +32,9 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -121,9 +116,9 @@ public class CachedRenderingChunk implements VertexBufferHost {
         }
     }
 
-    public void render(Frustum frustum) {
+    public void render(Frustum frustum, boolean translucent) {
         if (!frustum.isVisible(renderingBB)) return;
-        renderInternal(buffers.keySet());
+        renderInternal(buffers.keySet(), translucent);
     }
 
     public GpuBuffer getBuffer(Map<RenderType, GpuBuffer> buffers, RenderType renderType, long size, int usage) {
@@ -166,7 +161,7 @@ public class CachedRenderingChunk implements VertexBufferHost {
         return builder;
     }
 
-    private void renderInternal(Collection<RenderType> renderTypes) {
+    private void renderInternal(Collection<RenderType> renderTypes, boolean translucent) {
         if (isEmpty) return;
 
         Vec3 cameraPosition = minecraft.gameRenderer.getMainCamera().position();
@@ -176,8 +171,7 @@ public class CachedRenderingChunk implements VertexBufferHost {
             return;
         }
 
-        renderLayers(renderTypes, cameraPosition, false);
-        renderLayers(renderTypes, cameraPosition, true);
+        renderLayers(renderTypes, cameraPosition, translucent);
     }
 
     private void renderLayers(Collection<RenderType> renderingOrders, Vec3 cameraPosition, boolean translucent) {

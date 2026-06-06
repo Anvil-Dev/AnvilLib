@@ -1,8 +1,8 @@
 package dev.anvilcraft.lib.v2.rendering.mixins;
 
-import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
-import dev.anvilcraft.lib.v2.rendering.bloom.BloomPostEffect;
+import dev.anvilcraft.lib.v2.rendering.event.MainTargetResizeEvent;
 import net.minecraft.client.renderer.GameRenderer;
+import net.neoforged.fml.ModLoader;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,12 +16,6 @@ public class GameRendererMixin {
         at = @At("HEAD")
     )
     void onResize(int width, int height, CallbackInfo ci) {
-        BloomPostEffect bloomPostEffect = ALRPostEffects.getBloomPostEffect();
-        if (bloomPostEffect != null) {
-            bloomPostEffect.resize(
-                width,
-                height
-            );
-        }
+        ModLoader.postEvent(new MainTargetResizeEvent(width, height));
     }
 }

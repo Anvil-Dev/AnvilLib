@@ -1,6 +1,9 @@
 package dev.anvilcraft.lib.v2.test.client.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
@@ -20,7 +23,6 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 
-import java.util.Arrays;
 import java.util.Random;
 
 public class GuiTestScreen extends Screen {
@@ -60,6 +62,7 @@ public class GuiTestScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         super.extractRenderState(graphics, mouseX, mouseY, a);
+        dispatchComputeTest(graphics);
         graphics.pose().pushMatrix().scale(1);
         int startX = 10;
         int startY = 30;
@@ -200,10 +203,9 @@ public class GuiTestScreen extends Screen {
 
         graphics.pose().popMatrix();
 
-        dispatchComputeTest();
     }
 
-    public void dispatchComputeTest() {
+    public void dispatchComputeTest(GuiGraphicsExtractor graphics) {
         ALRCommandEncoderExtension commandEncoder = ALRCommandEncoderExtension.of(RenderSystem.getDevice().createCommandEncoder());
         try (ALRComputePass pass = commandEncoder.alrCreateComputePass()) {
             pass.setPipeline(TestPipelines.EMPTY);
@@ -218,9 +220,27 @@ public class GuiTestScreen extends Screen {
             }
             float with = 10;
             ComputeSupport.INSTANCE.add(fs, with);
-        }catch (Throwable ex){
+        } catch (Throwable ex) {
             ex.printStackTrace();
         }
+
+        GpuSampler sampler = ComputeSupport.INSTANCE.getTheSampler();
+        int scaledWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        int scaledHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+
+        GuiRenderExtras.blitDynamicTexture(
+            graphics,
+            ComputeSupport.INSTANCE::getOutputTextureView,
+            sampler,
+            0,
+            0,
+            scaledWidth,
+            scaledHeight,
+            0,
+            1,
+            1,
+            0
+        );
     }
 
     @Override

@@ -269,8 +269,6 @@ public class BloomPostEffect implements DirtyTracked {
         bloomPass.close();
     }
 
-
-
     private void doDownSample(
         CommandEncoder commandEncoder,
         RenderTarget inputTarget

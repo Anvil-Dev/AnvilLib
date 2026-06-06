@@ -26,7 +26,16 @@ public class TestPipelines {
         .withShaderStorage("Input")
         .withShaderStorage("Output")
         .withUniformBlock("AddParameter")
+        .withAtomicCounter("Counter")
         .withShader(AnvilLibTest.of("compute/add.csh"))
+        .build();
+
+    public static final ALRComputePipeline BLUR = ALRComputePipeline.builder()
+        .withName(AnvilLibTest.of("image_and_sampler"))
+        .withUniformBlock("BlurParam")
+        .withTexture("InTexture")
+        .withWriteOnlyImage("OutImage")
+        .withShader(AnvilLibTest.of("compute/image_and_sampler.csh"))
         .build();
 
     @SubscribeEvent
@@ -34,5 +43,6 @@ public class TestPipelines {
         event.registerPipeline(TEST);
         event.registerPipeline(EMPTY);
         event.registerPipeline(ADD);
+        event.registerPipeline(BLUR);
     }
 }

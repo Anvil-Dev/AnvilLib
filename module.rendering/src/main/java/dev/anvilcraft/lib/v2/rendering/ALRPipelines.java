@@ -36,38 +36,38 @@ public class ALRPipelines {
         .build();
 
     public static final RenderPipeline DOWNSAMPLE = RenderPipeline.builder(POST_PASS)
-            .withLocation(AnvilLibRendering.location("down_sample"))
-            .withFragmentShader(AnvilLibRendering.location("core/down_sample"))
-            .withSampler("DiffuseSampler")
-            .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
-            .build();
+        .withLocation(AnvilLibRendering.location("down_sample"))
+        .withFragmentShader(AnvilLibRendering.location("core/down_sample"))
+        .withSampler("DiffuseSampler")
+        .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
+        .build();
 
     public static final RenderPipeline UPSAMPLE = RenderPipeline.builder(POST_PASS)
-            .withLocation(AnvilLibRendering.location("up_sample"))
-            .withFragmentShader(AnvilLibRendering.location("core/up_sample"))
-            .withSampler("DiffuseSampler")
-            .withSampler("PreviousSampler")
-            .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
-            .build();
+        .withLocation(AnvilLibRendering.location("up_sample"))
+        .withFragmentShader(AnvilLibRendering.location("core/up_sample"))
+        .withSampler("DiffuseSampler")
+        .withSampler("PreviousSampler")
+        .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
+        .build();
 
-    public static final VertexFormat   SDF_GRAPHICS_FORMAT  = VertexFormat.builder()
-            .add("Position", VertexFormatElement.POSITION)
-            .add("Color", VertexFormatElement.COLOR)
-            .add("UV0", VertexFormatElement.UV)
-            .add("UV1", VertexFormatElement.UV1)
-            .build();
+    public static final VertexFormat SDF_GRAPHICS_FORMAT = VertexFormat.builder()
+        .add("Position", VertexFormatElement.POSITION)
+        .add("Color", VertexFormatElement.COLOR)
+        .add("UV0", VertexFormatElement.UV)
+        .add("UV1", VertexFormatElement.UV1)
+        .build();
 
     public static final RenderPipeline SDF_GRAPHICS = RenderPipeline.builder()
-            .withLocation(AnvilLibRendering.location("sdf_graphics"))
-            .withVertexShader(AnvilLibRendering.location("core/sdf_graphics"))
-            .withFragmentShader(AnvilLibRendering.location("core/sdf_graphics"))
-            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-            .withVertexFormat(SDF_GRAPHICS_FORMAT, VertexFormat.Mode.QUADS)
-            .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
-            .withUniform("Projection", UniformType.UNIFORM_BUFFER)
-            .withUniform("SDFParameters", UniformType.UNIFORM_BUFFER)
-            .withCull(false)
-            .build();
+        .withLocation(AnvilLibRendering.location("sdf_graphics"))
+        .withVertexShader(AnvilLibRendering.location("core/sdf_graphics"))
+        .withFragmentShader(AnvilLibRendering.location("core/sdf_graphics"))
+        .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+        .withVertexFormat(SDF_GRAPHICS_FORMAT, VertexFormat.Mode.QUADS)
+        .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
+        .withUniform("Projection", UniformType.UNIFORM_BUFFER)
+        .withUniform("SDFParameters", UniformType.UNIFORM_BUFFER)
+        .withCull(false)
+        .build();
 
 
     @SubscribeEvent

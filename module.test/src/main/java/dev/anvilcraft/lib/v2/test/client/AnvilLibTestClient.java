@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.test.client;
 
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import dev.anvilcraft.lib.v2.rendering.cachedber.renderer.CachedBlockEntityRenderDispatcher;
+import dev.anvilcraft.lib.v2.rendering.event.MainTargetResizeEvent;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.client.cber.TestCachedRenderer;
@@ -12,12 +13,14 @@ import javafx.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.Commands;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -44,6 +47,16 @@ public class AnvilLibTestClient {
     @SubscribeEvent
     public static void onRegisterGuiLayers(RegisterGuiLayersEvent e) {
         e.registerAboveAll(SdfGraphicsLayer.LOCATION, new SdfGraphicsLayer());
+    }
+
+    @SubscribeEvent
+    public static void on(MainTargetResizeEvent event) {
+        ComputeSupport.INSTANCE.resize(event.getNewWidth(), event.getNewHeight());
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void on(RenderLevelStageEvent.AfterLevel level) {
+        ComputeSupport.INSTANCE.computeBlur();
     }
 
     @SubscribeEvent
@@ -77,7 +90,7 @@ public class AnvilLibTestClient {
                                                     String result = Arrays.toString(add);
                                                     System.out.println("a = " + a);
                                                     System.out.println("result = " + result);
-                                                }catch (Throwable ex){
+                                                } catch (Throwable ex) {
                                                     ex.printStackTrace();
                                                 }
                                                 return 0;

@@ -15,10 +15,13 @@ layout(std140, binding = 2) uniform AddParameter {
     int arraySize;
 };
 
+layout(binding = 3) uniform atomic_uint Counter;
+
 void main() {
     uint idx = gl_GlobalInvocationID.x;
     if (idx >= arraySize) {
         return;
     }
     b.data[idx] = a.data[idx] + f1;
+    atomicCounterIncrement(Counter);
 }

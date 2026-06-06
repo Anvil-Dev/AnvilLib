@@ -120,9 +120,9 @@ public class CachedBlockEntityRenderingPipeline {
         valid = false;
     }
 
-    public void render(Frustum frustum) {
+    public void render(Frustum frustum, boolean translucent) {
         for (CachedRenderingChunk value : chunks.values()) {
-            value.render(frustum);
+            value.render(frustum, translucent);
         }
     }
 

@@ -47,6 +47,12 @@ public class TestCachedRenderer implements CachedBlockEntityRenderer<TestCachedR
             state.displayContext
         );
 
+        minecraft.getBlockModelResolver().update(
+            state.blockModelRenderState1,
+            Blocks.LIME_STAINED_GLASS.defaultBlockState(),
+            state.displayContext
+        );
+
         return state;
     }
 
@@ -72,12 +78,22 @@ public class TestCachedRenderer implements CachedBlockEntityRenderer<TestCachedR
             OverlayTexture.NO_OVERLAY,
             0
         );
+
+        poseStack.translate(0, 1, 0);
+        renderState.blockModelRenderState1.submit(
+            poseStack,
+            submitNodeCollector,
+            LightCoordsUtil.FULL_BRIGHT,
+            OverlayTexture.NO_OVERLAY,
+            0
+        );
         poseStack.popPose();
     }
 
     public static class State extends CachedBlockEntityRenderState {
         private final ItemStackRenderState renderState = new ItemStackRenderState();
         private final BlockModelRenderState blockModelRenderState = new BlockModelRenderState();
+        private final BlockModelRenderState blockModelRenderState1 = new BlockModelRenderState();
         private final BlockDisplayContext displayContext = BlockDisplayContext.create();
     }
 }

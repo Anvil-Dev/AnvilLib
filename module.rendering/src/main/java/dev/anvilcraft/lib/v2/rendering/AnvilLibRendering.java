@@ -39,15 +39,32 @@ public class AnvilLibRendering {
     }
 
     @SubscribeEvent
-    public static void on(AddClientReloadListenersEvent event){
+    public static void on(AddClientReloadListenersEvent event) {
         event.addListener(AnvilLibRendering.location("compute_shader_manager"), ALRComputeShaderManager.INSTANCE);
     }
 
     @SubscribeEvent
-    public static void on(RenderLevelStageEvent.AfterTranslucentParticles event) {
+    public static void on(RenderLevelStageEvent.AfterOpaqueBlocks event) {
         if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
-            CachedBlockEntityRenderingPipeline.getInstance().render(event.getLevelRenderState().cameraRenderState.cullFrustum);
+            CachedBlockEntityRenderingPipeline.getInstance().render(
+                event.getLevelRenderState().cameraRenderState.cullFrustum,
+                false
+            );
         }
+    }
+
+    @SubscribeEvent
+    public static void on(RenderLevelStageEvent.AfterTranslucentFeatures event) {
+        if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
+            CachedBlockEntityRenderingPipeline.getInstance().render(
+                event.getLevelRenderState().cameraRenderState.cullFrustum,
+                true
+            );
+        }
+    }
+
+    @SubscribeEvent
+    public static void on(RenderLevelStageEvent.AfterTranslucentParticles event) {
         ALRPostEffects.runBloomDraws(event.getModelViewMatrix());
     }
 
