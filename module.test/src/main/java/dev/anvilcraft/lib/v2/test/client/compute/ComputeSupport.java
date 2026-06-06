@@ -13,6 +13,7 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.TextureBinding;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.GpuBufferConstants;
@@ -31,6 +32,7 @@ import java.util.OptionalDouble;
 
 public class ComputeSupport {
     public static final ComputeSupport INSTANCE = new ComputeSupport();
+    public static final float[] UNSUPPORTED = {};
     @Getter
     private final GpuDevice device = RenderSystem.getDevice();
 
@@ -90,6 +92,9 @@ public class ComputeSupport {
     private final BlurParamUbo blurParam = new BlurParamUbo();
 
     public float[] add(float[] input, float f) {
+        if (!ALRComputeCapabilities.isComputeSupported()) {
+            return UNSUPPORTED;
+        }
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
         ALRCommandEncoderExtension commandEncoderExtension = ALRCommandEncoderExtension.of(commandEncoder);
         addParam.arraySize = input.length;

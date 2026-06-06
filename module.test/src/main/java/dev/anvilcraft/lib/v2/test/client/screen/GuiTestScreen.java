@@ -7,6 +7,7 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 import dev.anvilcraft.lib.v2.rendering.foundation.fakeworld.FakeDisplayLevel;
 import dev.anvilcraft.lib.v2.rendering.gui.GuiRenderExtras;
@@ -200,12 +201,11 @@ public class GuiTestScreen extends Screen {
             true,
             poseStack
         );
-
         graphics.pose().popMatrix();
-
     }
 
     public void dispatchComputeTest(GuiGraphicsExtractor graphics) {
+        if (!ALRComputeCapabilities.isComputeSupported()) return;
         ALRCommandEncoderExtension commandEncoder = ALRCommandEncoderExtension.of(RenderSystem.getDevice().createCommandEncoder());
         try (ALRComputePass pass = commandEncoder.alrCreateComputePass()) {
             pass.setPipeline(TestPipelines.EMPTY);
