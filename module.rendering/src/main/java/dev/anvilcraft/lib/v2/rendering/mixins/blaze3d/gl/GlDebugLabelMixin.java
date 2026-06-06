@@ -30,7 +30,7 @@ public class GlDebugLabelMixin {
         @Override
         public void alrApplyLabel(ALRComputeProgramInstance shaderInstance) {
             KHRDebug.glObjectLabel(
-                GL46.GL_SHADER,
+                GL46.GL_PROGRAM,
                 shaderInstance.id(),
                 StringUtil.truncateStringIfNecessary(
                     shaderInstance.key().location().toString(),

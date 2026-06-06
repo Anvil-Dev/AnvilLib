@@ -14,6 +14,7 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePassBackend;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePipeline;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.TextureBinding;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeShaderManager;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -25,7 +26,6 @@ import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL46;
 
 public class GlComputePassBackend implements ALRComputePassBackend {
-    private final GpuDeviceBackend backend;
     private final ALRGpuDeviceBackendExtension backendExtension;
     private final ALRCommandEncoderBackendExtension commandEncoderExtension;
     private final Int2ObjectMap<TextureBinding.SamplerAndTexture> textureBindings = new Int2ObjectOpenHashMap<>();
@@ -40,7 +40,6 @@ public class GlComputePassBackend implements ALRComputePassBackend {
         ALRGpuDeviceBackendExtension backendExtension
     ) {
         this.commandEncoderExtension = commandEncoderExtension;
-        this.backend = (GpuDeviceBackend) backendExtension;
         this.backendExtension = backendExtension;
     }
 
@@ -110,8 +109,9 @@ public class GlComputePassBackend implements ALRComputePassBackend {
     }
 
     private void setupState() {
-        int program = ALRComputeShaderManager.INSTANCE.getShader(pipeline).id();
-        GL46.glUseProgram(program);
+        ALRComputeProgramInstance program = ALRComputeShaderManager.INSTANCE.getShader(pipeline);
+        if (program == null || program == ALRComputeProgramInstance.INVALID) return;
+        GL46.glUseProgram(program.id());
 
         for (Int2ObjectMap.Entry<TextureBinding.SamplerAndTexture> entry : this.textureBindings.int2ObjectEntrySet()) {
             this.setupTexture(entry.getIntKey(), entry.getValue());

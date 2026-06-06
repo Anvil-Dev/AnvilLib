@@ -144,6 +144,9 @@ public class ComputeSupport {
         ByteBuffer counterData = mappedCounterBuffer.data();
 
         int anInt = counterData.getInt();
+        if (anInt != input.length){
+            System.out.printf("Compute counter does not match with input size: %d/%d%n", anInt, input.length);
+        }
         return result;
     }
 
