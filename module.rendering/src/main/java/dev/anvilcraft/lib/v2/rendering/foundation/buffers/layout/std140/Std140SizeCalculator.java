@@ -43,7 +43,7 @@ public final class Std140SizeCalculator implements BufferSizeCalculator {
 
     public void putIVec3() {
         this.align(16);
-        this.size += 16;
+        this.size += 12;
     }
 
     public void putVec4() {
