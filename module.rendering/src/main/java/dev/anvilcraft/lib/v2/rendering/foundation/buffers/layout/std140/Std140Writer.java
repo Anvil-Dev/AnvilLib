@@ -58,7 +58,7 @@ public final class Std140Writer implements BufferWriter {
     public void putVec3(Vector3f vec) {
         this.align(16);
         vec.get(this.buffer);
-        this.buffer.position(this.buffer.position() + 16);
+        this.buffer.position(this.buffer.position() + 12);
     }
 
     public void putIVec3(Vector3i vec) {
