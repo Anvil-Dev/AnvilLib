@@ -25,9 +25,8 @@ public class SdfParameters extends BufferObject<SdfParameters> {
     private final   Vector4f    rect            = new Vector4f();
     private final   Vector4i    typeParams      = new Vector4i();
 
-    private         int         color           = 0xFFFFFFFF;
-    private         float       rotation;
-    private         boolean     center;
+    int                         uboIndex        = -1;
+    boolean                     uploaded        = false;
 
     protected SdfParameters() {
         super(BufferLayout.STD140, ShaderBufferObjectUsage.UBO);
@@ -107,18 +106,6 @@ public class SdfParameters extends BufferObject<SdfParameters> {
         this                ._cornerRadius(radius);
     }
 
-    public void color(int color) {
-        this.color          = color;
-    }
-
-    public void rotate(float rotation) {
-        this.rotation       = rotation;
-    }
-
-    public void center(boolean center) {
-        this.center         = center;
-    }
-
     public void fill() {
         this                ._pass(SdfPassType.FILL);
     }
@@ -167,26 +154,32 @@ public class SdfParameters extends BufferObject<SdfParameters> {
 
     private void _smooth(float value) {
         this.sharedParams.x = value;
+        this.uploaded       = false;
     }
 
     private void _light(float value) {
         this.sharedParams.w = 4.605f / value;
+        this.uploaded       = false;
     }
 
     private void _width(float value) {
         this.sharedParams.y = value;
+        this.uploaded       = false;
     }
 
     private void _cornerRadius(float value) {
         this.sharedParams.z = value;
+        this.uploaded       = false;
     }
 
     private void _pass(SdfPassType value) {
-        this.typeParams.x = value.ordinal();
+        this.typeParams.x   = value.ordinal();
+        this.uploaded       = false;
     }
 
     private void _renderType(SdfRenderType value) {
-        this.typeParams.y = value.ordinal();
+        this.typeParams.y   = value.ordinal();
+        this.uploaded       = false;
     }
 
     @Override
@@ -200,8 +193,10 @@ public class SdfParameters extends BufferObject<SdfParameters> {
         this.rect           .set(0.0f, 0.0f, 0.0f, 0.0f);
         this.typeParams     .set(0, 0, 0, 4);
 
-        this.color          = 0xFFFFFFFF;
-        this.rotation       = 0f;
-        this.center         = false;
+        this.uploaded       = false;
+    }
+
+    public boolean isShared() {
+        return              this.uboIndex != -1;
     }
 }

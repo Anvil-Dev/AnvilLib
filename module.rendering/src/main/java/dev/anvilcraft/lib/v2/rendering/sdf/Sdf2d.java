@@ -7,9 +7,25 @@ import org.jetbrains.annotations.NotNull;
 @UtilityClass
 public class Sdf2d {
 
+    /**
+     * @param params Sdf 参数
+     * @param pX 点 x 坐标
+     * @param pY 点 y 坐标
+     * @param rX 矩形 x 起始点
+     * @param rY 矩形 y 起始点
+     * @param rotation 旋转角度
+     * @param centred 居中
+     * @return 点距离 sdf 的距离
+     */
     public static float sd(
             @NotNull SdfParameters params,
-            float x, float y
+                     float         pX,
+                     float         pY,
+                     float         rX,
+                     float         rY,
+                     float         rotation,
+                     boolean       centred
+
     ) {
         var rect        = params.getRect();
         var round       = params.getRound();
@@ -23,7 +39,6 @@ public class Sdf2d {
         final var hw    = width * 0.5f;
         final var hh    = height * 0.5f;
 
-        var rotation    = params.getRotation();
         var radian      = rotation * Mth.DEG_TO_RAD;
         var cos         = Mth.cos(radian);
         var sin         = Mth.sin(radian);
@@ -31,19 +46,19 @@ public class Sdf2d {
         float cx;
         float cy;
 
-        if (params.isCenter()) {
+        if (centred) {
 
-            cx          = rect.x;
-            cy          = rect.y;
+            cx          = rX;
+            cy          = rY;
 
         } else {
 
-            cx          = rect.x + hw - hw * cos + hh * sin;
-            cy          = rect.y + hh - hw * sin - hh * cos;
+            cx          = rX + hw - hw * cos + hh * sin;
+            cy          = rY + hh - hw * sin - hh * cos;
         }
 
-        var px          = x - cx;
-        var py          = y - cy;
+        var px          = pX - cx;
+        var py          = pY - cy;
 
         if (rotation    != 0f) {
 
