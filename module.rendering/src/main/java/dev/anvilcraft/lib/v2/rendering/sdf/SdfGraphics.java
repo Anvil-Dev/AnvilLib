@@ -487,7 +487,9 @@ public final class SdfGraphics {
         rect.z              = z;
         rect.w              = w;
 
-        SdfGraphics         .index++;
+        if (!shared) {
+            SdfGraphics     .index++;
+        }
     }
 
     private record RenderState(
