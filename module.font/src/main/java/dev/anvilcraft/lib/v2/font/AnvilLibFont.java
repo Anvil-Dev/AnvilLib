@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.font;
 
 import dev.anvilcraft.lib.v2.font.screen.FontConfigScreen;
+import dev.anvilcraft.lib.v2.font.sdf.SdfGlyphAtlas;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModContainer;
@@ -20,10 +21,17 @@ public class AnvilLibFont {
     public AnvilLibFont(ModContainer container) {
         AnvilLibFontConfig.AnvilLibFontConfigManager.readConfig(AnvilLibFont.CONFIG);
         container.registerExtensionPoint(IConfigScreenFactory.class, FontConfigScreen::new);
+        // Start building the SDF atlas on a background thread at mod init time.
+        // By the time the player opens any GUI the atlas is already uploaded.
+        SdfGlyphAtlas.getOrCreate(getSelectFont());
     }
 
     public static Font getSelectFont() {
-        return FontManager.INSTANCE.getFont(AnvilLibFont.CONFIG.getFont());
+        Font font = FontManager.INSTANCE.getFont(AnvilLibFont.CONFIG.getFont());
+        // Eagerly start building the SDF atlas on a background thread so it is
+        // ready (or nearly ready) by the time the first text is rendered.
+        SdfGlyphAtlas.getOrCreate(font);
+        return font;
     }
 
     public static Identifier of(String path) {

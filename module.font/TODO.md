@@ -8,6 +8,12 @@
 - **Fix:** Cache `SdfTextLayout` results keyed by `(atlasKey, text, scale)`. Store quad positions relative to origin; apply offset during `buildVertices()`.
 
 ### 2. Async Glyph Creation -- DONE
+- **Follow-up fixes:**
+  - `SdfGlyphPage.dirty` made `volatile` — cross-thread visibility for texture re-upload
+  - `placeGlyph()`/`fillPaddingForCell()` synchronized — memory barrier with `uploadPage`
+  - `createGlyphAsync` now calls `SdfGlyphPage::updateHash` — prevents stale hash from skipping upload
+  - `getIfReady` retries on failed futures — transient errors don't permanently disable atlas
+  - `AnvilLibFont.getSelectFont()` preloads atlas eagerly — avoids first-frame text invisibility
 - **File:** `SdfGlyphAtlas.java`, `SdfAtlasTexture.java`
 - **Problem:** `glyph()` calls `createGlyph()` synchronously on the render thread when a glyph is not yet in the atlas. For CJK text, hundreds of glyphs may need creation, each involving AWT rendering + EDT distance transform (~O(n^2) per glyph), blocking the render loop for multiple frames.
 - **Fix:** Return null for not-yet-created codepoints, enqueue async creation on a background single-threaded executor. Added `pendingGlyphs` set to prevent duplicate creation requests. `synchronized` on atlas for glyph creation, synchronized on page for texture upload.

@@ -32,6 +32,18 @@ public final class SdfTextRenderer {
     public SdfTextRenderer() {
     }
 
+    /**
+     * Get the SDF atlas for a font, or {@code null} if still building.
+     * <p>
+     * The atlas is pre-built at mod init, so this should almost always
+     * return non-null. If it returns null the caller skips rendering
+     * gracefully; the atlas will be ready the next frame.
+     */
+    @Nullable
+    private static SdfGlyphAtlas getAtlas(@Nullable Font font) {
+        return SdfGlyphAtlas.getIfReady(font);
+    }
+
     public void drawString(
         GuiGraphicsExtractor graphics,
         @Nullable Font font,
@@ -42,7 +54,7 @@ public final class SdfTextRenderer {
         boolean dropShadow
     ) {
         if (text == null || text.isEmpty()) return;
-        SdfGlyphAtlas atlas = SdfGlyphAtlas.getIfReady(font);
+        SdfGlyphAtlas atlas = getAtlas(font);
         if (atlas == null) return;
         drawStringWithAtlas(graphics, atlas, text, x, y, color);
     }
@@ -145,7 +157,7 @@ public final class SdfTextRenderer {
     }
 
     private int flushFormattedSegment(GuiGraphicsExtractor graphics, @Nullable Font font, String text, int x, int y, int color) {
-        SdfGlyphAtlas atlas = SdfGlyphAtlas.getIfReady(font);
+        SdfGlyphAtlas atlas = getAtlas(font);
         if (atlas == null) return x;
         float scale = scaleFor(atlas);
         int quadY = y - Math.round((atlas.awtAscent() + 2) * scale);
@@ -193,7 +205,7 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        SdfGlyphAtlas atlas = SdfGlyphAtlas.getIfReady(font);
+        SdfGlyphAtlas atlas = getAtlas(font);
         if (atlas == null) return;
         float scale = scaleFor(atlas);
         List<String> lines = wrapLines(atlas, text.getString(), width, scale);
@@ -209,7 +221,7 @@ public final class SdfTextRenderer {
 
     public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, FormattedCharSequence text, int x, int y, int color) {
         String value = flattenToString(text);
-        SdfGlyphAtlas atlas = SdfGlyphAtlas.getIfReady(font);
+        SdfGlyphAtlas atlas = getAtlas(font);
         if (atlas == null) return;
         float scale = scaleFor(atlas);
         int drawX = x - Math.round(atlas.measureText(value) * scale) / 2;

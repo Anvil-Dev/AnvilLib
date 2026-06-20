@@ -26,8 +26,8 @@ public class ALFont {
 
     public Font awtFont() { return this.font; }
 
-    private @Nullable SdfGlyphAtlas atlas() { return SdfGlyphAtlas.getIfReady(this.font); }
-    private SdfGlyphAtlas atlasBlocking() { return SdfGlyphAtlas.getOrCreate(this.font).join(); }
+    @Nullable
+    private SdfGlyphAtlas atlas() { return SdfGlyphAtlas.getIfReady(this.font); }
 
     private float scale() {
         SdfGlyphAtlas a = atlas();

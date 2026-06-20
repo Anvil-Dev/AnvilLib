@@ -101,11 +101,15 @@ public final class SdfGlyphAtlas {
     public static CompletableFuture<SdfGlyphAtlas> getOrCreate(@Nullable Font font) {
         Font resolved = resolveFont(font);
         String key = resolved.getFontName(Locale.ENGLISH) + "." + resolved.getStyle() + "." + resolved.getSize();
-        return CACHE.computeIfAbsent(key, _ -> CompletableFuture.supplyAsync(() -> new SdfGlyphAtlas(key, resolved)));
+        return CACHE.computeIfAbsent(key, _ -> CompletableFuture.supplyAsync(() -> new SdfGlyphAtlas(key, resolved), GLYPH_EXECUTOR));
     }
 
     /**
      * Return the atlas if fully built, or {@code null} if still constructing.
+     * <p>
+     * If the previous build failed (future completed exceptionally), the
+     * failed future is removed and a fresh build is started so that a
+     * transient error does not permanently disable the atlas.
      */
     public static @Nullable SdfGlyphAtlas getIfReady(@Nullable Font font) {
         Font resolved = resolveFont(font);
@@ -114,7 +118,10 @@ public final class SdfGlyphAtlas {
         if (f != null && f.isDone()) {
             try {
                 return f.get();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                LOGGER.error("SDF atlas build failed for key={}, retrying", key, e);
+                CACHE.remove(key, f);
+                f = null;
             }
         }
         if (f == null) getOrCreate(font);
