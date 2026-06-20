@@ -48,7 +48,9 @@ jobs:
       - name: Run roseauCheck
         id: roseau
         continue-on-error: true
-        run: ./gradlew :${{ inputs.module_id }}-neoforge-26.1:roseauCheck
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :${{ inputs.module_id }}-neoforge-26.1:roseauCheck
 
       - name: Collect result
         id: result
