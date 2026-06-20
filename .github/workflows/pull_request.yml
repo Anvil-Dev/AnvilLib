@@ -1,4 +1,5 @@
 name: Pull Request Check
+
 on:
   pull_request:
     branches:
@@ -15,6 +16,12 @@ on:
       - module.gradle
       - gradle.properties
       - settings.gradle
+
+permissions:
+  contents: read
+  actions: read
+  packages: read
+  pull-requests: write
 
 jobs:
   codec:
@@ -321,8 +328,6 @@ jobs:
       - main-roseau
     if: always()
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     env:
       CODEC_BC: ${{ needs.codec-roseau.outputs.has_bc }}
       CODEC_N: ${{ needs.codec-roseau.outputs.bc_count }}
