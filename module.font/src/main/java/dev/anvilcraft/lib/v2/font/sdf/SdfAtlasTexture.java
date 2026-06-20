@@ -30,25 +30,27 @@ public final class SdfAtlasTexture {
     public static Identifier uploadPage(SdfGlyphAtlas atlas, int pageIndex) {
         SdfGlyphPage page = atlas.page(pageIndex);
         String key = atlas.key() + ".p" + pageIndex;
-        int version = page.version.get();
+        Identifier id = Identifier.fromNamespaceAndPath("anvillib_font", "dynamic/sdf_atlas/" + sanitize(key));
+        // Synchronize on page to read the version and image data atomically
+        // with respect to the glyph creation thread, which also synchronizes
+        // on page for placeGlyph / fillPaddingForCell.
+        NativeImage nativeImage;
+        int version;
+        synchronized (page) {
+            version = page.version.get();
+            nativeImage = toNativeImage(page.image);
+            page.dirty = false;
+        }
 
         PageEntry entry = CACHE.get(key);
         if (entry != null && entry.version == version) return entry.id;
 
-        Identifier id = Identifier.fromNamespaceAndPath("anvillib_font", "dynamic/sdf_atlas/" + sanitize(key));
-        // Synchronize on page to avoid reading image data while the async
-        // glyph creation thread is writing to it.
-        NativeImage nativeImage;
-        synchronized (page) {
-            nativeImage = toNativeImage(page.image);
-        }
         SdfTexture texture = new SdfTexture(nativeImage);
         Minecraft.getInstance().getTextureManager().register(id, texture);
 
         if (entry != null) entry.texture.close();
         CACHE.put(key, new PageEntry(id, texture, version));
         page.textureId = id;
-        page.dirty = false;
         return id;
     }
 
@@ -58,7 +60,12 @@ public final class SdfAtlasTexture {
     public static void ensureUploaded(SdfGlyphAtlas atlas) {
         for (int i = 0; i < atlas.pageCount(); i++) {
             SdfGlyphPage page = atlas.page(i);
-            if (page.dirty || page.textureId == null) {
+            String key = atlas.key() + ".p" + i;
+            PageEntry entry = CACHE.get(key);
+            if (page.textureId == null
+                || entry == null
+                || entry.version != page.version.get()
+                || page.dirty) {
                 uploadPage(atlas, i);
             }
         }
@@ -81,14 +88,10 @@ public final class SdfAtlasTexture {
     }
 
     static NativeImage toNativeImage(BufferedImage image) {
-        int w = image.getWidth();
-        int h = image.getHeight();
-        NativeImage ni = new NativeImage(NativeImage.Format.RGBA, w, h, false);
-        byte[] pixels = (byte[]) image.getRaster().getDataElements(0, 0, w, h, null);
-        int idx = 0;
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                int gray = pixels[idx++] & 0xFF;
+        NativeImage ni = new NativeImage(NativeImage.Format.RGBA, image.getWidth(), image.getHeight(), false);
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                int gray = image.getRGB(x, y) & 0xFF;
                 ni.setPixel(x, y, (0xFF << 24) | (gray << 16) | (gray << 8) | gray);
             }
         }
