@@ -184,3 +184,229 @@ jobs:
       ci_build: true
       pr_build: true
       gametest: true
+
+  # ── Roseau API checks ──────────────────────────────────────────
+
+  codec-roseau:
+    needs: codec
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: codec
+      module_id: anvillib-codec
+
+  collision-roseau:
+    needs: collision
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: collision
+      module_id: anvillib-collision
+
+  config-roseau:
+    needs: config
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: config
+      module_id: anvillib-config
+
+  font-roseau:
+    needs: font
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: font
+      module_id: anvillib-font
+
+  integration-roseau:
+    needs: integration
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: integration
+      module_id: anvillib-integration
+
+  moveable-entity-block-roseau:
+    needs: moveable-entity-block
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: moveable-entity-block
+      module_id: anvillib-moveable-entity-block
+
+  multiblock-roseau:
+    needs: multiblock
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: multiblock
+      module_id: anvillib-multiblock
+
+  network-roseau:
+    needs: network
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: network
+      module_id: anvillib-network
+
+  recipe-roseau:
+    needs: recipe
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: recipe
+      module_id: anvillib-recipe
+
+  registrum-roseau:
+    needs: registrum
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: registrum
+      module_id: anvillib-registrum
+
+  rendering-roseau:
+    needs: rendering
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: rendering
+      module_id: anvillib-rendering
+
+  space-select-roseau:
+    needs: space-select
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: space-select
+      module_id: anvillib-space-select
+
+  sync-roseau:
+    needs: sync
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: sync
+      module_id: anvillib-sync
+
+  util-roseau:
+    needs: util
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: util
+      module_id: anvillib-util
+
+  wheel-roseau:
+    needs: wheel
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: wheel
+      module_id: anvillib-wheel
+
+  main-roseau:
+    needs: main
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: main
+      module_id: anvillib
+
+  # ── Roseau summary comment ─────────────────────────────────────
+
+  roseau-summary:
+    needs:
+      - codec-roseau
+      - collision-roseau
+      - config-roseau
+      - font-roseau
+      - integration-roseau
+      - moveable-entity-block-roseau
+      - multiblock-roseau
+      - network-roseau
+      - recipe-roseau
+      - registrum-roseau
+      - rendering-roseau
+      - space-select-roseau
+      - sync-roseau
+      - util-roseau
+      - wheel-roseau
+      - main-roseau
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      CODEC_BC: ${{ needs.codec-roseau.outputs.has_bc }}
+      CODEC_N: ${{ needs.codec-roseau.outputs.bc_count }}
+      COLLISION_BC: ${{ needs.collision-roseau.outputs.has_bc }}
+      COLLISION_N: ${{ needs.collision-roseau.outputs.bc_count }}
+      CONFIG_BC: ${{ needs.config-roseau.outputs.has_bc }}
+      CONFIG_N: ${{ needs.config-roseau.outputs.bc_count }}
+      FONT_BC: ${{ needs.font-roseau.outputs.has_bc }}
+      FONT_N: ${{ needs.font-roseau.outputs.bc_count }}
+      INTEGRATION_BC: ${{ needs.integration-roseau.outputs.has_bc }}
+      INTEGRATION_N: ${{ needs.integration-roseau.outputs.bc_count }}
+      MEB_BC: ${{ needs.moveable-entity-block-roseau.outputs.has_bc }}
+      MEB_N: ${{ needs.moveable-entity-block-roseau.outputs.bc_count }}
+      MULTIBLOCK_BC: ${{ needs.multiblock-roseau.outputs.has_bc }}
+      MULTIBLOCK_N: ${{ needs.multiblock-roseau.outputs.bc_count }}
+      NETWORK_BC: ${{ needs.network-roseau.outputs.has_bc }}
+      NETWORK_N: ${{ needs.network-roseau.outputs.bc_count }}
+      RECIPE_BC: ${{ needs.recipe-roseau.outputs.has_bc }}
+      RECIPE_N: ${{ needs.recipe-roseau.outputs.bc_count }}
+      REGISTRUM_BC: ${{ needs.registrum-roseau.outputs.has_bc }}
+      REGISTRUM_N: ${{ needs.registrum-roseau.outputs.bc_count }}
+      RENDERING_BC: ${{ needs.rendering-roseau.outputs.has_bc }}
+      RENDERING_N: ${{ needs.rendering-roseau.outputs.bc_count }}
+      SPACESELECT_BC: ${{ needs.space-select-roseau.outputs.has_bc }}
+      SPACESELECT_N: ${{ needs.space-select-roseau.outputs.bc_count }}
+      SYNC_BC: ${{ needs.sync-roseau.outputs.has_bc }}
+      SYNC_N: ${{ needs.sync-roseau.outputs.bc_count }}
+      UTIL_BC: ${{ needs.util-roseau.outputs.has_bc }}
+      UTIL_N: ${{ needs.util-roseau.outputs.bc_count }}
+      WHEEL_BC: ${{ needs.wheel-roseau.outputs.has_bc }}
+      WHEEL_N: ${{ needs.wheel-roseau.outputs.bc_count }}
+      MAIN_BC: ${{ needs.main-roseau.outputs.has_bc }}
+      MAIN_N: ${{ needs.main-roseau.outputs.bc_count }}
+    steps:
+      - name: Generate and post PR comment
+        run: |
+          row() {
+            local name=$1 bc=$2 count=$3
+            if [ -z "$bc" ]; then
+              echo "| ${name} | ⚪ Skipped | — |"
+            elif [ "$bc" = "true" ]; then
+              echo "| ${name} | 🔴 BC detected | ${count} |"
+            else
+              echo "| ${name} | ✅ Compatible | 0 |"
+            fi
+          }
+
+          {
+            echo "## 🌿 Roseau API Breaking Change Report"
+            echo ""
+            echo "| Module | Status | Breaking Changes |"
+            echo "|--------|--------|-----------------|"
+            row "codec"                 "$CODEC_BC"       "$CODEC_N"
+            row "collision"             "$COLLISION_BC"   "$COLLISION_N"
+            row "config"                "$CONFIG_BC"      "$CONFIG_N"
+            row "font"                  "$FONT_BC"        "$FONT_N"
+            row "integration"           "$INTEGRATION_BC" "$INTEGRATION_N"
+            row "moveable-entity-block" "$MEB_BC"         "$MEB_N"
+            row "multiblock"            "$MULTIBLOCK_BC"  "$MULTIBLOCK_N"
+            row "network"               "$NETWORK_BC"     "$NETWORK_N"
+            row "recipe"                "$RECIPE_BC"      "$RECIPE_N"
+            row "registrum"             "$REGISTRUM_BC"   "$REGISTRUM_N"
+            row "rendering"             "$RENDERING_BC"   "$RENDERING_N"
+            row "space-select"          "$SPACESELECT_BC" "$SPACESELECT_N"
+            row "sync"                  "$SYNC_BC"        "$SYNC_N"
+            row "util"                  "$UTIL_BC"        "$UTIL_N"
+            row "wheel"                 "$WHEEL_BC"       "$WHEEL_N"
+            row "main"                  "$MAIN_BC"        "$MAIN_N"
+            echo ""
+            echo "> Detailed reports: see the *Artifacts* section of [this workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
+          } > /tmp/roseau-body.md
+
+      - name: Find existing Roseau comment
+        id: find-comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: Roseau API Breaking Change Report
+
+      - name: Create or update PR comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: /tmp/roseau-body.md
+          edit-mode: replace

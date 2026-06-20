@@ -1,0 +1,75 @@
+name: Roseau Check
+
+on:
+  workflow_call:
+    inputs:
+      module:
+        description: 'Module directory name (e.g. codec, config)'
+        required: true
+        type: string
+      module_id:
+        description: 'Module short ID (e.g. anvillib-codec)'
+        required: true
+        type: string
+    outputs:
+      has_bc:
+        description: 'Whether breaking changes were detected'
+        value: ${{ jobs.check.outputs.has_bc }}
+      bc_count:
+        description: 'Number of breaking changes'
+        value: ${{ jobs.check.outputs.bc_count }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      has_bc: ${{ steps.result.outputs.has_bc }}
+      bc_count: ${{ steps.result.outputs.bc_count }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Read Java version
+        id: properties
+        uses: christian-draeger/read-properties@1.1.1
+        with:
+          path: gradle.properties
+          properties: java_version
+
+      - name: Setup Java ${{ steps.properties.outputs.java_version }}
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: zulu
+          java-version: ${{ steps.properties.outputs.java_version }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Run roseauCheck
+        id: roseau
+        continue-on-error: true
+        run: ./gradlew :${{ inputs.module_id }}-neoforge-26.1:roseauCheck
+
+      - name: Collect result
+        id: result
+        if: always()
+        run: |
+          CSV="module.${{ inputs.module }}/build/reports/roseau/report.csv"
+          if [ -f "$CSV" ] && [ "$(wc -l < "$CSV")" -gt 1 ]; then
+            COUNT=$(($(wc -l < "$CSV") - 1))
+            echo "has_bc=true" >> $GITHUB_OUTPUT
+            echo "bc_count=${COUNT}" >> $GITHUB_OUTPUT
+            echo "Roseau: ${COUNT} breaking change(s) in ${{ inputs.module }}"
+          else
+            echo "has_bc=false" >> $GITHUB_OUTPUT
+            echo "bc_count=0" >> $GITHUB_OUTPUT
+            echo "Roseau: no breaking changes in ${{ inputs.module }}"
+          fi
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: roseau-${{ inputs.module }}
+          path: module.${{ inputs.module }}/build/reports/roseau/
+          retention-days: 7
