@@ -68,6 +68,7 @@ public final class SdfGlyphAtlas {
     private SdfGlyphAtlas(String key, Font font) {
         this.key = key;
         this.font = font;
+        LOGGER.info("SdfGlyphAtlas building for key={}, thread={}", key, Thread.currentThread().getName());
 
         // Capture font metrics first — needed by cellSize calculation
         BufferedImage tmp = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
@@ -89,8 +90,10 @@ public final class SdfGlyphAtlas {
         this.sdfRadius = Math.max(12, font.getSize() * 0.25f);
         this.padding = Math.max(4, this.cellSize / 6);
         this.paddedCellSize = this.cellSize + 2 * this.padding;
+        LOGGER.info("SdfGlyphAtlas cellSize={} ascent={} descent={} key={}", this.cellSize, this.awtAscent, awtDescent, key);
 
         preWarmAscii();
+        LOGGER.info("SdfGlyphAtlas ready for key={}, pages={}", key, this.pages.size());
     }
 
     // ── Public API ──────────────────────────────────────────────
@@ -101,7 +104,14 @@ public final class SdfGlyphAtlas {
     public static CompletableFuture<SdfGlyphAtlas> getOrCreate(@Nullable Font font) {
         Font resolved = resolveFont(font);
         String key = resolved.getFontName(Locale.ENGLISH) + "." + resolved.getStyle() + "." + resolved.getSize();
-        return CACHE.computeIfAbsent(key, _ -> CompletableFuture.supplyAsync(() -> new SdfGlyphAtlas(key, resolved), GLYPH_EXECUTOR));
+        CompletableFuture<SdfGlyphAtlas> result = CACHE.computeIfAbsent(key, _ -> {
+            LOGGER.info("Starting SDF atlas build for key={}", key);
+            return CompletableFuture.supplyAsync(() -> new SdfGlyphAtlas(key, resolved), GLYPH_EXECUTOR);
+        });
+        if (result.isDone()) {
+            LOGGER.info("SDF atlas build done for key={}, done={}, cancelled={}", key, result.isDone(), result.isCancelled());
+        }
+        return result;
     }
 
     /**
@@ -117,14 +127,18 @@ public final class SdfGlyphAtlas {
         CompletableFuture<SdfGlyphAtlas> f = CACHE.get(key);
         if (f != null && f.isDone()) {
             try {
-                return f.get();
+                SdfGlyphAtlas atlas = f.get();
+                return atlas;
             } catch (Exception e) {
                 LOGGER.error("SDF atlas build failed for key={}, retrying", key, e);
                 CACHE.remove(key, f);
                 f = null;
             }
         }
-        if (f == null) getOrCreate(font);
+        if (f == null) {
+            LOGGER.info("No atlas future for key={}, starting build", key);
+            getOrCreate(font);
+        }
         return null;
     }
 

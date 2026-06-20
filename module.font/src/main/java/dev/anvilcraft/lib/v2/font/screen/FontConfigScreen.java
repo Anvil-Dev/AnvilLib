@@ -96,7 +96,7 @@ public class FontConfigScreen extends Screen {
 
         this.refreshFontOptions(this.familyDropdown.getValueId(), AnvilLibFont.CONFIG.getFont(), false);
 
-        this.familyDropdown.setValue(AnvilLibFont.CONFIG.getFont());
+        this.fontDropdown.setValue(AnvilLibFont.CONFIG.getFont());
 
         this.addRenderableWidget(this.testBtn);
         this.addRenderableWidget(this.fontDropdown);

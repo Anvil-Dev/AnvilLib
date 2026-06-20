@@ -26,19 +26,16 @@ public class ALFont {
 
     public Font awtFont() { return this.font; }
 
-    @Nullable
-    private SdfGlyphAtlas atlas() { return SdfGlyphAtlas.getIfReady(this.font); }
+    private SdfGlyphAtlas atlas() { return SdfGlyphAtlas.getOrCreate(this.font).join(); }
 
     private float scale() {
-        SdfGlyphAtlas a = atlas();
-        return a == null ? 1f : (float) lineHeight / a.awtHeight();
+        return (float) lineHeight / atlas().awtHeight();
     }
 
     // ── Width measurement ───────────────────────────────────────
 
     public int width(String str) {
-        SdfGlyphAtlas a = atlas();
-        return a == null ? 0 : Mth.ceil(a.measureText(str) * scale());
+        return Mth.ceil(atlas().measureText(str) * scale());
     }
 
     public int width(FormattedText text) { return width(text.getString()); }
@@ -58,7 +55,6 @@ public class ALFont {
 
     private String plainHeadByWidth(String str, int maxWidth) {
         SdfGlyphAtlas a = atlas();
-        if (a == null) return str;
         float s = scale();
         if (a.measureText(str) * s <= maxWidth) return str;
         int lo = 0, hi = str.length();
@@ -72,7 +68,6 @@ public class ALFont {
 
     private String plainTailByWidth(String str, int maxWidth) {
         SdfGlyphAtlas a = atlas();
-        if (a == null) return str;
         float s = scale();
         if (a.measureText(str) * s <= maxWidth) return str;
         int lo = 0, hi = str.length();
@@ -92,7 +87,6 @@ public class ALFont {
 
     public List<FormattedCharSequence> split(FormattedText input, int maxWidth) {
         SdfGlyphAtlas a = atlas();
-        if (a == null) return List.of(FormattedCharSequence.forward(input.getString(), Style.EMPTY));
         float s = scale();
         List<String> lines = wrapLines(a, input.getString(), maxWidth, s);
         List<FormattedCharSequence> result = new ArrayList<>(lines.size());

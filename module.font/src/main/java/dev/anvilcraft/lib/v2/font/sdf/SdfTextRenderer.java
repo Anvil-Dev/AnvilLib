@@ -33,15 +33,12 @@ public final class SdfTextRenderer {
     }
 
     /**
-     * Get the SDF atlas for a font, or {@code null} if still building.
-     * <p>
-     * The atlas is pre-built at mod init, so this should almost always
-     * return non-null. If it returns null the caller skips rendering
-     * gracefully; the atlas will be ready the next frame.
+     * Get the SDF atlas for a font, blocking until it is ready on first access.
+     * The atlas is cached forever, so only the very first call for a particular
+     * font blocks (typically ~200-400 ms while the glyph atlas is built).
      */
-    @Nullable
     private static SdfGlyphAtlas getAtlas(@Nullable Font font) {
-        return SdfGlyphAtlas.getIfReady(font);
+        return SdfGlyphAtlas.getOrCreate(font).join();
     }
 
     public void drawString(
@@ -54,18 +51,16 @@ public final class SdfTextRenderer {
         boolean dropShadow
     ) {
         if (text == null || text.isEmpty()) return;
-        SdfGlyphAtlas atlas = getAtlas(font);
-        if (atlas == null) return;
-        drawStringWithAtlas(graphics, atlas, text, x, y, color);
+        drawStringWithAtlas(graphics, getAtlas(font), text, x, y, color);
     }
 
     private void drawStringWithAtlas(GuiGraphicsExtractor graphics, SdfGlyphAtlas atlas,
                                       String text, int x, int y, int color) {
         float scale = scaleFor(atlas);
         int quadY = y - Math.round((atlas.awtAscent() + 2) * scale);
+        SdfAtlasTexture.ensureUploaded(atlas);
         SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
         if (layout.pages().isEmpty()) return;
-        SdfAtlasTexture.ensureUploaded(atlas);
         for (SdfTextLayout.PageQuads pq : layout.pages()) {
             drawAtlasPipeline(graphics, pq, this.diffuseSampler, color, x, quadY);
         }
@@ -158,11 +153,10 @@ public final class SdfTextRenderer {
 
     private int flushFormattedSegment(GuiGraphicsExtractor graphics, @Nullable Font font, String text, int x, int y, int color) {
         SdfGlyphAtlas atlas = getAtlas(font);
-        if (atlas == null) return x;
         float scale = scaleFor(atlas);
         int quadY = y - Math.round((atlas.awtAscent() + 2) * scale);
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
         SdfAtlasTexture.ensureUploaded(atlas);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
         for (SdfTextLayout.PageQuads pq : layout.pages()) {
             if (pq.atlasTexture() != null && !pq.quads().isEmpty()) {
                 drawAtlasPipeline(graphics, pq, this.diffuseSampler, color, x, quadY);
@@ -206,7 +200,6 @@ public final class SdfTextRenderer {
         boolean dropShadow
     ) {
         SdfGlyphAtlas atlas = getAtlas(font);
-        if (atlas == null) return;
         float scale = scaleFor(atlas);
         List<String> lines = wrapLines(atlas, text.getString(), width, scale);
         int lineHeight = Minecraft.getInstance().font.lineHeight;
@@ -222,7 +215,6 @@ public final class SdfTextRenderer {
     public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, FormattedCharSequence text, int x, int y, int color) {
         String value = flattenToString(text);
         SdfGlyphAtlas atlas = getAtlas(font);
-        if (atlas == null) return;
         float scale = scaleFor(atlas);
         int drawX = x - Math.round(atlas.measureText(value) * scale) / 2;
         this.drawFormatted(graphics, font, text, drawX, y, color, false);

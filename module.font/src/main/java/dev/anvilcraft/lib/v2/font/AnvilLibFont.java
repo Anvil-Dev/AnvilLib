@@ -10,6 +10,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
 import java.awt.Font;
+import java.util.List;
 
 @EventBusSubscriber
 @Mod(value = AnvilLibFont.MOD_ID, dist = Dist.CLIENT)
@@ -21,9 +22,14 @@ public class AnvilLibFont {
     public AnvilLibFont(ModContainer container) {
         AnvilLibFontConfig.AnvilLibFontConfigManager.readConfig(AnvilLibFont.CONFIG);
         container.registerExtensionPoint(IConfigScreenFactory.class, FontConfigScreen::new);
-        // Start building the SDF atlas on a background thread at mod init time.
-        // By the time the player opens any GUI the atlas is already uploaded.
-        SdfGlyphAtlas.getOrCreate(getSelectFont());
+        // Start building the SDF atlas for the base font and all common style
+        // variants on background threads at mod init time.  This avoids render-
+        // thread blocking (visible lag) when bold/italic text is first drawn.
+        Font base = getSelectFont();
+        SdfGlyphAtlas.getOrCreate(base);
+        for (int style : List.of(Font.BOLD, Font.ITALIC, Font.BOLD | Font.ITALIC)) {
+            SdfGlyphAtlas.getOrCreate(base.deriveFont(style));
+        }
     }
 
     public static Font getSelectFont() {
