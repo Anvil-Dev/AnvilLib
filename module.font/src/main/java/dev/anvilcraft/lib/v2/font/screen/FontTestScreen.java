@@ -30,7 +30,7 @@ public class FontTestScreen extends Screen {
         );
         graphics.anvillib$centeredText(
             AnvilLibFont.getSelectFont(),
-            Component.literal("请不要关闭你的计算机").withStyle(ChatFormatting.GREEN),
+            Component.literal("请不要关闭你的计算机").withStyle(Style.EMPTY.withColor(ChatFormatting.GREEN).withStrikethrough(true)),
             offsetX,
             offsetY + this.font.lineHeight,
             0xFFFFFFFF
@@ -60,7 +60,7 @@ public class FontTestScreen extends Screen {
         graphics.anvillib$centeredText(
             AnvilLibFont.getSelectFont(),
             Component.literal("The quick brown fox jumped over the lazy dog.")
-                .withStyle(Style.EMPTY.withItalic(true).withColor(ChatFormatting.DARK_PURPLE)),
+                .withStyle(Style.EMPTY.withItalic(true).withColor(ChatFormatting.DARK_PURPLE).withUnderlined(true)),
             offsetX,
             offsetY + this.font.lineHeight * 5,
             0xFFFFFFFF
@@ -85,6 +85,14 @@ public class FontTestScreen extends Screen {
             Component.literal("【】；‘，。、《超かぐや姫！》？、|"),
             offsetX,
             offsetY + this.font.lineHeight * 8,
+            0xFFFFFFFF
+        );
+        graphics.anvillib$centeredText(
+            AnvilLibFont.getSelectFont(),
+            Component.literal("混淆文字测试")
+                .withStyle(Style.EMPTY.withItalic(true).withBold(true).withObfuscated(true)),
+            offsetX,
+            offsetY + this.font.lineHeight * 9,
             0xFFFFFFFF
         );
     }

@@ -57,12 +57,11 @@ public final class SdfTextRenderer {
     private void drawStringWithAtlas(GuiGraphicsExtractor graphics, SdfGlyphAtlas atlas,
                                       String text, int x, int y, int color) {
         float scale = scaleFor(atlas);
-        int quadY = y - Math.round((atlas.awtAscent() + 2) * scale);
         SdfAtlasTexture.ensureUploaded(atlas);
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
         if (layout.pages().isEmpty()) return;
         for (SdfTextLayout.PageQuads pq : layout.pages()) {
-            drawAtlasPipeline(graphics, pq, this.diffuseSampler, color, x, quadY);
+            drawAtlasPipeline(graphics, pq, this.diffuseSampler, color, x, y);
         }
     }
 
@@ -154,12 +153,11 @@ public final class SdfTextRenderer {
     private int flushFormattedSegment(GuiGraphicsExtractor graphics, @Nullable Font font, String text, int x, int y, int color) {
         SdfGlyphAtlas atlas = getAtlas(font);
         float scale = scaleFor(atlas);
-        int quadY = y - Math.round((atlas.awtAscent() + 2) * scale);
         SdfAtlasTexture.ensureUploaded(atlas);
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
         for (SdfTextLayout.PageQuads pq : layout.pages()) {
             if (pq.atlasTexture() != null && !pq.quads().isEmpty()) {
-                drawAtlasPipeline(graphics, pq, this.diffuseSampler, color, x, quadY);
+                drawAtlasPipeline(graphics, pq, this.diffuseSampler, color, x, y);
             }
         }
         return x + layout.width();
