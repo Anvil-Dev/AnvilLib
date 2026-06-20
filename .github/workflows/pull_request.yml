@@ -22,6 +22,7 @@ permissions:
   actions: read
   packages: read
   pull-requests: write
+  issues: write
 
 jobs:
   codec:
