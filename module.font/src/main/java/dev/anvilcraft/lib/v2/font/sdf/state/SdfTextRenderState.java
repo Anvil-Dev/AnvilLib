@@ -32,6 +32,8 @@ public record SdfTextRenderState(
     int atlasWidth,
     int atlasHeight,
     int color,
+    int originX,
+    int originY,
     @Nullable ScreenRectangle scissorArea
 ) implements LibGuiElementRenderState {
     private static final Logger LOGGER = LoggerFactory.getLogger(SdfTextRenderState.class);
@@ -55,14 +57,16 @@ public record SdfTextRenderState(
 
     @Override
     public void buildVertices(VertexConsumer consumer) {
+        int ox = this.originX;
+        int oy = this.originY;
         for (SdfTextLayout.GlyphQuad quad : this.glyphs) {
             // Build quad vertices in screen space
             // The pose matrix will handle transformation to clip space
 
-            float x0 = quad.x0();
-            float y0 = quad.y0();
-            float x1 = quad.x1();
-            float y1 = quad.y1();
+            float x0 = quad.x0() + ox;
+            float y0 = quad.y0() + oy;
+            float x1 = quad.x1() + ox;
+            float y1 = quad.y1() + oy;
 
             float u0 = quad.u0();
             float v0 = quad.v0();

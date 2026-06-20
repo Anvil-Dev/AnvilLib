@@ -14,7 +14,7 @@ public final class SdfGlyphPage {
     final int cols, rows;
     int nextCol, nextRow;
     Identifier textureId;
-    boolean dirty = true;
+    volatile boolean dirty = true;
 
     SdfGlyphPage(int paddedCellSize) {
         this.cols = SIZE / paddedCellSize;
@@ -26,7 +26,7 @@ public final class SdfGlyphPage {
         return nextRow < rows;
     }
 
-    SdfGlyphAtlas.GlyphEntry placeGlyph(SdfGlyphAtlas atlas, BufferedImage mask) {
+    synchronized SdfGlyphAtlas.GlyphEntry placeGlyph(SdfGlyphAtlas atlas, BufferedImage mask) {
         int col = nextCol, row = nextRow;
         int padX = col * atlas.paddedCellSize;
         int padY = row * atlas.paddedCellSize;
@@ -42,7 +42,7 @@ public final class SdfGlyphPage {
         return new SdfGlyphAtlas.GlyphEntry(0, innerX, innerY, atlas.cellSize, atlas.cellSize, 0);
     }
 
-    void fillPaddingForCell(SdfGlyphAtlas atlas, SdfGlyphAtlas.GlyphEntry e) {
+    synchronized void fillPaddingForCell(SdfGlyphAtlas atlas, SdfGlyphAtlas.GlyphEntry e) {
         int col = (e.atlasX() - atlas.padding) / atlas.paddedCellSize;
         int row = (e.atlasY() - atlas.padding) / atlas.paddedCellSize;
         SdfGlyphAtlas.fillPadding(

@@ -1,6 +1,8 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -9,7 +11,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -17,6 +18,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -26,6 +29,7 @@ import java.util.function.Consumer;
  * pre-warmed; all other codepoints are rendered lazily on first use.
  */
 public final class SdfGlyphAtlas {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SdfGlyphAtlas.class);
     static final int PAGE_SIZE = 1024;
     private static final int FIRST_CHAR = 32;
     private static final int LAST_CHAR = 126;
@@ -36,28 +40,36 @@ public final class SdfGlyphAtlas {
 
     private static final Map<String, CompletableFuture<SdfGlyphAtlas>> CACHE = new ConcurrentHashMap<>();
 
+    /**
+     * Single-threaded executor for background glyph creation.
+     * All glyph creation (including SDF computation) happens on this thread
+     * to avoid blocking the render loop.
+     */
+    private static final ExecutorService GLYPH_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "AnvilLib-SDF-Glyph");
+        t.setDaemon(true);
+        return t;
+    });
+
     private final String key;
     private final Font font;
     final int cellSize;
     final int padding;
     final int paddedCellSize;
     final float sdfRadius;
-    private int awtAscent;
-    private int awtHeight;
+    private final int awtAscent;
+    private final int awtHeight;
     private final FontMetrics fontMetrics;
 
     private final List<SdfGlyphPage> pages = new ArrayList<>();
-    private final Map<Integer, GlyphEntry> glyphMap = new HashMap<>();
+    private final Map<Integer, GlyphEntry> glyphMap = new ConcurrentHashMap<>();
+    private final Set<Integer> pendingGlyphs = ConcurrentHashMap.newKeySet();
 
     private SdfGlyphAtlas(String key, Font font) {
         this.key = key;
         this.font = font;
-        this.cellSize = Math.max(24, font.getSize() + 12);
-        this.sdfRadius = Math.max(12, font.getSize() * 0.25f);
-        this.padding = Math.max(4, this.cellSize / 6);
-        this.paddedCellSize = this.cellSize + 2 * this.padding;
 
-        // Capture font metrics
+        // Capture font metrics first — needed by cellSize calculation
         BufferedImage tmp = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = tmp.createGraphics();
         try {
@@ -68,6 +80,15 @@ public final class SdfGlyphAtlas {
         } finally {
             g.dispose();
         }
+
+        // Cell must accommodate full ascent + descent above and below baseline,
+        // plus 2px margin on each side. Previously used font.getSize()+12, which
+        // could clip descenders or ascenders for fonts with large extents.
+        int awtDescent = this.fontMetrics.getDescent();
+        this.cellSize = Math.max(24, this.awtAscent + awtDescent + 4);
+        this.sdfRadius = Math.max(12, font.getSize() * 0.25f);
+        this.padding = Math.max(4, this.cellSize / 6);
+        this.paddedCellSize = this.cellSize + 2 * this.padding;
 
         preWarmAscii();
     }
@@ -115,7 +136,7 @@ public final class SdfGlyphAtlas {
     }
 
     public int awtHeight() {
-        return this.font.getSize();
+        return this.awtHeight;
     }
 
     public int awtAscent() {
@@ -131,12 +152,40 @@ public final class SdfGlyphAtlas {
     }
 
     /**
-     * Get (or lazily create) the glyph entry for a codepoint.
+     * Get the glyph entry for a codepoint. If the glyph is not yet in the
+     * atlas, requests async creation and returns {@code null}. The caller
+     * should handle the missing glyph gracefully (e.g. advance by a default
+     * width); the glyph will be available on the next call.
      */
     public @Nullable GlyphEntry glyph(int codepoint, Consumer<SdfGlyphPage> pageConsumer) {
         GlyphEntry entry = this.glyphMap.get(codepoint);
         if (entry != null) return entry;
-        return createGlyph(codepoint, pageConsumer);
+        // Trigger async creation on background thread
+        if (this.pendingGlyphs.add(codepoint)) {
+            GLYPH_EXECUTOR.submit(() -> createGlyphAsync(codepoint));
+        }
+        return null;
+    }
+
+    /**
+     * Background-thread entry point for glyph creation.
+     * Synchronized to ensure only one glyph is created at a time per atlas,
+     * avoiding races on page state (nextCol, nextRow, image pixels).
+     */
+    private void createGlyphAsync(int codepoint) {
+        try {
+            synchronized (this) {
+                // Double-check: may have been created since we were enqueued
+                if (this.glyphMap.containsKey(codepoint)) return;
+                createGlyph(codepoint, SdfGlyphPage::updateHash);
+            }
+            // Invalidate cached layouts so they pick up the new glyph
+            SdfTextLayout.invalidateAtlas(this.key);
+        } catch (Exception e) {
+            LOGGER.error("Failed to create SDF glyph for codepoint {} (U+{})", codepoint, Integer.toHexString(codepoint).toUpperCase(), e);
+        } finally {
+            this.pendingGlyphs.remove(codepoint);
+        }
     }
 
     public int measureText(String text) {
@@ -169,9 +218,8 @@ public final class SdfGlyphAtlas {
 
     // ── Glyph creation ──────────────────────────────────────────
 
-    private @Nullable GlyphEntry createGlyph(int codepoint, Consumer<SdfGlyphPage> pageConsumer) {
+    private GlyphEntry createGlyph(int codepoint, Consumer<SdfGlyphPage> pageConsumer) {
         BufferedImage mask = renderMask(codepoint);
-        if (mask == null) return null;
 
         int pageIdx = findOrCreatePageIndex();
         SdfGlyphPage page = this.pages.get(pageIdx);
@@ -221,7 +269,7 @@ public final class SdfGlyphAtlas {
             g.setColor(new Color(0, 0, 0, 0));
             g.fillRect(0, 0, this.cellSize, this.cellSize);
             g.setColor(Color.WHITE);
-            g.drawString(s, 2, Math.min(this.cellSize - 4, this.awtAscent + 2));
+            g.drawString(s, 2, this.awtAscent + 2);
         } finally {
             g.dispose();
         }

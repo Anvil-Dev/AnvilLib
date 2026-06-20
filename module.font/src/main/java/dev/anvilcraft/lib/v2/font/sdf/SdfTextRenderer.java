@@ -50,12 +50,12 @@ public final class SdfTextRenderer {
     private void drawStringWithAtlas(GuiGraphicsExtractor graphics, SdfGlyphAtlas atlas,
                                       String text, int x, int y, int color) {
         float scale = scaleFor(atlas);
-        int quadY = y - 2;
+        int quadY = y - Math.round((atlas.awtAscent() + 2) * scale);
         SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
         if (layout.pages().isEmpty()) return;
         SdfAtlasTexture.ensureUploaded(atlas);
         for (SdfTextLayout.PageQuads pq : layout.pages()) {
-            drawAtlasPipeline(graphics, pq, this.diffuseSampler, color);
+            drawAtlasPipeline(graphics, pq, this.diffuseSampler, color, x, quadY);
         }
     }
 
@@ -148,12 +148,12 @@ public final class SdfTextRenderer {
         SdfGlyphAtlas atlas = SdfGlyphAtlas.getIfReady(font);
         if (atlas == null) return x;
         float scale = scaleFor(atlas);
-        int quadY = y - 2;
+        int quadY = y - Math.round((atlas.awtAscent() + 2) * scale);
         SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
         SdfAtlasTexture.ensureUploaded(atlas);
         for (SdfTextLayout.PageQuads pq : layout.pages()) {
             if (pq.atlasTexture() != null && !pq.quads().isEmpty()) {
-                drawAtlasPipeline(graphics, pq, this.diffuseSampler, color);
+                drawAtlasPipeline(graphics, pq, this.diffuseSampler, color, x, quadY);
             }
         }
         return x + layout.width();
@@ -237,7 +237,9 @@ public final class SdfTextRenderer {
         GuiGraphicsExtractor graphics,
         SdfTextLayout.PageQuads pq,
         GpuSampler diffuseSampler,
-        int color
+        int color,
+        int originX,
+        int originY
     ) {
         if (pq.atlasTexture() == null || pq.quads().isEmpty()) return;
         SdfTextRenderState state = new SdfTextRenderState(
@@ -248,6 +250,8 @@ public final class SdfTextRenderer {
             pq.pageWidth(),
             pq.pageHeight(),
             color,
+            originX,
+            originY,
             graphics.peekScissorStack()
         );
         graphics.submitGuiElementRenderState(state);

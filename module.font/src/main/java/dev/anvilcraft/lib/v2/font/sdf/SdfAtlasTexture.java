@@ -34,7 +34,13 @@ public final class SdfAtlasTexture {
         if (entry != null && entry.hash == hash) return entry.id;
 
         Identifier id = Identifier.fromNamespaceAndPath("anvillib_font", "dynamic/sdf_atlas/" + sanitize(key));
-        SdfTexture texture = new SdfTexture(toNativeImage(page.image));
+        // Synchronize on page to avoid reading image data while the async
+        // glyph creation thread is writing to it.
+        NativeImage nativeImage;
+        synchronized (page) {
+            nativeImage = toNativeImage(page.image);
+        }
+        SdfTexture texture = new SdfTexture(nativeImage);
         Minecraft.getInstance().getTextureManager().register(id, texture);
 
         if (entry != null) entry.texture.close();
