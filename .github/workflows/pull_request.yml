@@ -363,6 +363,12 @@ jobs:
       MAIN_BC: ${{ needs.main-roseau.outputs.has_bc }}
       MAIN_N: ${{ needs.main-roseau.outputs.bc_count }}
     steps:
+      - name: Download Roseau reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: roseau-*
+          path: roseau-reports
+
       - name: Generate and post PR comment
         run: |
           row() {
@@ -398,8 +404,49 @@ jobs:
             row "wheel"                 "$WHEEL_BC"       "$WHEEL_N"
             row "main"                  "$MAIN_BC"        "$MAIN_N"
             echo ""
-            echo "> Detailed reports: see the *Artifacts* section of [this workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
           } > /tmp/roseau-body.md
+
+          # Append breaking change details for each affected module
+          append_details() {
+            local mod=$1 bc=$2 count=$3
+            if [ "$bc" != "true" ]; then return; fi
+            local csv="roseau-reports/roseau-${mod}/report.csv"
+            if [ ! -f "$csv" ]; then return; fi
+            {
+              echo "### 🔴 ${mod} — ${count} breaking change(s)"
+              echo ""
+              while IFS=';' read -r type symbol kind nature location newSymbol binaryBreaking sourceBreaking; do
+                echo "#### \`${location}\`"
+                echo '```'
+                echo "${type}"
+                echo "${symbol}"
+                echo "${kind}"
+                [ "$binaryBreaking" = "true" ] && echo "✗ binary-breaking" || echo "✓ binary-compatible"
+                [ "$sourceBreaking" = "true" ] && echo "✗ source-breaking" || echo "✓ source-compatible"
+                echo '```'
+                echo ""
+              done < <(tail -n +2 "$csv")
+            } >> /tmp/roseau-body.md
+          }
+
+          append_details "codec"                 "$CODEC_BC"       "$CODEC_N"
+          append_details "collision"             "$COLLISION_BC"   "$COLLISION_N"
+          append_details "config"                "$CONFIG_BC"      "$CONFIG_N"
+          append_details "font"                  "$FONT_BC"        "$FONT_N"
+          append_details "integration"           "$INTEGRATION_BC" "$INTEGRATION_N"
+          append_details "moveable-entity-block" "$MEB_BC"         "$MEB_N"
+          append_details "multiblock"            "$MULTIBLOCK_BC"  "$MULTIBLOCK_N"
+          append_details "network"               "$NETWORK_BC"     "$NETWORK_N"
+          append_details "recipe"                "$RECIPE_BC"      "$RECIPE_N"
+          append_details "registrum"             "$REGISTRUM_BC"   "$REGISTRUM_N"
+          append_details "rendering"             "$RENDERING_BC"   "$RENDERING_N"
+          append_details "space-select"          "$SPACESELECT_BC" "$SPACESELECT_N"
+          append_details "sync"                  "$SYNC_BC"        "$SYNC_N"
+          append_details "util"                  "$UTIL_BC"        "$UTIL_N"
+          append_details "wheel"                 "$WHEEL_BC"       "$WHEEL_N"
+          append_details "main"                  "$MAIN_BC"        "$MAIN_N"
+
+          echo "> Full CSVs: see the *Artifacts* section of [this workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})." >> /tmp/roseau-body.md
 
       - name: Find existing Roseau comment
         id: find-comment
