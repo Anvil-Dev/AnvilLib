@@ -16,8 +16,6 @@ import org.joml.Matrix3x2f;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Render state for SDF text rendering.
@@ -36,8 +34,6 @@ public record SdfTextRenderState(
     int originY,
     @Nullable ScreenRectangle scissorArea
 ) implements LibGuiElementRenderState {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SdfTextRenderState.class);
-
     @Override
     public RenderPipeline pipeline() {
         return ALFPipelines.SDF_TEXT;

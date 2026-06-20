@@ -10,13 +10,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
+import org.joml.Matrix3x2f;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.awt.Font;
 import java.util.List;
-import org.joml.Matrix3x2f;
 
 /**
  * SDF text renderer that draws strings via the SDF text render pipeline.
@@ -25,8 +23,6 @@ import org.joml.Matrix3x2f;
  * sampled by a custom fragment shader for smooth anti-aliased text.
  */
 public final class SdfTextRenderer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SdfTextRenderer.class);
-
     private final GpuSampler diffuseSampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
 
     public SdfTextRenderer() {
@@ -54,8 +50,10 @@ public final class SdfTextRenderer {
         drawStringWithAtlas(graphics, getAtlas(font), text, x, y, color);
     }
 
-    private void drawStringWithAtlas(GuiGraphicsExtractor graphics, SdfGlyphAtlas atlas,
-                                      String text, int x, int y, int color) {
+    private void drawStringWithAtlas(
+        GuiGraphicsExtractor graphics, SdfGlyphAtlas atlas,
+        String text, int x, int y, int color
+    ) {
         float scale = scaleFor(atlas);
         SdfAtlasTexture.ensureUploaded(atlas);
         SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
@@ -109,7 +107,10 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        int[] pen = {x, x};
+        int[] pen = {
+            x,
+            x
+        };
         StringBuilder buf = new StringBuilder();
         int[] segColor = {color};
         boolean[] segBold = {false};

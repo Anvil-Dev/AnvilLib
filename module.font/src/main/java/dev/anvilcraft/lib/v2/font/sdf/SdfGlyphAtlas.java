@@ -1,8 +1,7 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -28,8 +27,8 @@ import java.util.function.Consumer;
  * Glyphs are packed into fixed-size 1024×1024 pages. ASCII 32-126 is
  * pre-warmed; all other codepoints are rendered lazily on first use.
  */
+@Slf4j
 public final class SdfGlyphAtlas {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SdfGlyphAtlas.class);
     static final int PAGE_SIZE = 1024;
     private static final int FIRST_CHAR = 32;
     private static final int LAST_CHAR = 126;
@@ -67,7 +66,7 @@ public final class SdfGlyphAtlas {
     private SdfGlyphAtlas(String key, Font font) {
         this.key = key;
         this.font = font;
-        LOGGER.info("SdfGlyphAtlas building for key={}, thread={}", key, Thread.currentThread().getName());
+        log.info("SdfGlyphAtlas building for key={}, thread={}", key, Thread.currentThread().getName());
 
         // Capture font metrics first — needed by cellSize calculation
         BufferedImage tmp = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
@@ -89,10 +88,10 @@ public final class SdfGlyphAtlas {
         this.sdfRadius = Math.max(12, font.getSize() * 0.25f);
         this.padding = Math.max(4, this.cellSize / 6);
         this.paddedCellSize = this.cellSize + 2 * this.padding;
-        LOGGER.info("SdfGlyphAtlas cellSize={} ascent={} descent={} key={}", this.cellSize, this.awtAscent, awtDescent, key);
+        log.info("SdfGlyphAtlas cellSize={} ascent={} descent={} key={}", this.cellSize, this.awtAscent, awtDescent, key);
 
         preWarmAscii();
-        LOGGER.info("SdfGlyphAtlas ready for key={}, pages={}", key, this.pages.size());
+        log.info("SdfGlyphAtlas ready for key={}, pages={}", key, this.pages.size());
     }
 
     // ── Public API ──────────────────────────────────────────────
@@ -103,14 +102,10 @@ public final class SdfGlyphAtlas {
     public static CompletableFuture<SdfGlyphAtlas> getOrCreate(@Nullable Font font) {
         Font resolved = resolveFont(font);
         String key = resolved.getFontName(Locale.ENGLISH) + "." + resolved.getStyle() + "." + resolved.getSize();
-        CompletableFuture<SdfGlyphAtlas> result = CACHE.computeIfAbsent(key, _ -> {
-            LOGGER.info("Starting SDF atlas build for key={}", key);
+        return CACHE.computeIfAbsent(key, _ -> {
+            log.debug("Starting SDF atlas build for key={}", key);
             return CompletableFuture.supplyAsync(() -> new SdfGlyphAtlas(key, resolved), GLYPH_EXECUTOR);
         });
-        if (result.isDone()) {
-            LOGGER.info("SDF atlas build done for key={}, done={}, cancelled={}", key, result.isDone(), result.isCancelled());
-        }
-        return result;
     }
 
     /**
@@ -129,13 +124,13 @@ public final class SdfGlyphAtlas {
                 SdfGlyphAtlas atlas = f.get();
                 return atlas;
             } catch (Exception e) {
-                LOGGER.error("SDF atlas build failed for key={}, retrying", key, e);
+                log.error("SDF atlas build failed for key={}, retrying", key, e);
                 CACHE.remove(key, f);
                 f = null;
             }
         }
         if (f == null) {
-            LOGGER.info("No atlas future for key={}, starting build", key);
+            log.info("No atlas future for key={}, starting build", key);
             getOrCreate(font);
         }
         return null;
@@ -202,7 +197,7 @@ public final class SdfGlyphAtlas {
             // Invalidate cached layouts so they pick up the new glyph
             SdfTextLayout.invalidateAtlas(this.key);
         } catch (Exception e) {
-            LOGGER.error("Failed to create SDF glyph for codepoint {} (U+{})", codepoint, Integer.toHexString(codepoint).toUpperCase(), e);
+            log.error("Failed to create SDF glyph for codepoint {} (U+{})", codepoint, Integer.toHexString(codepoint).toUpperCase(), e);
         } finally {
             this.pendingGlyphs.remove(codepoint);
         }
