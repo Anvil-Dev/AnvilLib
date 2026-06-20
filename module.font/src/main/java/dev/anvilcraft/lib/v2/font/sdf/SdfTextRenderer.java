@@ -12,6 +12,7 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
 import org.joml.Matrix3x2f;
+import org.joml.Matrix3x2fStack;
 import org.jspecify.annotations.Nullable;
 
 import java.awt.Font;
@@ -180,14 +181,18 @@ public final class SdfTextRenderer {
     ) {
         if (x1 <= x0) return;
         int lh = Minecraft.getInstance().font.lineHeight;
+        Matrix3x2fStack pose = graphics.pose();
+        pose.pushMatrix();
+        pose.scale(1.0f, 0.5f);
         if (strikethrough) {
-            int sy = y + lh / 2;
+            int sy = (y + lh / 2) * 2;
             graphics.fill(x0, sy, x1, sy + 1, color);
         }
         if (underline) {
-            int sy = y + lh;
+            int sy = (y + lh - 2) * 2;
             graphics.fill(x0, sy, x1, sy + 1, color);
         }
+        pose.popMatrix();
     }
 
     public void drawWrapped(
