@@ -41,6 +41,7 @@ def roseauBaselineVersion = project.findProperty('roseauBaselineVersion') ?: {
 def roseauMvnCoord = "${roseauGroup}:${roseauArtifact}:${roseauBaselineVersion}"
 def roseauBaselineDep = dependencies.create(group: roseauGroup, name: roseauArtifact, version: roseauBaselineVersion)
 def roseauBaselineConfig = configurations.detachedConfiguration(roseauBaselineDep)
+roseauBaselineConfig.transitive = false
 def roseauBaselineJarProvider = provider { roseauBaselineConfig.singleFile }
 def roseauConfig = rootProject.file("roseau.yaml").absolutePath
 
