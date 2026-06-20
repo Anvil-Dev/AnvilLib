@@ -4,6 +4,7 @@ import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.awt.image.BufferedImage;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A single 1024×1024 atlas page holding packed glyphs.
@@ -12,7 +13,7 @@ import java.awt.image.BufferedImage;
 public final class SdfGlyphPage {
     private static final int SIZE = SdfGlyphAtlas.PAGE_SIZE;
     final BufferedImage image;
-    int hash = 1;
+    final AtomicInteger version = new AtomicInteger();
     final int cols, rows;
     int nextCol, nextRow;
     Identifier textureId;
@@ -58,6 +59,6 @@ public final class SdfGlyphPage {
     }
 
     public void updateHash() {
-        this.hash = SdfAtlasTexture.hashImage(this.image);
+        this.version.incrementAndGet();
     }
 }

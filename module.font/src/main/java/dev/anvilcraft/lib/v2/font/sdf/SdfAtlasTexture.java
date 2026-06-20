@@ -30,10 +30,10 @@ public final class SdfAtlasTexture {
     public static Identifier uploadPage(SdfGlyphAtlas atlas, int pageIndex) {
         SdfGlyphPage page = atlas.page(pageIndex);
         String key = atlas.key() + ".p" + pageIndex;
-        int hash = page.hash;
+        int version = page.version.get();
 
         PageEntry entry = CACHE.get(key);
-        if (entry != null && entry.hash == hash) return entry.id;
+        if (entry != null && entry.version == version) return entry.id;
 
         Identifier id = Identifier.fromNamespaceAndPath("anvillib_font", "dynamic/sdf_atlas/" + sanitize(key));
         // Synchronize on page to avoid reading image data while the async
@@ -46,7 +46,7 @@ public final class SdfAtlasTexture {
         Minecraft.getInstance().getTextureManager().register(id, texture);
 
         if (entry != null) entry.texture.close();
-        CACHE.put(key, new PageEntry(id, texture, hash));
+        CACHE.put(key, new PageEntry(id, texture, version));
         page.textureId = id;
         page.dirty = false;
         return id;
@@ -81,10 +81,14 @@ public final class SdfAtlasTexture {
     }
 
     static NativeImage toNativeImage(BufferedImage image) {
-        NativeImage ni = new NativeImage(NativeImage.Format.RGBA, image.getWidth(), image.getHeight(), false);
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                int gray = image.getRGB(x, y) & 0xFF;
+        int w = image.getWidth();
+        int h = image.getHeight();
+        NativeImage ni = new NativeImage(NativeImage.Format.RGBA, w, h, false);
+        byte[] pixels = (byte[]) image.getRaster().getDataElements(0, 0, w, h, null);
+        int idx = 0;
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int gray = pixels[idx++] & 0xFF;
                 ni.setPixel(x, y, (0xFF << 24) | (gray << 16) | (gray << 8) | gray);
             }
         }
@@ -108,25 +112,15 @@ public final class SdfAtlasTexture {
         return sb.toString();
     }
 
-    public static int hashImage(BufferedImage image) {
-        int hash = 1;
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                hash = 31 * hash + image.getRGB(x, y);
-            }
-        }
-        return hash;
-    }
-
     private static final class PageEntry {
         final Identifier id;
         final SdfTexture texture;
-        final int hash;
+        final int version;
 
-        PageEntry(Identifier id, SdfTexture texture, int hash) {
+        PageEntry(Identifier id, SdfTexture texture, int version) {
             this.id = id;
             this.texture = texture;
-            this.hash = hash;
+            this.version = version;
         }
     }
 }
