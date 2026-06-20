@@ -41,6 +41,7 @@ import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ScreenFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MobEffectBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.NoConfigBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.SelfBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.data.DataComponentPredicateBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.self.PotionBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.self.SoundEventBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.data.AttachmentBuilder;
@@ -82,6 +83,7 @@ import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.predicates.DataComponentPredicate;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -1653,6 +1655,42 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      * @author baka4n
      */
     public <E> DataComponentBuilder<E, S> dataComponent(String name) {
+        return dataComponent(self(), name);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public <E> DataComponentBuilder<E, S> dataComponent(String name, Class<E> clazz) {
+        return dataComponent(self(), name);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    protected <E extends DataComponentPredicate, P> DataComponentPredicateBuilder<E, P> dataComponentPredicate(P parent, String name) {
+        return entry(name, callback -> new DataComponentPredicateBuilder<>(this, parent, name, callback));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public <E> DataComponentBuilder<E, S> dataComponentPredicate(String name) {
+        return dataComponent(self(), name);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public <E> DataComponentBuilder<E, S> dataComponentPredicate(String name, Class<E> clazz) {
         return dataComponent(self(), name);
     }
 
