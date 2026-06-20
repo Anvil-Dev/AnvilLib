@@ -41,15 +41,14 @@ public final class SdfGlyphAtlas {
     private static final Map<String, CompletableFuture<SdfGlyphAtlas>> CACHE = new ConcurrentHashMap<>();
 
     /**
-     * Single-threaded executor for background glyph creation.
-     * All glyph creation (including SDF computation) happens on this thread
-     * to avoid blocking the render loop.
+     * Per-task virtual-thread executor for background glyph creation.
+     * Each glyph (or batch) gets its own virtual thread; the existing
+     * {@code synchronized} blocks on the atlas and page objects already
+     * provide the necessary mutual exclusion.
      */
-    private static final ExecutorService GLYPH_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "AnvilLib-SDF-Glyph");
-        t.setDaemon(true);
-        return t;
-    });
+    private static final ExecutorService GLYPH_EXECUTOR = Executors.newThreadPerTaskExecutor(
+        Thread.ofVirtual().name("AnvilLib-SDF-Glyph-", 0).factory()
+    );
 
     private final String key;
     private final Font font;
