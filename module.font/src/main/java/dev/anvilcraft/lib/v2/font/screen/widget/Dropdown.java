@@ -166,7 +166,10 @@ public class Dropdown extends AbstractWidget {
 
     public int calcMaxHeight() {
         int startHeight = this.getY() + this.getHeight();
-        return Math.clamp((long) this.allows.size() * this.getHeight(), 0, this.screenHeight - startHeight - 10);
+        int maxHeight = Math.clamp((long) this.allows.size() * this.getHeight(), 0, this.screenHeight - startHeight - 10);
+        // Round down to a multiple of the row height so the last visible row
+        // fills the entire area without trailing blank space.
+        return (maxHeight / this.getHeight()) * this.getHeight();
     }
 
     private int visibleRowCount() {
