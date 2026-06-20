@@ -10,6 +10,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+@ApiStatus.Internal
 public class Dropdown extends AbstractWidget {
     private final List<DropdownEntry> allows = new ArrayList<>();
     private final Minecraft minecraft = Minecraft.getInstance();

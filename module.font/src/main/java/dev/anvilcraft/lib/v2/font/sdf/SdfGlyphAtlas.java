@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.awt.Color;
@@ -27,6 +28,7 @@ import java.util.function.Consumer;
  * Glyphs are packed into fixed-size 1024×1024 pages. ASCII 32-126 is
  * pre-warmed; all other codepoints are rendered lazily on first use.
  */
+@ApiStatus.Internal
 @Slf4j
 public final class SdfGlyphAtlas {
     static final int PAGE_SIZE = 1024;

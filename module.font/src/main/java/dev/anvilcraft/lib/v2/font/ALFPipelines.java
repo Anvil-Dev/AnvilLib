@@ -11,6 +11,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Font module render pipeline registration.
@@ -18,6 +19,7 @@ import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
  * <p>The pipeline is ready for SDF text quad rendering and will be consumed by the
  * runtime text render state in a follow-up step.</p>
  */
+@ApiStatus.Internal
 @Slf4j
 @EventBusSubscriber(modid = AnvilLibFont.MOD_ID, value = Dist.CLIENT)
 public final class ALFPipelines {

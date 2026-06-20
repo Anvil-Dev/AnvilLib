@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
+import com.google.common.annotations.Beta;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
@@ -22,6 +23,7 @@ import java.util.List;
  * Uses a CPU-generated SDF glyph atlas uploaded to a GPU texture,
  * sampled by a custom fragment shader for smooth anti-aliased text.
  */
+@Beta
 public final class SdfTextRenderer {
     private final GpuSampler diffuseSampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
 

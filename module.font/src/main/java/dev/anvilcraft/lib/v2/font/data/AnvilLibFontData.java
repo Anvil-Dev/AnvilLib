@@ -8,7 +8,9 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 @EventBusSubscriber(modid = AnvilLibFont.MOD_ID)
 public class AnvilLibFontData {
     @SubscribeEvent

@@ -12,6 +12,7 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix3x2f;
 import org.jspecify.annotations.Nullable;
 
@@ -22,6 +23,7 @@ import java.util.List;
  *
  * <p>Coordinates are in screen space and will be transformed via the pose matrix.</p>
  */
+@ApiStatus.Internal
 public record SdfTextRenderState(
     Matrix3x2f pose,
     List<SdfTextLayout.GlyphQuad> glyphs,

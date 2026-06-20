@@ -1,12 +1,14 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.awt.image.BufferedImage;
 
 /**
  * A single 1024×1024 atlas page holding packed glyphs.
  */
+@ApiStatus.Internal
 public final class SdfGlyphPage {
     private static final int SIZE = SdfGlyphAtlas.PAGE_SIZE;
     final BufferedImage image;

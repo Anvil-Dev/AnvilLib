@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.font;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import lombok.Getter;
@@ -19,6 +20,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import javax.swing.UIManager;
 
+@Beta
 @Slf4j
 @Getter
 public class FontManager {

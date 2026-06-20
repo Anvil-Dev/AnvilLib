@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * computation each frame. Quads are stored with positions relative to the
  * layout origin; the renderer supplies the screen-space offset.
  */
+@ApiStatus.Internal
 public final class SdfTextLayout {
     private static final int MAX_CACHE_SIZE = 1024;
     private static final Map<CacheKey, SdfTextLayout> LAYOUT_CACHE = new ConcurrentHashMap<>();

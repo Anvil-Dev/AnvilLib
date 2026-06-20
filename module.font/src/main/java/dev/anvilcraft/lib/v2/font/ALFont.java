@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.font;
 
+import com.google.common.annotations.Beta;
 import dev.anvilcraft.lib.v2.font.sdf.SdfGlyphAtlas;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.FormattedText;
@@ -10,12 +11,12 @@ import net.minecraft.util.Mth;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Wraps {@link Font} with text measurement and layout utilities that
  * delegate to {@link SdfGlyphAtlas} for glyph metrics.
  */
+@Beta
 public class ALFont {
     public final int lineHeight = Minecraft.getInstance().font.lineHeight;
     private final Font font;

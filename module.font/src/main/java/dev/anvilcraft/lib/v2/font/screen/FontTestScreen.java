@@ -6,8 +6,9 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import org.joml.Matrix3x2fStack;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class FontTestScreen extends Screen {
     protected final Screen lastScreen;
 

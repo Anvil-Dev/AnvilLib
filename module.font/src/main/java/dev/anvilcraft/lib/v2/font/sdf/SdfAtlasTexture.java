@@ -8,6 +8,7 @@ import com.mojang.blaze3d.textures.TextureFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.awt.image.BufferedImage;
 import java.util.Map;
@@ -16,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Uploads SDF glyph atlas pages to GPU textures with LINEAR filtering.
  */
+@ApiStatus.Internal
 public final class SdfAtlasTexture {
     private static final Map<String, PageEntry> CACHE = new ConcurrentHashMap<>();
 
