@@ -453,12 +453,13 @@ jobs:
         uses: peter-evans/find-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          comment-author: github-actions[bot]
+          comment-author: anvil-craft
           body-includes: Roseau API Breaking Change Report
 
       - name: Create or update PR comment
         uses: peter-evans/create-or-update-comment@v4
         with:
+          token: ${{ secrets.PAT_TOKEN }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body-path: /tmp/roseau-body.md
