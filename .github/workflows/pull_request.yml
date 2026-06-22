@@ -452,6 +452,7 @@ jobs:
         id: find-comment
         uses: peter-evans/find-comment@v3
         with:
+          token: ${{ secrets.PAT_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: anvil-craft
           body-includes: Roseau API Breaking Change Report
