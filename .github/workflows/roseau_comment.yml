@@ -1,0 +1,150 @@
+name: Roseau PR Comment
+
+on:
+  workflow_run:
+    workflows:
+      - Pull Request Check
+    types:
+      - completed
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+
+jobs:
+  comment:
+    if: ${{ github.event.workflow_run.conclusion != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Roseau reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: roseau-*
+          path: roseau-reports
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Find PR number
+        id: pr
+        run: |
+          HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          PR_NUMBER=$(gh pr list \
+            --head "$HEAD_BRANCH" \
+            --state open \
+            --json number \
+            --jq '.[0].number')
+          if [ -z "$PR_NUMBER" ]; then
+            PR_NUMBER=$(gh pr list \
+              --search "$HEAD_SHA" \
+              --state open \
+              --json number \
+              --jq '.[0].number')
+          fi
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::warning::Could not find PR number for branch=$HEAD_BRANCH sha=$HEAD_SHA"
+          fi
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate report body
+        run: |
+          row() {
+            local name=$1 dir=$2
+            local csv="${dir}/report.csv"
+            if [ -f "$csv" ] && [ "$(wc -l < "$csv")" -gt 1 ]; then
+              local count=$(($(wc -l < "$csv") - 1))
+              echo "| ${name} | 🔴 BC detected | ${count} |"
+            elif [ -f "$csv" ]; then
+              echo "| ${name} | ✅ Compatible | 0 |"
+            else
+              echo "| ${name} | ⚪ Skipped | — |"
+            fi
+          }
+
+          {
+            echo "## 🌿 Roseau API Breaking Change Report"
+            echo ""
+            echo "| Module | Status | Breaking Changes |"
+            echo "|--------|--------|-----------------|"
+            row "codec"                 "roseau-reports/roseau-codec"
+            row "collision"             "roseau-reports/roseau-collision"
+            row "config"                "roseau-reports/roseau-config"
+            row "font"                  "roseau-reports/roseau-font"
+            row "integration"           "roseau-reports/roseau-integration"
+            row "moveable-entity-block" "roseau-reports/roseau-moveable-entity-block"
+            row "multiblock"            "roseau-reports/roseau-multiblock"
+            row "network"               "roseau-reports/roseau-network"
+            row "recipe"                "roseau-reports/roseau-recipe"
+            row "registrum"             "roseau-reports/roseau-registrum"
+            row "rendering"             "roseau-reports/roseau-rendering"
+            row "space-select"          "roseau-reports/roseau-space-select"
+            row "sync"                  "roseau-reports/roseau-sync"
+            row "util"                  "roseau-reports/roseau-util"
+            row "wheel"                 "roseau-reports/roseau-wheel"
+            row "main"                  "roseau-reports/roseau-main"
+            echo ""
+          } > /tmp/roseau-body.md
+
+          append_details() {
+            local name=$1 dir=$2
+            local csv="${dir}/report.csv"
+            if [ ! -f "$csv" ]; then return; fi
+            local count=$(($(wc -l < "$csv") - 1))
+            if [ "$count" -le 0 ]; then return; fi
+            {
+              echo "### 🔴 ${name} — ${count} breaking change(s)"
+              echo ""
+              while IFS=';' read -r type symbol kind nature location newSymbol binaryBreaking sourceBreaking; do
+                echo "#### \`${location}\`"
+                echo '```'
+                echo "${type}"
+                echo "${symbol}"
+                echo "${kind}"
+                [ "$binaryBreaking" = "true" ] && echo "✗ binary-breaking" || echo "✓ binary-compatible"
+                [ "$sourceBreaking" = "true" ] && echo "✗ source-breaking" || echo "✓ source-compatible"
+                echo '```'
+                echo ""
+              done < <(tail -n +2 "$csv")
+            } >> /tmp/roseau-body.md
+          }
+
+          append_details "codec"                 "roseau-reports/roseau-codec"
+          append_details "collision"             "roseau-reports/roseau-collision"
+          append_details "config"                "roseau-reports/roseau-config"
+          append_details "font"                  "roseau-reports/roseau-font"
+          append_details "integration"           "roseau-reports/roseau-integration"
+          append_details "moveable-entity-block" "roseau-reports/roseau-moveable-entity-block"
+          append_details "multiblock"            "roseau-reports/roseau-multiblock"
+          append_details "network"               "roseau-reports/roseau-network"
+          append_details "recipe"                "roseau-reports/roseau-recipe"
+          append_details "registrum"             "roseau-reports/roseau-registrum"
+          append_details "rendering"             "roseau-reports/roseau-rendering"
+          append_details "space-select"          "roseau-reports/roseau-space-select"
+          append_details "sync"                  "roseau-reports/roseau-sync"
+          append_details "util"                  "roseau-reports/roseau-util"
+          append_details "wheel"                 "roseau-reports/roseau-wheel"
+          append_details "main"                  "roseau-reports/roseau-main"
+
+          echo "> Full CSVs: see the *Artifacts* section of [this workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }})." >> /tmp/roseau-body.md
+
+      - name: Find existing Roseau comment
+        id: find-comment
+        if: steps.pr.outputs.number != ''
+        uses: peter-evans/find-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ steps.pr.outputs.number }}
+          comment-author: anvil-craft
+          body-includes: Roseau API Breaking Change Report
+
+      - name: Create or update PR comment
+        if: steps.pr.outputs.number != ''
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ steps.pr.outputs.number }}
+          body-path: /tmp/roseau-body.md
+          edit-mode: replace
