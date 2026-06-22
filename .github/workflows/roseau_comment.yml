@@ -50,6 +50,12 @@ jobs:
 
       - name: Generate report body
         run: |
+          MODULES=(
+            codec collision config font integration
+            moveable-entity-block multiblock network recipe registrum
+            rendering space-select sync util wheel main
+          )
+
           row() {
             local name=$1 dir=$2
             local csv="${dir}/report.csv"
@@ -62,30 +68,6 @@ jobs:
               echo "| ${name} | ⚪ Skipped | — |"
             fi
           }
-
-          {
-            echo "## 🌿 Roseau API Breaking Change Report"
-            echo ""
-            echo "| Module | Status | Breaking Changes |"
-            echo "|--------|--------|-----------------|"
-            row "codec"                 "roseau-reports/roseau-codec"
-            row "collision"             "roseau-reports/roseau-collision"
-            row "config"                "roseau-reports/roseau-config"
-            row "font"                  "roseau-reports/roseau-font"
-            row "integration"           "roseau-reports/roseau-integration"
-            row "moveable-entity-block" "roseau-reports/roseau-moveable-entity-block"
-            row "multiblock"            "roseau-reports/roseau-multiblock"
-            row "network"               "roseau-reports/roseau-network"
-            row "recipe"                "roseau-reports/roseau-recipe"
-            row "registrum"             "roseau-reports/roseau-registrum"
-            row "rendering"             "roseau-reports/roseau-rendering"
-            row "space-select"          "roseau-reports/roseau-space-select"
-            row "sync"                  "roseau-reports/roseau-sync"
-            row "util"                  "roseau-reports/roseau-util"
-            row "wheel"                 "roseau-reports/roseau-wheel"
-            row "main"                  "roseau-reports/roseau-main"
-            echo ""
-          } > /tmp/roseau-body.md
 
           append_details() {
             local name=$1 dir=$2
@@ -110,22 +92,20 @@ jobs:
             } >> /tmp/roseau-body.md
           }
 
-          append_details "codec"                 "roseau-reports/roseau-codec"
-          append_details "collision"             "roseau-reports/roseau-collision"
-          append_details "config"                "roseau-reports/roseau-config"
-          append_details "font"                  "roseau-reports/roseau-font"
-          append_details "integration"           "roseau-reports/roseau-integration"
-          append_details "moveable-entity-block" "roseau-reports/roseau-moveable-entity-block"
-          append_details "multiblock"            "roseau-reports/roseau-multiblock"
-          append_details "network"               "roseau-reports/roseau-network"
-          append_details "recipe"                "roseau-reports/roseau-recipe"
-          append_details "registrum"             "roseau-reports/roseau-registrum"
-          append_details "rendering"             "roseau-reports/roseau-rendering"
-          append_details "space-select"          "roseau-reports/roseau-space-select"
-          append_details "sync"                  "roseau-reports/roseau-sync"
-          append_details "util"                  "roseau-reports/roseau-util"
-          append_details "wheel"                 "roseau-reports/roseau-wheel"
-          append_details "main"                  "roseau-reports/roseau-main"
+          {
+            echo "## 🌿 Roseau API Breaking Change Report"
+            echo ""
+            echo "| Module | Status | Breaking Changes |"
+            echo "|--------|--------|-----------------|"
+            for mod in "${MODULES[@]}"; do
+              row "$mod" "roseau-reports/roseau-${mod}"
+            done
+            echo ""
+          } > /tmp/roseau-body.md
+
+          for mod in "${MODULES[@]}"; do
+            append_details "$mod" "roseau-reports/roseau-${mod}"
+          done
 
           echo "> Full CSVs: see the *Artifacts* section of [this workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }})." >> /tmp/roseau-body.md
 

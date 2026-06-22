@@ -1,0 +1,19 @@
+[
+  { "module": "codec",                 "needs": [] },
+  { "module": "collision",             "needs": [] },
+  { "module": "config",                "needs": [] },
+  { "module": "integration",           "needs": [] },
+  { "module": "moveable-entity-block", "needs": [] },
+  { "module": "network",               "needs": [] },
+  { "module": "rendering",             "needs": [] },
+  { "module": "space-select",          "needs": [] },
+
+  { "module": "font",  "needs": ["rendering"] },
+  { "module": "util",  "needs": ["codec"] },
+
+  { "module": "multiblock", "needs": ["codec", "config", "network", "util"] },
+  { "module": "recipe",     "needs": ["codec", "config", "util"] },
+  { "module": "registrum",  "needs": ["util"] },
+  { "module": "sync",       "needs": ["codec", "network", "util"] },
+  { "module": "wheel",      "needs": ["rendering", "util"] }
+]

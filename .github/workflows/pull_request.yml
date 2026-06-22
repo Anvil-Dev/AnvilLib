@@ -4,10 +4,12 @@ on:
   pull_request:
     branches:
       - dev/**
-      # - releases/**
     paths:
+      - .github/modules.json
       - .github/workflows/build_and_test.yml
       - .github/workflows/pull_request.yml
+      - .github/workflows/roseau_check.yml
+      - .github/workflows/generate-matrix.js
       - gradle/**
       - module.*/src/**
       - module.*/build.gradle
@@ -22,166 +24,90 @@ permissions:
   actions: read
   packages: read
   pull-requests: write
+
 jobs:
-  codec:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      level_0: ${{ steps.matrix.outputs.level_0 }}
+      level_1: ${{ steps.matrix.outputs.level_1 }}
+      level_2: ${{ steps.matrix.outputs.level_2 }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: matrix
+        run: node .github/workflows/generate-matrix.js
+
+  # ── Build (topological levels) ──────────────────────────────────
+
+  build-l0:
+    needs: [prepare]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: codec
-      module_id: anvillib-codec
-      mod_id: anvillib_codec
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+      mod_id: ${{ matrix.mod_id }}
       ci_build: true
       pr_build: true
-  collision:
+
+  build-l1:
+    needs: [build-l0]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: collision
-      module_id: anvillib-collision
-      mod_id: anvillib_collision
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+      mod_id: ${{ matrix.mod_id }}
       ci_build: true
       pr_build: true
-  config:
+
+  build-l2:
+    needs: [build-l1]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: config
-      module_id: anvillib-config
-      mod_id: anvillib_config
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+      mod_id: ${{ matrix.mod_id }}
       ci_build: true
       pr_build: true
-  font:
-    needs:
-      - rendering
-    uses: ./.github/workflows/build_and_test.yml
+
+  # ── Roseau API checks ───────────────────────────────────────────
+
+  roseau-l0:
+    needs: [build-l0]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
+    uses: ./.github/workflows/roseau_check.yml
     with:
-      module: font
-      module_id: anvillib-font
-      mod_id: anvillib_font
-      ci_build: true
-      pr_build: true
-  integration:
-    uses: ./.github/workflows/build_and_test.yml
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+
+  roseau-l1:
+    needs: [build-l1]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
+    uses: ./.github/workflows/roseau_check.yml
     with:
-      module: integration
-      module_id: anvillib-integration
-      mod_id: anvillib_integration
-      ci_build: true
-      pr_build: true
-  moveable-entity-block:
-    uses: ./.github/workflows/build_and_test.yml
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+
+  roseau-l2:
+    needs: [build-l2]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
+    uses: ./.github/workflows/roseau_check.yml
     with:
-      module: moveable-entity-block
-      module_id: anvillib-moveable-entity-block
-      mod_id: anvillib_moveable_entity_block
-      ci_build: true
-      pr_build: true
-  multiblock:
-    uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - codec
-      - config
-      - network
-      - util
-    with:
-      module: multiblock
-      module_id: anvillib-multiblock
-      mod_id: anvillib_multiblock
-      ci_build: true
-      pr_build: true
-  network:
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: network
-      module_id: anvillib-network
-      mod_id: anvillib_network
-      ci_build: true
-      pr_build: true
-  recipe:
-    needs:
-      - codec
-      - config
-      - util
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: recipe
-      module_id: anvillib-recipe
-      mod_id: anvillib_recipe
-      ci_build: true
-      pr_build: true
-  registrum:
-    uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - util
-    with:
-      module: registrum
-      module_id: anvillib-registrum
-      mod_id: anvillib_registrum
-      ci_build: true
-      pr_build: true
-  rendering:
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: rendering
-      module_id: anvillib-rendering
-      mod_id: anvillib_rendering
-      ci_build: true
-      pr_build: true
-  space-select:
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: space-select
-      module_id: anvillib-space-select
-      mod_id: anvillib_space_select
-      ci_build: true
-      pr_build: true
-  sync:
-    uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - codec
-      - network
-      - util
-    with:
-      module: sync
-      module_id: anvillib-sync
-      mod_id: anvillib_sync
-      ci_build: true
-      pr_build: true
-  util:
-    uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - codec
-    with:
-      module: util
-      module_id: anvillib-util
-      mod_id: anvillib_util
-      ci_build: true
-      pr_build: true
-  wheel:
-    uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - rendering
-      - util
-    with:
-      module: wheel
-      module_id: anvillib-wheel
-      mod_id: anvillib_wheel
-      ci_build: true
-      pr_build: true
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+
+  # ── Main (aggregator) ───────────────────────────────────────────
+
   main:
-    needs:
-      - codec
-      - collision
-      - config
-      - font
-      - integration
-      - moveable-entity-block
-      - multiblock
-      - network
-      - recipe
-      - registrum
-      - rendering
-      - space-select
-      - sync
-      - util
-      - wheel
+    needs: [build-l2]
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: main
@@ -191,115 +117,8 @@ jobs:
       pr_build: true
       gametest: true
 
-  # ── Roseau API checks ──────────────────────────────────────────
-
-  codec-roseau:
-    needs: codec
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: codec
-      module_id: anvillib-codec
-
-  collision-roseau:
-    needs: collision
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: collision
-      module_id: anvillib-collision
-
-  config-roseau:
-    needs: config
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: config
-      module_id: anvillib-config
-
-  font-roseau:
-    needs: font
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: font
-      module_id: anvillib-font
-
-  integration-roseau:
-    needs: integration
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: integration
-      module_id: anvillib-integration
-
-  moveable-entity-block-roseau:
-    needs: moveable-entity-block
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: moveable-entity-block
-      module_id: anvillib-moveable-entity-block
-
-  multiblock-roseau:
-    needs: multiblock
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: multiblock
-      module_id: anvillib-multiblock
-
-  network-roseau:
-    needs: network
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: network
-      module_id: anvillib-network
-
-  recipe-roseau:
-    needs: recipe
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: recipe
-      module_id: anvillib-recipe
-
-  registrum-roseau:
-    needs: registrum
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: registrum
-      module_id: anvillib-registrum
-
-  rendering-roseau:
-    needs: rendering
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: rendering
-      module_id: anvillib-rendering
-
-  space-select-roseau:
-    needs: space-select
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: space-select
-      module_id: anvillib-space-select
-
-  sync-roseau:
-    needs: sync
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: sync
-      module_id: anvillib-sync
-
-  util-roseau:
-    needs: util
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: util
-      module_id: anvillib-util
-
-  wheel-roseau:
-    needs: wheel
-    uses: ./.github/workflows/roseau_check.yml
-    with:
-      module: wheel
-      module_id: anvillib-wheel
-
   main-roseau:
-    needs: main
+    needs: [main]
     uses: ./.github/workflows/roseau_check.yml
     with:
       module: main
