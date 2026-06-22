@@ -13,6 +13,8 @@ import net.neoforged.neoforge.network.handling.IPayloadHandler;
 
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Set;
 
 @Slf4j
@@ -35,11 +37,17 @@ record PacketData<B extends ByteBuf, T extends IPacket>(
                 ) {
                     continue;
                 }
-                Class<?> declaringClass = field.getType();
-                if (declaringClass.isAssignableFrom(CustomPacketPayload.Type.class)) {
+                Class<?> fieldType = field.getType();
+                if (CustomPacketPayload.Type.class.isAssignableFrom(fieldType)) {
+                    if (!isMatchingTypeArgument(field.getGenericType(), 0, packetClass)) {
+                        continue;
+                    }
                     field.setAccessible(true);
                     type = (CustomPacketPayload.Type<T>) field.get(null);
-                } else if (declaringClass.isAssignableFrom(StreamCodec.class)) {
+                } else if (StreamCodec.class.isAssignableFrom(fieldType)) {
+                    if (!isMatchingTypeArgument(field.getGenericType(), 1, packetClass)) {
+                        continue;
+                    }
                     field.setAccessible(true);
                     codec = (StreamCodec<B, T>) field.get(null);
                 }
@@ -76,5 +84,28 @@ record PacketData<B extends ByteBuf, T extends IPacket>(
             throw new IllegalStateException();
         }
         return new PacketData<>(type, codec, direction, handler);
+    }
+
+    /**
+     * 检查字段的参数化类型中，指定索引的类型实参是否与期望的类匹配。
+     * 如果字段类型不是参数化类型、类型实参不足、或类型不匹配，返回 false。
+     */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private static boolean isMatchingTypeArgument(
+        Type genericType,
+        int typeArgIndex,
+        Class<?> expectedClass
+    ) {
+        if (!(genericType instanceof ParameterizedType pt)) {
+            return false;
+        }
+        Type[] typeArgs = pt.getActualTypeArguments();
+        if (typeArgs.length <= typeArgIndex) {
+            return false;
+        }
+        if (!(typeArgs[typeArgIndex] instanceof Class<?> typeArg)) {
+            return false;
+        }
+        return typeArg.isAssignableFrom(expectedClass);
     }
 }
