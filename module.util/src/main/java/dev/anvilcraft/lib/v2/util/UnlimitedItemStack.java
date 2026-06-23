@@ -124,7 +124,7 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
     }
 
     public boolean isEmpty() {
-        return this.getStack().isEmpty() || this.getCount() <= 0;
+        return this.getStack().isEmpty() || this.count <= 0;
     }
 
     public UnlimitedItemStack split(int amount) {
