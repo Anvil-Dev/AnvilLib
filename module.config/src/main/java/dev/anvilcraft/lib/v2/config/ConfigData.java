@@ -41,11 +41,11 @@ public class ConfigData {
         ModConfig.Type type = config.type();
         proxy.add(TITLE_STRING.formatted(name), "%s Configuration".formatted(FormattingUtil.toEnglishName(name)));
         proxy.add(
-            TOML_STRING.formatted(name, FormattingUtil.toPointSpiltName(name), type.extension()),
+            TOML_STRING.formatted(name, FormattingUtil.toPointSplitName(name), type.extension()),
             "%s %s Configuration".formatted(FormattingUtil.toEnglishName(name), FormattingUtil.toEnglishName(type.extension()))
         );
         proxy.add(
-            TOML_TITLE_STRING.formatted(name, FormattingUtil.toPointSpiltName(name), type.extension()),
+            TOML_TITLE_STRING.formatted(name, FormattingUtil.toPointSplitName(name), type.extension()),
             "%s %s Configuration".formatted(FormattingUtil.toEnglishName(name), FormattingUtil.toEnglishName(type.extension()))
         );
         ConfigData.readConfigClass(proxy, name, type, configClass, null);

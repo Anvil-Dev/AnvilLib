@@ -5,8 +5,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public abstract class FormattingUtil {
@@ -29,7 +27,9 @@ public abstract class FormattingUtil {
             .collect(Collectors.joining(" "));
     }
 
-    public static String toPointSpiltName(String name) {
-        return String.join(".", name.split("[^A-Za-z0-9]"));
+    public static String toPointSplitName(String name) {
+        return Arrays.stream(name.split("[^A-Za-z0-9]"))
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.joining("."));
     }
 }
