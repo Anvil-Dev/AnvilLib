@@ -52,7 +52,7 @@ jobs:
       pr_build: true
 
   build-l1:
-    needs: [build-l0]
+    needs: [prepare, build-l0]
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
     uses: ./.github/workflows/build_and_test.yml
@@ -64,7 +64,7 @@ jobs:
       pr_build: true
 
   build-l2:
-    needs: [build-l1]
+    needs: [prepare, build-l1]
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
     uses: ./.github/workflows/build_and_test.yml
@@ -78,7 +78,7 @@ jobs:
   # ── Roseau API checks ───────────────────────────────────────────
 
   roseau-l0:
-    needs: [build-l0]
+    needs: [prepare, build-l0]
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
     uses: ./.github/workflows/roseau_check.yml
@@ -87,7 +87,7 @@ jobs:
       module_id: ${{ matrix.module_id }}
 
   roseau-l1:
-    needs: [build-l1]
+    needs: [prepare, build-l1]
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
     uses: ./.github/workflows/roseau_check.yml
@@ -96,7 +96,7 @@ jobs:
       module_id: ${{ matrix.module_id }}
 
   roseau-l2:
-    needs: [build-l2]
+    needs: [prepare, build-l2]
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
     uses: ./.github/workflows/roseau_check.yml
