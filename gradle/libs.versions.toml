@@ -1,12 +1,9 @@
 [versions]
 minecraft = "26.1.2"
-neoForge = "26.1.2.43-beta"
+neoForge = "26.1.2.71"
 modDevGradle = "2.0.141"
 lombok = "9.2.0"
 machete = "2.0.1"
-
-[libraries]
-neoForge = { group = "net.neoforged", name = "neoforge", version.ref = "neoForge" }
 
 [plugins]
 modDevGradle = { id = "net.neoforged.moddev", version.ref = "modDevGradle" }
