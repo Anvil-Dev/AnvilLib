@@ -35,14 +35,17 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
+/// 不限数量的 {@link ItemStack}
 @Getter
 @Setter
+@SuppressWarnings("unused")
 public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHolder {
     public static final UnlimitedItemStack EMPTY = new UnlimitedItemStack(ItemStack.EMPTY, 0);
     public static final MapCodec<UnlimitedItemStack> MAP_CODEC = MapCodec.recursive(
@@ -98,19 +101,17 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
     };
     public static final StreamCodec<RegistryFriendlyByteBuf, List<UnlimitedItemStack>> OPTIONAL_LIST_STREAM_CODEC = OPTIONAL_STREAM_CODEC
         .apply(ByteBufCodecs.collection(NonNullList::createWithCapacity));
-    private ItemStack stack;
-    private int count;
+    private ItemStack stack = ItemStack.EMPTY;
+    private int count = 0;
 
     public UnlimitedItemStack(ItemResource resource, int count) {
         this(resource.typeHolder(), count, resource.getComponentsPatch());
     }
 
     public UnlimitedItemStack(ItemStack stack, int count) {
-        this.count = Math.max(count, 0);
-        if (this.count == 0) {
-            this.stack = ItemStack.EMPTY;
-        } else {
-            this.stack = stack.copyWithCount(1);
+        this.setCount(Math.max(count, 0));
+        if (this.getCount() != 0) {
+            this.setStack(stack.copyWithCount(1));
         }
     }
 
@@ -123,7 +124,7 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
     }
 
     public boolean isEmpty() {
-        return this.stack.isEmpty() || this.count <= 0;
+        return this.getStack().isEmpty() || this.getCount() <= 0;
     }
 
     public UnlimitedItemStack split(int amount) {
@@ -150,7 +151,7 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
     @Override
     @SuppressWarnings("deprecation")
     public Holder<Item> typeHolder() {
-        return this.isEmpty() ? Items.AIR.builtInRegistryHolder() : this.stack.typeHolder();
+        return this.isEmpty() ? Items.AIR.builtInRegistryHolder() : this.getStack().typeHolder();
     }
 
     public boolean is(ItemLike item) {
@@ -174,15 +175,23 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
     }
 
     public boolean isStackable() {
-        return this.getMaxStackSize() > 1 && (!this.stack.isDamageableItem() || !this.stack.isDamaged());
+        return this.getMaxStackSize() > 1 && (!this.isDamageableItem() || !this.isDamaged());
+    }
+
+    public boolean isDamageableItem() {
+        return this.getStack().isDamageableItem();
+    }
+
+    public boolean isDamaged() {
+        return this.getStack().isDamaged();
     }
 
     public UnlimitedItemStack copy() {
-        return new UnlimitedItemStack(this.stack, this.count);
+        return new UnlimitedItemStack(this.getStack(), this.getCount());
     }
 
     public UnlimitedItemStack copyWithCount(int count) {
-        return new UnlimitedItemStack(this.stack, count);
+        return new UnlimitedItemStack(this.getStack(), count);
     }
 
     public UnlimitedItemStack transmuteCopy(ItemLike newItem) {
@@ -210,7 +219,7 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
         if (this == stack) {
             return true;
         }
-        return this.count == stack.count && this.isSameItemSameComponents(stack);
+        return this.getCount() == stack.getCount() && this.isSameItemSameComponents(stack);
     }
 
     public boolean isSameItem(ItemResource resource) {
@@ -233,19 +242,19 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
         if (this.isEmpty() || resource == null) {
             return this.isEmpty() == (resource == null);
         }
-        return resource.matches(this.stack);
+        return resource.matches(this.getStack());
     }
 
     public boolean isSameItemSameComponents(ItemStack stack) {
-        return ItemStack.isSameItemSameComponents(this.stack, stack);
+        return ItemStack.isSameItemSameComponents(this.getStack(), stack);
     }
 
     public boolean isSameItemSameComponents(@Nullable ItemStackTemplate stack) {
-        return ItemStack.isSameItemSameComponents(this.stack, stack);
+        return ItemStack.isSameItemSameComponents(this.getStack(), stack);
     }
 
     public boolean isSameItemSameComponents(@Nullable UnlimitedItemStack stack) {
-        return stack != null && this.isSameItemSameComponents(stack.stack);
+        return stack != null && this.isSameItemSameComponents(stack.getStack());
     }
 
     public boolean matchesIgnoringComponents(ItemStack stack, Predicate<DataComponentType<?>> ignoredPredicate) {
@@ -270,16 +279,16 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
 
     @Override
     public <T> @Nullable T set(DataComponentType<T> type, @Nullable T value) {
-        return this.stack.set(type, value);
+        return this.getStack().set(type, value);
     }
 
     public <T> @Nullable T set(TypedDataComponent<T> value) {
-        return this.stack.set(value);
+        return this.getStack().set(value);
     }
 
     @Override
     public <T> void copyFrom(DataComponentType<T> type, DataComponentGetter source) {
-        this.stack.copyFrom(type, source);
+        this.getStack().copyFrom(type, source);
     }
 
     public void copyFrom(UnlimitedItemStack stack) {
@@ -289,27 +298,27 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
 
     @Override
     public <T, U> @Nullable T update(DataComponentType<T> type, T defaultValue, U value, BiFunction<T, U, T> combiner) {
-        return this.stack.update(type, defaultValue, value, combiner);
+        return this.getStack().update(type, defaultValue, value, combiner);
     }
 
     @Override
     public <T> @Nullable T update(DataComponentType<T> type, T defaultValue, UnaryOperator<T> function) {
-        return this.stack.update(type, defaultValue, function);
+        return this.getStack().update(type, defaultValue, function);
     }
 
     @Override
     public <T> @Nullable T remove(DataComponentType<? extends T> type) {
-        return this.stack.remove(type);
+        return this.getStack().remove(type);
     }
 
     @Override
     public void applyComponents(DataComponentPatch patch) {
-        this.stack.applyComponents(patch);
+        this.getStack().applyComponents(patch);
     }
 
     @Override
     public void applyComponents(DataComponentMap components) {
-        this.stack.applyComponents(components);
+        this.getStack().applyComponents(components);
     }
 
     @Override
@@ -325,11 +334,11 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
 
     @Override
     public ItemEnchantments getTagEnchantments() {
-        return this.stack.getTagEnchantments();
+        return this.getStack().getTagEnchantments();
     }
 
     public int getCount() {
-        return this.isEmpty() ? 0 : this.count;
+        return this.isEmpty() ? 0 : this.getCount();
     }
 
     @Override
@@ -358,16 +367,16 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
 
     @Override
     public DataComponentMap getComponents() {
-        return this.stack.getComponents();
+        return this.getStack().getComponents();
     }
 
     public DataComponentPatch getComponentsPatch() {
-        return this.stack.getComponentsPatch();
+        return this.getStack().getComponentsPatch();
     }
 
     @Override
     public @Nullable ItemStackTemplate getCraftingRemainder() {
-        return this.stack.getCraftingRemainder();
+        return this.getStack().getCraftingRemainder();
     }
 
     public static boolean listMatches(List<UnlimitedItemStack> list, List<UnlimitedItemStack> other) {
@@ -385,7 +394,7 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
     /// @return 一个与本物品栈数据完全相同的 {@link ItemStack}
     /// @see UnlimitedItemStack#toStacks()
     public ItemStack toStack() {
-        return this.stack.copyWithCount(this.count);
+        return this.getStack().copyWithCount(this.getCount());
     }
 
     /// 将本物品栈按存储的 {@link ItemStack} 允许的最大数量转为一个物品栈列表。
@@ -397,20 +406,22 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
     /// 最后一份物品栈的数量为 {@code count - [(n - 1) * max]}
     /// @see UnlimitedItemStack#toStack()
     public List<ItemStack> toStacks() {
-        int maxCount = this.stack.getMaxStackSize();
-        if (this.count <= maxCount) {
-            return List.of(this.stack.copyWithCount(this.count));
+        ItemStack stack = this.getStack();
+        int count = this.getCount();
+        int maxCount = stack.getMaxStackSize();
+        if (count <= maxCount) {
+            return List.of(stack.copyWithCount(count));
         }
 
-        int fullStacks = this.count / maxCount;
+        int fullStacks = count / maxCount;
         ImmutableList.Builder<ItemStack> stacksBuilder = ImmutableList.builder();
         for (int i = 0; i < fullStacks; i++) {
-            stacksBuilder.add(this.stack.copyWithCount(maxCount));
+            stacksBuilder.add(stack.copyWithCount(maxCount));
         }
 
-        int remain = this.count % maxCount;
+        int remain = count % maxCount;
         if (remain != 0) {
-            stacksBuilder.add(this.stack.copyWithCount(remain));
+            stacksBuilder.add(stack.copyWithCount(remain));
         }
 
         return stacksBuilder.build();
@@ -424,7 +435,7 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
 
     @Override
     public int hashCode() {
-        return ((this.stack.getItem().hashCode() + 31) * 31 + Integer.hashCode(this.count)) * 31 + this.stack.getComponents().hashCode();
+        return Objects.hash(this.getStack().getItem(), this.getCount(), this.getStack().getComponents());
     }
 
     @Override
