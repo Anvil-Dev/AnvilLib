@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.test;
 
+import dev.anvilcraft.lib.v2.config.ConfigManager;
 import dev.anvilcraft.lib.v2.registrum.Registrum;
 import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
 import dev.anvilcraft.lib.v2.test.all.TestBlocks;
@@ -15,6 +16,7 @@ import net.neoforged.fml.common.Mod;
 public class AnvilLibTest {
     public static final String MOD_ID = "anvillib_test";
     public static final Registrum REGISTRUM = Registrum.create(MOD_ID);
+    public static final AnvilLibTestConfig CONFIG = ConfigManager.register(MOD_ID, AnvilLibTestConfig::new);
 
     public static Identifier of(String path) {
         return Identifier.fromNamespaceAndPath(AnvilLibTest.MOD_ID, path);
