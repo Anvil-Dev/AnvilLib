@@ -24,6 +24,9 @@ jobs:
           path: roseau-reports
           run-id: ${{ github.event.workflow_run.id }}
 
+      - name: Checkout repo (needed for gh CLI)
+        uses: actions/checkout@v4
+
       - name: Find PR number
         id: pr
         run: |
