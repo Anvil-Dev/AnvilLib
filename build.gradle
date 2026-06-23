@@ -74,10 +74,11 @@ tasks.register("createModule") {
             
             @Mod(${class_name}.MOD_ID)
             public class $class_name {
+                public static final String MAIN_ID = "anvillib";
                 public static final String MOD_ID = "$mod_id";
             
                 public static Identifier of(String path) {
-                    return Identifier.fromNamespaceAndPath(${class_name}.MOD_ID, path);
+                    return Identifier.fromNamespaceAndPath(${class_name}.MAIN_ID, path);
                 }
             }
             """.stripIndent().trim()
