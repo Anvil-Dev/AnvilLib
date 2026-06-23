@@ -46,7 +46,7 @@ jobs:
           fi
           echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
 
       - name: Generate report body
         run: |
@@ -134,7 +134,7 @@ jobs:
         if: steps.pr.outputs.number != ''
         uses: peter-evans/find-comment@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           issue-number: ${{ steps.pr.outputs.number }}
           comment-author: anvil-craft
           body-includes: Roseau API Breaking Change Report
@@ -143,7 +143,7 @@ jobs:
         if: steps.pr.outputs.number != ''
         uses: peter-evans/create-or-update-comment@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ steps.pr.outputs.number }}
           body-path: /tmp/roseau-body.md
