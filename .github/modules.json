@@ -10,6 +10,7 @@
 
   { "module": "font",  "needs": ["rendering"] },
   { "module": "util",  "needs": ["codec"] },
+  { "module": "explosion",  "needs": ["config"] },
 
   { "module": "multiblock", "needs": ["codec", "config", "network", "util"] },
   { "module": "recipe",     "needs": ["codec", "config", "util"] },

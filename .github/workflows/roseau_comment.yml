@@ -55,7 +55,7 @@ jobs:
       - name: Generate report body
         run: |
           MODULES=(
-            codec collision config font integration
+            codec collision config explosion font integration
             moveable-entity-block multiblock network recipe registrum
             rendering space-select sync util wheel main
           )
