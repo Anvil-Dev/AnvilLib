@@ -2,6 +2,7 @@ dependencies {
     implementation project(":anvillib-codec-neoforge-26.1")
     implementation project(":anvillib-collision-neoforge-26.1")
     implementation project(":anvillib-config-neoforge-26.1")
+    implementation project(":anvillib-explosion-neoforge-26.1")
     implementation project(":anvillib-font-neoforge-26.1")
     interfaceInjectionData(implementation project(":anvillib-font-neoforge-26.1"))
     implementation project(":anvillib-integration-neoforge-26.1")
