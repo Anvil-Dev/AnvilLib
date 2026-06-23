@@ -338,7 +338,7 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
     }
 
     public int getCount() {
-        return this.isEmpty() ? 0 : this.getCount();
+        return this.isEmpty() ? 0 : this.count;
     }
 
     @Override
