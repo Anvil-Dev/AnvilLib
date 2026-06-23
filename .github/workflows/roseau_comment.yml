@@ -23,6 +23,7 @@ jobs:
           pattern: roseau-*
           path: roseau-reports
           run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.PAT_TOKEN }}
 
       - name: Checkout repo (needed for gh CLI)
         uses: actions/checkout@v4
