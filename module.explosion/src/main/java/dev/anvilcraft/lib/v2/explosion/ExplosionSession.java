@@ -331,7 +331,7 @@ class ExplosionSession {
     }
 
     /**
-     * Melt a block by replacing it with air without dropping items.
+     * Melt a block by replacing it with another block from MELTING_CACHE.
      * Used for the melting radius effect.
      */
     public static boolean meltBlock(ServerLevel level, BlockPos pos) {
@@ -342,13 +342,21 @@ class ExplosionSession {
         if (blockState.isAir()) {
             return false;
         }
-        FluidState fluidState = level.getFluidState(pos);
-        // Replace with air/fluid without dropping resources
-        boolean destroyed = level.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, 512);
-        if (destroyed) {
+
+        Block originalBlock = blockState.getBlock();
+        Block targetBlock = AnvilLibExplosion.MELTING_CACHE.get(originalBlock);
+
+        BlockState newState;
+        if (targetBlock == null) {
+            return false;
+        }
+        newState = targetBlock.defaultBlockState();
+
+        boolean changed = level.setBlock(pos, newState, Block.UPDATE_ALL, 512);
+        if (changed) {
             level.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(null, blockState));
         }
-        return true;
+        return changed;
     }
 
     public static boolean destroyBlock(ServerLevel level, BlockPos pos, boolean dropResources) {
