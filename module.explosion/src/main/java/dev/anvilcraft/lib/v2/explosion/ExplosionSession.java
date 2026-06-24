@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -44,6 +45,7 @@ class ExplosionSession {
     private final int meltingRadius; // Melting radius (replace with air without drops)
     private final int effectiveMaxRadius; // Outermost radius to process (max of probabilityRadius and meltingRadius)
     private final List<Predicate<Block>> excludedBlocks; // Blocks that cannot be destroyed by explosion
+    private final List<Predicate<Block>> frangibleBlocks; // Frangible blocks that are always destroyed within range
 
     // Current processing state
     private int currentLayer; // Current distance layer (0 to effectiveMaxRadius)
@@ -64,7 +66,8 @@ class ExplosionSession {
         boolean dropItems,
         int probabilityRadius,
         int meltingRadius,
-        @Nullable List<Predicate<Block>> excludedBlocks
+        @Nullable List<Predicate<Block>> excludedBlocks,
+        @Nullable List<Predicate<Block>> frangibleBlocks
     ) {
         this.level = level;
         this.center = center;
@@ -75,6 +78,7 @@ class ExplosionSession {
         this.meltingRadius = meltingRadius;
         this.effectiveMaxRadius = Math.max(probabilityRadius, meltingRadius);
         this.excludedBlocks = excludedBlocks != null ? excludedBlocks : List.of();
+        this.frangibleBlocks = frangibleBlocks != null ? frangibleBlocks : List.of();
     }
 
     // ---- lifecycle ----
@@ -148,6 +152,14 @@ class ExplosionSession {
                     continue;
                 }
 
+                // Frangible blocks are always completely destroyed within range
+                if (this.isBlockFrangible(blockState.getBlock())) {
+                    if (ExplosionSession.destroyBlock(this.level, target, this.dropItems)) {
+                        removed++;
+                    }
+                    continue;
+                }
+
                 double distance = Math.sqrt(target.distToCenterSqr(this.center.getX(), this.center.getY(), this.center.getZ()));
 
                 // Determine action based on distance
@@ -156,20 +168,24 @@ class ExplosionSession {
                     if (ExplosionSession.destroyBlock(this.level, target, this.dropItems)) {
                         removed++;
                     }
-                } else if (distance <= this.probabilityRadius && isSurface) {
-                    // Probability destruction: probability decreases from 80% at maxRadius to 0% at probabilityRadius
-                    double probability = this.calculateProbability(distance, this.maxRadius, this.probabilityRadius);
-                    if (Math.random() < probability) {
-                        if (ExplosionSession.destroyBlock(this.level, target, this.dropItems)) {
-                            removed++;
+                } else {
+                    if (distance <= this.probabilityRadius && isSurface) {
+                        // Probability destruction: probability decreases from 80% at maxRadius to 0% at probabilityRadius
+                        double probability = this.calculateProbability(distance, this.maxRadius, this.probabilityRadius);
+                        if (Math.random() < probability) {
+                            if (ExplosionSession.destroyBlock(this.level, target, this.dropItems)) {
+                                removed++;
+                                blockState = Blocks.AIR.defaultBlockState();
+                            }
                         }
                     }
-                } else if (distance <= this.meltingRadius && isSurface) {
-                    // Melting: probability decreases from 80% at probabilityRadius to 0% at meltingRadius
-                    double probability = this.calculateProbability(distance, this.probabilityRadius, this.meltingRadius);
-                    if (Math.random() < probability) {
-                        if (ExplosionSession.meltBlock(this.level, target)) {
-                            removed++;
+                    if (distance <= this.meltingRadius && isSurface && !blockState.isAir()) {
+                        // Melting: probability decreases from 80% at probabilityRadius to 0% at meltingRadius
+                        double probability = this.calculateProbability(distance, this.probabilityRadius, this.meltingRadius);
+                        if (Math.random() < probability) {
+                            if (ExplosionSession.meltBlock(this.level, target)) {
+                                removed++;
+                            }
                         }
                     }
                 }
@@ -338,6 +354,21 @@ class ExplosionSession {
      */
     private boolean isBlockExcluded(Block block) {
         for (Predicate<Block> predicate : this.excludedBlocks) {
+            if (predicate.test(block)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if a block is frangible (always destroyed within range).
+     *
+     * @param block The block to check
+     * @return true if the block is frangible
+     */
+    private boolean isBlockFrangible(Block block) {
+        for (Predicate<Block> predicate : this.frangibleBlocks) {
             if (predicate.test(block)) {
                 return true;
             }

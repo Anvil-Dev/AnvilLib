@@ -4,8 +4,10 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
+import net.neoforged.neoforge.common.Tags;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +41,14 @@ public class ExplosionExecutor {
     private List<Predicate<Block>> excludedBlocks = new ArrayList<>() {{
         add(block -> block.defaultDestroyTime() < 0);
     }};
+    /// 脆弱的方块列表，在范围内的这些方块会被完全破坏
+    @SuppressWarnings("deprecation")
+    private List<Predicate<Block>> frangibleBlocks = new ArrayList<>() {{
+        add(block -> block.builtInRegistryHolder().is(Tags.Blocks.GLASS_BLOCKS));
+        add(block -> block.builtInRegistryHolder().is(Tags.Blocks.GLASS_PANES));
+        add(block -> block.builtInRegistryHolder().is(BlockTags.LEAVES));
+        add(block -> block.builtInRegistryHolder().is(BlockTags.REPLACEABLE));
+    }};
 
     private ExplosionExecutor() {
     }
@@ -69,6 +79,28 @@ public class ExplosionExecutor {
         return this;
     }
 
+    @SafeVarargs
+    public final ExplosionExecutor frangibleBlocks(Predicate<Block>... blocks) {
+        this.frangibleBlocks.addAll(List.of(blocks));
+        return this;
+    }
+
+    public final ExplosionExecutor frangibleBlocks(Block... blocks) {
+        for (Block block : blocks) {
+            this.frangibleBlocks.add(block1 -> block1 == block);
+        }
+        return this;
+    }
+
+    @SafeVarargs
+    @SuppressWarnings("deprecation")
+    public final ExplosionExecutor frangibleBlocks(TagKey<Block>... blocks) {
+        for (TagKey<Block> block : blocks) {
+            this.frangibleBlocks.add(block1 -> block1.builtInRegistryHolder().is(block));
+        }
+        return this;
+    }
+
     /// 开始进行分层球形爆炸。该爆炸会创建一个 {@link ExplosionSession} 对象，该对象会自动注册到 NeoForge 事件总线中，并从爆炸中心开始逐层（逐块）移除周围的方块。
     public void execute(ServerLevel level, BlockPos pos) {
         // Ensure probabilityRadius and meltingRadius are valid
@@ -83,7 +115,8 @@ public class ExplosionExecutor {
             this.dropItems,
             actualProbabilityRadius,
             actualMeltingRadius,
-            this.excludedBlocks
+            this.excludedBlocks,
+            this.frangibleBlocks
         ).start();
     }
 }
