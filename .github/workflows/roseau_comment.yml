@@ -17,6 +17,9 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion != 'skipped' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo (needed for gh CLI)
+        uses: actions/checkout@v4
+
       - name: Download Roseau reports
         uses: actions/download-artifact@v7
         with:
@@ -24,9 +27,6 @@ jobs:
           path: roseau-reports
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.PAT_TOKEN }}
-
-      - name: Checkout repo (needed for gh CLI)
-        uses: actions/checkout@v4
 
       - name: Find PR number
         id: pr
