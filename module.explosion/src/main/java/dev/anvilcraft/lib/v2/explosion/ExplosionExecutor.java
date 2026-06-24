@@ -52,10 +52,11 @@ public class ExplosionExecutor {
         add(block -> block.builtInRegistryHolder().is(BlockTags.LEAVES));
         add(block -> block.builtInRegistryHolder().is(BlockTags.REPLACEABLE));
     }};
+    private @Nullable Entity executor = null;
     /// 方块破坏时触发的实体处理函数
     private @Nullable TriConsumer<ServerLevel, BlockPos, Entity> entityProcessor = (level, _, entity) -> entity.hurtServer(
         level,
-        entity.damageSources().explosion(null, null),
+        entity.damageSources().explosion(null, ExplosionExecutor.this.executor),
         ExplosionExecutor.this.radius * 0.5f
     );
 

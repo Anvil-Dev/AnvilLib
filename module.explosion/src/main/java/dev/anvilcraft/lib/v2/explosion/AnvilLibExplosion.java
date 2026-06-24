@@ -60,6 +60,13 @@ public class AnvilLibExplosion {
                 AnvilLibExplosion.MELTING_CACHE.put(blockHolder.value(), Blocks.COAL_BLOCK);
             }
         });
+        AnvilLibExplosion.MELTING_CACHE.put(Blocks.GRASS_BLOCK, Blocks.PODZOL);
+        AnvilLibExplosion.MELTING_CACHE.put(Blocks.MYCELIUM, Blocks.PODZOL);
+        AnvilLibExplosion.MELTING_CACHE.put(Blocks.DIRT_PATH, Blocks.COARSE_DIRT);
+        AnvilLibExplosion.MELTING_CACHE.put(Blocks.DIRT, Blocks.COARSE_DIRT);
+        AnvilLibExplosion.MELTING_CACHE.put(Blocks.ROOTED_DIRT, Blocks.COARSE_DIRT);
+        AnvilLibExplosion.MELTING_CACHE.put(Blocks.FARMLAND, Blocks.COARSE_DIRT);
+        AnvilLibExplosion.MELTING_CACHE.put(Blocks.MUD, Blocks.DIRT);
         for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
             Recipe<?> value = holder.value();
             if (value instanceof SmeltingRecipe || value instanceof BlastingRecipe) {

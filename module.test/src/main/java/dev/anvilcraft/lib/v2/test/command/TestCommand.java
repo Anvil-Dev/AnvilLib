@@ -19,13 +19,6 @@ public class TestCommand {
             Commands.literal("anvillib").then(
                 Commands.literal("test").then(
                     Commands.literal("explosion")
-                        // Basic explosion command
-                        .then(
-                            Commands.argument("radius", IntegerArgumentType.integer(1, 8192)).then(
-                                Commands.argument("breaksPerTick", IntegerArgumentType.integer(1, 8192)).executes(TestCommand::explosion)
-                            )
-                        )
-                        // Advanced explosion with probability and melting radii
                         .then(
                             Commands.argument("radius", IntegerArgumentType.integer(1, 8192)).then(
                                 Commands.argument("breaksPerTick", IntegerArgumentType.integer(1, 8192)).then(
@@ -40,16 +33,6 @@ public class TestCommand {
         );
     }
 
-    public static int explosion(CommandContext<CommandSourceStack> context) {
-        int radius = IntegerArgumentType.getInteger(context, "radius");
-        int breaksPerTick = IntegerArgumentType.getInteger(context, "breaksPerTick");
-        ExplosionExecutor.create()
-            .radius(radius)
-            .maxBreakPreTick(breaksPerTick)
-            .execute(context.getSource().getLevel(), BlockPos.containing(context.getSource().getPosition()));
-        return 1;
-    }
-
     public static int explosionAdvanced(CommandContext<CommandSourceStack> context) {
         int radius = IntegerArgumentType.getInteger(context, "radius");
         int breaksPerTick = IntegerArgumentType.getInteger(context, "breaksPerTick");
@@ -61,6 +44,7 @@ public class TestCommand {
             .maxBreakPreTick(breaksPerTick)
             .probabilityRadius(probabilityRadius)
             .meltingRadius(meltingRadius)
+            .executor(context.getSource().getEntity())
             .execute(context.getSource().getLevel(), BlockPos.containing(context.getSource().getPosition()));
         return 1;
     }

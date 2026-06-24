@@ -163,6 +163,9 @@ class ExplosionSession {
 
                 if (!this.level.isLoaded(target)) continue;
 
+                if (this.entityProcessor != null) {
+                    this.entityCache.get(target).forEach(entity -> this.entityProcessor.accept(this.level, target, entity));
+                }
                 BlockState blockState = this.level.getBlockState(target);
                 if (blockState.isAir()) continue;
                 // public int getHeight(Heightmap.Types type, int x, int z) {}
@@ -179,10 +182,6 @@ class ExplosionSession {
                         removed++;
                     }
                     continue;
-                }
-
-                if (this.entityProcessor != null) {
-                    this.entityCache.get(target).forEach(entity -> this.entityProcessor.accept(this.level, target, entity));
                 }
 
                 double distance = Math.sqrt(target.distToCenterSqr(this.center.getX(), this.center.getY(), this.center.getZ()));
