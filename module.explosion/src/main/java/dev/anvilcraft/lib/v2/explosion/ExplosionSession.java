@@ -31,32 +31,43 @@ import java.util.concurrent.Executors;
  */
 class ExplosionSession {
     // Shared virtual thread executor for async layer pre-computation
-    private static final Executor VIRTUAL_EXECUTOR =
-        Executors.newVirtualThreadPerTaskExecutor();
-    
+    private static final Executor VIRTUAL_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
+
     private final ServerLevel level;
     private final BlockPos center;
     private final int maxRadius;
     private final int maxBreakPerTick;
     private final boolean dropItems;
+    private final int probabilityRadius; // Probability destruction radius
+    private final int meltingRadius; // Melting radius (replace with air without drops)
 
     // Current processing state
     private int currentLayer; // Current distance layer (0 to maxRadius)
     private @Nullable List<BlockPos> currentLayerBlocks; // Blocks in current layer
     private int layerIndex; // Index within current layer
-    
+
     // Async pre-computation for next layer
     private @Nullable CompletableFuture<List<BlockPos>> nextLayerFuture; // Future for next layer computation
     private int nextLayerToCompute; // Which layer is being pre-computed
-    
+
     private boolean finished;
 
-    ExplosionSession(ServerLevel level, BlockPos center, int maxRadius, int maxBreakPerTick, boolean dropItems) {
+    ExplosionSession(
+        ServerLevel level,
+        BlockPos center,
+        int maxRadius,
+        int maxBreakPerTick,
+        boolean dropItems,
+        int probabilityRadius,
+        int meltingRadius
+    ) {
         this.level = level;
         this.center = center;
         this.maxRadius = maxRadius;
         this.maxBreakPerTick = maxBreakPerTick;
         this.dropItems = dropItems;
+        this.probabilityRadius = probabilityRadius;
+        this.meltingRadius = meltingRadius;
     }
 
     // ---- lifecycle ----
@@ -85,7 +96,7 @@ class ExplosionSession {
         }
 
         int removed = 0;
-        
+
         // Process blocks layer by layer to avoid memory issues with large radii
         while (removed < this.maxBreakPerTick && this.currentLayer <= this.maxRadius) {
             // Generate current layer if needed
@@ -100,19 +111,19 @@ class ExplosionSession {
                     // Fallback: compute synchronously if pre-computation wasn't ready
                     this.currentLayerBlocks = this.generateLayerBlocks(this.currentLayer);
                 }
-                
+
                 this.layerIndex = 0;
-                
+
                 // Move to next layer if current one is empty
                 if (this.currentLayerBlocks.isEmpty()) {
                     this.currentLayer++;
                     continue;
                 }
-                
+
                 // Start pre-computing next layer in virtual thread
                 this.startNextLayerPrecomputation();
             }
-            
+
             // Process blocks in current layer
             while (this.layerIndex < this.currentLayerBlocks.size() && removed < this.maxBreakPerTick) {
                 BlockPos target = this.currentLayerBlocks.get(this.layerIndex);
@@ -121,11 +132,30 @@ class ExplosionSession {
                 if (!this.level.isLoaded(target)) continue;
                 if (this.level.getBlockState(target).isAir()) continue;
 
-                if (ExplosionSession.destroyBlock(this.level, target, this.dropItems)) {
-                    removed++;
+                double distance = Math.sqrt(target.distToCenterSqr(this.center.getX(), this.center.getY(), this.center.getZ()));
+
+                // Determine action based on distance
+                if (distance <= this.maxRadius) {
+                    // Core explosion: always destroy
+                    if (ExplosionSession.destroyBlock(this.level, target, this.dropItems)) {
+                        removed++;
+                    }
+                } else if (distance <= this.probabilityRadius) {
+                    // Probability destruction: closer to center = higher chance
+                    double probability = this.calculateProbability(distance, this.maxRadius, this.probabilityRadius);
+                    if (Math.random() < probability) {
+                        if (ExplosionSession.destroyBlock(this.level, target, this.dropItems)) {
+                            removed++;
+                        }
+                    }
+                } else if (distance <= this.meltingRadius) {
+                    // Melting: replace with air without drops
+                    if (ExplosionSession.meltBlock(this.level, target)) {
+                        removed++;
+                    }
                 }
             }
-            
+
             // Move to next layer when current one is done
             if (this.layerIndex >= this.currentLayerBlocks.size()) {
                 this.currentLayer++;
@@ -147,43 +177,40 @@ class ExplosionSession {
      */
     private void startNextLayerPrecomputation() {
         int nextLayer = this.currentLayer + 1;
-        
+
         // Don't pre-compute beyond max radius
         if (nextLayer > this.maxRadius) {
             return;
         }
-        
+
         // Only start if not already computing this layer
         if (this.nextLayerFuture != null && !this.nextLayerFuture.isDone()) {
             return;
         }
-        
+
         // Use parallel computation for large layers to improve performance
         boolean useParallel = nextLayer >= 32; // Threshold for parallel processing
-        
+
         this.nextLayerToCompute = nextLayer;
-        this.nextLayerFuture = CompletableFuture.supplyAsync(
-            () -> this.generateLayerBlocks(nextLayer, useParallel),
-            VIRTUAL_EXECUTOR
-        );
+        this.nextLayerFuture = CompletableFuture.supplyAsync(() -> this.generateLayerBlocks(nextLayer, useParallel), VIRTUAL_EXECUTOR);
     }
 
     /**
      * Generate all block positions at a specific distance layer from center.
      * This approach avoids storing all blocks in memory at once for large radii.
-     * 
+     *
      * @param layer The distance layer (Euclidean distance shell)
      * @return List of BlockPos at this layer, shuffled for natural explosion pattern
      */
     private List<BlockPos> generateLayerBlocks(int layer) {
         return this.generateLayerBlocks(layer, false);
     }
-    
+
     /**
      * Generate all block positions at a specific distance layer from center.
      * Supports parallel computation for large radii.
-     * 
-     * @param layer The distance layer (Euclidean distance shell)
+     *
+     * @param layer       The distance layer (Euclidean distance shell)
      * @param useParallel Whether to use parallel computation for this layer
      * @return List of BlockPos at this layer, shuffled for natural explosion pattern
      */
@@ -192,14 +219,14 @@ class ExplosionSession {
             // Center point
             return List.of(this.center);
         }
-        
+
         // For each layer, we process a "shell" at approximately that distance
         // We use integer bounds to efficiently find blocks in the shell
         int rSquared = layer * layer;
         int innerRSquared = (layer - 1) * (layer - 1);
-        
+
         List<BlockPos> blocks;
-        
+
         if (useParallel && layer >= 96) {
             // Parallel computation: split by X-axis slices
             blocks = this.generateLayerBlocksParallel(layer, rSquared, innerRSquared);
@@ -211,34 +238,30 @@ class ExplosionSession {
         Collections.shuffle(blocks);
         return blocks;
     }
-    
+
     /**
      * Sequential generation of layer blocks (for small radii).
      */
     private List<BlockPos> generateLayerBlocksSequential(int layer, int rSquared, int innerRSquared) {
         List<BlockPos> blocks = new ArrayList<>();
-        
+
         // Iterate through bounding box of this shell
         for (int x = -layer; x <= layer; x++) {
             for (int y = -layer; y <= layer; y++) {
                 for (int z = -layer; z <= layer; z++) {
                     int distSquared = x * x + y * y + z * z;
-                    
+
                     // Only include blocks in this shell layer
                     if (distSquared > innerRSquared && distSquared <= rSquared) {
-                        blocks.add(new BlockPos(
-                            this.center.getX() + x,
-                            this.center.getY() + y,
-                            this.center.getZ() + z
-                        ));
+                        blocks.add(new BlockPos(this.center.getX() + x, this.center.getY() + y, this.center.getZ() + z));
                     }
                 }
             }
         }
-        
+
         return blocks;
     }
-    
+
     /**
      * Parallel generation of layer blocks (for large radii).
      * Splits the work along the X-axis and merges results.
@@ -247,51 +270,89 @@ class ExplosionSession {
         // Determine number of parallel tasks based on layer size
         int numTasks = Math.min(Runtime.getRuntime().availableProcessors(), layer / 8 + 1);
         int sliceSize = (layer * 2 + 1) / numTasks;
-        
+
         // Create parallel tasks for each X-slice
         List<CompletableFuture<List<BlockPos>>> futures = new ArrayList<>(numTasks);
-        
+
         for (int taskIdx = 0; taskIdx < numTasks; taskIdx++) {
             final int startX = -layer + taskIdx * sliceSize;
             final int endX = (taskIdx == numTasks - 1) ? layer : (startX + sliceSize - 1);
-            
-            CompletableFuture<List<BlockPos>> future = CompletableFuture.supplyAsync(() -> {
-                List<BlockPos> sliceBlocks = new ArrayList<>();
-                
-                for (int x = startX; x <= endX; x++) {
-                    for (int y = -layer; y <= layer; y++) {
-                        for (int z = -layer; z <= layer; z++) {
-                            int distSquared = x * x + y * y + z * z;
-                            
-                            // Only include blocks in this shell layer
-                            if (distSquared > innerRSquared && distSquared <= rSquared) {
-                                sliceBlocks.add(new BlockPos(
-                                    this.center.getX() + x,
-                                    this.center.getY() + y,
-                                    this.center.getZ() + z
-                                ));
+
+            CompletableFuture<List<BlockPos>> future = CompletableFuture.supplyAsync(
+                () -> {
+                    List<BlockPos> sliceBlocks = new ArrayList<>();
+
+                    for (int x = startX; x <= endX; x++) {
+                        for (int y = -layer; y <= layer; y++) {
+                            for (int z = -layer; z <= layer; z++) {
+                                int distSquared = x * x + y * y + z * z;
+
+                                // Only include blocks in this shell layer
+                                if (distSquared > innerRSquared && distSquared <= rSquared) {
+                                    sliceBlocks.add(new BlockPos(this.center.getX() + x, this.center.getY() + y, this.center.getZ() + z));
+                                }
                             }
                         }
                     }
-                }
-                
-                return sliceBlocks;
-            }, VIRTUAL_EXECUTOR);
-            
+
+                    return sliceBlocks;
+                }, VIRTUAL_EXECUTOR
+            );
+
             futures.add(future);
         }
-        
+
         // Wait for all tasks to complete and merge results
-        return futures.stream()
-            .map(CompletableFuture::join)
-            .reduce(new ArrayList<>(), (list1, list2) -> {
+        return futures.stream().map(CompletableFuture::join).reduce(
+            new ArrayList<>(), (list1, list2) -> {
                 list1.addAll(list2);
                 return list1;
-            });
+            }
+        );
+    }
+
+    /**
+     * Calculate destruction probability based on distance.
+     * Probability decreases linearly from 100% at maxRadius to 80% at probabilityRadius.
+     *
+     * @param distance          Distance from explosion center
+     * @param maxRadius         Core explosion radius (100% destruction)
+     * @param probabilityRadius Outer boundary of probability zone (80% at this distance)
+     * @return Destruction probability (0.0 to 1.0)
+     */
+    private double calculateProbability(double distance, int maxRadius, int probabilityRadius) {
+        if (distance <= maxRadius) {
+            return 1.0; // Always destroy within core radius
+        }
+
+        // Linear interpolation: 100% at maxRadius, 80% at probabilityRadius
+        double ratio = (distance - maxRadius) / (double) (probabilityRadius - maxRadius);
+        return 1.0 - (ratio * 0.2); // Decreases from 1.0 to 0.8
+    }
+
+    /**
+     * Melt a block by replacing it with air without dropping items.
+     * Used for the melting radius effect.
+     */
+    public static boolean meltBlock(ServerLevel level, BlockPos pos) {
+        if (!level.isLoaded(pos)) {
+            return false;
+        }
+        BlockState blockState = level.getBlockState(pos);
+        if (blockState.isAir()) {
+            return false;
+        }
+        FluidState fluidState = level.getFluidState(pos);
+        // Replace with air/fluid without dropping resources
+        boolean destroyed = level.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, 512);
+        if (destroyed) {
+            level.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(null, blockState));
+        }
+        return true;
     }
 
     public static boolean destroyBlock(ServerLevel level, BlockPos pos, boolean dropResources) {
-        if(!level.isLoaded(pos)) {
+        if (!level.isLoaded(pos)) {
             return false;
         }
         BlockState blockState = level.getBlockState(pos);
