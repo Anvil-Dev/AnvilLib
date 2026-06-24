@@ -471,6 +471,6 @@ class ExplosionSession {
         if (destroyed) {
             level.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(null, blockState));
         }
-        return true;
+        return destroyed;
     }
 }
