@@ -3,8 +3,10 @@ package dev.anvilcraft.lib.v2.explosion;
 import dev.anvilcraft.lib.v2.config.ConfigManager;
 import dev.anvilcraft.lib.v2.explosion.mixin.SingleItemRecipeAccessor;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStackTemplate;
@@ -15,6 +17,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
@@ -51,6 +54,12 @@ public class AnvilLibExplosion {
     }
 
     private static void registerMelting(MinecraftServer server) {
+        AnvilLibExplosion.MELTING_CACHE.clear();
+        BuiltInRegistries.BLOCK.get(BlockTags.LOGS_THAT_BURN).ifPresent(block -> {
+            for (Holder<Block> blockHolder : block) {
+                AnvilLibExplosion.MELTING_CACHE.put(blockHolder.value(), Blocks.COAL_BLOCK);
+            }
+        });
         for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
             Recipe<?> value = holder.value();
             if (value instanceof SmeltingRecipe || value instanceof BlastingRecipe) {
