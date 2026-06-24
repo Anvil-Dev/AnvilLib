@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Predicate;
 
 /**
  * Performs the actual block removal in a spherical explosion, driven by
@@ -40,6 +41,7 @@ class ExplosionSession {
     private final boolean dropItems;
     private final int probabilityRadius; // Probability destruction radius
     private final int meltingRadius; // Melting radius (replace with air without drops)
+    private final List<Predicate<Block>> excludedBlocks; // Blocks that cannot be destroyed by explosion
 
     // Current processing state
     private int currentLayer; // Current distance layer (0 to maxRadius)
@@ -59,7 +61,8 @@ class ExplosionSession {
         int maxBreakPerTick,
         boolean dropItems,
         int probabilityRadius,
-        int meltingRadius
+        int meltingRadius,
+        List<Predicate<Block>> excludedBlocks
     ) {
         this.level = level;
         this.center = center;
@@ -68,6 +71,7 @@ class ExplosionSession {
         this.dropItems = dropItems;
         this.probabilityRadius = probabilityRadius;
         this.meltingRadius = meltingRadius;
+        this.excludedBlocks = excludedBlocks != null ? excludedBlocks : List.of();
     }
 
     // ---- lifecycle ----
@@ -130,7 +134,13 @@ class ExplosionSession {
                 this.layerIndex++;
 
                 if (!this.level.isLoaded(target)) continue;
-                if (this.level.getBlockState(target).isAir()) continue;
+                BlockState blockState = this.level.getBlockState(target);
+                if (blockState.isAir()) continue;
+
+                // Check if block is excluded from explosion
+                if (this.isBlockExcluded(blockState.getBlock())) {
+                    continue;
+                }
 
                 double distance = Math.sqrt(target.distToCenterSqr(this.center.getX(), this.center.getY(), this.center.getZ()));
 
@@ -149,7 +159,7 @@ class ExplosionSession {
                         }
                     }
                 } else if (distance <= this.meltingRadius) {
-                    // Melting: replace with air without drops
+                    // Melting: replace with another block or air without drops
                     if (ExplosionSession.meltBlock(this.level, target)) {
                         removed++;
                     }
@@ -312,6 +322,21 @@ class ExplosionSession {
     }
 
     /**
+     * Check if a block should be excluded from explosion.
+     * 
+     * @param block The block to check
+     * @return true if the block should not be destroyed/melted
+     */
+    private boolean isBlockExcluded(Block block) {
+        for (Predicate<Block> predicate : this.excludedBlocks) {
+            if (predicate.test(block)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Calculate destruction probability based on distance.
      * Probability decreases linearly from 100% at maxRadius to 80% at probabilityRadius.
      *
@@ -352,7 +377,7 @@ class ExplosionSession {
         }
         newState = targetBlock.defaultBlockState();
 
-        boolean changed = level.setBlock(pos, newState, Block.UPDATE_ALL, 512);
+        boolean changed = level.setBlock(pos, newState, Block.UPDATE_CLIENTS, 512);
         if (changed) {
             level.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(null, blockState));
         }
