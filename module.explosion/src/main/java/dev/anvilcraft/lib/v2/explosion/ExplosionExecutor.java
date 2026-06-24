@@ -41,17 +41,17 @@ public class ExplosionExecutor {
     /// 融化半径（以块为单位），需要大于 `radius` ，该范围内的地表方块将由近到远地被概率性地融化，距离中心越近的概率越高，最靠近 `radius` 的概率为 `100%`，最靠近 `meltingRadius` 的概率为 `80%`
     private int meltingRadius = 160;
     /// 不允许被爆炸破坏的方块列表
-    private List<Predicate<Block>> excludedBlocks = new ArrayList<>() {{
-        add(block -> block.defaultDestroyTime() < 0);
-    }};
+    private List<Predicate<Block>> excludedBlocks = new ArrayList<>(List.of(
+        block -> block.defaultDestroyTime() < 0
+    ));
     /// 脆弱的方块列表，在范围内的这些方块会被完全破坏
     @SuppressWarnings("deprecation")
-    private List<Predicate<Block>> frangibleBlocks = new ArrayList<>() {{
-        add(block -> block.builtInRegistryHolder().is(Tags.Blocks.GLASS_BLOCKS));
-        add(block -> block.builtInRegistryHolder().is(Tags.Blocks.GLASS_PANES));
-        add(block -> block.builtInRegistryHolder().is(BlockTags.LEAVES));
-        add(block -> block.builtInRegistryHolder().is(BlockTags.REPLACEABLE));
-    }};
+    private List<Predicate<Block>> frangibleBlocks = new ArrayList<>(List.of(
+        block -> block.builtInRegistryHolder().is(Tags.Blocks.GLASS_BLOCKS),
+        block -> block.builtInRegistryHolder().is(Tags.Blocks.GLASS_PANES),
+        block -> block.builtInRegistryHolder().is(BlockTags.LEAVES),
+        block -> block.builtInRegistryHolder().is(BlockTags.REPLACEABLE)
+    ));
     private @Nullable Entity executor = null;
     /// 方块破坏时触发的实体处理函数
     private @Nullable TriConsumer<ServerLevel, BlockPos, Entity> entityProcessor = (level, _, entity) -> entity.hurtServer(
@@ -121,7 +121,7 @@ public class ExplosionExecutor {
             level,
             pos,
             this.radius,
-            this.maxBreakPreTick,
+            Math.min(this.maxBreakPreTick, AnvilLibExplosion.CONFIG.maxRemoveBlocksPerTick),
             this.dropItems,
             actualProbabilityRadius,
             actualMeltingRadius,

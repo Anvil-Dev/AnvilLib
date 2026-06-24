@@ -26,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Performs the actual block removal in a spherical explosion, driven by
@@ -38,7 +39,7 @@ import java.util.function.Predicate;
  */
 class ExplosionSession {
     // Shared virtual thread executor for async layer pre-computation
-    private static final Executor VIRTUAL_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
+    private static final Executor THREAD_EXECUTOR = Executors.newWorkStealingPool();
 
     private final ServerLevel level;
     private final BlockPos center;
@@ -51,6 +52,8 @@ class ExplosionSession {
     private final @Nullable List<Predicate<Block>> excludedBlocks; // Blocks that cannot be destroyed by explosion
     private final @Nullable List<Predicate<Block>> frangibleBlocks; // Frangible blocks that are always destroyed within range
     private final @Nullable TriConsumer<ServerLevel, BlockPos, Entity> entityProcessor;
+
+    private final int surfaceHeight;
 
     // Current processing state
     private int currentLayer; // Current distance layer (0 to effectiveMaxRadius)
@@ -87,6 +90,8 @@ class ExplosionSession {
         this.excludedBlocks = excludedBlocks;
         this.frangibleBlocks = frangibleBlocks;
         this.entityProcessor = entityProcessor;
+
+        this.surfaceHeight = (int) (Math.ceil(maxRadius * 0.1) + 1);
     }
 
     // ---- lifecycle ----
@@ -101,11 +106,7 @@ class ExplosionSession {
         this.entityCache.clear();
         if (this.entityProcessor != null) {
             this.level.getEntities().getAll().forEach(entity -> {
-                BlockPos offset = entity.blockPosition().subtract(this.center);
-                int dx = offset.getX();
-                int dy = offset.getY();
-                int dz = offset.getZ();
-                if (dx * dx + dy * dy + dz * dz > this.maxRadius * this.maxRadius) {
+                if (entity.blockPosition().distSqr(this.center) > this.maxRadius * this.maxRadius) {
                     return;
                 }
                 this.entityCache.put(entity.blockPosition(), entity);
@@ -170,7 +171,7 @@ class ExplosionSession {
                 if (blockState.isAir()) continue;
                 // public int getHeight(Heightmap.Types type, int x, int z) {}
                 int height = level.getHeight(Heightmap.Types.WORLD_SURFACE, target.getX(), target.getZ());
-                boolean isSurface = target.getY() >= height - Math.ceil(maxRadius * 0.1) - 1;
+                boolean isSurface = target.getY() >= height - this.surfaceHeight;
                 // Check if block is excluded from explosion
                 if (this.isBlockExcluded(blockState.getBlock())) {
                     continue;
@@ -251,7 +252,7 @@ class ExplosionSession {
         boolean useParallel = nextLayer >= 32; // Threshold for parallel processing
 
         this.nextLayerToCompute = nextLayer;
-        this.nextLayerFuture = CompletableFuture.supplyAsync(() -> this.generateLayerBlocks(nextLayer, useParallel), VIRTUAL_EXECUTOR);
+        this.nextLayerFuture = CompletableFuture.supplyAsync(() -> this.generateLayerBlocks(nextLayer, useParallel), THREAD_EXECUTOR);
     }
 
     /**
@@ -355,19 +356,14 @@ class ExplosionSession {
                     }
 
                     return sliceBlocks;
-                }, VIRTUAL_EXECUTOR
+                }, THREAD_EXECUTOR
             );
 
             futures.add(future);
         }
 
         // Wait for all tasks to complete and merge results
-        return futures.stream().map(CompletableFuture::join).reduce(
-            new ArrayList<>(), (list1, list2) -> {
-                list1.addAll(list2);
-                return list1;
-            }
-        );
+        return futures.stream().flatMap(f -> f.join().stream()).collect(Collectors.toList());
     }
 
     /**
@@ -416,6 +412,7 @@ class ExplosionSession {
      * @return Probability (0.0 to 0.8)
      */
     private double calculateProbability(double distance, int innerRadius, int outerRadius) {
+        if (outerRadius <= innerRadius) return 0.0;
         if (distance <= innerRadius) {
             return 0.8; // 80% at inner boundary
         }

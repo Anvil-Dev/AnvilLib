@@ -24,9 +24,9 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mod(AnvilLibExplosion.MOD_ID)
 @EventBusSubscriber(modid = AnvilLibExplosion.MOD_ID)
@@ -34,7 +34,7 @@ public class AnvilLibExplosion {
     public static final String MAIN_ID = "anvillib";
     public static final String MOD_ID = "anvillib_explosion";
     public static final AnvilLibExplosionConfig CONFIG = ConfigManager.register(MOD_ID, AnvilLibExplosionConfig::new);
-    public static final Map<Block, Block> MELTING_CACHE = new HashMap<>();
+    public static final Map<Block, Block> MELTING_CACHE = new ConcurrentHashMap<>();
 
     public static Identifier of(String path) {
         return Identifier.fromNamespaceAndPath(AnvilLibExplosion.MAIN_ID, path);
