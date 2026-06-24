@@ -90,7 +90,6 @@ class ExplosionSession {
         this.excludedBlocks = excludedBlocks;
         this.frangibleBlocks = frangibleBlocks;
         this.entityProcessor = entityProcessor;
-
         this.surfaceHeight = (int) (Math.ceil(maxRadius * 0.1) + 1);
     }
 
@@ -104,14 +103,6 @@ class ExplosionSession {
         this.nextLayerToCompute = -1;
         this.finished = false;
         this.entityCache.clear();
-        if (this.entityProcessor != null) {
-            this.level.getEntities().getAll().forEach(entity -> {
-                if (entity.blockPosition().distSqr(this.center) > this.maxRadius * this.maxRadius) {
-                    return;
-                }
-                this.entityCache.put(entity.blockPosition(), entity);
-            });
-        }
         NeoForge.EVENT_BUS.register(this);
     }
 
@@ -130,6 +121,7 @@ class ExplosionSession {
 
         int removed = 0;
 
+        this.createEntityCache();
         // Process blocks layer by layer to avoid memory issues with large radii
         while (removed < this.maxBreakPerTick && this.currentLayer <= this.effectiveMaxRadius) {
             // Generate current layer if needed
@@ -472,5 +464,18 @@ class ExplosionSession {
             level.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(null, blockState));
         }
         return destroyed;
+    }
+
+    private void createEntityCache() {
+        this.entityCache.clear();
+        if (this.entityProcessor == null) {
+            return;
+        }
+        this.level.getEntities().getAll().forEach(entity -> {
+            if (entity.blockPosition().distSqr(this.center) > this.maxRadius * this.maxRadius) {
+                return;
+            }
+            this.entityCache.put(entity.blockPosition(), entity);
+        });
     }
 }
