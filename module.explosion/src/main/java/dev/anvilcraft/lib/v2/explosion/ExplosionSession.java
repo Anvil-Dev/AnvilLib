@@ -1,7 +1,10 @@
 package dev.anvilcraft.lib.v2.explosion;
 
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -13,6 +16,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import org.apache.logging.log4j.util.TriConsumer;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -44,8 +48,9 @@ class ExplosionSession {
     private final int probabilityRadius; // Probability destruction radius
     private final int meltingRadius; // Melting radius (replace with air without drops)
     private final int effectiveMaxRadius; // Outermost radius to process (max of probabilityRadius and meltingRadius)
-    private final List<Predicate<Block>> excludedBlocks; // Blocks that cannot be destroyed by explosion
-    private final List<Predicate<Block>> frangibleBlocks; // Frangible blocks that are always destroyed within range
+    private final @Nullable List<Predicate<Block>> excludedBlocks; // Blocks that cannot be destroyed by explosion
+    private final @Nullable List<Predicate<Block>> frangibleBlocks; // Frangible blocks that are always destroyed within range
+    private final @Nullable TriConsumer<ServerLevel, BlockPos, Entity> entityProcessor;
 
     // Current processing state
     private int currentLayer; // Current distance layer (0 to effectiveMaxRadius)
@@ -54,6 +59,7 @@ class ExplosionSession {
 
     // Async pre-computation for next layer
     private @Nullable CompletableFuture<List<BlockPos>> nextLayerFuture; // Future for next layer computation
+    private final Multimap<BlockPos, Entity> entityCache = MultimapBuilder.hashKeys().arrayListValues().build();
     private int nextLayerToCompute; // Which layer is being pre-computed
 
     private boolean finished;
@@ -67,7 +73,8 @@ class ExplosionSession {
         int probabilityRadius,
         int meltingRadius,
         @Nullable List<Predicate<Block>> excludedBlocks,
-        @Nullable List<Predicate<Block>> frangibleBlocks
+        @Nullable List<Predicate<Block>> frangibleBlocks,
+        @Nullable TriConsumer<ServerLevel, BlockPos, Entity> entityProcessor
     ) {
         this.level = level;
         this.center = center;
@@ -77,8 +84,9 @@ class ExplosionSession {
         this.probabilityRadius = probabilityRadius;
         this.meltingRadius = meltingRadius;
         this.effectiveMaxRadius = Math.max(probabilityRadius, meltingRadius);
-        this.excludedBlocks = excludedBlocks != null ? excludedBlocks : List.of();
-        this.frangibleBlocks = frangibleBlocks != null ? frangibleBlocks : List.of();
+        this.excludedBlocks = excludedBlocks;
+        this.frangibleBlocks = frangibleBlocks;
+        this.entityProcessor = entityProcessor;
     }
 
     // ---- lifecycle ----
@@ -90,6 +98,19 @@ class ExplosionSession {
         this.nextLayerFuture = null;
         this.nextLayerToCompute = -1;
         this.finished = false;
+        this.entityCache.clear();
+        if (this.entityProcessor != null) {
+            this.level.getEntities().getAll().forEach(entity -> {
+                BlockPos offset = entity.blockPosition().subtract(this.center);
+                int dx = offset.getX();
+                int dy = offset.getY();
+                int dz = offset.getZ();
+                if (dx * dx + dy * dy + dz * dz > this.maxRadius * this.maxRadius) {
+                    return;
+                }
+                this.entityCache.put(entity.blockPosition(), entity);
+            });
+        }
         NeoForge.EVENT_BUS.register(this);
     }
 
@@ -158,6 +179,10 @@ class ExplosionSession {
                         removed++;
                     }
                     continue;
+                }
+
+                if (this.entityProcessor != null) {
+                    this.entityCache.get(target).forEach(entity -> this.entityProcessor.accept(this.level, target, entity));
                 }
 
                 double distance = Math.sqrt(target.distToCenterSqr(this.center.getX(), this.center.getY(), this.center.getZ()));
@@ -353,6 +378,9 @@ class ExplosionSession {
      * @return true if the block should not be destroyed/melted
      */
     private boolean isBlockExcluded(Block block) {
+        if (this.excludedBlocks == null) {
+            return false;
+        }
         for (Predicate<Block> predicate : this.excludedBlocks) {
             if (predicate.test(block)) {
                 return true;
@@ -368,6 +396,9 @@ class ExplosionSession {
      * @return true if the block is frangible
      */
     private boolean isBlockFrangible(Block block) {
+        if (this.frangibleBlocks == null) {
+            return false;
+        }
         for (Predicate<Block> predicate : this.frangibleBlocks) {
             if (predicate.test(block)) {
                 return true;

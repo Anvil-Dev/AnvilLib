@@ -6,8 +6,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.common.Tags;
+import org.apache.logging.log4j.util.TriConsumer;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +52,12 @@ public class ExplosionExecutor {
         add(block -> block.builtInRegistryHolder().is(BlockTags.LEAVES));
         add(block -> block.builtInRegistryHolder().is(BlockTags.REPLACEABLE));
     }};
+    /// 方块破坏时触发的实体处理函数
+    private @Nullable TriConsumer<ServerLevel, BlockPos, Entity> entityProcessor = (level, _, entity) -> entity.hurtServer(
+        level,
+        entity.damageSources().explosion(null, null),
+        ExplosionExecutor.this.radius * 0.5f
+    );
 
     private ExplosionExecutor() {
     }
@@ -116,7 +125,8 @@ public class ExplosionExecutor {
             actualProbabilityRadius,
             actualMeltingRadius,
             this.excludedBlocks,
-            this.frangibleBlocks
+            this.frangibleBlocks,
+            this.entityProcessor
         ).start();
     }
 }
