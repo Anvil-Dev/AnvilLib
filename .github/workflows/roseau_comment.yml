@@ -54,11 +54,7 @@ jobs:
 
       - name: Generate report body
         run: |
-          MODULES=(
-            codec collision config explosion font integration
-            moveable-entity-block multiblock network recipe registrum
-            rendering space-select sync util wheel main
-          )
+          MODULES=($(jq -r '.[].module' .github/modules.json) main)
 
           row() {
             local name=$1 dir=$2
