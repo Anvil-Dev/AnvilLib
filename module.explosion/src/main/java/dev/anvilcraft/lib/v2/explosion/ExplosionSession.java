@@ -16,6 +16,9 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Performs the actual block removal in a spherical explosion, driven by
@@ -23,11 +26,14 @@ import java.util.List;
  * blocks from inside to outside until the explosion radius is exhausted,
  * then self-unregisters.
  *
- * <p>Uses dynamic layer-by-layer generation to avoid memory issues with large radii.
- * Blocks are processed in distance-sorted order to maintain the visual effect of
- * an expanding explosion while ensuring complete coverage.
+ * <p>Uses dynamic layer-by-layer generation with virtual thread pre-computation
+ * to avoid memory issues with large radii and improve performance through async processing.
  */
 class ExplosionSession {
+    // Shared virtual thread executor for async layer pre-computation
+    private static final Executor VIRTUAL_EXECUTOR =
+        Executors.newVirtualThreadPerTaskExecutor();
+    
     private final ServerLevel level;
     private final BlockPos center;
     private final int maxRadius;
@@ -38,6 +44,11 @@ class ExplosionSession {
     private int currentLayer; // Current distance layer (0 to maxRadius)
     private @Nullable List<BlockPos> currentLayerBlocks; // Blocks in current layer
     private int layerIndex; // Index within current layer
+    
+    // Async pre-computation for next layer
+    private @Nullable CompletableFuture<List<BlockPos>> nextLayerFuture; // Future for next layer computation
+    private int nextLayerToCompute; // Which layer is being pre-computed
+    
     private boolean finished;
 
     ExplosionSession(ServerLevel level, BlockPos center, int maxRadius, int maxBreakPerTick, boolean dropItems) {
@@ -54,6 +65,8 @@ class ExplosionSession {
         this.currentLayer = 0;
         this.currentLayerBlocks = null;
         this.layerIndex = 0;
+        this.nextLayerFuture = null;
+        this.nextLayerToCompute = -1;
         this.finished = false;
         NeoForge.EVENT_BUS.register(this);
     }
@@ -77,7 +90,17 @@ class ExplosionSession {
         while (removed < this.maxBreakPerTick && this.currentLayer <= this.maxRadius) {
             // Generate current layer if needed
             if (this.currentLayerBlocks == null || this.layerIndex >= this.currentLayerBlocks.size()) {
-                this.currentLayerBlocks = this.generateLayerBlocks(this.currentLayer);
+                // Try to get pre-computed next layer
+                if (this.nextLayerFuture != null && this.nextLayerToCompute == this.currentLayer) {
+                    // Use pre-computed result from virtual thread
+                    this.currentLayerBlocks = this.nextLayerFuture.join();
+                    this.nextLayerFuture = null;
+                    this.nextLayerToCompute = -1;
+                } else {
+                    // Fallback: compute synchronously if pre-computation wasn't ready
+                    this.currentLayerBlocks = this.generateLayerBlocks(this.currentLayer);
+                }
+                
                 this.layerIndex = 0;
                 
                 // Move to next layer if current one is empty
@@ -85,6 +108,9 @@ class ExplosionSession {
                     this.currentLayer++;
                     continue;
                 }
+                
+                // Start pre-computing next layer in virtual thread
+                this.startNextLayerPrecomputation();
             }
             
             // Process blocks in current layer
@@ -116,11 +142,37 @@ class ExplosionSession {
     // ---- Block enumeration ----
 
     /**
+     * Start pre-computing the next layer in a virtual thread.
+     * This allows the expensive block enumeration to happen asynchronously
+     * while we're still processing the current layer.
+     */
+    private void startNextLayerPrecomputation() {
+        int nextLayer = this.currentLayer + 1;
+        
+        // Don't pre-compute beyond max radius
+        if (nextLayer > this.maxRadius) {
+            return;
+        }
+        
+        // Only start if not already computing this layer
+        if (this.nextLayerFuture != null && !this.nextLayerFuture.isDone()) {
+            return;
+        }
+        
+        // Start async computation using virtual thread executor
+        this.nextLayerToCompute = nextLayer;
+        this.nextLayerFuture = CompletableFuture.supplyAsync(
+            () -> this.generateLayerBlocks(nextLayer),
+            VIRTUAL_EXECUTOR
+        );
+    }
+
+    /**
      * Generate all block positions at a specific distance layer from center.
      * This approach avoids storing all blocks in memory at once for large radii.
      * 
-     * @param layer The distance layer (Manhattan distance approximation for efficiency)
-     * @return List of BlockPos at this layer, sorted for consistent ordering
+     * @param layer The distance layer (Euclidean distance shell)
+     * @return List of BlockPos at this layer, shuffled for natural explosion pattern
      */
     private List<BlockPos> generateLayerBlocks(int layer) {
         List<BlockPos> blocks = new ArrayList<>();
@@ -133,14 +185,13 @@ class ExplosionSession {
         
         // For each layer, we process a "shell" at approximately that distance
         // We use integer bounds to efficiently find blocks in the shell
-        int r = layer;
-        int rSquared = r * r;
-        int innerRSquared = (r - 1) * (r - 1);
+        int rSquared = layer * layer;
+        int innerRSquared = (layer - 1) * (layer - 1);
         
         // Iterate through bounding box of this shell
-        for (int x = -r; x <= r; x++) {
-            for (int y = -r; y <= r; y++) {
-                for (int z = -r; z <= r; z++) {
+        for (int x = -layer; x <= layer; x++) {
+            for (int y = -layer; y <= layer; y++) {
+                for (int z = -layer; z <= layer; z++) {
                     int distSquared = x * x + y * y + z * z;
                     
                     // Only include blocks in this shell layer
