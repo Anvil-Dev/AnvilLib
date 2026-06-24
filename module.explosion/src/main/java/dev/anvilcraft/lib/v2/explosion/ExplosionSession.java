@@ -397,7 +397,7 @@ class ExplosionSession {
             BlockEntity blockEntity = blockState.hasBlockEntity() ? level.getBlockEntity(pos) : null;
             Block.dropResources(blockState, level, pos, blockEntity, null, ItemStack.EMPTY);
         }
-        boolean destroyed = level.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, 512);
+        boolean destroyed = level.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_CLIENTS, 512);
         if (destroyed) {
             level.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(null, blockState));
         }
