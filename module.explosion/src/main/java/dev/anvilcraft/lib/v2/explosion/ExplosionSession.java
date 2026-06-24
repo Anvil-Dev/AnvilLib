@@ -143,8 +143,7 @@ class ExplosionSession {
 
     /**
      * Start pre-computing the next layer in a virtual thread.
-     * This allows the expensive block enumeration to happen asynchronously
-     * while we're still processing the current layer.
+     * For large radii, splits the computation into multiple parallel sub-tasks.
      */
     private void startNextLayerPrecomputation() {
         int nextLayer = this.currentLayer + 1;
@@ -159,10 +158,12 @@ class ExplosionSession {
             return;
         }
         
-        // Start async computation using virtual thread executor
+        // Use parallel computation for large layers to improve performance
+        boolean useParallel = nextLayer >= 32; // Threshold for parallel processing
+        
         this.nextLayerToCompute = nextLayer;
         this.nextLayerFuture = CompletableFuture.supplyAsync(
-            () -> this.generateLayerBlocks(nextLayer),
+            () -> this.generateLayerBlocks(nextLayer, useParallel),
             VIRTUAL_EXECUTOR
         );
     }
@@ -175,18 +176,47 @@ class ExplosionSession {
      * @return List of BlockPos at this layer, shuffled for natural explosion pattern
      */
     private List<BlockPos> generateLayerBlocks(int layer) {
-        List<BlockPos> blocks = new ArrayList<>();
-        
+        return this.generateLayerBlocks(layer, false);
+    }
+    
+    /**
+     * Generate all block positions at a specific distance layer from center.
+     * Supports parallel computation for large radii.
+     * 
+     * @param layer The distance layer (Euclidean distance shell)
+     * @param useParallel Whether to use parallel computation for this layer
+     * @return List of BlockPos at this layer, shuffled for natural explosion pattern
+     */
+    private List<BlockPos> generateLayerBlocks(int layer, boolean useParallel) {
         if (layer == 0) {
             // Center point
-            blocks.add(this.center);
-            return blocks;
+            return List.of(this.center);
         }
         
         // For each layer, we process a "shell" at approximately that distance
         // We use integer bounds to efficiently find blocks in the shell
         int rSquared = layer * layer;
         int innerRSquared = (layer - 1) * (layer - 1);
+        
+        List<BlockPos> blocks;
+        
+        if (useParallel && layer >= 96) {
+            // Parallel computation: split by X-axis slices
+            blocks = this.generateLayerBlocksParallel(layer, rSquared, innerRSquared);
+        } else {
+            // Sequential computation for smaller layers
+            blocks = this.generateLayerBlocksSequential(layer, rSquared, innerRSquared);
+        }
+
+        Collections.shuffle(blocks);
+        return blocks;
+    }
+    
+    /**
+     * Sequential generation of layer blocks (for small radii).
+     */
+    private List<BlockPos> generateLayerBlocksSequential(int layer, int rSquared, int innerRSquared) {
+        List<BlockPos> blocks = new ArrayList<>();
         
         // Iterate through bounding box of this shell
         for (int x = -layer; x <= layer; x++) {
@@ -205,10 +235,59 @@ class ExplosionSession {
                 }
             }
         }
-
-        Collections.shuffle(blocks);
-
+        
         return blocks;
+    }
+    
+    /**
+     * Parallel generation of layer blocks (for large radii).
+     * Splits the work along the X-axis and merges results.
+     */
+    private List<BlockPos> generateLayerBlocksParallel(int layer, int rSquared, int innerRSquared) {
+        // Determine number of parallel tasks based on layer size
+        int numTasks = Math.min(Runtime.getRuntime().availableProcessors(), layer / 8 + 1);
+        int sliceSize = (layer * 2 + 1) / numTasks;
+        
+        // Create parallel tasks for each X-slice
+        List<CompletableFuture<List<BlockPos>>> futures = new ArrayList<>(numTasks);
+        
+        for (int taskIdx = 0; taskIdx < numTasks; taskIdx++) {
+            final int startX = -layer + taskIdx * sliceSize;
+            final int endX = (taskIdx == numTasks - 1) ? layer : (startX + sliceSize - 1);
+            
+            CompletableFuture<List<BlockPos>> future = CompletableFuture.supplyAsync(() -> {
+                List<BlockPos> sliceBlocks = new ArrayList<>();
+                
+                for (int x = startX; x <= endX; x++) {
+                    for (int y = -layer; y <= layer; y++) {
+                        for (int z = -layer; z <= layer; z++) {
+                            int distSquared = x * x + y * y + z * z;
+                            
+                            // Only include blocks in this shell layer
+                            if (distSquared > innerRSquared && distSquared <= rSquared) {
+                                sliceBlocks.add(new BlockPos(
+                                    this.center.getX() + x,
+                                    this.center.getY() + y,
+                                    this.center.getZ() + z
+                                ));
+                            }
+                        }
+                    }
+                }
+                
+                return sliceBlocks;
+            }, VIRTUAL_EXECUTOR);
+            
+            futures.add(future);
+        }
+        
+        // Wait for all tasks to complete and merge results
+        return futures.stream()
+            .map(CompletableFuture::join)
+            .reduce(new ArrayList<>(), (list1, list2) -> {
+                list1.addAll(list2);
+                return list1;
+            });
     }
 
     public static boolean destroyBlock(ServerLevel level, BlockPos pos, boolean dropResources) {
