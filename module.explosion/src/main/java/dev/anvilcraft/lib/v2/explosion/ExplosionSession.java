@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -41,10 +42,11 @@ class ExplosionSession {
     private final boolean dropItems;
     private final int probabilityRadius; // Probability destruction radius
     private final int meltingRadius; // Melting radius (replace with air without drops)
+    private final int effectiveMaxRadius; // Outermost radius to process (max of probabilityRadius and meltingRadius)
     private final List<Predicate<Block>> excludedBlocks; // Blocks that cannot be destroyed by explosion
 
     // Current processing state
-    private int currentLayer; // Current distance layer (0 to maxRadius)
+    private int currentLayer; // Current distance layer (0 to effectiveMaxRadius)
     private @Nullable List<BlockPos> currentLayerBlocks; // Blocks in current layer
     private int layerIndex; // Index within current layer
 
@@ -62,7 +64,7 @@ class ExplosionSession {
         boolean dropItems,
         int probabilityRadius,
         int meltingRadius,
-        List<Predicate<Block>> excludedBlocks
+        @Nullable List<Predicate<Block>> excludedBlocks
     ) {
         this.level = level;
         this.center = center;
@@ -71,6 +73,7 @@ class ExplosionSession {
         this.dropItems = dropItems;
         this.probabilityRadius = probabilityRadius;
         this.meltingRadius = meltingRadius;
+        this.effectiveMaxRadius = Math.max(probabilityRadius, meltingRadius);
         this.excludedBlocks = excludedBlocks != null ? excludedBlocks : List.of();
     }
 
@@ -102,7 +105,7 @@ class ExplosionSession {
         int removed = 0;
 
         // Process blocks layer by layer to avoid memory issues with large radii
-        while (removed < this.maxBreakPerTick && this.currentLayer <= this.maxRadius) {
+        while (removed < this.maxBreakPerTick && this.currentLayer <= this.effectiveMaxRadius) {
             // Generate current layer if needed
             if (this.currentLayerBlocks == null || this.layerIndex >= this.currentLayerBlocks.size()) {
                 // Try to get pre-computed next layer
@@ -134,9 +137,12 @@ class ExplosionSession {
                 this.layerIndex++;
 
                 if (!this.level.isLoaded(target)) continue;
+
                 BlockState blockState = this.level.getBlockState(target);
                 if (blockState.isAir()) continue;
-
+                // public int getHeight(Heightmap.Types type, int x, int z) {}
+                int height = level.getHeight(Heightmap.Types.WORLD_SURFACE, target.getX(), target.getZ());
+                boolean isSurface = target.getY() >= height - Math.ceil(maxRadius * 0.1) - 1;
                 // Check if block is excluded from explosion
                 if (this.isBlockExcluded(blockState.getBlock())) {
                     continue;
@@ -150,18 +156,21 @@ class ExplosionSession {
                     if (ExplosionSession.destroyBlock(this.level, target, this.dropItems)) {
                         removed++;
                     }
-                } else if (distance <= this.probabilityRadius) {
-                    // Probability destruction: closer to center = higher chance
+                } else if (distance <= this.probabilityRadius && isSurface) {
+                    // Probability destruction: probability decreases from 80% at maxRadius to 0% at probabilityRadius
                     double probability = this.calculateProbability(distance, this.maxRadius, this.probabilityRadius);
                     if (Math.random() < probability) {
                         if (ExplosionSession.destroyBlock(this.level, target, this.dropItems)) {
                             removed++;
                         }
                     }
-                } else if (distance <= this.meltingRadius) {
-                    // Melting: replace with another block or air without drops
-                    if (ExplosionSession.meltBlock(this.level, target)) {
-                        removed++;
+                } else if (distance <= this.meltingRadius && isSurface) {
+                    // Melting: probability decreases from 80% at probabilityRadius to 0% at meltingRadius
+                    double probability = this.calculateProbability(distance, this.probabilityRadius, this.meltingRadius);
+                    if (Math.random() < probability) {
+                        if (ExplosionSession.meltBlock(this.level, target)) {
+                            removed++;
+                        }
                     }
                 }
             }
@@ -173,7 +182,7 @@ class ExplosionSession {
             }
         }
 
-        if (this.currentLayer > this.maxRadius) {
+        if (this.currentLayer > this.effectiveMaxRadius) {
             this.finished = true;
             this.stop();
         }
@@ -188,8 +197,8 @@ class ExplosionSession {
     private void startNextLayerPrecomputation() {
         int nextLayer = this.currentLayer + 1;
 
-        // Don't pre-compute beyond max radius
-        if (nextLayer > this.maxRadius) {
+        // Don't pre-compute beyond effective max radius
+        if (nextLayer > this.effectiveMaxRadius) {
             return;
         }
 
@@ -323,7 +332,7 @@ class ExplosionSession {
 
     /**
      * Check if a block should be excluded from explosion.
-     * 
+     *
      * @param block The block to check
      * @return true if the block should not be destroyed/melted
      */
@@ -337,22 +346,25 @@ class ExplosionSession {
     }
 
     /**
-     * Calculate destruction probability based on distance.
-     * Probability decreases linearly from 100% at maxRadius to 80% at probabilityRadius.
+     * Calculate probability based on distance.
+     * Probability decreases linearly from 80% at innerRadius to 0% at outerRadius.
      *
-     * @param distance          Distance from explosion center
-     * @param maxRadius         Core explosion radius (100% destruction)
-     * @param probabilityRadius Outer boundary of probability zone (80% at this distance)
-     * @return Destruction probability (0.0 to 1.0)
+     * @param distance    Distance from explosion center
+     * @param innerRadius Inner boundary of the zone (80% probability)
+     * @param outerRadius Outer boundary of the zone (0% probability)
+     * @return Probability (0.0 to 0.8)
      */
-    private double calculateProbability(double distance, int maxRadius, int probabilityRadius) {
-        if (distance <= maxRadius) {
-            return 1.0; // Always destroy within core radius
+    private double calculateProbability(double distance, int innerRadius, int outerRadius) {
+        if (distance <= innerRadius) {
+            return 0.8; // 80% at inner boundary
+        }
+        if (distance >= outerRadius) {
+            return 0.0; // 0% at outer boundary
         }
 
-        // Linear interpolation: 100% at maxRadius, 80% at probabilityRadius
-        double ratio = (distance - maxRadius) / (double) (probabilityRadius - maxRadius);
-        return 1.0 - (ratio * 0.2); // Decreases from 1.0 to 0.8
+        // Linear interpolation: 80% at innerRadius, 0% at outerRadius
+        double ratio = (distance - innerRadius) / (double) (outerRadius - innerRadius);
+        return 0.8 * (1.0 - ratio); // Decreases from 0.8 to 0.0
     }
 
     /**

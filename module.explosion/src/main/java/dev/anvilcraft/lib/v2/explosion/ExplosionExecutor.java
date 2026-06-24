@@ -32,9 +32,9 @@ public class ExplosionExecutor {
     /// 当方块被破坏时，是否需要掉落物品
     private boolean dropItems = false;
     /// 概率半径（以块为单位），需要大于 `radius` ，该范围内的地表方块将由近到远地被概率性地破坏，距离中心越近的概率越高，最靠近 `radius` 的概率为 `100%`，最靠近 `probabilityRadius` 的概率为 `80%`
-    private int probabilityRadius = 160;
+    private int probabilityRadius = 128;
     /// 融化半径（以块为单位），需要大于 `radius` ，该范围内的地表方块将由近到远地被概率性地融化，距离中心越近的概率越高，最靠近 `radius` 的概率为 `100%`，最靠近 `meltingRadius` 的概率为 `80%`
-    private int meltingRadius = 128;
+    private int meltingRadius = 160;
     /// 不允许被爆炸破坏的方块列表
     private List<Predicate<Block>> excludedBlocks = new ArrayList<>() {{
         add(block -> block.defaultDestroyTime() < 0);
