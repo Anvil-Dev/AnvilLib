@@ -5,13 +5,14 @@ import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 
 @Mod(AnvilLibRpc.MOD_ID)
+@EventBusSubscriber(modid = AnvilLibRpc.MOD_ID)
 public class AnvilLibRpc {
     public static final String MAIN_ID = "anvillib";
     public static final String MOD_ID = "anvillib_rpc";
@@ -27,8 +28,7 @@ public class AnvilLibRpc {
     public static final RpcPendingCalls PENDING = new RpcPendingCalls();
 
     public AnvilLibRpc(IEventBus modEventBus, ModContainer modContainer) {
-        modEventBus.register(this);
-        NeoForge.EVENT_BUS.register(this);
+        modEventBus.addListener(this::onRegisterConfigurationTasks);
     }
 
     public static Identifier of(String path) {
@@ -44,7 +44,7 @@ public class AnvilLibRpc {
      * 驱动服务端侧 {@link RPC#invoke} 调用的超时检查。
      */
     @SubscribeEvent
-    public void onServerTick(ServerTickEvent.Post event) {
+    public static void onServerTick(ServerTickEvent.Post event) {
         AnvilLibRpc.PENDING.tick();
     }
 
@@ -52,7 +52,7 @@ public class AnvilLibRpc {
      * 服务器停止时清理服务端侧未完成的 {@link RPC#invoke} 调用。
      */
     @SubscribeEvent
-    public void onServerStopped(ServerStoppedEvent event) {
+    public static void onServerStopped(ServerStoppedEvent event) {
         AnvilLibRpc.PENDING.clear();
     }
 }
