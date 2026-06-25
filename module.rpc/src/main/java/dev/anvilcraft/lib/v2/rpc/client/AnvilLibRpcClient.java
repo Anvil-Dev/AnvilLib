@@ -7,10 +7,10 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * 客户端侧入口，持有仅采纳服务端下发映射的客户端索引表。
@@ -19,7 +19,6 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
  * 从而保证客户端断开后开启局域网时，集成服务端仍下发其本地扫描得到的正确映射。</p>
  */
 @Mod(value = AnvilLibRpc.MOD_ID, dist = Dist.CLIENT)
-@EventBusSubscriber(modid = AnvilLibRpc.MOD_ID, value = Dist.CLIENT)
 public class AnvilLibRpcClient {
     /**
      * 客户端索引表：仅通过 {@link RpcRegistry#adopt} 采纳服务端下发的映射。
@@ -32,13 +31,15 @@ public class AnvilLibRpcClient {
     public static final RpcPendingCalls PENDING = new RpcPendingCalls();
 
     public AnvilLibRpcClient(IEventBus modEventBus, ModContainer modContainer) {
+        NeoForge.EVENT_BUS.addListener(this::onClientTick);
+        NeoForge.EVENT_BUS.addListener(this::onLoggingOut);
     }
 
     /**
      * 驱动客户端侧 {@link dev.anvilcraft.lib.v2.rpc.RPC#invoke} 调用的超时检查。
      */
     @SubscribeEvent
-    public static void onClientTick(ClientTickEvent.Post event) {
+    public void onClientTick(ClientTickEvent.Post event) {
         AnvilLibRpcClient.PENDING.tick();
     }
 
@@ -46,7 +47,7 @@ public class AnvilLibRpcClient {
      * 客户端登出时清理客户端侧未完成的 {@link dev.anvilcraft.lib.v2.rpc.RPC#invoke} 调用。
      */
     @SubscribeEvent
-    public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+    public void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         AnvilLibRpcClient.PENDING.clear();
     }
 }
