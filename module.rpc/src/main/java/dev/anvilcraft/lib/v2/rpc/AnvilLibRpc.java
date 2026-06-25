@@ -6,6 +6,8 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 
 @Mod(AnvilLibRpc.MOD_ID)
@@ -25,6 +27,7 @@ public class AnvilLibRpc {
 
     public AnvilLibRpc(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.register(this);
+        NeoForge.EVENT_BUS.register(this);
     }
 
     public static Identifier of(String path) {
@@ -34,5 +37,13 @@ public class AnvilLibRpc {
     @SubscribeEvent
     public void onRegisterConfigurationTasks(RegisterConfigurationTasksEvent event) {
         event.register(new RpcConfigurationTask());
+    }
+
+    /**
+     * 驱动服务端侧 {@link RPC#invoke} 调用的超时检查。
+     */
+    @SubscribeEvent
+    public void onServerTick(ServerTickEvent.Post event) {
+        AnvilLibRpc.PENDING.tick();
     }
 }

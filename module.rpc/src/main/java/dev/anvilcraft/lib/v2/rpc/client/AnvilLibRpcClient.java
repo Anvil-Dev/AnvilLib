@@ -4,7 +4,12 @@ import dev.anvilcraft.lib.v2.rpc.AnvilLibRpc;
 import dev.anvilcraft.lib.v2.rpc.RpcPendingCalls;
 import dev.anvilcraft.lib.v2.rpc.RpcRegistry;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * 客户端侧入口，持有仅采纳服务端下发映射的客户端索引表。
@@ -23,4 +28,16 @@ public class AnvilLibRpcClient {
      * 客户端侧待响应的 {@link dev.anvilcraft.lib.v2.rpc.RPC#invoke} 调用登记表。
      */
     public static final RpcPendingCalls PENDING = new RpcPendingCalls();
+
+    public AnvilLibRpcClient(IEventBus modEventBus, ModContainer modContainer) {
+        NeoForge.EVENT_BUS.register(this);
+    }
+
+    /**
+     * 驱动客户端侧 {@link dev.anvilcraft.lib.v2.rpc.RPC#invoke} 调用的超时检查。
+     */
+    @SubscribeEvent
+    public void onClientTick(ClientTickEvent.Post event) {
+        AnvilLibRpcClient.PENDING.tick();
+    }
 }
