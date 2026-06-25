@@ -7,6 +7,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 
@@ -45,5 +46,13 @@ public class AnvilLibRpc {
     @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event) {
         AnvilLibRpc.PENDING.tick();
+    }
+
+    /**
+     * 服务器停止时清理服务端侧未完成的 {@link RPC#invoke} 调用。
+     */
+    @SubscribeEvent
+    public void onServerStopped(ServerStoppedEvent event) {
+        AnvilLibRpc.PENDING.clear();
     }
 }

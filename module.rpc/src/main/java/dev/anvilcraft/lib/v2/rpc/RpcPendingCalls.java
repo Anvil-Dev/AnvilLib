@@ -1,10 +1,12 @@
 package dev.anvilcraft.lib.v2.rpc;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
@@ -65,7 +67,7 @@ public final class RpcPendingCalls {
      * @param callId 调用 id
      * @return 登记项；若不存在（如超时已移除）返回 {@code null}
      */
-    @org.jspecify.annotations.Nullable
+    @Nullable
     Pending remove(int callId) {
         return pending.remove(callId);
     }
@@ -85,6 +87,23 @@ public final class RpcPendingCalls {
                 new TimeoutException("RPC call timed out after " + TIMEOUT_TICKS + " ticks: " + entry.method())
             );
         }
+    }
+
+    /**
+     * 清空登记表，并使所有未完成的调用以异常失败。
+     *
+     * <p>在所属侧的连接终止时调用（服务端 {@code ServerStoppedEvent}、客户端
+     * {@code ClientPlayerNetworkEvent.LoggingOut}），避免遗留的 future 永久挂起或残留到下一次会话。</p>
+     */
+    @ApiStatus.Internal
+    public void clear() {
+        Iterator<Map.Entry<Integer, Pending>> it = pending.entrySet().iterator();
+        while (it.hasNext()) {
+            Pending entry = it.next().getValue();
+            it.remove();
+            entry.future().completeExceptionally(new CancellationException("RPC connection closed before response"));
+        }
+        currentTick = 0;
     }
 
     record Pending(Method method, CompletableFuture<Object> future, int registeredTick) {

@@ -8,6 +8,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -39,5 +40,13 @@ public class AnvilLibRpcClient {
     @SubscribeEvent
     public void onClientTick(ClientTickEvent.Post event) {
         AnvilLibRpcClient.PENDING.tick();
+    }
+
+    /**
+     * 客户端登出时清理客户端侧未完成的 {@link dev.anvilcraft.lib.v2.rpc.RPC#invoke} 调用。
+     */
+    @SubscribeEvent
+    public void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        AnvilLibRpcClient.PENDING.clear();
     }
 }
