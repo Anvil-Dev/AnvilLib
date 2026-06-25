@@ -6,13 +6,18 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import org.jspecify.annotations.Nullable;
 
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -82,25 +87,62 @@ final class RpcMethods {
     }
 
     private static Method doResolve(String className, String methodName, String descriptor) {
-        Class<?> clazz;
-        try {
-            clazz = Class.forName(className, true, Thread.currentThread().getContextClassLoader());
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Cannot find RPC target class: " + className, e);
-        }
+        Class<?> clazz = loadClass(className);
         for (Method method : clazz.getDeclaredMethods()) {
             if (!method.getName().equals(methodName)) continue;
             if (!methodDescriptor(method).equals(descriptor)) continue;
-            if (!Modifier.isStatic(method.getModifiers())) {
-                throw new IllegalStateException("@RemoteCallable method must be static: " + className + "#" + methodName);
-            }
-            if (!method.isAnnotationPresent(RemoteCallable.class)) {
-                throw new IllegalStateException("Method is not @RemoteCallable: " + className + "#" + methodName);
-            }
+            validate(method);
             method.setAccessible(true);
             return method;
         }
         throw new IllegalStateException("Cannot find method " + methodName + descriptor + " in " + className);
+    }
+
+    /**
+     * 按类与方法名解析唯一的 {@link RemoteCallable} 方法（用于无方法引用的逃生口调用）。
+     *
+     * <p>若该名称存在多个重载，视为歧义并抛出异常——此时应改用方法引用形式以借助参数类型消歧。</p>
+     *
+     * @param clazz      方法所属类
+     * @param methodName 方法名
+     * @return 已校验通过、可访问的目标方法
+     */
+    static Method resolveByName(Class<?> clazz, String methodName) {
+        Method found = null;
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (!method.getName().equals(methodName)) continue;
+            if (!Modifier.isStatic(method.getModifiers())) continue;
+            if (!method.isAnnotationPresent(RemoteCallable.class)) continue;
+            if (found != null) {
+                throw new IllegalStateException(
+                    "Ambiguous @RemoteCallable method " + clazz.getName() + "#" + methodName
+                    + "; use a method reference (RPC.call) to disambiguate overloads"
+                );
+            }
+            method.setAccessible(true);
+            found = method;
+        }
+        if (found == null) {
+            throw new IllegalStateException("Cannot find @RemoteCallable static method " + clazz.getName() + "#" + methodName);
+        }
+        return found;
+    }
+
+    private static Class<?> loadClass(String className) {
+        try {
+            return Class.forName(className, true, Thread.currentThread().getContextClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Cannot find RPC target class: " + className, e);
+        }
+    }
+
+    private static void validate(Method method) {
+        if (!Modifier.isStatic(method.getModifiers())) {
+            throw new IllegalStateException("@RemoteCallable method must be static: " + method);
+        }
+        if (!method.isAnnotationPresent(RemoteCallable.class)) {
+            throw new IllegalStateException("Method is not @RemoteCallable: " + method);
+        }
     }
 
     /**
@@ -121,34 +163,98 @@ final class RpcMethods {
     }
 
     private static StreamCodec<?, ?> resolveCodec(Parameter parameter) {
+        // 1. 优先使用 @CallableParam 显式指定的编解码器
         CallableParam annotation = parameter.getAnnotation(CallableParam.class);
         if (annotation != null) {
-            return readCodecField(annotation);
+            return readCodecField(annotation.clazz(), annotation.field());
         }
+        // 2. 其次使用 ByteBufCodecs 中按类型提供的默认编解码器
         StreamCodec<?, ?> codec = DEFAULTS.get(parameter.getType());
-        if (codec == null) {
-            throw new IllegalStateException(
-                "No default StreamCodec for parameter type " + parameter.getType().getName()
-                + "; annotate the parameter with @CallableParam to provide one"
-            );
+        if (codec != null) {
+            return codec;
         }
-        return codec;
+        // 3. 最后回退到参数类型自身声明的 public static final StreamCodec 字段
+        codec = findDeclaredCodec(parameter.getType());
+        if (codec != null) {
+            return codec;
+        }
+        throw new IllegalStateException(
+            "No StreamCodec for parameter type " + parameter.getType().getName()
+            + "; annotate the parameter with @CallableParam, or declare a public static final StreamCodec field in "
+            + parameter.getType().getName()
+        );
     }
 
-    private static StreamCodec<?, ?> readCodecField(CallableParam annotation) {
+    /**
+     * 在给定类型中查找可用于编码该类型自身的 {@code public static final StreamCodec} 字段。
+     *
+     * <p>字段的负载类型实参须与参数类型兼容；若存在多个匹配字段则视为歧义并抛出异常。</p>
+     *
+     * @param type 参数类型
+     * @return 匹配的编解码器；若无匹配字段返回 {@code null}
+     */
+    private static @Nullable StreamCodec<?, ?> findDeclaredCodec(Class<?> type) {
+        StreamCodec<?, ?> found = null;
+        String foundName = null;
+        for (Field field : type.getDeclaredFields()) {
+            Set<AccessFlag> flags = field.accessFlags();
+            if (!flags.contains(AccessFlag.PUBLIC) || !flags.contains(AccessFlag.STATIC) || !flags.contains(AccessFlag.FINAL)) {
+                continue;
+            }
+            if (!StreamCodec.class.isAssignableFrom(field.getType())) continue;
+            if (!isCodecForPayload(field.getGenericType(), type)) continue;
+            if (found != null) {
+                throw new IllegalStateException(
+                    "Ambiguous StreamCodec fields in " + type.getName() + ": " + foundName + " and " + field.getName()
+                    + "; use @CallableParam to disambiguate"
+                );
+            }
+            try {
+                field.setAccessible(true);
+                found = (StreamCodec<?, ?>) field.get(null);
+                foundName = field.getName();
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException("Cannot read StreamCodec field " + type.getName() + "." + field.getName(), e);
+            }
+        }
+        return found;
+    }
+
+    /**
+     * 判断 {@code StreamCodec<?, P>} 的负载类型实参 {@code P} 是否可承载 {@code payloadType}。
+     */
+    private static boolean isCodecForPayload(Type genericType, Class<?> payloadType) {
+        if (!(genericType instanceof ParameterizedType pt)) {
+            // 原始类型无法校验负载类型，保守地接受
+            return true;
+        }
+        Type[] args = pt.getActualTypeArguments();
+        if (args.length < 2) return true;
+        Type payloadArg = args[1];
+        if (payloadArg instanceof Class<?> payloadClass) {
+            return payloadClass.isAssignableFrom(payloadType);
+        }
+        if (payloadArg instanceof ParameterizedType payloadPt && payloadPt.getRawType() instanceof Class<?> raw) {
+            return raw.isAssignableFrom(payloadType);
+        }
+        // 通配符 / 类型变量等无法静态判定，保守接受
+        return true;
+    }
+
+    private static StreamCodec<?, ?> readCodecField(Class<?> clazz, String fieldName) {
         try {
-            Field field = annotation.clazz().getDeclaredField(annotation.field());
+            Field field = clazz.getDeclaredField(fieldName);
             field.setAccessible(true);
             Object value = field.get(null);
             if (value instanceof StreamCodec<?, ?> codec) {
                 return codec;
             }
             throw new IllegalStateException(
-                "Field " + annotation.clazz().getName() + "." + annotation.field() + " is not a StreamCodec"
+                "Field " + clazz.getName() + "." + fieldName + " is not a StreamCodec"
             );
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new IllegalStateException(
-                "Cannot read StreamCodec from " + annotation.clazz().getName() + "." + annotation.field(), e
+                "Cannot read StreamCodec from " + clazz.getName() + "." + fieldName, e
             );
         }
     }

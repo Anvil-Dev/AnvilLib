@@ -34,9 +34,7 @@ public class RpcPayload implements IInsensitiveBiPacket {
     }
 
     private static void encode(RegistryFriendlyByteBuf buf, RpcPayload payload) {
-        ByteBufCodecs.STRING_UTF8.encode(buf, payload.method.getDeclaringClass().getName());
-        ByteBufCodecs.STRING_UTF8.encode(buf, payload.method.getName());
-        ByteBufCodecs.STRING_UTF8.encode(buf, RpcMethods.methodDescriptor(payload.method));
+        ByteBufCodecs.VAR_INT.encode(buf, RpcRegistry.index(payload.method));
         StreamCodec<RegistryFriendlyByteBuf, Object>[] codecs = RpcMethods.codecs(payload.method);
         for (int i = 0; i < codecs.length; i++) {
             codecs[i].encode(buf, payload.args[i]);
@@ -44,10 +42,7 @@ public class RpcPayload implements IInsensitiveBiPacket {
     }
 
     private static RpcPayload decode(RegistryFriendlyByteBuf buf) {
-        String className = ByteBufCodecs.STRING_UTF8.decode(buf);
-        String methodName = ByteBufCodecs.STRING_UTF8.decode(buf);
-        String descriptor = ByteBufCodecs.STRING_UTF8.decode(buf);
-        Method method = RpcMethods.resolve(className, methodName, descriptor);
+        Method method = RpcRegistry.byIndex(ByteBufCodecs.VAR_INT.decode(buf));
         StreamCodec<RegistryFriendlyByteBuf, Object>[] codecs = RpcMethods.codecs(method);
         Object[] args = new Object[codecs.length];
         for (int i = 0; i < codecs.length; i++) {

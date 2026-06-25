@@ -93,8 +93,127 @@ public final class RPC {
         dispatch(target, methodRef, a, b, c, d, e, f);
     }
 
+    /**
+     * 调用七参方法。
+     */
+    public static <A, B, C, D, E, F, G> void call(
+        RpcTarget target, RpcMethodRef.R7<A, B, C, D, E, F, G> methodRef, A a, B b, C c, D d, E e, F f, G g
+    ) {
+        dispatch(target, methodRef, a, b, c, d, e, f, g);
+    }
+
+    /**
+     * 调用八参方法。
+     */
+    public static <A, B, C, D, E, F, G, H> void call(
+        RpcTarget target, RpcMethodRef.R8<A, B, C, D, E, F, G, H> methodRef, A a, B b, C c, D d, E e, F f, G g, H h
+    ) {
+        dispatch(target, methodRef, a, b, c, d, e, f, g, h);
+    }
+
+    /**
+     * 调用九参方法。
+     */
+    public static <A, B, C, D, E, F, G, H, I> void call(
+        RpcTarget target, RpcMethodRef.R9<A, B, C, D, E, F, G, H, I> methodRef,
+        A a, B b, C c, D d, E e, F f, G g, H h, I i
+    ) {
+        dispatch(target, methodRef, a, b, c, d, e, f, g, h, i);
+    }
+
+    /**
+     * 调用十参方法。
+     */
+    public static <A, B, C, D, E, F, G, H, I, J> void call(
+        RpcTarget target, RpcMethodRef.R10<A, B, C, D, E, F, G, H, I, J> methodRef,
+        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j
+    ) {
+        dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j);
+    }
+
+    /**
+     * 调用十一参方法。
+     */
+    public static <A, B, C, D, E, F, G, H, I, J, K> void call(
+        RpcTarget target, RpcMethodRef.R11<A, B, C, D, E, F, G, H, I, J, K> methodRef,
+        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k
+    ) {
+        dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k);
+    }
+
+    /**
+     * 调用十二参方法。
+     */
+    public static <A, B, C, D, E, F, G, H, I, J, K, L> void call(
+        RpcTarget target, RpcMethodRef.R12<A, B, C, D, E, F, G, H, I, J, K, L> methodRef,
+        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l
+    ) {
+        dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l);
+    }
+
+    /**
+     * 调用十三参方法。
+     */
+    public static <A, B, C, D, E, F, G, H, I, J, K, L, M> void call(
+        RpcTarget target, RpcMethodRef.R13<A, B, C, D, E, F, G, H, I, J, K, L, M> methodRef,
+        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m
+    ) {
+        dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m);
+    }
+
+    /**
+     * 调用十四参方法。
+     */
+    public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N> void call(
+        RpcTarget target, RpcMethodRef.R14<A, B, C, D, E, F, G, H, I, J, K, L, M, N> methodRef,
+        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m, N n
+    ) {
+        dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
+    }
+
+    /**
+     * 调用十五参方法。
+     */
+    public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> void call(
+        RpcTarget target, RpcMethodRef.R15<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> methodRef,
+        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m, N n, O o
+    ) {
+        dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
+    }
+
+    /**
+     * 调用十六参方法。
+     */
+    public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> void call(
+        RpcTarget target, RpcMethodRef.R16<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> methodRef,
+        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m, N n, O o, P p
+    ) {
+        dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p);
+    }
+
+    /**
+     * 逃生口：按类与方法名调用 {@link RemoteCallable} 方法，参数个数不限。
+     *
+     * <p>当参数个数超过 {@link #call} 提供的 16 个档次，或无法使用方法引用时使用。代价是失去对实参的
+     * 编译期类型检查：调用者需自行保证 {@code args} 的类型与个数同目标方法一致。若该方法名存在重载，
+     * 将因歧义而抛出异常，此时应改用方法引用形式的 {@link #call}。</p>
+     *
+     * @param target     目标端
+     * @param clazz      目标方法所属类
+     * @param methodName 目标方法名（须唯一且为 {@link RemoteCallable} 静态方法）
+     * @param args       实参
+     */
+    public static void callByName(RpcTarget target, Class<?> clazz, String methodName, Object... args) {
+        Method method = RpcMethods.resolveByName(clazz, methodName);
+        sendChecked(target, method, args);
+    }
+
     private static void dispatch(RpcTarget target, Serializable methodRef, Object... args) {
         Method method = LambdaResolver.resolve(methodRef);
+        sendChecked(target, method, args);
+    }
+
+    private static void sendChecked(RpcTarget target, Method method, Object[] args) {
         if (method.getParameterCount() != args.length) {
             throw new IllegalArgumentException(
                 "RPC method " + method + " expects " + method.getParameterCount() + " arguments, got " + args.length
