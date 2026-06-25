@@ -109,7 +109,9 @@ tasks.named("processResources") {
         expand replaceProperties
     }
 
-    finalizedBy 'changeModsToml'
+    if (project.name != "anvillib-test-neoforge-26.1") {
+        finalizedBy 'changeModsToml'
+    }
 }
 
 tasks.register('sourcesJar', Jar) {
