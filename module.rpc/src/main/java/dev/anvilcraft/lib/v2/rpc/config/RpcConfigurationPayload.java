@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * Configuration 阶段由服务端下发给客户端的 RPC 索引映射包。
  *
- * <p>客户端收到后用其覆盖本地索引表（{@link RpcRegistry#adopt(Map)}），从而与服务端共享同一套
+ * <p>客户端收到后用其覆盖本地索引表（{@link dev.anvilcraft.lib.v2.rpc.RpcRegistry#adopt(Map)}），从而与服务端共享同一套
  * {@code 索引 -> 规范键} 映射，保证双向 RPC 的索引一致；随后回复
  * {@link RpcConfigurationFinishPayload} 以结束该配置任务。</p>
  */
@@ -29,13 +29,13 @@ public record RpcConfigurationPayload(Map<Integer, String> indexMap) implements 
     );
 
     @Override
-    public void handleOnClient(Player player) {
-    }
-
-    @Override
     public void clientHandler(IPayloadContext ctx) {
         ctx.enqueueWork(() -> AnvilLibRpcClient.REGISTRY.adopt(this.indexMap()));
         ctx.reply(RpcConfigurationFinishPayload.INSTANCE);
+    }
+
+    @Override
+    public void handleOnClient(Player player) {
     }
 
     @Override

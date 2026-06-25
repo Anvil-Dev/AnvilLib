@@ -40,7 +40,7 @@ public final class RpcPendingCalls {
     /**
      * 自增的 tick 计数器，作为登记项的时间戳基准。
      */
-    private volatile int currentTick;
+    private final AtomicInteger currentTick = new AtomicInteger(0);
 
     /**
      * 构造一个空的登记表。
@@ -57,7 +57,7 @@ public final class RpcPendingCalls {
      */
     int register(Method method, CompletableFuture<Object> future) {
         int id = nextId.getAndIncrement();
-        pending.put(id, new Pending(method, future, currentTick));
+        pending.put(id, new Pending(method, future, currentTick.get()));
         return id;
     }
 
@@ -67,8 +67,7 @@ public final class RpcPendingCalls {
      * @param callId 调用 id
      * @return 登记项；若不存在（如超时已移除）返回 {@code null}
      */
-    @Nullable
-    Pending remove(int callId) {
+    @Nullable Pending remove(int callId) {
         return pending.remove(callId);
     }
 
@@ -77,15 +76,14 @@ public final class RpcPendingCalls {
      */
     @ApiStatus.Internal
     public void tick() {
-        int now = ++currentTick;
+        int now = currentTick.incrementAndGet();
         Iterator<Map.Entry<Integer, Pending>> it = pending.entrySet().iterator();
         while (it.hasNext()) {
             Pending entry = it.next().getValue();
             if (now - entry.registeredTick() < TIMEOUT_TICKS) continue;
             it.remove();
-            entry.future().completeExceptionally(
-                new TimeoutException("RPC call timed out after " + TIMEOUT_TICKS + " ticks: " + entry.method())
-            );
+            entry.future()
+                .completeExceptionally(new TimeoutException("RPC call timed out after " + TIMEOUT_TICKS + " ticks: " + entry.method()));
         }
     }
 
@@ -103,7 +101,7 @@ public final class RpcPendingCalls {
             it.remove();
             entry.future().completeExceptionally(new CancellationException("RPC connection closed before response"));
         }
-        currentTick = 0;
+        currentTick.set(0);
     }
 
     record Pending(Method method, CompletableFuture<Object> future, int registeredTick) {

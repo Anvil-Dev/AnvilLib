@@ -1,6 +1,5 @@
 package dev.anvilcraft.lib.v2.rpc;
 
-import dev.anvilcraft.lib.v2.rpc.client.AnvilLibRpcClient;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
@@ -13,34 +12,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * @see #server()
  */
 public interface RpcTarget {
-    /**
-     * 将网络包发送至该目标端。
-     *
-     * @param payload 远程调用网络包
-     */
-    void send(CustomPacketPayload payload);
-
-    /**
-     * 编码本次调用应使用的索引表（由发送方向决定：服务端发送用权威表，客户端发送用已采纳表）。
-     *
-     * @return 发送侧索引表
-     */
-    RpcRegistry registry();
-
-    /**
-     * 编码所用的注册表访问器，用于构造可承载注册表对象的缓冲区。
-     *
-     * @return 发送侧注册表访问器
-     */
-    RegistryAccess registryAccess();
-
-    /**
-     * 发起方（本侧）待响应调用登记表，用于 {@link RPC#invoke} 关联响应。
-     *
-     * @return 发送侧的 pending 表
-     */
-    RpcPendingCalls pending();
-
     /**
      * 目标端为指定客户端玩家（服务端 -&gt; 客户端）。
      *
@@ -79,4 +50,32 @@ public interface RpcTarget {
     static RpcTarget server() {
         return ClientRpcTargets.server();
     }
+
+    /**
+     * 将网络包发送至该目标端。
+     *
+     * @param payload 远程调用网络包
+     */
+    void send(CustomPacketPayload payload);
+
+    /**
+     * 编码本次调用应使用的索引表（由发送方向决定：服务端发送用权威表，客户端发送用已采纳表）。
+     *
+     * @return 发送侧索引表
+     */
+    RpcRegistry registry();
+
+    /**
+     * 编码所用的注册表访问器，用于构造可承载注册表对象的缓冲区。
+     *
+     * @return 发送侧注册表访问器
+     */
+    RegistryAccess registryAccess();
+
+    /**
+     * 发起方（本侧）待响应调用登记表，用于 {@link RPC#invoke} 关联响应。
+     *
+     * @return 发送侧的 pending 表
+     */
+    RpcPendingCalls pending();
 }

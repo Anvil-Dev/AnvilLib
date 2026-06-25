@@ -39,16 +39,10 @@ public class RpcResponsePayload implements IInsensitiveBiPacket {
         this.data = data;
     }
 
-    byte[] data() {
-        return this.data;
-    }
-
     /**
      * 编码一个成功响应。
      */
-    static RpcResponsePayload success(
-        RpcRegistry registry, RegistryAccess registryAccess, int callId, Method method, Object result
-    ) {
+    static RpcResponsePayload success(RpcRegistry registry, RegistryAccess registryAccess, int callId, Method method, Object result) {
         RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess, ConnectionType.NEOFORGE);
         buf.writeVarInt(callId);
         buf.writeBoolean(true);
@@ -73,16 +67,27 @@ public class RpcResponsePayload implements IInsensitiveBiPacket {
         return new RpcResponsePayload(data);
     }
 
+    byte[] data() {
+        return this.data;
+    }
+
     @Override
     public void bidirectionalHandler(IPayloadContext ctx) {
         ctx.enqueueWork(() -> this.handle(ctx));
+    }
+
+    @Override
+    public void handleOnBothSide(Player player) {
+        // 实际处理在 handle(ctx) 中完成
     }
 
     private void handle(IPayloadContext ctx) {
         // 收到 clientbound 响应表示本侧为发起 invoke 的客户端
         RpcPendingCalls pending = ctx.flow().isClientbound() ? AnvilLibRpcClient.PENDING : AnvilLibRpc.PENDING;
         RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(
-            Unpooled.wrappedBuffer(this.data), ctx.player().registryAccess(), ConnectionType.NEOFORGE
+            Unpooled.wrappedBuffer(this.data),
+            ctx.player().registryAccess(),
+            ConnectionType.NEOFORGE
         );
         int callId = buf.readVarInt();
         RpcPendingCalls.Pending entry = pending.remove(callId);
@@ -97,11 +102,6 @@ public class RpcResponsePayload implements IInsensitiveBiPacket {
         }
         Object result = RpcMethods.returnCodec(entry.method()).decode(buf);
         entry.future().complete(result);
-    }
-
-    @Override
-    public void handleOnBothSide(Player player) {
-        // 实际处理在 handle(ctx) 中完成
     }
 
     @Override

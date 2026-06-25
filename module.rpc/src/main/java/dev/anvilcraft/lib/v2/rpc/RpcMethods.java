@@ -90,10 +90,7 @@ final class RpcMethods {
      * @return 已校验通过、可访问的目标方法
      */
     static Method resolve(String className, String methodName, String descriptor) {
-        return METHOD_CACHE.computeIfAbsent(
-            className + "#" + methodName + descriptor,
-            key -> doResolve(className, methodName, descriptor)
-        );
+        return METHOD_CACHE.computeIfAbsent(className + "#" + methodName + descriptor, _ -> doResolve(className, methodName, descriptor));
     }
 
     private static Method doResolve(String className, String methodName, String descriptor) {
@@ -124,10 +121,7 @@ final class RpcMethods {
             if (!Modifier.isStatic(method.getModifiers())) continue;
             if (!method.isAnnotationPresent(RemoteCallable.class)) continue;
             if (found != null) {
-                throw new IllegalStateException(
-                    "Ambiguous @RemoteCallable method " + clazz.getName() + "#" + methodName
-                    + "; use a method reference (RPC.call) to disambiguate overloads"
-                );
+                throw new IllegalStateException("Ambiguous @RemoteCallable method " + clazz.getName() + "#" + methodName + "; use a method reference (RPC.call) to disambiguate overloads");
             }
             method.setAccessible(true);
             found = method;
@@ -162,7 +156,12 @@ final class RpcMethods {
         return CODEC_CACHE.computeIfAbsent(method, RpcMethods::resolveCodecs);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings(
+        {
+            "unchecked",
+            "rawtypes"
+        }
+    )
     private static StreamCodec<RegistryFriendlyByteBuf, Object>[] resolveCodecs(Method method) {
         Parameter[] parameters = method.getParameters();
         StreamCodec[] codecs = new StreamCodec[parameters.length];
@@ -183,11 +182,9 @@ final class RpcMethods {
         if (codec != null) {
             return codec;
         }
-        throw new IllegalStateException(
-            "No StreamCodec for parameter type " + parameter.getType().getName()
-            + "; annotate the parameter with @CallableParam, or declare a public static final StreamCodec field in "
-            + parameter.getType().getName()
-        );
+        throw new IllegalStateException("No StreamCodec for parameter type " + parameter.getType()
+            .getName() + "; annotate the parameter with @CallableParam, or declare a public static final StreamCodec field in " + parameter.getType()
+                                            .getName());
     }
 
     /**
@@ -217,11 +214,7 @@ final class RpcMethods {
             codec = codecForType(returnType);
         }
         if (codec == null) {
-            throw new IllegalStateException(
-                "No StreamCodec for return type " + returnType.getName()
-                + "; annotate the method with @CallableParam, or declare a public static final StreamCodec field in "
-                + returnType.getName()
-            );
+            throw new IllegalStateException("No StreamCodec for return type " + returnType.getName() + "; annotate the method with @CallableParam, or declare a public static final StreamCodec field in " + returnType.getName());
         }
         return (StreamCodec<RegistryFriendlyByteBuf, Object>) codec;
     }
@@ -260,10 +253,7 @@ final class RpcMethods {
             if (!StreamCodec.class.isAssignableFrom(field.getType())) continue;
             if (!isCodecForPayload(field.getGenericType(), type)) continue;
             if (found != null) {
-                throw new IllegalStateException(
-                    "Ambiguous StreamCodec fields in " + type.getName() + ": " + foundName + " and " + field.getName()
-                    + "; use @CallableParam to disambiguate"
-                );
+                throw new IllegalStateException("Ambiguous StreamCodec fields in " + type.getName() + ": " + foundName + " and " + field.getName() + "; use @CallableParam to disambiguate");
             }
             try {
                 field.setAccessible(true);
@@ -305,13 +295,9 @@ final class RpcMethods {
             if (value instanceof StreamCodec<?, ?> codec) {
                 return codec;
             }
-            throw new IllegalStateException(
-                "Field " + clazz.getName() + "." + fieldName + " is not a StreamCodec"
-            );
+            throw new IllegalStateException("Field " + clazz.getName() + "." + fieldName + " is not a StreamCodec");
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new IllegalStateException(
-                "Cannot read StreamCodec from " + clazz.getName() + "." + fieldName, e
-            );
+            throw new IllegalStateException("Cannot read StreamCodec from " + clazz.getName() + "." + fieldName, e);
         }
     }
 
@@ -323,10 +309,9 @@ final class RpcMethods {
      * @param args   已解码的实参
      * @return 是否允许执行
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     static boolean validate(Method method, IPayloadContext ctx, Object[] args) {
-        IRemoteCallableValidator validator = VALIDATOR_CACHE
-            .computeIfAbsent(method, RpcMethods::resolveValidator)
-            .orElse(null);
+        IRemoteCallableValidator validator = VALIDATOR_CACHE.computeIfAbsent(method, RpcMethods::resolveValidator).orElse(null);
         return validator == null || validator.validate(ctx, method, args);
     }
 
@@ -342,9 +327,7 @@ final class RpcMethods {
             constructor.setAccessible(true);
             return Optional.of(constructor.newInstance());
         } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(
-                "Cannot instantiate RPC validator " + type.getName() + " (needs a no-arg constructor)", e
-            );
+            throw new IllegalStateException("Cannot instantiate RPC validator " + type.getName() + " (needs a no-arg constructor)", e);
         }
     }
 

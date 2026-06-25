@@ -51,6 +51,19 @@ public final class RpcRegistry {
         this.authoritative = authoritative;
     }
 
+    private static String canonicalKey(Method method) {
+        return method.getDeclaringClass().getName() + "#" + method.getName() + RpcMethods.methodDescriptor(method);
+    }
+
+    private static Method resolve(String key) {
+        int hash = key.indexOf('#');
+        int paren = key.indexOf('(', hash);
+        String className = key.substring(0, hash);
+        String methodName = key.substring(hash + 1, paren);
+        String descriptor = key.substring(paren);
+        return RpcMethods.resolve(className, methodName, descriptor);
+    }
+
     /**
      * 返回方法对应的整数索引。
      *
@@ -60,6 +73,7 @@ public final class RpcRegistry {
     public synchronized int index(Method method) {
         ensureLoaded();
         String key = canonicalKey(method);
+        assert indexByKey != null;
         Integer index = indexByKey.get(key);
         if (index == null) {
             throw new IllegalStateException("Method is not a registered @RemoteCallable: " + key);
@@ -75,6 +89,7 @@ public final class RpcRegistry {
      */
     public synchronized Method byIndex(int index) {
         ensureLoaded();
+        assert keyByIndex != null;
         String key = keyByIndex.get(index);
         if (key == null) {
             throw new IllegalStateException("Unknown RPC method index: " + index + " (registered: " + keyByIndex.size() + ")");
@@ -89,6 +104,7 @@ public final class RpcRegistry {
      */
     public synchronized Map<Integer, String> snapshot() {
         ensureLoaded();
+        assert keyByIndex != null;
         return new HashMap<>(keyByIndex);
     }
 
@@ -114,17 +130,8 @@ public final class RpcRegistry {
         scan();
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     private void scan() {
-        List<String> keys = new ArrayList<>();
-        for (ModFileInfo fileInfo : FMLLoader.getCurrent().getLoadingModList().getModFiles()) {
-            for (ModFileScanData.AnnotationData annotation : fileInfo.getFile().getScanResult().getAnnotations()) {
-                if (!annotation.annotationType().getDescriptor().equals(ANNOTATION_DESCRIPTOR)) continue;
-                if (annotation.targetType() != ElementType.METHOD) continue;
-                // memberName 形如 "methodName(Ljava/lang/String;I)V"
-                keys.add(annotation.clazz().getClassName() + "#" + annotation.memberName());
-            }
-        }
+        List<String> keys = getKeys();
         // 排序仅为本地索引分配的确定性与日志可读性；跨端一致性由服务端下发映射保证
         keys.sort(null);
 
@@ -140,16 +147,17 @@ public final class RpcRegistry {
         log.info("Scan complete - {} @RemoteCallable method(s) registered.", keys.size());
     }
 
-    private static String canonicalKey(Method method) {
-        return method.getDeclaringClass().getName() + "#" + method.getName() + RpcMethods.methodDescriptor(method);
-    }
-
-    private static Method resolve(String key) {
-        int hash = key.indexOf('#');
-        int paren = key.indexOf('(', hash);
-        String className = key.substring(0, hash);
-        String methodName = key.substring(hash + 1, paren);
-        String descriptor = key.substring(paren);
-        return RpcMethods.resolve(className, methodName, descriptor);
+    @SuppressWarnings("UnstableApiUsage")
+    private static List<String> getKeys() {
+        List<String> keys = new ArrayList<>();
+        for (ModFileInfo fileInfo : FMLLoader.getCurrent().getLoadingModList().getModFiles()) {
+            for (ModFileScanData.AnnotationData annotation : fileInfo.getFile().getScanResult().getAnnotations()) {
+                if (!annotation.annotationType().getDescriptor().equals(ANNOTATION_DESCRIPTOR)) continue;
+                if (annotation.targetType() != ElementType.METHOD) continue;
+                // memberName 形如 "methodName(Ljava/lang/String;I)V"
+                keys.add(annotation.clazz().getClassName() + "#" + annotation.memberName());
+            }
+        }
+        return keys;
     }
 }

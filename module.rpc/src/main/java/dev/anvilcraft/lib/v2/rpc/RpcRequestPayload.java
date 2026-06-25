@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
  *
  * @see RPC#invoke
  */
-public class RpcRequestPayload implements IInsensitiveBiPacket {
+public class RpcRequestPayload implements IRpcPayload, IInsensitiveBiPacket {
     public static final Type<RpcRequestPayload> TYPE = IPacket.type(AnvilLibRpc.of("rpc_request"));
     public static final StreamCodec<ByteBuf, RpcRequestPayload> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.BYTE_ARRAY,
@@ -35,10 +35,6 @@ public class RpcRequestPayload implements IInsensitiveBiPacket {
 
     RpcRequestPayload(byte[] data) {
         this.data = data;
-    }
-
-    byte[] data() {
-        return this.data;
     }
 
     /**
@@ -56,19 +52,22 @@ public class RpcRequestPayload implements IInsensitiveBiPacket {
     ) {
         RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess, ConnectionType.NEOFORGE);
         buf.writeVarInt(callId);
-        buf.writeVarInt(registry.index(method));
-        StreamCodec<RegistryFriendlyByteBuf, Object>[] codecs = RpcMethods.codecs(method);
-        for (int i = 0; i < codecs.length; i++) {
-            codecs[i].encode(buf, args[i]);
-        }
-        byte[] data = new byte[buf.readableBytes()];
-        buf.readBytes(data);
+        byte[] data = IRpcPayload.encodeParams(registry, method, args, buf);
         return new RpcRequestPayload(data);
+    }
+
+    byte[] data() {
+        return this.data;
     }
 
     @Override
     public void bidirectionalHandler(IPayloadContext ctx) {
         ctx.enqueueWork(() -> this.handle(ctx));
+    }
+
+    @Override
+    public void handleOnBothSide(Player player) {
+        // 实际处理在 handle(ctx) 中完成
     }
 
     private void handle(IPayloadContext ctx) {
@@ -81,12 +80,7 @@ public class RpcRequestPayload implements IInsensitiveBiPacket {
         );
         int callId = buf.readVarInt();
         Method method = registry.byIndex(buf.readVarInt());
-        StreamCodec<RegistryFriendlyByteBuf, Object>[] codecs = RpcMethods.codecs(method);
-        Object[] args = new Object[codecs.length];
-        for (int i = 0; i < codecs.length; i++) {
-            args[i] = codecs[i].decode(buf);
-        }
-
+        Object[] args = IRpcPayload.decodeParams(method, buf);
         if (!RpcMethods.validate(method, ctx, args)) {
             ctx.reply(RpcResponsePayload.failure(callId, "RPC call rejected by validator: " + method));
             return;
@@ -104,11 +98,6 @@ public class RpcRequestPayload implements IInsensitiveBiPacket {
             throw new RuntimeException("RPC method " + method + " threw an exception", cause);
         }
         ctx.reply(RpcResponsePayload.success(registry, registryAccess, callId, method, result));
-    }
-
-    @Override
-    public void handleOnBothSide(Player player) {
-        // 实际处理在 handle(ctx) 中完成
     }
 
     @Override

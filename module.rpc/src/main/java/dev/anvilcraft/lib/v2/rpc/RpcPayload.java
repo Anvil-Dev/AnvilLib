@@ -31,7 +31,7 @@ import java.lang.reflect.Method;
  *
  * @see RPC#call
  */
-public class RpcPayload implements IInsensitiveBiPacket {
+public class RpcPayload implements IRpcPayload, IInsensitiveBiPacket {
     public static final Type<RpcPayload> TYPE = IPacket.type(AnvilLibRpc.of("rpc"));
     public static final StreamCodec<ByteBuf, RpcPayload> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.BYTE_ARRAY,
@@ -45,34 +45,32 @@ public class RpcPayload implements IInsensitiveBiPacket {
         this.data = data;
     }
 
-    byte[] data() {
-        return this.data;
-    }
-
     /**
      * 在发送侧将方法索引与实参编码为字节。
      *
-     * @param registry      发送侧索引表（服务端为权威表，客户端为已采纳表）
+     * @param registry       发送侧索引表（服务端为权威表，客户端为已采纳表）
      * @param registryAccess 发送侧注册表访问器，用于构造可承载注册表对象的缓冲区
-     * @param method        目标方法
-     * @param args          实参
+     * @param method         目标方法
+     * @param args           实参
      * @return 编码后的网络包
      */
     static RpcPayload encode(RpcRegistry registry, RegistryAccess registryAccess, Method method, Object[] args) {
         RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess, ConnectionType.NEOFORGE);
-        buf.writeVarInt(registry.index(method));
-        StreamCodec<RegistryFriendlyByteBuf, Object>[] codecs = RpcMethods.codecs(method);
-        for (int i = 0; i < codecs.length; i++) {
-            codecs[i].encode(buf, args[i]);
-        }
-        byte[] data = new byte[buf.readableBytes()];
-        buf.readBytes(data);
-        return new RpcPayload(data);
+        return new RpcPayload(IRpcPayload.encodeParams(registry, method, args, buf));
+    }
+
+    byte[] data() {
+        return this.data;
     }
 
     @Override
     public void bidirectionalHandler(IPayloadContext ctx) {
         ctx.enqueueWork(() -> this.handle(ctx));
+    }
+
+    @Override
+    public void handleOnBothSide(Player player) {
+        // 实际处理在 handle(ctx) 中完成（需要 ctx.flow() 与 ctx.player()）
     }
 
     private void handle(IPayloadContext ctx) {
@@ -82,11 +80,7 @@ public class RpcPayload implements IInsensitiveBiPacket {
             Unpooled.wrappedBuffer(this.data), ctx.player().registryAccess(), ConnectionType.NEOFORGE
         );
         Method method = registry.byIndex(buf.readVarInt());
-        StreamCodec<RegistryFriendlyByteBuf, Object>[] codecs = RpcMethods.codecs(method);
-        Object[] args = new Object[codecs.length];
-        for (int i = 0; i < codecs.length; i++) {
-            args[i] = codecs[i].decode(buf);
-        }
+        Object[] args = IRpcPayload.decodeParams(method, buf);
         if (!RpcMethods.validate(method, ctx, args)) {
             // 校验未通过：静默丢弃该单向调用
             return;
@@ -98,11 +92,6 @@ public class RpcPayload implements IInsensitiveBiPacket {
         } catch (InvocationTargetException e) {
             throw new RuntimeException("RPC method " + method + " threw an exception", e.getCause());
         }
-    }
-
-    @Override
-    public void handleOnBothSide(Player player) {
-        // 实际处理在 handle(ctx) 中完成（需要 ctx.flow() 与 ctx.player()）
     }
 
     @Override

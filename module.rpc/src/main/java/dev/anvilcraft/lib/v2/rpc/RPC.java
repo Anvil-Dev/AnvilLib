@@ -79,9 +79,7 @@ public final class RPC {
     /**
      * 调用五参方法。
      */
-    public static <A, B, C, D, E> void call(
-        RpcTarget target, RpcMethodRef.R5<A, B, C, D, E> methodRef, A a, B b, C c, D d, E e
-    ) {
+    public static <A, B, C, D, E> void call(RpcTarget target, RpcMethodRef.R5<A, B, C, D, E> methodRef, A a, B b, C c, D d, E e) {
         dispatch(target, methodRef, a, b, c, d, e);
     }
 
@@ -89,7 +87,14 @@ public final class RPC {
      * 调用六参方法。
      */
     public static <A, B, C, D, E, F> void call(
-        RpcTarget target, RpcMethodRef.R6<A, B, C, D, E, F> methodRef, A a, B b, C c, D d, E e, F f
+        RpcTarget target,
+        RpcMethodRef.R6<A, B, C, D, E, F> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f);
     }
@@ -98,7 +103,15 @@ public final class RPC {
      * 调用七参方法。
      */
     public static <A, B, C, D, E, F, G> void call(
-        RpcTarget target, RpcMethodRef.R7<A, B, C, D, E, F, G> methodRef, A a, B b, C c, D d, E e, F f, G g
+        RpcTarget target,
+        RpcMethodRef.R7<A, B, C, D, E, F, G> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f, g);
     }
@@ -107,7 +120,16 @@ public final class RPC {
      * 调用八参方法。
      */
     public static <A, B, C, D, E, F, G, H> void call(
-        RpcTarget target, RpcMethodRef.R8<A, B, C, D, E, F, G, H> methodRef, A a, B b, C c, D d, E e, F f, G g, H h
+        RpcTarget target,
+        RpcMethodRef.R8<A, B, C, D, E, F, G, H> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f, g, h);
     }
@@ -116,8 +138,17 @@ public final class RPC {
      * 调用九参方法。
      */
     public static <A, B, C, D, E, F, G, H, I> void call(
-        RpcTarget target, RpcMethodRef.R9<A, B, C, D, E, F, G, H, I> methodRef,
-        A a, B b, C c, D d, E e, F f, G g, H h, I i
+        RpcTarget target,
+        RpcMethodRef.R9<A, B, C, D, E, F, G, H, I> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f, g, h, i);
     }
@@ -126,8 +157,18 @@ public final class RPC {
      * 调用十参方法。
      */
     public static <A, B, C, D, E, F, G, H, I, J> void call(
-        RpcTarget target, RpcMethodRef.R10<A, B, C, D, E, F, G, H, I, J> methodRef,
-        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j
+        RpcTarget target,
+        RpcMethodRef.R10<A, B, C, D, E, F, G, H, I, J> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j);
     }
@@ -136,8 +177,19 @@ public final class RPC {
      * 调用十一参方法。
      */
     public static <A, B, C, D, E, F, G, H, I, J, K> void call(
-        RpcTarget target, RpcMethodRef.R11<A, B, C, D, E, F, G, H, I, J, K> methodRef,
-        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k
+        RpcTarget target,
+        RpcMethodRef.R11<A, B, C, D, E, F, G, H, I, J, K> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k);
     }
@@ -146,8 +198,20 @@ public final class RPC {
      * 调用十二参方法。
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L> void call(
-        RpcTarget target, RpcMethodRef.R12<A, B, C, D, E, F, G, H, I, J, K, L> methodRef,
-        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l
+        RpcTarget target,
+        RpcMethodRef.R12<A, B, C, D, E, F, G, H, I, J, K, L> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l);
     }
@@ -156,8 +220,21 @@ public final class RPC {
      * 调用十三参方法。
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M> void call(
-        RpcTarget target, RpcMethodRef.R13<A, B, C, D, E, F, G, H, I, J, K, L, M> methodRef,
-        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m
+        RpcTarget target,
+        RpcMethodRef.R13<A, B, C, D, E, F, G, H, I, J, K, L, M> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m);
     }
@@ -166,8 +243,22 @@ public final class RPC {
      * 调用十四参方法。
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N> void call(
-        RpcTarget target, RpcMethodRef.R14<A, B, C, D, E, F, G, H, I, J, K, L, M, N> methodRef,
-        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m, N n
+        RpcTarget target,
+        RpcMethodRef.R14<A, B, C, D, E, F, G, H, I, J, K, L, M, N> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m,
+        N n
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
     }
@@ -176,8 +267,23 @@ public final class RPC {
      * 调用十五参方法。
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> void call(
-        RpcTarget target, RpcMethodRef.R15<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> methodRef,
-        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m, N n, O o
+        RpcTarget target,
+        RpcMethodRef.R15<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m,
+        N n,
+        O o
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
     }
@@ -186,8 +292,24 @@ public final class RPC {
      * 调用十六参方法。
      */
     public static <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> void call(
-        RpcTarget target, RpcMethodRef.R16<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> methodRef,
-        A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m, N n, O o, P p
+        RpcTarget target,
+        RpcMethodRef.R16<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m,
+        N n,
+        O o,
+        P p
     ) {
         dispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p);
     }
@@ -238,9 +360,7 @@ public final class RPC {
     /**
      * 发起三参、有返回值的远程调用。
      */
-    public static <R, A, B, C> CompletableFuture<R> invoke(
-        RpcTarget target, RpcFunctionRef.F3<R, A, B, C> methodRef, A a, B b, C c
-    ) {
+    public static <R, A, B, C> CompletableFuture<R> invoke(RpcTarget target, RpcFunctionRef.F3<R, A, B, C> methodRef, A a, B b, C c) {
         return invokeDispatch(target, methodRef, a, b, c);
     }
 
@@ -248,7 +368,12 @@ public final class RPC {
      * 发起四参、有返回值的远程调用。
      */
     public static <R, A, B, C, D> CompletableFuture<R> invoke(
-        RpcTarget target, RpcFunctionRef.F4<R, A, B, C, D> methodRef, A a, B b, C c, D d
+        RpcTarget target,
+        RpcFunctionRef.F4<R, A, B, C, D> methodRef,
+        A a,
+        B b,
+        C c,
+        D d
     ) {
         return invokeDispatch(target, methodRef, a, b, c, d);
     }
@@ -257,7 +382,13 @@ public final class RPC {
      * 发起五参、有返回值的远程调用。
      */
     public static <R, A, B, C, D, E> CompletableFuture<R> invoke(
-        RpcTarget target, RpcFunctionRef.F5<R, A, B, C, D, E> methodRef, A a, B b, C c, D d, E e
+        RpcTarget target,
+        RpcFunctionRef.F5<R, A, B, C, D, E> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e
     ) {
         return invokeDispatch(target, methodRef, a, b, c, d, e);
     }
@@ -266,7 +397,14 @@ public final class RPC {
      * 发起六参、有返回值的远程调用。
      */
     public static <R, A, B, C, D, E, F> CompletableFuture<R> invoke(
-        RpcTarget target, RpcFunctionRef.F6<R, A, B, C, D, E, F> methodRef, A a, B b, C c, D d, E e, F f
+        RpcTarget target,
+        RpcFunctionRef.F6<R, A, B, C, D, E, F> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f
     ) {
         return invokeDispatch(target, methodRef, a, b, c, d, e, f);
     }
@@ -296,9 +434,7 @@ public final class RPC {
 
     private static void sendChecked(RpcTarget target, Method method, Object[] args) {
         if (method.getParameterCount() != args.length) {
-            throw new IllegalArgumentException(
-                "RPC method " + method + " expects " + method.getParameterCount() + " arguments, got " + args.length
-            );
+            throw new IllegalArgumentException("RPC method " + method + " expects " + method.getParameterCount() + " arguments, got " + args.length);
         }
         target.send(RpcPayload.encode(target.registry(), target.registryAccess(), method, args));
     }
@@ -312,15 +448,12 @@ public final class RPC {
             throw new IllegalArgumentException("RPC method " + method + " returns void; use RPC.call instead");
         }
         if (method.getParameterCount() != args.length) {
-            throw new IllegalArgumentException(
-                "RPC method " + method + " expects " + method.getParameterCount() + " arguments, got " + args.length
-            );
+            throw new IllegalArgumentException("RPC method " + method + " expects " + method.getParameterCount() + " arguments, got " + args.length);
         }
         CompletableFuture<Object> future = new CompletableFuture<>();
         int callId = target.pending().register(method, future);
         target.send(RpcRequestPayload.encode(target.registry(), target.registryAccess(), callId, method, args));
-        @SuppressWarnings("unchecked")
-        CompletableFuture<R> typed = (CompletableFuture<R>) future;
+        @SuppressWarnings("unchecked") CompletableFuture<R> typed = (CompletableFuture<R>) future;
         return typed;
     }
 }

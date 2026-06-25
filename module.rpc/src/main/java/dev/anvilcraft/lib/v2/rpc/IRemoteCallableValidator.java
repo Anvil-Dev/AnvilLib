@@ -24,7 +24,7 @@ public interface IRemoteCallableValidator {
      * @param method 即将执行的目标方法
      * @param args   已解码的实参
      * @return {@code true} 放行并执行；{@code false} 拒绝（{@link RPC#call} 静默丢弃，
-     *         {@link RPC#invoke} 使调用方 future 以异常失败）
+     * {@link RPC#invoke} 使调用方 future 以异常失败）
      */
     boolean validate(IPayloadContext ctx, Method method, Object[] args);
 }

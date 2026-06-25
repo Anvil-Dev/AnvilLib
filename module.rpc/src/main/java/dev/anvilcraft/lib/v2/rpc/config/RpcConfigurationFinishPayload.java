@@ -17,12 +17,12 @@ public class RpcConfigurationFinishPayload implements IServerboundPacket {
     public static final StreamCodec<ByteBuf, RpcConfigurationFinishPayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 
     @Override
-    public void handleOnServer(Player player) {
+    public void serverHandler(IPayloadContext ctx) {
+        ctx.finishCurrentTask(RpcConfigurationTask.TYPE);
     }
 
     @Override
-    public void serverHandler(IPayloadContext ctx) {
-        ctx.finishCurrentTask(RpcConfigurationTask.TYPE);
+    public void handleOnServer(Player player) {
     }
 
     @Override
