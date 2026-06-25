@@ -1,0 +1,69 @@
+import groovy.json.JsonSlurper
+
+tasks.register("changeModsToml") {
+    mustRunAfter tasks.withType(ProcessResources)
+
+    // 在配置阶段捕获这些值
+    def modulesJsonPath = rootProject.projectDir.absolutePath + "/.github/modules.json"
+    def modId = project.mod_id
+    def buildDirPath = project.buildDir.absolutePath
+
+    doLast {
+        // 读取 modules.json
+        def modulesFile = new File(modulesJsonPath)
+        if (!modulesFile.exists()) {
+            throw new GradleException("modules.json not found at: ${modulesFile.absolutePath}")
+        }
+
+        def jsonSlurper = new JsonSlurper()
+        def modules = jsonSlurper.parse(modulesFile)
+
+        def add = """
+[[dependencies."$modId"]]
+modId = "%s"
+type = "required"
+versionRange = "[2.0.0,)"
+ordering = "NONE"
+side = "BOTH"
+"""
+        var needs = "\n# ========= $modId =========\n"
+
+        if (modId == "anvillib") {
+            // 主模块：依赖所有子模块
+            for (module in modules) {
+                def moduleId = module.module.replace("-", "_")
+                def moduleModId = "anvillib_%s".formatted(moduleId)
+                needs += add.formatted(moduleModId)
+                needs += "\n"
+            }
+        } else {
+            // 子模块：只依赖它的 needs
+            for (module in modules) {
+                def moduleId = module.module.replace("-", "_")
+                def moduleModId = "anvillib_%s".formatted(moduleId)
+                if (modId == moduleModId) {
+                    for (need in module.needs) {
+                        def needModuleId = need.replace("-", "_")
+                        def needModuleModId = "anvillib_%s".formatted(needModuleId)
+                        needs += add.formatted(needModuleModId)
+                        needs += "\n"
+                    }
+                    break
+                }
+            }
+        }
+
+        // 写入到处理后的 mods.toml 文件
+        def modsTomlFile = new File("$buildDirPath/resources/main/META-INF/neoforge.mods.toml")
+        if (modsTomlFile.exists()) {
+            def content = modsTomlFile.text
+            // 移除旧的自动生成内容
+            content = content.replaceAll(/(?s)# ========= $modId =========.*?(?=\n\[|$)/, '')
+            // 追加新内容
+            modsTomlFile.text = content + needs
+            println("Updated ${modsTomlFile.path}")
+        } else {
+            println("Warning: ${modsTomlFile.path} not found")
+        }
+    }
+}

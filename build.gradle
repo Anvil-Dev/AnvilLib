@@ -127,5 +127,6 @@ subprojects {
     apply from: rootProject.file("module.gradle")
     if (it.name != "anvillib-test-neoforge-26.1") {
         apply from: rootProject.file("gradle/scripts/roseau.gradle")
+        apply from: rootProject.file("gradle/scripts/toml.gradle")
     }
 }
