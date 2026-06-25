@@ -1,7 +1,6 @@
 package dev.anvilcraft.lib.v2.rpc.config;
 
 import dev.anvilcraft.lib.v2.rpc.AnvilLibRpc;
-import dev.anvilcraft.lib.v2.rpc.RpcRegistry;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.neoforge.network.configuration.ICustomConfigurationTask;
 
@@ -15,7 +14,7 @@ public record RpcConfigurationTask() implements ICustomConfigurationTask {
 
     @Override
     public void run(Consumer<CustomPacketPayload> sender) {
-        sender.accept(new RpcConfigurationPayload(RpcRegistry.snapshot()));
+        sender.accept(new RpcConfigurationPayload(AnvilLibRpc.REGISTRY.snapshot()));
     }
 
     @Override

@@ -3,7 +3,7 @@ package dev.anvilcraft.lib.v2.rpc.config;
 import dev.anvilcraft.lib.v2.network.packet.IClientboundPacket;
 import dev.anvilcraft.lib.v2.network.packet.IPacket;
 import dev.anvilcraft.lib.v2.rpc.AnvilLibRpc;
-import dev.anvilcraft.lib.v2.rpc.RpcRegistry;
+import dev.anvilcraft.lib.v2.rpc.client.AnvilLibRpcClient;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -34,7 +34,7 @@ public record RpcConfigurationPayload(Map<Integer, String> indexMap) implements 
 
     @Override
     public void clientHandler(IPayloadContext ctx) {
-        ctx.enqueueWork(() -> RpcRegistry.adopt(this.indexMap()));
+        ctx.enqueueWork(() -> AnvilLibRpcClient.REGISTRY.adopt(this.indexMap()));
         ctx.reply(RpcConfigurationFinishPayload.INSTANCE);
     }
 

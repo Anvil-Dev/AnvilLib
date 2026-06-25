@@ -13,6 +13,11 @@ public class AnvilLibRpc {
     public static final String MAIN_ID = "anvillib";
     public static final String MOD_ID = "anvillib_rpc";
 
+    /**
+     * 服务端 / 通用侧的权威索引表：本地扫描填充，从不被服务端下发覆盖。
+     */
+    public static final RpcRegistry REGISTRY = new RpcRegistry(true);
+
     public AnvilLibRpc(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.register(this);
     }

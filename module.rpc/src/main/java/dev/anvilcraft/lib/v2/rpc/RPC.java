@@ -219,6 +219,6 @@ public final class RPC {
                 "RPC method " + method + " expects " + method.getParameterCount() + " arguments, got " + args.length
             );
         }
-        target.send(new RpcPayload(method, args));
+        target.send(RpcPayload.encode(target.registry(), target.registryAccess(), method, args));
     }
 }

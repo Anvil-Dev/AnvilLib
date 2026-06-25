@@ -2,64 +2,103 @@ package dev.anvilcraft.lib.v2.rpc;
 
 import dev.anvilcraft.lib.v2.network.packet.IInsensitiveBiPacket;
 import dev.anvilcraft.lib.v2.network.packet.IPacket;
+import dev.anvilcraft.lib.v2.rpc.client.AnvilLibRpcClient;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.network.connection.ConnectionType;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * 承载一次远程调用的网络包：携带目标方法的定位信息与编码后的实参，在目标端解码后执行该方法。
+ * 承载一次远程调用的网络包。
  *
- * <p>双向包：服务端与客户端均可作为发送端或接收端。</p>
+ * <p>线上仅传输一段不透明字节（{@code 索引 + 编码后的实参}）。仿照
+ * {@link dev.anvilcraft.lib.v2.network.packet 网络包} 中 SyncPayload 的做法，真正依赖「当前侧」的
+ * 编解码在已知方向的位置进行：</p>
+ * <ul>
+ *     <li><b>编码</b>在发送侧（{@link RpcTarget} 已知发送方向，故已知使用哪个 {@link RpcRegistry}）；</li>
+ *     <li><b>解码</b>在处理侧（{@link IPayloadContext#flow()} 已知接收方向）——而非 {@link StreamCodec}
+ *     的解码回调中（其运行于网络线程，无法可靠判断当前侧）。</li>
+ * </ul>
  *
  * @see RPC#call
  */
 public class RpcPayload implements IInsensitiveBiPacket {
     public static final Type<RpcPayload> TYPE = IPacket.type(AnvilLibRpc.of("rpc"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, RpcPayload> STREAM_CODEC = StreamCodec.of(
-        RpcPayload::encode,
-        RpcPayload::decode
+    public static final StreamCodec<ByteBuf, RpcPayload> STREAM_CODEC = StreamCodec.composite(
+        ByteBufCodecs.BYTE_ARRAY,
+        RpcPayload::data,
+        RpcPayload::new
     );
 
-    private final Method method;
-    private final Object[] args;
+    private final byte[] data;
 
-    RpcPayload(Method method, Object[] args) {
-        this.method = method;
-        this.args = args;
+    RpcPayload(byte[] data) {
+        this.data = data;
     }
 
-    private static void encode(RegistryFriendlyByteBuf buf, RpcPayload payload) {
-        ByteBufCodecs.VAR_INT.encode(buf, RpcRegistry.index(payload.method));
-        StreamCodec<RegistryFriendlyByteBuf, Object>[] codecs = RpcMethods.codecs(payload.method);
+    byte[] data() {
+        return this.data;
+    }
+
+    /**
+     * 在发送侧将方法索引与实参编码为字节。
+     *
+     * @param registry      发送侧索引表（服务端为权威表，客户端为已采纳表）
+     * @param registryAccess 发送侧注册表访问器，用于构造可承载注册表对象的缓冲区
+     * @param method        目标方法
+     * @param args          实参
+     * @return 编码后的网络包
+     */
+    static RpcPayload encode(RpcRegistry registry, RegistryAccess registryAccess, Method method, Object[] args) {
+        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess, ConnectionType.NEOFORGE);
+        buf.writeVarInt(registry.index(method));
+        StreamCodec<RegistryFriendlyByteBuf, Object>[] codecs = RpcMethods.codecs(method);
         for (int i = 0; i < codecs.length; i++) {
-            codecs[i].encode(buf, payload.args[i]);
+            codecs[i].encode(buf, args[i]);
         }
+        byte[] data = new byte[buf.readableBytes()];
+        buf.readBytes(data);
+        return new RpcPayload(data);
     }
 
-    private static RpcPayload decode(RegistryFriendlyByteBuf buf) {
-        Method method = RpcRegistry.byIndex(ByteBufCodecs.VAR_INT.decode(buf));
+    @Override
+    public void bidirectionalHandler(IPayloadContext ctx) {
+        ctx.enqueueWork(() -> this.handle(ctx));
+    }
+
+    private void handle(IPayloadContext ctx) {
+        // 接收 clientbound 表示本侧为客户端，使用已采纳的客户端表；serverbound 则本侧为服务端，使用权威表
+        RpcRegistry registry = ctx.flow().isClientbound() ? AnvilLibRpcClient.REGISTRY : AnvilLibRpc.REGISTRY;
+        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(
+            Unpooled.wrappedBuffer(this.data), ctx.player().registryAccess(), ConnectionType.NEOFORGE
+        );
+        Method method = registry.byIndex(buf.readVarInt());
         StreamCodec<RegistryFriendlyByteBuf, Object>[] codecs = RpcMethods.codecs(method);
         Object[] args = new Object[codecs.length];
         for (int i = 0; i < codecs.length; i++) {
             args[i] = codecs[i].decode(buf);
         }
-        return new RpcPayload(method, args);
+        try {
+            method.invoke(null, args);
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException("Cannot invoke RPC method " + method, e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException("RPC method " + method + " threw an exception", e.getCause());
+        }
     }
 
     @Override
     public void handleOnBothSide(Player player) {
-        try {
-            this.method.invoke(null, this.args);
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException("Cannot invoke RPC method " + this.method, e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("RPC method " + this.method + " threw an exception", e.getCause());
-        }
+        // 实际处理在 handle(ctx) 中完成（需要 ctx.flow() 与 ctx.player()）
     }
 
     @Override

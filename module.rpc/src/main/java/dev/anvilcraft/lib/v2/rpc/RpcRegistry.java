@@ -5,6 +5,7 @@ import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.moddiscovery.ModFileInfo;
 import net.neoforged.neoforgespi.language.ModFileScanData;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.ElementType;
 import java.lang.reflect.Method;
@@ -14,28 +15,40 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 全局 {@link RemoteCallable} 方法索引表。
+ * {@link RemoteCallable} 方法的索引表。索引以「规范键」{@code 全限定类名 + '#' + 方法名 + 方法描述符}
+ * 为单位分配，网络包仅传输整数索引。
  *
- * <p>索引以「规范键」{@code 全限定类名 + '#' + 方法名 + 方法描述符} 为单位分配，网络包仅传输整数索引。</p>
+ * <h2>双实例与一致性</h2>
+ * <p>本类按服务端 / 客户端各维护一个实例：</p>
+ * <ul>
+ *     <li><b>权威实例</b>（{@link AnvilLibRpc#REGISTRY}）：由本地扫描填充，<em>从不</em>被
+ *     {@link #adopt(Map)} 覆盖。服务端在 Configuration 阶段用 {@link #snapshot()} 将其映射下发给客户端。</li>
+ *     <li><b>客户端实例</b>（{@code AnvilLibRpcClient.REGISTRY}）：仅通过 {@link #adopt(Map)} 采纳服务端
+ *     下发的映射。</li>
+ * </ul>
  *
- * <h2>一致性</h2>
- * <p>服务端为权威方：服务端扫描自身的 {@link RemoteCallable} 方法并分配索引，随后在 Configuration 阶段
- * 通过 {@link dev.anvilcraft.lib.v2.rpc.config.RpcConfigurationPayload} 将 {@code 索引 -> 规范键} 映射下发给客户端；客户端调用
- * {@link #adopt(Map)} 用服务端映射覆盖本地映射。由此两端共享同一套索引，双向 RPC 均按此索引收发，
- * 而不依赖两端各自扫描结果的巧合一致。</p>
- *
- * <p>键到 {@link Method} 的解析按需进行（见 {@link RpcMethods#resolve}），因此客户端采纳一个含有本地
- * 不存在的方法的映射不会立即失败——只有真正调用到该方法时才会报错。</p>
+ * <p>由此即便客户端断开某服务器后再开局域网，权威实例仍是本地扫描结果（未被污染），不会把上一个服务器的
+ * 映射当作自己的下发出去。编解码时按方向选择实例（发送方向决定编码端、{@code ctx.flow()} 决定解码端），
+ * 双向 RPC 的索引始终一致。</p>
  */
 @Slf4j
 @ApiStatus.Internal
 public final class RpcRegistry {
     private static final String ANNOTATION_DESCRIPTOR = "L" + RemoteCallable.class.getName().replace('.', '/') + ";";
 
-    private static Map<String, Integer> indexByKey;
-    private static Map<Integer, String> keyByIndex;
+    /**
+     * 是否为权威实例：权威实例在未初始化时执行本地扫描，非权威（客户端）实例则要求先经
+     * {@link #adopt(Map)} 采纳服务端映射。
+     */
+    private final boolean authoritative;
+    private @Nullable Map<String, Integer> indexByKey;
+    private @Nullable Map<Integer, String> keyByIndex;
 
-    private RpcRegistry() {
+    /**
+     * @param authoritative {@code true} 为权威（服务端）实例，按需本地扫描；{@code false} 为客户端实例，仅采纳下发
+     */
+    public RpcRegistry(boolean authoritative) {
+        this.authoritative = authoritative;
     }
 
     /**
@@ -44,15 +57,12 @@ public final class RpcRegistry {
      * @param method 已注册的 {@link RemoteCallable} 方法
      * @return 该方法的索引
      */
-    static synchronized int index(Method method) {
+    public synchronized int index(Method method) {
         ensureLoaded();
         String key = canonicalKey(method);
         Integer index = indexByKey.get(key);
         if (index == null) {
-            throw new IllegalStateException(
-                "Method is not a registered @RemoteCallable: " + key
-                + " (is it present and annotated on the authoritative/server side?)"
-            );
+            throw new IllegalStateException("Method is not a registered @RemoteCallable: " + key);
         }
         return index;
     }
@@ -63,7 +73,7 @@ public final class RpcRegistry {
      * @param index 方法索引
      * @return 对应的 {@link RemoteCallable} 方法
      */
-    static synchronized Method byIndex(int index) {
+    public synchronized Method byIndex(int index) {
         ensureLoaded();
         String key = keyByIndex.get(index);
         if (key == null) {
@@ -77,34 +87,35 @@ public final class RpcRegistry {
      *
      * @return 索引到规范键的映射
      */
-    @ApiStatus.Internal
-    public static synchronized Map<Integer, String> snapshot() {
+    public synchronized Map<Integer, String> snapshot() {
         ensureLoaded();
         return new HashMap<>(keyByIndex);
     }
 
     /**
-     * 用给定（服务端权威）映射覆盖本地索引表。
+     * 用给定（服务端权威）映射覆盖本实例的索引表。
      *
      * @param map 服务端下发的 {@code 索引 -> 规范键} 映射
      */
-    @ApiStatus.Internal
-    public static synchronized void adopt(Map<Integer, String> map) {
+    public synchronized void adopt(Map<Integer, String> map) {
         Map<Integer, String> byIndex = new HashMap<>(map);
         Map<String, Integer> byKey = new HashMap<>();
         byIndex.forEach((index, key) -> byKey.put(key, index));
-        keyByIndex = byIndex;
-        indexByKey = byKey;
+        this.keyByIndex = byIndex;
+        this.indexByKey = byKey;
         log.debug("Adopted {} authoritative @RemoteCallable index mapping(s)", byIndex.size());
     }
 
-    private static void ensureLoaded() {
+    private void ensureLoaded() {
         if (indexByKey != null) return;
+        if (!authoritative) {
+            throw new IllegalStateException("RPC index mapping has not been received from the server yet");
+        }
         scan();
     }
 
     @SuppressWarnings("UnstableApiUsage")
-    private static void scan() {
+    private void scan() {
         List<String> keys = new ArrayList<>();
         for (ModFileInfo fileInfo : FMLLoader.getCurrent().getLoadingModList().getModFiles()) {
             for (ModFileScanData.AnnotationData annotation : fileInfo.getFile().getScanResult().getAnnotations()) {
@@ -124,8 +135,8 @@ public final class RpcRegistry {
             byKey.put(keys.get(i), i);
             log.debug("Registered @RemoteCallable [{}] {}", i, keys.get(i));
         }
-        keyByIndex = byIndex;
-        indexByKey = byKey;
+        this.keyByIndex = byIndex;
+        this.indexByKey = byKey;
         log.info("Scan complete - {} @RemoteCallable method(s) registered.", keys.size());
     }
 
