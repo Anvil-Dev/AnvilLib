@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.sync.management;
 import dev.anvilcraft.lib.v2.sync.AnvilLibSync;
 import dev.anvilcraft.lib.v2.sync.network.payload.SyncConfigurationPayload;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.moddiscovery.ModFileInfo;
 import net.neoforged.neoforgespi.language.ModFileScanData;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+@Slf4j
 public class SyncConfigManager {
     public static final String SYNC_DESCRIPTOR = "Ldev/anvilcraft/lib/v2/sync/annotation/Sync;";
     private static final String SYNC_PROXY_DESC = "Ldev/anvilcraft/lib/v2/sync/management/SyncProxy;";
@@ -35,6 +37,7 @@ public class SyncConfigManager {
                 if (!annotation.annotationType().getDescriptor().equals(SyncConfigManager.SYNC_DESCRIPTOR)) continue;
                 if (annotation.targetType() != ElementType.TYPE) continue;
                 String className = annotation.clazz().getClassName();
+                log.info("Loading SyncConfig: {}", className);
                 ClassReader classReader = new ClassReader(className);
                 FieldListingVisitor fieldListingVisitor = new FieldListingVisitor(className, null);
                 classReader.accept(fieldListingVisitor, 0);
