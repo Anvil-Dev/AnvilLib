@@ -410,6 +410,221 @@ public final class RPC {
     }
 
     /**
+     * 发起七参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F, G> CompletableFuture<R> invoke(
+        RpcTarget target,
+        RpcFunctionRef.F7<R, A, B, C, D, E, F, G> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f, g);
+    }
+
+    /**
+     * 发起八参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F, G, H> CompletableFuture<R> invoke(
+        RpcTarget target,
+        RpcFunctionRef.F8<R, A, B, C, D, E, F, G, H> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f, g, h);
+    }
+
+    /**
+     * 发起九参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F, G, H, I> CompletableFuture<R> invoke(
+        RpcTarget target,
+        RpcFunctionRef.F9<R, A, B, C, D, E, F, G, H, I> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f, g, h, i);
+    }
+
+    /**
+     * 发起十参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F, G, H, I, J> CompletableFuture<R> invoke(
+        RpcTarget target,
+        RpcFunctionRef.F10<R, A, B, C, D, E, F, G, H, I, J> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j);
+    }
+
+    /**
+     * 发起十一参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F, G, H, I, J, K> CompletableFuture<R> invoke(
+        RpcTarget target,
+        RpcFunctionRef.F11<R, A, B, C, D, E, F, G, H, I, J, K> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k);
+    }
+
+    /**
+     * 发起十二参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F, G, H, I, J, K, L> CompletableFuture<R> invoke(
+        RpcTarget target,
+        RpcFunctionRef.F12<R, A, B, C, D, E, F, G, H, I, J, K, L> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l);
+    }
+
+    /**
+     * 发起十三参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F, G, H, I, J, K, L, M> CompletableFuture<R> invoke(
+        RpcTarget target,
+        RpcFunctionRef.F13<R, A, B, C, D, E, F, G, H, I, J, K, L, M> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m);
+    }
+
+    /**
+     * 发起十四参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F, G, H, I, J, K, L, M, N> CompletableFuture<R> invoke(
+        RpcTarget target,
+        RpcFunctionRef.F14<R, A, B, C, D, E, F, G, H, I, J, K, L, M, N> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m,
+        N n
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
+    }
+
+    /**
+     * 发起十五参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> CompletableFuture<R> invoke(
+        RpcTarget target,
+        RpcFunctionRef.F15<R, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m,
+        N n,
+        O o
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
+    }
+
+    /**
+     * 发起十六参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> CompletableFuture<R> invoke(
+        RpcTarget target,
+        RpcFunctionRef.F16<R, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m,
+        N n,
+        O o,
+        P p
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p);
+    }
+
+    /**
      * 逃生口：按类与方法名发起有返回值的远程调用，参数个数不限。
      *
      * <p>与 {@link #callByName} 同理，失去对实参的编译期类型检查；返回类型由调用者通过 {@code <R>} 指定，
