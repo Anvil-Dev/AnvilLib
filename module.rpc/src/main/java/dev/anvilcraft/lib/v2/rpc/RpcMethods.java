@@ -6,6 +6,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.AccessFlag;
@@ -17,6 +18,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,6 +49,10 @@ final class RpcMethods {
      * 返回值编解码器解析缓存。
      */
     private static final Map<Method, StreamCodec<RegistryFriendlyByteBuf, Object>> RETURN_CODEC_CACHE = new ConcurrentHashMap<>();
+    /**
+     * 方法校验器实例缓存。{@code Optional.empty()} 表示该方法无校验器（始终放行）。
+     */
+    private static final Map<Method, Optional<IRemoteCallableValidator>> VALIDATOR_CACHE = new ConcurrentHashMap<>();
 
     static {
         // int / long 默认使用 VarInt / VarLong，与原版网络包惯例一致
@@ -305,6 +311,39 @@ final class RpcMethods {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new IllegalStateException(
                 "Cannot read StreamCodec from " + clazz.getName() + "." + fieldName, e
+            );
+        }
+    }
+
+    /**
+     * 运行目标方法的接收端校验器。无校验器（默认哨兵）时始终放行。
+     *
+     * @param method 目标方法
+     * @param ctx    网络包上下文
+     * @param args   已解码的实参
+     * @return 是否允许执行
+     */
+    static boolean validate(Method method, IPayloadContext ctx, Object[] args) {
+        IRemoteCallableValidator validator = VALIDATOR_CACHE
+            .computeIfAbsent(method, RpcMethods::resolveValidator)
+            .orElse(null);
+        return validator == null || validator.validate(ctx, method, args);
+    }
+
+    private static Optional<IRemoteCallableValidator> resolveValidator(Method method) {
+        RemoteCallable annotation = method.getAnnotation(RemoteCallable.class);
+        Class<? extends IRemoteCallableValidator> type = annotation.validator();
+        // 默认哨兵：注解未指定校验器，等价于始终放行
+        if (type == IRemoteCallableValidator.class) {
+            return Optional.empty();
+        }
+        try {
+            var constructor = type.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return Optional.of(constructor.newInstance());
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(
+                "Cannot instantiate RPC validator " + type.getName() + " (needs a no-arg constructor)", e
             );
         }
     }

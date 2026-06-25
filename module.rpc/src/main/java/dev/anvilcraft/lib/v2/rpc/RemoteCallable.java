@@ -17,4 +17,14 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RemoteCallable {
+    /**
+     * 接收端校验器：在方法执行前判定本次调用是否被允许。
+     *
+     * <p>默认值 {@link IRemoteCallableValidator} 本身为「始终放行」哨兵；指定其它实现类时，
+     * 该类须有无参构造器，框架会反射实例化并缓存。校验不通过时，{@link RPC#call} 静默丢弃，
+     * {@link RPC#invoke} 使调用方 future 以异常失败。</p>
+     *
+     * @return 校验器类型
+     */
+    Class<? extends IRemoteCallableValidator> validator() default IRemoteCallableValidator.class;
 }

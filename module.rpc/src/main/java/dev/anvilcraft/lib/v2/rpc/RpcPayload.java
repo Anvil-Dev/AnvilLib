@@ -87,6 +87,10 @@ public class RpcPayload implements IInsensitiveBiPacket {
         for (int i = 0; i < codecs.length; i++) {
             args[i] = codecs[i].decode(buf);
         }
+        if (!RpcMethods.validate(method, ctx, args)) {
+            // 校验未通过：静默丢弃该单向调用
+            return;
+        }
         try {
             method.invoke(null, args);
         } catch (IllegalAccessException e) {

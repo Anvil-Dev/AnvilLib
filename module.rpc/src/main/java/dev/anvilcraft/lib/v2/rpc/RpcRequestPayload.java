@@ -87,6 +87,11 @@ public class RpcRequestPayload implements IInsensitiveBiPacket {
             args[i] = codecs[i].decode(buf);
         }
 
+        if (!RpcMethods.validate(method, ctx, args)) {
+            ctx.reply(RpcResponsePayload.failure(callId, "RPC call rejected by validator: " + method));
+            return;
+        }
+
         Object result;
         try {
             result = method.invoke(null, args);
