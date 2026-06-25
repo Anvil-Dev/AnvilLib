@@ -12,6 +12,7 @@ dependencies {
     interfaceInjectionData(implementation project(":anvillib-recipe-neoforge-26.1"))
     implementation project(":anvillib-registrum-neoforge-26.1")
     implementation project(":anvillib-rendering-neoforge-26.1")
+    implementation project(":anvillib-rpc-neoforge-26.1")
     implementation project(":anvillib-space-select-neoforge-26.1")
     implementation project(":anvillib-sync-neoforge-26.1")
     implementation project(":anvillib-util-neoforge-26.1")
