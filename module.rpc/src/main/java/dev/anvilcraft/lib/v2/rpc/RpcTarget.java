@@ -35,6 +35,13 @@ public interface RpcTarget {
     RegistryAccess registryAccess();
 
     /**
+     * 发起方（本侧）待响应调用登记表，用于 {@link RPC#invoke} 关联响应。
+     *
+     * @return 发送侧的 pending 表
+     */
+    RpcPendingCalls pending();
+
+    /**
      * 目标端为指定客户端玩家（服务端 -&gt; 客户端）。
      *
      * @param player 接收远程调用的服务端玩家
@@ -55,6 +62,11 @@ public interface RpcTarget {
             @Override
             public RegistryAccess registryAccess() {
                 return player.registryAccess();
+            }
+
+            @Override
+            public RpcPendingCalls pending() {
+                return AnvilLibRpc.PENDING;
             }
         };
     }

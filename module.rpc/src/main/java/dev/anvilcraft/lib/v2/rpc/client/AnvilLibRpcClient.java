@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.rpc.client;
 
 import dev.anvilcraft.lib.v2.rpc.AnvilLibRpc;
+import dev.anvilcraft.lib.v2.rpc.RpcPendingCalls;
 import dev.anvilcraft.lib.v2.rpc.RpcRegistry;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
@@ -17,4 +18,9 @@ public class AnvilLibRpcClient {
      * 客户端索引表：仅通过 {@link RpcRegistry#adopt} 采纳服务端下发的映射。
      */
     public static final RpcRegistry REGISTRY = new RpcRegistry(false);
+
+    /**
+     * 客户端侧待响应的 {@link dev.anvilcraft.lib.v2.rpc.RPC#invoke} 调用登记表。
+     */
+    public static final RpcPendingCalls PENDING = new RpcPendingCalls();
 }

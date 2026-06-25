@@ -43,6 +43,10 @@ final class RpcMethods {
      * 参数编解码器解析缓存。
      */
     private static final Map<Method, StreamCodec<RegistryFriendlyByteBuf, Object>[]> CODEC_CACHE = new ConcurrentHashMap<>();
+    /**
+     * 返回值编解码器解析缓存。
+     */
+    private static final Map<Method, StreamCodec<RegistryFriendlyByteBuf, Object>> RETURN_CODEC_CACHE = new ConcurrentHashMap<>();
 
     static {
         // int / long 默认使用 VarInt / VarLong，与原版网络包惯例一致
@@ -168,13 +172,8 @@ final class RpcMethods {
         if (annotation != null) {
             return readCodecField(annotation.clazz(), annotation.field());
         }
-        // 2. 其次使用 ByteBufCodecs 中按类型提供的默认编解码器
-        StreamCodec<?, ?> codec = DEFAULTS.get(parameter.getType());
-        if (codec != null) {
-            return codec;
-        }
-        // 3. 最后回退到参数类型自身声明的 public static final StreamCodec 字段
-        codec = findDeclaredCodec(parameter.getType());
+        // 2. 其次按类型解析（默认编解码器 / 类型自身声明的字段）
+        StreamCodec<?, ?> codec = codecForType(parameter.getType());
         if (codec != null) {
             return codec;
         }
@@ -183,6 +182,57 @@ final class RpcMethods {
             + "; annotate the parameter with @CallableParam, or declare a public static final StreamCodec field in "
             + parameter.getType().getName()
         );
+    }
+
+    /**
+     * 解析方法返回值的编解码器（用于有返回值的 {@link RPC#invoke} 调用）。
+     *
+     * <p>解析顺序：方法上的 {@link CallableParam} 指定的字段 &rarr; 返回类型的默认编解码器 &rarr;
+     * 返回类型自身声明的 {@code public static final StreamCodec} 字段。</p>
+     *
+     * @param method 目标方法（返回类型不得为 {@code void}）
+     * @return 返回值编解码器
+     */
+    static StreamCodec<RegistryFriendlyByteBuf, Object> returnCodec(Method method) {
+        return RETURN_CODEC_CACHE.computeIfAbsent(method, RpcMethods::resolveReturnCodec);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static StreamCodec<RegistryFriendlyByteBuf, Object> resolveReturnCodec(Method method) {
+        Class<?> returnType = method.getReturnType();
+        if (returnType == void.class) {
+            throw new IllegalStateException("@RemoteCallable method has no return value: " + method + "; use RPC.call instead");
+        }
+        StreamCodec<?, ?> codec;
+        CallableParam annotation = method.getAnnotation(CallableParam.class);
+        if (annotation != null) {
+            codec = readCodecField(annotation.clazz(), annotation.field());
+        } else {
+            codec = codecForType(returnType);
+        }
+        if (codec == null) {
+            throw new IllegalStateException(
+                "No StreamCodec for return type " + returnType.getName()
+                + "; annotate the method with @CallableParam, or declare a public static final StreamCodec field in "
+                + returnType.getName()
+            );
+        }
+        return (StreamCodec<RegistryFriendlyByteBuf, Object>) codec;
+    }
+
+    /**
+     * 按类型解析编解码器：先查 {@link ByteBufCodecs} 默认编解码器，再回退到该类型自身声明的
+     * {@code public static final StreamCodec} 字段。
+     *
+     * @param type 目标类型
+     * @return 匹配的编解码器；若都没有则返回 {@code null}
+     */
+    private static @Nullable StreamCodec<?, ?> codecForType(Class<?> type) {
+        StreamCodec<?, ?> codec = DEFAULTS.get(type);
+        if (codec != null) {
+            return codec;
+        }
+        return findDeclaredCodec(type);
     }
 
     /**

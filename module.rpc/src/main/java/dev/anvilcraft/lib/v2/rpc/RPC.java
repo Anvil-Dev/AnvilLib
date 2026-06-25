@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 远程过程调用入口。
@@ -208,6 +209,86 @@ public final class RPC {
         sendChecked(target, method, args);
     }
 
+    /**
+     * 发起无参、有返回值的远程调用。
+     *
+     * @param target    目标端
+     * @param methodRef 指向 {@link RemoteCallable} 静态方法的方法引用
+     * @param <R>       返回类型
+     * @return 在收到对端响应时兑现的 future
+     */
+    public static <R> CompletableFuture<R> invoke(RpcTarget target, RpcFunctionRef.F0<R> methodRef) {
+        return invokeDispatch(target, methodRef);
+    }
+
+    /**
+     * 发起单参、有返回值的远程调用。
+     */
+    public static <R, A> CompletableFuture<R> invoke(RpcTarget target, RpcFunctionRef.F1<R, A> methodRef, A a) {
+        return invokeDispatch(target, methodRef, a);
+    }
+
+    /**
+     * 发起双参、有返回值的远程调用。
+     */
+    public static <R, A, B> CompletableFuture<R> invoke(RpcTarget target, RpcFunctionRef.F2<R, A, B> methodRef, A a, B b) {
+        return invokeDispatch(target, methodRef, a, b);
+    }
+
+    /**
+     * 发起三参、有返回值的远程调用。
+     */
+    public static <R, A, B, C> CompletableFuture<R> invoke(
+        RpcTarget target, RpcFunctionRef.F3<R, A, B, C> methodRef, A a, B b, C c
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c);
+    }
+
+    /**
+     * 发起四参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D> CompletableFuture<R> invoke(
+        RpcTarget target, RpcFunctionRef.F4<R, A, B, C, D> methodRef, A a, B b, C c, D d
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d);
+    }
+
+    /**
+     * 发起五参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E> CompletableFuture<R> invoke(
+        RpcTarget target, RpcFunctionRef.F5<R, A, B, C, D, E> methodRef, A a, B b, C c, D d, E e
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e);
+    }
+
+    /**
+     * 发起六参、有返回值的远程调用。
+     */
+    public static <R, A, B, C, D, E, F> CompletableFuture<R> invoke(
+        RpcTarget target, RpcFunctionRef.F6<R, A, B, C, D, E, F> methodRef, A a, B b, C c, D d, E e, F f
+    ) {
+        return invokeDispatch(target, methodRef, a, b, c, d, e, f);
+    }
+
+    /**
+     * 逃生口：按类与方法名发起有返回值的远程调用，参数个数不限。
+     *
+     * <p>与 {@link #callByName} 同理，失去对实参的编译期类型检查；返回类型由调用者通过 {@code <R>} 指定，
+     * 运行时若与方法实际返回类型不符将导致解码或转型失败。</p>
+     *
+     * @param target     目标端
+     * @param clazz      目标方法所属类
+     * @param methodName 目标方法名（须唯一且为 {@link RemoteCallable} 静态方法）
+     * @param args       实参
+     * @param <R>        返回类型
+     * @return 在收到对端响应时兑现的 future
+     */
+    public static <R> CompletableFuture<R> invokeByName(RpcTarget target, Class<?> clazz, String methodName, Object... args) {
+        Method method = RpcMethods.resolveByName(clazz, methodName);
+        return invokeChecked(target, method, args);
+    }
+
     private static void dispatch(RpcTarget target, Serializable methodRef, Object... args) {
         Method method = LambdaResolver.resolve(methodRef);
         sendChecked(target, method, args);
@@ -220,5 +301,26 @@ public final class RPC {
             );
         }
         target.send(RpcPayload.encode(target.registry(), target.registryAccess(), method, args));
+    }
+
+    private static <R> CompletableFuture<R> invokeDispatch(RpcTarget target, Serializable methodRef, Object... args) {
+        return invokeChecked(target, LambdaResolver.resolve(methodRef), args);
+    }
+
+    private static <R> CompletableFuture<R> invokeChecked(RpcTarget target, Method method, Object[] args) {
+        if (method.getReturnType() == void.class) {
+            throw new IllegalArgumentException("RPC method " + method + " returns void; use RPC.call instead");
+        }
+        if (method.getParameterCount() != args.length) {
+            throw new IllegalArgumentException(
+                "RPC method " + method + " expects " + method.getParameterCount() + " arguments, got " + args.length
+            );
+        }
+        CompletableFuture<Object> future = new CompletableFuture<>();
+        int callId = target.pending().register(method, future);
+        target.send(RpcRequestPayload.encode(target.registry(), target.registryAccess(), callId, method, args));
+        @SuppressWarnings("unchecked")
+        CompletableFuture<R> typed = (CompletableFuture<R>) future;
+        return typed;
     }
 }

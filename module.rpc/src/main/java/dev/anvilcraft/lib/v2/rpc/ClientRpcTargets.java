@@ -38,6 +38,11 @@ final class ClientRpcTargets {
                 );
                 return connection.registryAccess();
             }
+
+            @Override
+            public RpcPendingCalls pending() {
+                return AnvilLibRpcClient.PENDING;
+            }
         };
     }
 }

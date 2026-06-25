@@ -18,6 +18,11 @@ public class AnvilLibRpc {
      */
     public static final RpcRegistry REGISTRY = new RpcRegistry(true);
 
+    /**
+     * 服务端侧待响应的 {@link RPC#invoke} 调用登记表。
+     */
+    public static final RpcPendingCalls PENDING = new RpcPendingCalls();
+
     public AnvilLibRpc(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.register(this);
     }
