@@ -15,7 +15,8 @@ public class SyncClassProcessor implements ClassProcessor {
 
     @Override
     public boolean handlesClass(SelectionContext context) {
-        return SyncTargetIndex.contains(context.type().getInternalName());
+        String internalName = context.type().getInternalName();
+        return SyncTargetIndex.contains(internalName) || LazySyncTargetIndex.contains(internalName);
     }
 
     @Override
@@ -23,9 +24,15 @@ public class SyncClassProcessor implements ClassProcessor {
         Type type = context.type();
         ClassNode node = context.node();
 
-        boolean modified = SyncBytecodeInjector.inject(node);
+        boolean modified = false;
+        if (SyncTargetIndex.contains(type.getInternalName())) {
+            modified |= SyncBytecodeInjector.inject(node);
+        }
+        if (LazySyncTargetIndex.contains(type.getInternalName())) {
+            modified |= LazySyncBytecodeInjector.inject(node);
+        }
         if (modified) {
-            log.debug("Injected setParent calls into {}", type.getInternalName());
+            log.debug("Injected sync calls into {}", type.getInternalName());
             return ComputeFlags.COMPUTE_FRAMES;
         }
         return ComputeFlags.NO_REWRITE;
