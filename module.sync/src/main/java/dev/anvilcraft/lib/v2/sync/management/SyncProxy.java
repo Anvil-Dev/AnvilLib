@@ -47,7 +47,7 @@ public class SyncProxy<T> {
     public SyncProxy(T value) {
         this.value = value;
         this.codec = Objects.requireNonNull(
-            this.defaultCodec(Util.cast(value.getClass())),
+            SyncProxy.defaultCodec(Util.cast(value.getClass())),
             "No default codec for type: " + value.getClass().getName()
         );
     }
@@ -59,7 +59,7 @@ public class SyncProxy<T> {
 
     public SyncProxy(Class<T> type) {
         this.value = null;
-        this.codec = Objects.requireNonNull(this.defaultCodec(type), "No default codec for type: " + type.getName());
+        this.codec = Objects.requireNonNull(SyncProxy.defaultCodec(type), "No default codec for type: " + type.getName());
     }
 
     public SyncProxy(StreamCodec<? extends ByteBuf, T> codec) {
@@ -120,7 +120,7 @@ public class SyncProxy<T> {
 
     @SuppressWarnings("unchecked")
     @Nullable
-    StreamCodec<? extends ByteBuf, T> defaultCodec(Class<T> type) {
+    static <T> StreamCodec<? extends ByteBuf, T> defaultCodec(Class<T> type) {
         if (type == CompoundTag.class) {
             return (StreamCodec<? extends ByteBuf, T>) ByteBufCodecs.TAG;
         }
