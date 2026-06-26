@@ -2,6 +2,8 @@ package dev.anvilcraft.lib.v2.sync.management;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.PropertyMap;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import dev.anvilcraft.lib.v2.sync.AnvilLibSync;
 import dev.anvilcraft.lib.v2.sync.util.SyncDirection;
 import dev.anvilcraft.lib.v2.util.Util;
@@ -22,6 +24,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.joml.Quaternionfc;
 import org.joml.Vector3fc;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.Objects;
 import javax.annotation.Nullable;
 
@@ -180,6 +185,50 @@ public class SyncProxy<T> {
         }
         if (type == Byte[].class || type == byte[].class) {
             return (StreamCodec<? extends ByteBuf, T>) ByteBufCodecs.BYTE_ARRAY;
+        }
+        return SyncProxy.codecFromType(type);
+    }
+
+    /**
+     * 在目标类型自身声明的 {@code public static final} 字段中查找可用的
+     * {@link Codec} 或 {@link MapCodec}，并转换为 {@link StreamCodec}。
+     *
+     * <p>查找规则：</p>
+     * <ul>
+     *   <li>仅扫描 {@code type} 自身声明的字段（不含父类），取 {@code public static final} 字段；</li>
+     *   <li>字段类型为 {@link Codec Codec&lt;T&gt;} 或 {@link MapCodec MapCodec&lt;T&gt;}，
+     *       且其类型实参与 {@code type} 兼容；{@link MapCodec} 经 {@link MapCodec#codec()} 转为 {@link Codec}；</li>
+     *   <li>经 {@link ByteBufCodecs#fromCodecWithRegistries(Codec)} 包装为注册表感知的
+     *       {@link StreamCodec}（本库的缓冲区在具备注册表访问时即为
+     *       {@link net.minecraft.network.RegistryFriendlyByteBuf RegistryFriendlyByteBuf}）。</li>
+     * </ul>
+     *
+     * @return 找到的 {@link StreamCodec}，未找到时返回 {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    @Nullable
+    private static <T> StreamCodec<? extends ByteBuf, T> codecFromType(Class<T> type) {
+        for (Field field : type.getDeclaredFields()) {
+            int mods = field.getModifiers();
+            if (!Modifier.isStatic(mods) || !Modifier.isFinal(mods) || !Modifier.isPublic(mods)) continue;
+
+            Class<?> fieldType = field.getType();
+            boolean isCodec = Codec.class == fieldType;
+            boolean isMapCodec = MapCodec.class == fieldType;
+            if (!isCodec && !isMapCodec) continue;
+            if (!(field.getGenericType() instanceof ParameterizedType pt)) continue;
+            if (pt.getActualTypeArguments().length != 1) continue;
+            if (!(pt.getActualTypeArguments()[0] instanceof Class<?> arg)) continue;
+            if (!type.isAssignableFrom(arg)) continue;
+
+            try {
+                Object value = field.get(null);
+                if (value == null) continue;
+                Codec<T> codec = isMapCodec ? ((MapCodec<T>) value).codec() : (Codec<T>) value;
+                return ByteBufCodecs.fromCodecWithRegistries(codec);
+            } catch (IllegalAccessException e) {
+                log.warn("Cannot access codec field {}.{}", type.getName(), field.getName(), e);
+            }
         }
         return null;
     }
