@@ -23,12 +23,12 @@ import net.minecraft.world.item.ItemStackTemplate;
 import org.jetbrains.annotations.ApiStatus;
 import org.joml.Quaternionfc;
 import org.joml.Vector3fc;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.Objects;
-import javax.annotation.Nullable;
 
 @Slf4j
 public class SyncProxy<T> {

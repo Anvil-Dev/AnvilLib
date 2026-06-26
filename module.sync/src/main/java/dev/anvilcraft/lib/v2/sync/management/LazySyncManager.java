@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -25,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.Nullable;
 
 /**
  * 惰性同步管理器。

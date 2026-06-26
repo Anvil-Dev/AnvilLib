@@ -5,9 +5,9 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
-import javax.annotation.Nullable;
 
 public record SyncRegisterEntry<T, ID>(
     Class<?> clazz,

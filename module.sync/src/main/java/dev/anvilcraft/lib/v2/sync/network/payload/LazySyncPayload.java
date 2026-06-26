@@ -10,7 +10,7 @@ import dev.anvilcraft.lib.v2.sync.util.SideUtil;
 import dev.anvilcraft.lib.v2.util.Util;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -21,7 +21,6 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 惰性同步网络包。
@@ -40,6 +39,7 @@ import java.util.Objects;
  *   byte[] blob             // 字段值负载：boolean(isNull) + (codec 编码值)
  * </pre>
  */
+@Slf4j
 public record LazySyncPayload(
     byte[] array
 ) implements IInsensitiveBiPacket {
@@ -83,32 +83,40 @@ public record LazySyncPayload(
         return new LazySyncPayload(array);
     }
 
-    @SneakyThrows
     private void handler(IPayloadContext ctx) {
         FriendlyByteBuf buf = SideUtil.createFriendlyByteBuf(Unpooled.buffer());
         buf.writeBytes(this.array());
 
-        String lookupClassName = buf.readUtf();
-        Class<?> lookupClass = Class.forName(lookupClassName);
-        SyncRegisterEntry<?, ?> entry = Objects.requireNonNull(
-            AnvilLibSync.SYNC_MANAGER.contains(lookupClass),
-            "Class " + lookupClassName + " is not registered for syncing"
-        );
-        Object id = entry.idCodec().decode(buf);
-        Object object = entry.finder().apply(ctx, Util.cast(id));
+        Object object;
+        List<LazySyncManager.AppliedField> applied;
+        try {
+            String lookupClassName = buf.readUtf();
+            Class<?> lookupClass = Class.forName(lookupClassName);
+            SyncRegisterEntry<?, ?> entry = AnvilLibSync.SYNC_MANAGER.contains(lookupClass);
+            if (entry == null) {
+                // 两端注册不一致时静默丢弃，避免抛异常传播到 Netty 导致连接断开
+                log.warn("Received LazySync packet for unregistered class {}, dropping", lookupClassName);
+                return;
+            }
+            Object id = entry.idCodec().decode(buf);
+            object = entry.finder().apply(ctx, Util.cast(id));
 
-        int fieldCount = buf.readVarInt();
-        boolean isServer = SideUtil.isServer();
-        List<LazySyncManager.AppliedField> applied = new ArrayList<>(fieldCount);
-        for (int i = 0; i < fieldCount; i++) {
-            int syncConfigId = buf.readVarInt();
-            int blobLength = buf.readVarInt();
-            byte[] blob = new byte[blobLength];
-            buf.readBytes(blob);
-            String configKey = isServer
-                                   ? AnvilLibSync.SYNC_CONFIG_MANAGER.getById(syncConfigId)
-                                   : AnvilLibSyncClient.SYNC_CONFIG_MANAGER.getById(syncConfigId);
-            applied.add(new LazySyncManager.AppliedField(configKey, blob));
+            int fieldCount = buf.readVarInt();
+            boolean isServer = SideUtil.isServer();
+            applied = new ArrayList<>(fieldCount);
+            for (int i = 0; i < fieldCount; i++) {
+                int syncConfigId = buf.readVarInt();
+                int blobLength = buf.readVarInt();
+                byte[] blob = new byte[blobLength];
+                buf.readBytes(blob);
+                String configKey = isServer
+                                       ? AnvilLibSync.SYNC_CONFIG_MANAGER.getById(syncConfigId)
+                                       : AnvilLibSyncClient.SYNC_CONFIG_MANAGER.getById(syncConfigId);
+                applied.add(new LazySyncManager.AppliedField(configKey, blob));
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse LazySync packet, dropping", e);
+            return;
         }
         if (object == null) return;
         AnvilLibSync.LAZY_SYNC_MANAGER.applyGrouped(object, applied);
