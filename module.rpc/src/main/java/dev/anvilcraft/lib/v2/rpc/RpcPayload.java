@@ -32,7 +32,7 @@ import java.lang.reflect.Method;
  * @see RPC#call
  */
 public class RpcPayload implements IRpcPayload, IInsensitiveBiPacket {
-    public static final Type<RpcPayload> TYPE = IPacket.type(AnvilLibRpc.of("rpc"));
+    public static final Type<RpcPayload> TYPE = IPacket.type(AnvilLibRpc.mod("rpc"));
     public static final StreamCodec<ByteBuf, RpcPayload> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.BYTE_ARRAY,
         RpcPayload::data,

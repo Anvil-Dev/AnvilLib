@@ -21,7 +21,7 @@ import java.util.Map;
  * {@link RpcConfigurationFinishPayload} 以结束该配置任务。</p>
  */
 public record RpcConfigurationPayload(Map<Integer, String> indexMap) implements IClientboundPacket {
-    public static final Type<RpcConfigurationPayload> TYPE = IPacket.type(AnvilLibRpc.of("rpc_config"));
+    public static final Type<RpcConfigurationPayload> TYPE = IPacket.type(AnvilLibRpc.mod("rpc_config"));
     public static final StreamCodec<ByteBuf, RpcConfigurationPayload> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.map(HashMap::new, ByteBufCodecs.VAR_INT, ByteBufCodecs.STRING_UTF8),
         RpcConfigurationPayload::indexMap,

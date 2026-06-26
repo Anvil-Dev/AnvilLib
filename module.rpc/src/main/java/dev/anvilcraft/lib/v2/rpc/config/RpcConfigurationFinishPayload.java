@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  */
 public class RpcConfigurationFinishPayload implements IServerboundPacket {
     public static final RpcConfigurationFinishPayload INSTANCE = new RpcConfigurationFinishPayload();
-    public static final Type<RpcConfigurationFinishPayload> TYPE = IPacket.type(AnvilLibRpc.of("rpc_config_finish"));
+    public static final Type<RpcConfigurationFinishPayload> TYPE = IPacket.type(AnvilLibRpc.mod("rpc_config_finish"));
     public static final StreamCodec<ByteBuf, RpcConfigurationFinishPayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 
     @Override

@@ -10,7 +10,7 @@ import java.util.function.Consumer;
  * 服务端配置任务：在 Configuration 阶段向客户端下发权威的 RPC 索引映射。
  */
 public record RpcConfigurationTask() implements ICustomConfigurationTask {
-    public static final Type TYPE = new Type(AnvilLibRpc.of("rpc_config"));
+    public static final Type TYPE = new Type(AnvilLibRpc.mod("rpc_config"));
 
     @Override
     public void run(Consumer<CustomPacketPayload> sender) {

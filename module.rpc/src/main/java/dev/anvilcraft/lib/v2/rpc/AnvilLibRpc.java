@@ -36,6 +36,10 @@ public class AnvilLibRpc {
         return Identifier.fromNamespaceAndPath(AnvilLibRpc.MAIN_ID, path);
     }
 
+    public static Identifier mod(String path) {
+        return Identifier.fromNamespaceAndPath(AnvilLibRpc.MOD_ID, path);
+    }
+
     @SubscribeEvent
     public void onRegisterConfigurationTasks(RegisterConfigurationTasksEvent event) {
         event.register(new RpcConfigurationTask());

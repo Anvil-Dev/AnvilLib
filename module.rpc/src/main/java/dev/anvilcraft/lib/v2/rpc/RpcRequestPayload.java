@@ -24,7 +24,7 @@ import java.lang.reflect.Method;
  * @see RPC#invoke
  */
 public class RpcRequestPayload implements IRpcPayload, IInsensitiveBiPacket {
-    public static final Type<RpcRequestPayload> TYPE = IPacket.type(AnvilLibRpc.of("rpc_request"));
+    public static final Type<RpcRequestPayload> TYPE = IPacket.type(AnvilLibRpc.mod("rpc_request"));
     public static final StreamCodec<ByteBuf, RpcRequestPayload> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.BYTE_ARRAY,
         RpcRequestPayload::data,
