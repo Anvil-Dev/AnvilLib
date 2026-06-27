@@ -35,7 +35,8 @@ public class AnvilLibSync {
 
     public AnvilLibSync(IEventBus modEventBus, ModContainer modContainer) {
         AnvilLibSyncEntries.SYNC_ENTRY.register(modEventBus);
-        modEventBus.register(this);
+        modEventBus.addListener(this::onRegister);
+        modEventBus.addListener(this::onRegisterConfigurationTasks);
         NeoForge.EVENT_BUS.addListener(this::onServerTick);
         NeoForge.EVENT_BUS.addListener(this::onServerStopped);
     }
