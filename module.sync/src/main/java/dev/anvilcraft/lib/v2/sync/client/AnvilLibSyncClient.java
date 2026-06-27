@@ -23,7 +23,6 @@ public class AnvilLibSyncClient {
     /**
      * 每客户端 tick 结束时扫描惰性同步目标并上行变更（受字段方向限制）。
      */
-    @SubscribeEvent
     public void onClientTick(ClientTickEvent.Post event) {
         AnvilLibSync.LAZY_SYNC_MANAGER.tickClient();
     }
@@ -31,7 +30,6 @@ public class AnvilLibSyncClient {
     /**
      * 客户端登出时清理客户端侧惰性同步跟踪状态，避免跨存档 / 跨服残留。
      */
-    @SubscribeEvent
     public void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         AnvilLibSync.LAZY_SYNC_MANAGER.clearClient();
     }
