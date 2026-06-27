@@ -30,6 +30,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
@@ -783,11 +784,34 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * 添加生成物品结果
      *
      * @param offset 偏移向量
+     * @param chance 生成概率
+     * @param stack  物品堆
+     * @return 当前构建器实例
+     */
+    public T spawnItem(Vec3 offset, double chance, ItemStack stack) {
+        return this.spawnItem(offset, chance, ItemStackTemplate.fromNonEmptyStack(stack));
+    }
+
+    /**
+     * 添加生成物品结果
+     *
+     * @param offset 偏移向量
      * @param stack  物品堆
      * @return 当前构建器实例
      */
     public T spawnItem(Vec3 offset, ItemStackTemplate stack) {
         return this.spawnItem(offset, 1, stack);
+    }
+
+    /**
+     * 添加生成物品结果
+     *
+     * @param offset 偏移向量
+     * @param stack  物品堆
+     * @return 当前构建器实例
+     */
+    public T spawnItem(Vec3 offset, ItemStack stack) {
+        return this.spawnItem(offset, ItemStackTemplate.fromNonEmptyStack(stack));
     }
 
     /**
@@ -807,6 +831,20 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 添加生成物品结果
      *
+     * @param x      X轴偏移量
+     * @param y      Y轴偏移量
+     * @param z      Z轴偏移量
+     * @param chance 生成概率
+     * @param stack  物品堆
+     * @return 当前构建器实例
+     */
+    public T spawnItem(double x, double y, double z, double chance, ItemStack stack) {
+        return this.spawnItem(x, y, z, chance, ItemStackTemplate.fromNonEmptyStack(stack));
+    }
+
+    /**
+     * 添加生成物品结果
+     *
      * @param x     X轴偏移量
      * @param y     Y轴偏移量
      * @param z     Z轴偏移量
@@ -820,11 +858,34 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 添加生成物品结果
      *
+     * @param x     X轴偏移量
+     * @param y     Y轴偏移量
+     * @param z     Z轴偏移量
+     * @param stack 物品堆
+     * @return 当前构建器实例
+     */
+    public T spawnItem(double x, double y, double z, ItemStack stack) {
+        return this.spawnItem(x, y, z, ItemStackTemplate.fromNonEmptyStack(stack));
+    }
+
+    /**
+     * 添加生成物品结果
+     *
      * @param stack 物品堆
      * @return 当前构建器实例
      */
     public T spawnItem(ItemStackTemplate stack) {
         return this.spawnItem(this.offset, stack);
+    }
+
+    /**
+     * 添加生成物品结果
+     *
+     * @param stack 物品堆
+     * @return 当前构建器实例
+     */
+    public T spawnItem(ItemStack stack) {
+        return this.spawnItem(ItemStackTemplate.fromNonEmptyStack(stack));
     }
 
     /**
@@ -923,17 +984,17 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      */
     public InWorldRecipe build() {
         return new InWorldRecipe(
-            this.icon.getFirst(),
-            this.trigger,
-            ImmutableList.copyOf(this.conflicting),
-            ImmutableList.copyOf(this.nonConflicting),
-            ImmutableList.copyOf(this.outcomes),
-            Objects.requireNonNullElseGet(
-                this.priority,
-                () -> InWorldRecipe.calcPriority(this.trigger, this.conflicting, this.nonConflicting, this.outcomes)
-            ),
-            this.compatible,
-            this.maxEfficiency
+                this.icon.getFirst(),
+                this.trigger,
+                ImmutableList.copyOf(this.conflicting),
+                ImmutableList.copyOf(this.nonConflicting),
+                ImmutableList.copyOf(this.outcomes),
+                Objects.requireNonNullElseGet(
+                        this.priority,
+                        () -> InWorldRecipe.calcPriority(this.trigger, this.conflicting, this.nonConflicting, this.outcomes)
+                ),
+                this.compatible,
+                this.maxEfficiency
         );
     }
 
@@ -952,8 +1013,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     @Override
     public ResourceKey<Recipe<?>> defaultId() {
         return ResourceKey.create(
-            Registries.RECIPE,
-            AnvilLibRecipe.of(this.group + "/" + BuiltInRegistries.ITEM.getKey(this.getResult()).getPath())
+                Registries.RECIPE,
+                AnvilLibRecipe.of(this.group + "/" + BuiltInRegistries.ITEM.getKey(this.getResult()).getPath())
         );
     }
 
@@ -964,20 +1025,20 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     @Override
     public void save(RecipeOutput recipeOutput, ResourceKey<Recipe<?>> key) {
         Advancement.Builder builder = recipeOutput.advancement()
-            .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(key))
-            .rewards(AdvancementRewards.Builder.recipe(key))
-            .requirements(AdvancementRequirements.Strategy.OR);
+                .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(key))
+                .rewards(AdvancementRewards.Builder.recipe(key))
+                .requirements(AdvancementRequirements.Strategy.OR);
         Objects.requireNonNull(builder);
         this.criteria.forEach(builder::addCriterion);
         InWorldRecipe recipe = this.build();
         Identifier location = key.identifier();
         recipeOutput.accept(
-            ResourceKey.create(
-                Registries.RECIPE,
-                Identifier.fromNamespaceAndPath(location.getNamespace(), this.group + "/" + location.getPath())
-            ),
-            recipe,
-            builder.build(location.withPrefix("recipes/" + this.group + "/"))
+                ResourceKey.create(
+                        Registries.RECIPE,
+                        Identifier.fromNamespaceAndPath(location.getNamespace(), this.group + "/" + location.getPath())
+                ),
+                recipe,
+                builder.build(location.withPrefix("recipes/" + this.group + "/"))
         );
     }
 
