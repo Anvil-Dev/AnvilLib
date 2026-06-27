@@ -8,11 +8,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * RPC 模块集成测试。
@@ -51,7 +51,7 @@ public class RpcIntegrationTest {
             testEdgeCases(player);
 
             LOGGER.info("RPC integration test completed successfully. Total calls: {}",
-                TestRpcMethods.getInvocationCounter().get());
+                    TestRpcMethods.getInvocationCounter().get());
             LOGGER.info("Call log: {}", TestRpcMethods.getCallLog());
         } catch (Exception e) {
             LOGGER.error("RPC integration test failed", e);
@@ -108,42 +108,43 @@ public class RpcIntegrationTest {
         LOGGER.info("Custom codecs test passed");
     }
 
-    private static void testReturnValues(ServerPlayer player) throws Exception {
+    private static void testReturnValues(ServerPlayer player) {
         LOGGER.info("Testing methods with return values...");
         RpcTarget target = RpcTarget.player(player);
 
-        CompletableFuture<Integer> futureInt = RPC.invoke(target, TestRpcMethods::returnInt);
-        Integer resultInt = futureInt.get(5, TimeUnit.SECONDS);
-        assert resultInt == 42 : "Expected 42, got " + resultInt;
+        // 不能在主线程上 future.get()：RPC 响应也在主线程兑现，阻塞会导致必然超时。改用回调校验。
+        RPC.invoke(target, TestRpcMethods::returnInt)
+                .thenAccept(result -> check("returnInt", result == 42, "Expected 42, got " + result))
+                .exceptionally(logFailure("returnInt"));
 
-        CompletableFuture<String> futureString = RPC.invoke(target, TestRpcMethods::returnString);
-        String resultString = futureString.get(5, TimeUnit.SECONDS);
-        assert "test result".equals(resultString) : "Expected 'test result', got " + resultString;
+        RPC.invoke(target, TestRpcMethods::returnString)
+                .thenAccept(result -> check("returnString", "test result".equals(result), "Expected 'test result', got " + result))
+                .exceptionally(logFailure("returnString"));
 
-        CompletableFuture<Boolean> futureBool = RPC.invoke(target, TestRpcMethods::returnBoolean);
-        Boolean resultBool = futureBool.get(5, TimeUnit.SECONDS);
-        assert resultBool : "Expected true, got false";
+        RPC.invoke(target, TestRpcMethods::returnBoolean)
+                .thenAccept(result -> check("returnBoolean", result, "Expected true, got false"))
+                .exceptionally(logFailure("returnBoolean"));
 
-        CompletableFuture<Integer> futureSum = RPC.invoke(target, TestRpcMethods::computeSum, 10, 32);
-        Integer sum = futureSum.get(5, TimeUnit.SECONDS);
-        assert sum == 42 : "Expected 42, got " + sum;
+        RPC.invoke(target, TestRpcMethods::computeSum, 10, 32)
+                .thenAccept(result -> check("computeSum", result == 42, "Expected 42, got " + result))
+                .exceptionally(logFailure("computeSum"));
 
-        CompletableFuture<String> futureConcat = RPC.invoke(target, TestRpcMethods::concatenate, "Hello", "World");
-        String concat = futureConcat.get(5, TimeUnit.SECONDS);
-        assert "HelloWorld".equals(concat) : "Expected 'HelloWorld', got " + concat;
+        RPC.invoke(target, TestRpcMethods::concatenate, "Hello", "World")
+                .thenAccept(result -> check("concatenate", "HelloWorld".equals(result), "Expected 'HelloWorld', got " + result))
+                .exceptionally(logFailure("concatenate"));
 
-        CompletableFuture<byte[]> futureArray = RPC.invoke(target, TestRpcMethods::returnByteArray, 10);
-        byte[] array = futureArray.get(5, TimeUnit.SECONDS);
-        assert array.length == 10 : "Expected array of length 10, got " + array.length;
+        RPC.invoke(target, TestRpcMethods::returnByteArray, 10)
+                .thenAccept(result -> check("returnByteArray", result.length == 10, "Expected array of length 10, got " + result.length))
+                .exceptionally(logFailure("returnByteArray"));
 
-        CompletableFuture<BlockPos> futurePos = RPC.invoke(target, TestRpcMethods::returnCustomType, 1, 2, 3);
-        BlockPos pos = futurePos.get(5, TimeUnit.SECONDS);
-        assert pos.equals(new BlockPos(1, 2, 3)) : "Expected BlockPos(1,2,3), got " + pos;
+        RPC.invoke(target, TestRpcMethods::returnCustomType, 1, 2, 3)
+                .thenAccept(result -> check("returnCustomType", result.equals(new BlockPos(1, 2, 3)), "Expected BlockPos(1,2,3), got " + result))
+                .exceptionally(logFailure("returnCustomType"));
 
-        LOGGER.info("Return values test passed");
+        LOGGER.info("Return values test dispatched (results verified asynchronously)");
     }
 
-    private static void testValidators(ServerPlayer player) throws Exception {
+    private static void testValidators(ServerPlayer player) {
         LOGGER.info("Testing validators...");
         RpcTarget target = RpcTarget.player(player);
 
@@ -157,21 +158,22 @@ public class RpcIntegrationTest {
         RPC.call(target, TestRpcMethods::conditionalAccept, -1);
 
         // 有返回值的调用 - 正值应通过
-        CompletableFuture<Integer> futureAccept = RPC.invoke(target, TestRpcMethods::conditionalReturn, 50);
-        Integer result = futureAccept.get(5, TimeUnit.SECONDS);
-        assert result == 100 : "Expected 100, got " + result;
+        RPC.invoke(target, TestRpcMethods::conditionalReturn, 50)
+                .thenAccept(result -> check("conditionalReturn(50)", result == 100, "Expected 100, got " + result))
+                .exceptionally(logFailure("conditionalReturn(50)"));
 
-        // 有返回值的调用 - 负值应失败
-        CompletableFuture<Integer> futureReject = RPC.invoke(target, TestRpcMethods::conditionalReturn, -10);
-        try {
-            futureReject.get(5, TimeUnit.SECONDS);
-            throw new AssertionError("Expected validator rejection, but call succeeded");
-        } catch (Exception e) {
-            // Expected
-            LOGGER.info("Validator correctly rejected negative value");
-        }
+        // 有返回值的调用 - 负值应被校验器拒绝，future 以异常失败
+        RPC.invoke(target, TestRpcMethods::conditionalReturn, -10)
+                .handle((result, ex) -> {
+                    if (ex == null) {
+                        LOGGER.error("Validator test FAILED: conditionalReturn(-10) should have been rejected, but returned {}", result);
+                    } else {
+                        LOGGER.info("Validator correctly rejected negative value");
+                    }
+                    return null;
+                });
 
-        LOGGER.info("Validators test passed");
+        LOGGER.info("Validators test dispatched (results verified asynchronously)");
     }
 
     private static void testExceptions(ServerPlayer player) {
@@ -182,16 +184,17 @@ public class RpcIntegrationTest {
         RPC.call(target, TestRpcMethods::throwsException);
 
         // 有返回值的调用抛出异常 - future 应完成为异常
-        CompletableFuture<Integer> futureException = RPC.invoke(target, TestRpcMethods::throwsExceptionWithReturn);
-        try {
-            futureException.get(5, TimeUnit.SECONDS);
-            throw new AssertionError("Expected exception, but call succeeded");
-        } catch (Exception e) {
-            // Expected
-            LOGGER.info("Exception correctly propagated from remote call");
-        }
+        RPC.invoke(target, TestRpcMethods::throwsExceptionWithReturn)
+                .handle((result, ex) -> {
+                    if (ex == null) {
+                        LOGGER.error("Exception test FAILED: expected exception, but call returned {}", result);
+                    } else {
+                        LOGGER.info("Exception correctly propagated from remote call");
+                    }
+                    return null;
+                });
 
-        LOGGER.info("Exception handling test passed");
+        LOGGER.info("Exception handling test dispatched (results verified asynchronously)");
     }
 
     private static void testEdgeCases(ServerPlayer player) {
@@ -218,5 +221,26 @@ public class RpcIntegrationTest {
         RPC.call(target, TestRpcMethods::withByteArray, new byte[1000]);
 
         LOGGER.info("Edge cases test passed");
+    }
+
+    /**
+     * 异步校验断言：条件不满足时记录错误日志（而非用默认关闭的 {@code assert}，否则会静默跳过）。
+     */
+    private static void check(String name, boolean condition, String message) {
+        if (condition) {
+            LOGGER.info("Assertion passed: {}", name);
+        } else {
+            LOGGER.error("Assertion FAILED [{}]: {}", name, message);
+        }
+    }
+
+    /**
+     * future 异常处理器：记录失败并吞掉异常，避免污染后续回调链。
+     */
+    private static <T> Function<Throwable, @Nullable T> logFailure(String name) {
+        return ex -> {
+            LOGGER.error("RPC call FAILED [{}]: {}", name, ex.getMessage(), ex);
+            return null;
+        };
     }
 }

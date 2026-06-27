@@ -242,27 +242,19 @@ public class RpcTestCommands {
 
         source.sendSuccess(() -> Component.literal("Running all RPC tests..."), true);
 
-        scheduleTest(source, 0, () -> runBasicTest(source));
-        scheduleTest(source, 20, () -> runInvokeTest(source));
-        scheduleTest(source, 40, () -> runValidatorTest(source));
-        scheduleTest(source, 60, () -> runStressTest(source));
-        scheduleTest(source, 80, () ->
+        scheduleTest(0, () -> runBasicTest(source));
+        scheduleTest(20, () -> runInvokeTest(source));
+        scheduleTest(40, () -> runValidatorTest(source));
+        scheduleTest(60, () -> runStressTest(source));
+        scheduleTest(80, () ->
             source.sendSuccess(() -> Component.literal("All tests completed!"), true)
         );
     }
 
-    private static void scheduleTest(CommandSourceStack source, int delayTicks, Runnable test) {
-        source.getServer().execute(() -> {
-            try {
-                for (int i = 0; i < delayTicks; i++) {
-                    Thread.sleep(50);
-                }
-                test.run();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                LOGGER.error("Test execution interrupted", e);
-            }
-        });
+    private static void scheduleTest(int delayTicks, Runnable test) {
+        // 非阻塞延迟：挂到服务端 tick 上逐 tick 递减，到点后在主线程执行。
+        // 不能用 Thread.sleep 占住主线程——那会冻结服务端，且会阻塞兑现 RPC future 的同一个线程。
+        RpcTestScheduler.onServer(delayTicks, test);
     }
 
     private static void showLog(CommandSourceStack source) {

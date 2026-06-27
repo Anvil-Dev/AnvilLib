@@ -10,7 +10,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -278,12 +277,6 @@ public final class TestRpcMethods {
     @RemoteCallable
     public static void emptyString(String empty) {
         callLog.add("emptyString:'" + empty + "'");
-        invocationCounter.incrementAndGet();
-    }
-
-    @RemoteCallable
-    public static void nullableValues(@Nullable CompoundTag tag) {
-        callLog.add("nullableValues:" + (tag == null ? "null" : "present"));
         invocationCounter.incrementAndGet();
     }
 
