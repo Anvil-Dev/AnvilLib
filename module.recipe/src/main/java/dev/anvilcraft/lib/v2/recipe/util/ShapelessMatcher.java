@@ -45,9 +45,16 @@ public class ShapelessMatcher {
      * @return 是否兼容
      */
     public static boolean compatible(List<IRecipePredicate<?>> predicates, InWorldRecipeContext ctx) {
+        List<IRecipePredicate<?>> pushed = new ArrayList<>();
         for (IRecipePredicate<?> predicate : predicates) {
-            if (!predicate.test(ctx)) return false;
+            if (!predicate.test(ctx)) {
+                while (!pushed.isEmpty()) {
+                    ctx.pop(pushed.removeLast());
+                }
+                return false;
+            }
             ctx.push(predicate);
+            pushed.add(predicate);
         }
         return true;
     }

@@ -181,6 +181,13 @@ public class InWorldRecipeContext implements RecipeInput {
         this.acceptors.values().forEach(acceptor -> acceptor.accept(this));
     }
 
+    public void clearFailedAttempt() {
+        while (!this.stack.isEmpty()) {
+            this.pop(this.stack.getLast());
+        }
+        this.acceptors.clear();
+    }
+
     /**
      * 创建一个空的战利品上下文
      *

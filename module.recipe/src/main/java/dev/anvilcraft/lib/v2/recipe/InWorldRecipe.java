@@ -231,7 +231,7 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
     public boolean matches(InWorldRecipeContext context, Level level) {
         boolean nonConflicting = ShapelessMatcher.compatible(this.nonConflicting, context);
         if (!nonConflicting) {
-            context.getStack().clear();
+            context.clearFailedAttempt();
             return false;
         }
         boolean flag;
@@ -241,7 +241,7 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
             flag = ShapelessMatcher.incompatible(this.conflicting, context);
         }
         if (!flag) {
-            context.getStack().clear();
+            context.clearFailedAttempt();
         }
         context.getStack().forEach(predicate -> predicate.clearStack(context));
         return flag;

@@ -7,6 +7,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeMap;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,7 +23,7 @@ abstract class RecipeManagerMixin implements IRecipeManagerExtension {
     @Final
     private HolderLookup.Provider registries;
     @Unique
-    private InWorldRecipeManager anvillib$inWorldRecipeManager = null;
+    private @Nullable InWorldRecipeManager anvillib$inWorldRecipeManager = null;
 
     @Override
     public void anvillib$setInWorldRecipeManager(InWorldRecipeManager manager) {
@@ -31,6 +32,9 @@ abstract class RecipeManagerMixin implements IRecipeManagerExtension {
 
     @Override
     public InWorldRecipeManager anvillib$getInWorldRecipeManager() {
+        if (this.anvillib$inWorldRecipeManager == null) {
+            this.anvillib$inWorldRecipeManager = new InWorldRecipeManager();
+        }
         return this.anvillib$inWorldRecipeManager;
     }
 

@@ -55,6 +55,7 @@ public class InWorldRecipeManager {
                 if (i >= recipe.maxEfficiency()) break;
                 if (!recipe.matches(ctx, ctx.getLevel())) {
                     if (!accept) break;
+                    ctx.clearFailedAttempt();
                     return;
                 }
                 accept = true;
