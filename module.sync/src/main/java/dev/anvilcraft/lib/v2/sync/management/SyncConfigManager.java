@@ -53,7 +53,7 @@ public class SyncConfigManager {
     }
 
     @SuppressWarnings("UnstableApiUsage")
-    private static void compileSyncType(ModFileInfo fileInfo, String className) throws java.io.IOException {
+    private static void compileSyncType(ModFileInfo fileInfo, String className) {
         IModFile modFile = fileInfo.getFile();
         String classPath = className.replace('.', '/') + ".class";
         log.info("Loading SyncConfig: {}", className);
@@ -65,6 +65,8 @@ public class SyncConfigManager {
                     FieldListingVisitor fieldListingVisitor = new FieldListingVisitor(className, null);
                     classReader.accept(fieldListingVisitor, 0);
                 }
+            } catch (Exception e) {
+                log.error("Error while reading class file: {}", classPath, e);
             }
         }
     }
