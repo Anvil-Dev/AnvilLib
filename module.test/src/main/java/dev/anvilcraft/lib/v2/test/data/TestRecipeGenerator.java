@@ -18,7 +18,7 @@ public class TestRecipeGenerator {
             .group("recipe_test")
             .hasBlock(TestBlocks.RECIPE_TARGET.get())
             .hasItemIngredient(builder -> builder.of(TestItems.RECIPE_INPUT.get()).count(1))
-            .spawnItem(TestItems.RECIPE_OUTPUT.asStack())
+            .spawnItem(TestItems.RECIPE_OUTPUT.get())
             .save(provider, SUCCESS_RECIPE_ID);
 
         InWorldRecipeBuilder.compatible(LibRecipeTriggers.ITEM_INTO_BLOCK)
@@ -26,7 +26,7 @@ public class TestRecipeGenerator {
             .hasBlock(TestBlocks.RECIPE_TARGET.get())
             .hasItemIngredient(builder -> builder.of(TestItems.RECIPE_INPUT.get()).count(1))
             .hasItem(builder -> builder.of(TestItems.RECIPE_OUTPUT.get()).moreThan(1))
-            .spawnItem(TestItems.RECIPE_OUTPUT.asStack())
+            .spawnItem(TestItems.RECIPE_OUTPUT.get())
             .save(provider, ROLLBACK_RECIPE_ID);
 
         InWorldRecipeBuilder.compatible(LibRecipeTriggers.ITEM_INTO_BLOCK)

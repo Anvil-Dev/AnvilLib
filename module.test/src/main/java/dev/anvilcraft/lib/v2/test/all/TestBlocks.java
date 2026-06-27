@@ -37,7 +37,7 @@ public class TestBlocks {
         .blockstate(() -> (ctx, provider) -> provider.blockStateOutput.accept(
             BlockModelGenerators.createSimpleBlock(
                 ctx.get(),
-                BlockModelGenerators.plainVariant(TexturedModel.CUBE.create(Blocks.IRON_BLOCK, provider.modelOutput))
+                BlockModelGenerators.plainVariant(provider.mcLoc("block/iron_block"))
             )
         ))
         .simpleItem()
@@ -47,7 +47,7 @@ public class TestBlocks {
         .blockstate(() -> (ctx, provider) -> provider.blockStateOutput.accept(
             BlockModelGenerators.createSimpleBlock(
                 ctx.get(),
-                BlockModelGenerators.plainVariant(TexturedModel.CUBE.create(Blocks.GOLD_BLOCK, provider.modelOutput))
+                BlockModelGenerators.plainVariant(provider.mcLoc("block/gold_block"))
             )
         ))
         .simpleItem()

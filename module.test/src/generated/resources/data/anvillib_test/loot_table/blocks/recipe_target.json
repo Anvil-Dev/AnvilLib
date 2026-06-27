@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "anvillib_test:recipe_target"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "anvillib_test:blocks/recipe_target"
+}

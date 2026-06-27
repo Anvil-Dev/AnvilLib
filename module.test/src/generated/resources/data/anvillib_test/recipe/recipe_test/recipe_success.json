@@ -1,0 +1,51 @@
+{
+  "type": "anvillib_recipe:in_world_recipe",
+  "compatible": true,
+  "conflicting": [
+    {
+      "type": "anvillib_recipe:has_item_ingredient",
+      "item": {
+        "items": "anvillib_test:recipe_input"
+      },
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "range": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  ],
+  "icon": {
+    "id": "minecraft:anvil"
+  },
+  "non_conflicting": [
+    {
+      "type": "anvillib_recipe:has_block",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "predicate": {
+        "blocks": "anvillib_test:recipe_target"
+      }
+    }
+  ],
+  "outcomes": [
+    {
+      "type": "anvillib_recipe:spawn_item",
+      "item": "anvillib_test:recipe_output",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "priority": 4,
+  "trigger": "anvillib_recipe:item_into_block"
+}

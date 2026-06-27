@@ -4,9 +4,7 @@ import dev.anvilcraft.lib.v2.registrum.util.entry.ItemEntry;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import dev.anvilcraft.lib.v2.test.item.TestItem;
 import net.minecraft.client.data.models.model.ItemModelUtils;
-import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 
 public class TestItems {
     static {
@@ -17,23 +15,21 @@ public class TestItems {
         .item("test_item", TestItem::new)
         .model(() -> (ctx, provider) -> provider.itemModelOutput.accept(
             ctx.get(),
-            ItemModelUtils.plainModel(provider.createFlatItemModel(Items.CARROT, ModelTemplates.FLAT_ITEM))
+            ItemModelUtils.plainModel(provider.mcLoc("item/carrot"))
         ))
         .register();
-
     public static final ItemEntry<Item> RECIPE_INPUT = AnvilLibTest.REGISTRUM
         .item("recipe_input", Item::new)
         .model(() -> (ctx, provider) -> provider.itemModelOutput.accept(
             ctx.get(),
-            ItemModelUtils.plainModel(provider.createFlatItemModel(Items.IRON_INGOT, ModelTemplates.FLAT_ITEM))
+            ItemModelUtils.plainModel(provider.mcLoc("item/iron_ingot"))
         ))
         .register();
-
     public static final ItemEntry<Item> RECIPE_OUTPUT = AnvilLibTest.REGISTRUM
         .item("recipe_output", Item::new)
         .model(() -> (ctx, provider) -> provider.itemModelOutput.accept(
             ctx.get(),
-            ItemModelUtils.plainModel(provider.createFlatItemModel(Items.GOLD_INGOT, ModelTemplates.FLAT_ITEM))
+            ItemModelUtils.plainModel(provider.mcLoc("item/gold_ingot"))
         ))
         .register();
 

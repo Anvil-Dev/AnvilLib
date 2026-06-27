@@ -796,6 +796,18 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * 添加生成物品结果
      *
      * @param offset 偏移向量
+     * @param chance 生成概率
+     * @param item   物品
+     * @return 当前构建器实例
+     */
+    public T spawnItem(Vec3 offset, double chance, Item item) {
+        return this.spawnItem(offset, chance, new ItemStackTemplate(item));
+    }
+
+    /**
+     * 添加生成物品结果
+     *
+     * @param offset 偏移向量
      * @param stack  物品堆
      * @return 当前构建器实例
      */
@@ -812,6 +824,17 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      */
     public T spawnItem(Vec3 offset, ItemStack stack) {
         return this.spawnItem(offset, ItemStackTemplate.fromNonEmptyStack(stack));
+    }
+
+    /**
+     * 添加生成物品结果
+     *
+     * @param offset 偏移向量
+     * @param item   物品
+     * @return 当前构建器实例
+     */
+    public T spawnItem(Vec3 offset, Item item) {
+        return this.spawnItem(offset, new ItemStackTemplate(item));
     }
 
     /**
@@ -845,6 +868,20 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 添加生成物品结果
      *
+     * @param x      X轴偏移量
+     * @param y      Y轴偏移量
+     * @param z      Z轴偏移量
+     * @param chance 生成概率
+     * @param item   物品
+     * @return 当前构建器实例
+     */
+    public T spawnItem(double x, double y, double z, double chance, Item item) {
+        return this.spawnItem(x, y, z, chance, new ItemStackTemplate(item));
+    }
+
+    /**
+     * 添加生成物品结果
+     *
      * @param x     X轴偏移量
      * @param y     Y轴偏移量
      * @param z     Z轴偏移量
@@ -871,6 +908,16 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 添加生成物品结果
      *
+     * @param item 物品
+     * @return 当前构建器实例
+     */
+    public T spawnItem(double x, double y, double z, Item item) {
+        return this.spawnItem(x, y, z, new ItemStackTemplate(item));
+    }
+
+    /**
+     * 添加生成物品结果
+     *
      * @param stack 物品堆
      * @return 当前构建器实例
      */
@@ -886,6 +933,16 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      */
     public T spawnItem(ItemStack stack) {
         return this.spawnItem(ItemStackTemplate.fromNonEmptyStack(stack));
+    }
+
+    /**
+     * 添加生成物品结果
+     *
+     * @param item 物品
+     * @return 当前构建器实例
+     */
+    public T spawnItem(Item item) {
+        return this.spawnItem(new ItemStackTemplate(item));
     }
 
     /**
