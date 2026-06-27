@@ -25,6 +25,7 @@ import java.util.Objects;
 @Slf4j
 public class SyncConfigManager {
     public static final String SYNC_DESCRIPTOR = "Ldev/anvilcraft/lib/v2/sync/annotation/Sync;";
+    public static final String LAZY_SYNC_DESCRIPTOR = "Ldev/anvilcraft/lib/v2/sync/annotation/LazySync;";
     private static final String SYNC_PROXY_DESC = "Ldev/anvilcraft/lib/v2/sync/management/SyncProxy;";
     public int usedId = 0;
     public final Map<String, Integer> syncConfigs = new HashMap<>();
@@ -37,22 +38,35 @@ public class SyncConfigManager {
     public static void compileContent() {
         for (ModFileInfo fileInfo : FMLLoader.getCurrent().getLoadingModList().getModFiles()) {
             for (ModFileScanData.AnnotationData annotation : fileInfo.getFile().getScanResult().getAnnotations()) {
-                if (!annotation.annotationType().getDescriptor().equals(SyncConfigManager.SYNC_DESCRIPTOR)) continue;
-                if (annotation.targetType() != ElementType.TYPE) continue;
-                String className = annotation.clazz().getClassName();
-                IModFile modFile = fileInfo.getFile();
-                String classPath = className.replace('.', '/') + ".class";
-                log.info("Loading SyncConfig: {}", className);
-                JarContents modFileContents = modFile.getContents();
-                if (modFileContents.containsFile(classPath)) {
-                    try (InputStream inputStream = modFileContents.openFile(classPath)) {
-                        if (inputStream != null) {
-                            ClassReader classReader = new ClassReader(inputStream);
-                            FieldListingVisitor fieldListingVisitor = new FieldListingVisitor(className, null);
-                            classReader.accept(fieldListingVisitor, 0);
-                        }
-                    }
+                if (annotation.annotationType().getDescriptor().equals(SyncConfigManager.SYNC_DESCRIPTOR)) {
+                    if (annotation.targetType() != ElementType.TYPE) continue;
+                    compileSyncType(fileInfo, annotation.clazz().getClassName());
+                } else if (annotation.annotationType().getDescriptor().equals(SyncConfigManager.LAZY_SYNC_DESCRIPTOR)) {
+                    if (annotation.targetType() != ElementType.FIELD) continue;
+                    // FIELD 目标的 memberName 即字段名
+                    String key = "%s#%s".formatted(annotation.clazz().getClassName(), annotation.memberName());
+                    log.info("Loading LazySyncConfig: {}", key);
+                    AnvilLibSync.SYNC_CONFIG_MANAGER.register(key);
                 }
+            }
+        }
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    private static void compileSyncType(ModFileInfo fileInfo, String className) {
+        IModFile modFile = fileInfo.getFile();
+        String classPath = className.replace('.', '/') + ".class";
+        log.info("Loading SyncConfig: {}", className);
+        JarContents modFileContents = modFile.getContents();
+        if (modFileContents.containsFile(classPath)) {
+            try (InputStream inputStream = modFileContents.openFile(classPath)) {
+                if (inputStream != null) {
+                    ClassReader classReader = new ClassReader(inputStream);
+                    FieldListingVisitor fieldListingVisitor = new FieldListingVisitor(className, null);
+                    classReader.accept(fieldListingVisitor, 0);
+                }
+            } catch (Exception e) {
+                log.error("Error while reading class file: {}", classPath, e);
             }
         }
     }

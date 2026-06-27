@@ -26,7 +26,7 @@ import java.util.concurrent.CompletionException;
  * @see RPC#invoke
  */
 public class RpcResponsePayload implements IInsensitiveBiPacket {
-    public static final Type<RpcResponsePayload> TYPE = IPacket.type(AnvilLibRpc.of("rpc_response"));
+    public static final Type<RpcResponsePayload> TYPE = IPacket.type(AnvilLibRpc.mod("rpc_response"));
     public static final StreamCodec<ByteBuf, RpcResponsePayload> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.BYTE_ARRAY,
         RpcResponsePayload::data,

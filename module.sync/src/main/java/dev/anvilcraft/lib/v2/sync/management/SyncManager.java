@@ -6,12 +6,12 @@ import dev.anvilcraft.lib.v2.sync.util.SideUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.minecraft.resources.ResourceKey;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import javax.annotation.Nullable;
 
 @Slf4j
 public class SyncManager {
