@@ -37,7 +37,7 @@ public final class RecipeIntegrationTest {
     }
 
     public static void runAll(ServerPlayer player) {
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = player.level();
         BlockPos origin = BlockPos.containing(player.position()).above();
         List<String> failures = new ArrayList<>();
 
