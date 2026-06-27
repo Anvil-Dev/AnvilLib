@@ -35,14 +35,14 @@ public class AnvilLibSync {
 
     public AnvilLibSync(IEventBus modEventBus, ModContainer modContainer) {
         AnvilLibSyncEntries.SYNC_ENTRY.register(modEventBus);
-        modEventBus.addListener(this::onRegister);
+        modEventBus.addListener(EventPriority.LOWEST, this::onRegister);
+        modEventBus.addListener(this::onFMLCommonSetup);
         modEventBus.addListener(this::onRegisterConfigurationTasks);
         NeoForge.EVENT_BUS.addListener(this::onServerTick);
         NeoForge.EVENT_BUS.addListener(this::onServerStopped);
     }
 
-    @SubscribeEvent
-    public void onRegister(FMLCommonSetupEvent event) {
+    public void onFMLCommonSetup(FMLCommonSetupEvent event) {
         SyncConfigManager.compileContent();
     }
 
@@ -53,7 +53,6 @@ public class AnvilLibSync {
     /**
      * 每服务端 tick 结束时扫描惰性同步目标并下发变更。
      */
-    @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event) {
         AnvilLibSync.LAZY_SYNC_MANAGER.tickServer();
     }
@@ -61,18 +60,15 @@ public class AnvilLibSync {
     /**
      * 服务器停止时清理服务端侧惰性同步跟踪状态。
      */
-    @SubscribeEvent
     public void onServerStopped(ServerStoppedEvent event) {
         AnvilLibSync.LAZY_SYNC_MANAGER.clearServer();
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onRegister(RegisterEvent event) {
         if (!Objects.equals(event.getRegistryKey(), AnvilLibSyncRegistries.SYNC_ENTRY)) return;
         AnvilLibSync.SYNC_MANAGER.compileContent();
     }
 
-    @SubscribeEvent
     public void onRegisterConfigurationTasks(RegisterConfigurationTasksEvent event) {
         event.register(new SyncConfig(event.getListener()));
     }
