@@ -13,6 +13,7 @@ import net.minecraft.client.data.models.model.TextureSlot;
 import net.minecraft.client.data.models.model.TexturedModel;
 import net.minecraft.client.renderer.block.dispatch.VariantMutator;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
 public class TestBlocks {
@@ -27,6 +28,26 @@ public class TestBlocks {
             BlockModelGenerators.createSimpleBlock(
                 ctx.get(),
                 BlockModelGenerators.plainVariant(TexturedModel.CUBE.create(Blocks.COMMAND_BLOCK, provider.modelOutput))
+            )
+        ))
+        .simpleItem()
+        .register();
+
+    public static final BlockEntry<Block> RECIPE_TARGET = AnvilLibTest.REGISTRUM.block("recipe_target", Block::new)
+        .blockstate(() -> (ctx, provider) -> provider.blockStateOutput.accept(
+            BlockModelGenerators.createSimpleBlock(
+                ctx.get(),
+                BlockModelGenerators.plainVariant(TexturedModel.CUBE.create(Blocks.IRON_BLOCK, provider.modelOutput))
+            )
+        ))
+        .simpleItem()
+        .register();
+
+    public static final BlockEntry<Block> RECIPE_RESULT = AnvilLibTest.REGISTRUM.block("recipe_result", Block::new)
+        .blockstate(() -> (ctx, provider) -> provider.blockStateOutput.accept(
+            BlockModelGenerators.createSimpleBlock(
+                ctx.get(),
+                BlockModelGenerators.plainVariant(TexturedModel.CUBE.create(Blocks.GOLD_BLOCK, provider.modelOutput))
             )
         ))
         .simpleItem()

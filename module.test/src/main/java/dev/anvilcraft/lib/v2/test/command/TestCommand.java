@@ -4,9 +4,12 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import dev.anvilcraft.lib.v2.explosion.ExplosionExecutor;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
+import dev.anvilcraft.lib.v2.test.recipe.RecipeIntegrationTest;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -28,6 +31,9 @@ public class TestCommand {
                                 )
                             )
                         )
+                ).then(
+                    Commands.literal("recipe")
+                        .executes(TestCommand::recipe)
                 )
             )
         );
@@ -38,7 +44,7 @@ public class TestCommand {
         int breaksPerTick = IntegerArgumentType.getInteger(context, "breaksPerTick");
         int probabilityRadius = IntegerArgumentType.getInteger(context, "probabilityRadius");
         int meltingRadius = IntegerArgumentType.getInteger(context, "meltingRadius");
-        
+
         ExplosionExecutor.create()
             .radius(radius)
             .maxBreakPreTick(breaksPerTick)
@@ -46,6 +52,15 @@ public class TestCommand {
             .meltingRadius(meltingRadius)
             .executor(context.getSource().getEntity())
             .execute(context.getSource().getLevel(), BlockPos.containing(context.getSource().getPosition()));
+        return 1;
+    }
+
+    public static int recipe(CommandContext<CommandSourceStack> context) {
+        if (!(context.getSource().getEntity() instanceof ServerPlayer player)) {
+            context.getSource().sendFailure(Component.literal("This command must be run by a player"));
+            return 0;
+        }
+        RecipeIntegrationTest.runAll(player);
         return 1;
     }
 }
