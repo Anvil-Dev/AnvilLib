@@ -12,11 +12,11 @@ on:
       - .github/workflows/generate-matrix.js
       - gradle/**
       - module.*/src/**
-      - module.sync/processer/src/**
+      - module.sync/processor/src/**
       - module.*/build.gradle
-      - module.sync/processer/build.gradle
+      - module.sync/processor/build.gradle
       - module.*/gradle.properties
-      - module.sync/processer/gradle.properties
+      - module.sync/processor/gradle.properties
       - build.gradle
       - module.gradle
       - gradle.properties
@@ -42,17 +42,17 @@ jobs:
 
   # ── Build (topological levels) ──────────────────────────────────
 
-  processer-build:
+  processor-build:
     needs: [prepare]
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: sync
-      module_id: anvillib-sync-processer
+      module_id: anvillib-sync-processor
       mod_id: anvillib_sync_processor
       ci_build: true
       pr_build: true
-      gradle_project: anvillib-sync-neoforge-26.1:anvillib-sync-processer-neoforge-26.1
-      module_dir: module.sync/processer
+      gradle_project: anvillib-sync-neoforge-26.1:anvillib-sync-processor-neoforge-26.1
+      module_dir: module.sync/processor
 
   build-l0:
     needs: [prepare]
@@ -79,7 +79,7 @@ jobs:
       pr_build: true
 
   build-l2:
-    needs: [prepare, build-l1, processer-build]
+    needs: [prepare, build-l1, processor-build]
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
     uses: ./.github/workflows/build_and_test.yml

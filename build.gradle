@@ -113,7 +113,7 @@ tasks.register("createModule") {
 
 subprojects {
     if (it.name == "renderdoc-loader-internal") return
-    if (it.name == "anvillib-sync-processer-neoforge-26.1") return
+    if (it.name == "anvillib-sync-processor-neoforge-26.1") return
     apply plugin: 'java'
     apply plugin: 'java-library'
     apply plugin: 'eclipse'

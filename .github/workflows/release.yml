@@ -20,17 +20,17 @@ jobs:
 
   # ── Build (topological levels) ──────────────────────────────────
 
-  processer-build:
+  processor-build:
     needs: [prepare]
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: sync
-      module_id: anvillib-sync-processer
+      module_id: anvillib-sync-processor
       mod_id: anvillib_sync_processor
       ci_build: false
       pr_build: false
-      gradle_project: anvillib-sync-neoforge-26.1:anvillib-sync-processer-neoforge-26.1
-      module_dir: module.sync/processer
+      gradle_project: anvillib-sync-neoforge-26.1:anvillib-sync-processor-neoforge-26.1
+      module_dir: module.sync/processor
     secrets:
       maven_url: ${{ secrets.MAVEN_URL }}
       maven_user: ${{ secrets.MAVEN_USER }}
@@ -69,7 +69,7 @@ jobs:
       maven_pass: ${{ secrets.MAVEN_PASS }}
 
   build-l2:
-    needs: [prepare, build-l1, processer-build]
+    needs: [prepare, build-l1, processor-build]
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
     uses: ./.github/workflows/build_and_test.yml
@@ -86,14 +86,14 @@ jobs:
 
   # ── Maven Central deploy ────────────────────────────────────────
 
-  processer-deploy:
-    needs: [processer-build]
+  processor-deploy:
+    needs: [processor-build]
     uses: ./.github/workflows/publish_maven_central.yml
     with:
       module: sync
-      module_id: anvillib-sync-processer
-      gradle_project: anvillib-sync-neoforge-26.1:anvillib-sync-processer-neoforge-26.1
-      module_dir: module.sync/processer
+      module_id: anvillib-sync-processor
+      gradle_project: anvillib-sync-neoforge-26.1:anvillib-sync-processor-neoforge-26.1
+      module_dir: module.sync/processor
     secrets:
       maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
       maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
