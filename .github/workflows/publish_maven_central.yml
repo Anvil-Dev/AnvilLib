@@ -11,7 +11,7 @@ on:
         required: true
         type: string
       gradle_project:
-        description: 'Gradle project name without leading colon'
+        description: 'Gradle project path or name without leading colon'
         required: false
         type: string
         default: ''
