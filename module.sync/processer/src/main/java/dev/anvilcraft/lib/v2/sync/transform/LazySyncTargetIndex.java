@@ -10,12 +10,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 在类加载早期扫描所有使用 {@link dev.anvilcraft.lib.v2.sync.annotation.LazySync LazySync}
+ * 在类加载早期扫描所有使用 {@link dev.anvilcraft.lib.v2.sync.annotation.LazySync}
  * 注解的字段，记录其所属类的内部名。
  *
  * <p>{@link SyncClassProcessor} 依此判断哪些类需要注入实例/静态跟踪调用。
  * 字段级的方向、编解码器等信息在运行时由
- * {@link dev.anvilcraft.lib.v2.sync.management.LazySyncManager LazySyncManager}
+ * {@link dev.anvilcraft.lib.v2.sync.management.LazySyncManager}
  * 通过反射读取，故此处仅需记录类的集合。</p>
  */
 @Slf4j

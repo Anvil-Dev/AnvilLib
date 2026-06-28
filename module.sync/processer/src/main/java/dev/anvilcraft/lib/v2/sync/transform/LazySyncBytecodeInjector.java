@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * 为含 {@link dev.anvilcraft.lib.v2.sync.annotation.LazySync LazySync} 字段的类注入跟踪登记调用：
+ * 为含 {@link dev.anvilcraft.lib.v2.sync.annotation.LazySync} 字段的类注入跟踪登记调用：
  * <ul>
  *   <li>含实例 {@code @LazySync} 字段 → 在每个 {@code <init>} 末尾注入
  *       {@code AnvilLibSync.LAZY_SYNC_MANAGER.track(this)}；</li>
@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  *       {@code AnvilLibSync.LAZY_SYNC_MANAGER.trackStatic(Owner.class)}。</li>
  * </ul>
  *
- * <p>登记后由 {@link dev.anvilcraft.lib.v2.sync.management.LazySyncManager LazySyncManager}
+ * <p>登记后由 {@link dev.anvilcraft.lib.v2.sync.management.LazySyncManager}
  * 每 tick 扫描差分，故此处无需注入任何字段写入拦截。</p>
  */
 @Slf4j

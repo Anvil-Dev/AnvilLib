@@ -2,7 +2,13 @@ plugins {
     id 'java'
     id 'maven-publish'
     alias libs.plugins.lombok
+    alias libs.plugins.modDevGradle
     alias libs.plugins.jreleaser
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
 }
 
 String buildType = 'snapshot'
@@ -22,6 +28,10 @@ repositories {
     mavenCentral()
 }
 
+neoForge {
+    version = libs.versions.neoForge.get()
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
@@ -33,29 +43,11 @@ java {
 jar {
     manifest {
         attributes(
-            'Premain-Class': 'dev.anvilcraft.lib.renderdoc.loader.RenderDocAgent',
-            'Agent-Class': 'dev.anvilcraft.lib.renderdoc.loader.RenderDocAgent',
-            'Can-Redefine-Classes': 'false',
-            'Can-Retransform-Classes': 'false',
-            'Can-Set-Native-Method-Prefix': 'false'
+                'Can-Redefine-Classes': 'false',
+                'Can-Retransform-Classes': 'false',
+                'Can-Set-Native-Method-Prefix': 'false'
         )
     }
-}
-
-tasks.register('sourcesJar', Jar) {
-    from sourceSets.main.allSource
-    archiveClassifier = 'sources'
-}
-
-tasks.register('javadocJar', Jar) {
-    from javadoc.destinationDir
-    dependsOn javadoc
-    archiveClassifier = 'javadoc'
-}
-
-javadoc {
-    options.encoding = 'UTF-8'
-    options.addStringOption('Xdoclint:none', '-quiet')
 }
 
 artifacts {

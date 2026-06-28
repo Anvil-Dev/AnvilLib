@@ -4,8 +4,12 @@ neoForge = "26.1.2.76"
 modDevGradle = "2.0.141"
 lombok = "9.2.0"
 machete = "2.0.1"
+jreleaser = "1.23.0"
+modPublish = "1.1.0"
 
 [plugins]
 modDevGradle = { id = "net.neoforged.moddev", version.ref = "modDevGradle" }
 lombok = { id = "io.freefair.lombok", version.ref = "lombok" }
 machete = { id = "io.github.p03w.machete", version.ref = "machete" }
+jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
+modPublish = { id = "me.modmuss50.mod-publish-plugin", version.ref = "modPublish" }
