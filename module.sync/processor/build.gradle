@@ -112,7 +112,22 @@ publishing {
         }
     }
     repositories {
+        // Add repositories to publish to here.
+        def MAVEN_URL = System.getenv("MAVEN_URL")
+        if (MAVEN_URL != null) {
+            maven {
+                url MAVEN_URL
+                credentials {
+                    username System.getenv("MAVEN_USERNAME")
+                    password System.getenv("MAVEN_PASSWORD")
+                }
+            }
+        }
         mavenLocal()
+        maven {
+            name = "staging"
+            url = layout.buildDirectory.dir("staging-deploy")
+        }
     }
 }
 
