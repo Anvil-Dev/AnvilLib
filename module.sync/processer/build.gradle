@@ -6,11 +6,6 @@ plugins {
     alias libs.plugins.jreleaser
 }
 
-java {
-    withSourcesJar()
-    withJavadocJar()
-}
-
 String buildType = 'snapshot'
 String buildNumber
 if (System.getenv("CI_BUILD") == 'false') buildNumber = null else {
@@ -38,6 +33,29 @@ java {
     }
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.register('sourcesJar', Jar) {
+    from delombok.outputs.files
+    dependsOn delombok
+    archiveClassifier = "sources"
+}
+
+tasks.register('javadocJar', Jar) {
+    from javadoc.destinationDir
+    dependsOn javadoc
+    archiveClassifier = "javadoc"
+}
+
+javadoc {
+    // options.encoding = 'UTF-8'
+    options {
+        encoding = 'UTF-8'
+        addStringOption 'Xdoclint:none', '-quiet'
+        addStringOption 'tag', 'apiNote:a:API Note:'
+        addStringOption 'tag', 'implSpec:a:Implementation Requirement:'
+        addStringOption 'tag', 'implNote:a:Implementation Note:'
+    }
 }
 
 jar {

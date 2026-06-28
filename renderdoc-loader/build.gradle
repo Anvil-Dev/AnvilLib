@@ -54,8 +54,14 @@ tasks.register('javadocJar', Jar) {
 }
 
 javadoc {
-    options.encoding = 'UTF-8'
-    options.addStringOption('Xdoclint:none', '-quiet')
+    // options.encoding = 'UTF-8'
+    options {
+        encoding = 'UTF-8'
+        addStringOption 'Xdoclint:none', '-quiet'
+        addStringOption 'tag', 'apiNote:a:API Note:'
+        addStringOption 'tag', 'implSpec:a:Implementation Requirement:'
+        addStringOption 'tag', 'implNote:a:Implementation Note:'
+    }
 }
 
 artifacts {
