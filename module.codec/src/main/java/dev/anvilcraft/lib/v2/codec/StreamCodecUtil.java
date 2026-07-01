@@ -15,9 +15,32 @@ import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import net.minecraft.advancements.critereon.BlockPredicate;
+import net.minecraft.advancements.critereon.DamageSourcePredicate;
+import net.minecraft.advancements.critereon.DistancePredicate;
+import net.minecraft.advancements.critereon.EntityEquipmentPredicate;
+import net.minecraft.advancements.critereon.EntityFlagsPredicate;
+import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.advancements.critereon.EntitySubPredicate;
+import net.minecraft.advancements.critereon.EntityTypePredicate;
+import net.minecraft.advancements.critereon.FluidPredicate;
+import net.minecraft.advancements.critereon.ItemPredicate;
+import net.minecraft.advancements.critereon.ItemSubPredicate;
+import net.minecraft.advancements.critereon.LightPredicate;
+import net.minecraft.advancements.critereon.LocationPredicate;
+import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.advancements.critereon.MobEffectsPredicate;
+import net.minecraft.advancements.critereon.MovementPredicate;
+import net.minecraft.advancements.critereon.NbtPredicate;
+import net.minecraft.advancements.critereon.SlotsPredicate;
+import net.minecraft.advancements.critereon.StatePropertiesPredicate;
+import net.minecraft.advancements.critereon.TagPredicate;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -25,8 +48,12 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.inventory.SlotRanges;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,6 +64,7 @@ import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.function.Function;
 
 /**
@@ -158,6 +186,248 @@ public abstract class StreamCodecUtil {
         StreamCodecUtil::numberProviderNetworkEncode,
         StreamCodecUtil::numberProviderNetworkDecode
     );
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, EntityTypePredicate> ENTITY_TYPE_PREDICATE = StreamCodec.composite(
+        ByteBufCodecs.holderSet(Registries.ENTITY_TYPE),
+        EntityTypePredicate::types,
+        EntityTypePredicate::new
+    );
+    public static final StreamCodec<ByteBuf, DistancePredicate> DISTANCE_PREDICATE = StreamCodec.composite(
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        DistancePredicate::x,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        DistancePredicate::y,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        DistancePredicate::z,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        DistancePredicate::horizontal,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        DistancePredicate::absolute,
+        DistancePredicate::new
+    );
+    public static final StreamCodec<ByteBuf, MovementPredicate> MOVEMENT_PREDICATE = StreamCodecUtil.composite(
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        MovementPredicate::x,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        MovementPredicate::y,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        MovementPredicate::z,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        MovementPredicate::speed,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        MovementPredicate::horizontalSpeed,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        MovementPredicate::verticalSpeed,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        MovementPredicate::fallDistance,
+        MovementPredicate::new
+    );
+    public static final StreamCodec<ByteBuf, MinMaxBounds.Doubles> MIN_MAX_BOUNDS_DOUBLES = StreamCodec.composite(
+        ByteBufCodecs.optional(ByteBufCodecs.DOUBLE),
+        MinMaxBounds.Doubles::min,
+        ByteBufCodecs.optional(ByteBufCodecs.DOUBLE),
+        MinMaxBounds.Doubles::max,
+        ByteBufCodecs.optional(ByteBufCodecs.DOUBLE),
+        MinMaxBounds.Doubles::minSq,
+        ByteBufCodecs.optional(ByteBufCodecs.DOUBLE),
+        MinMaxBounds.Doubles::maxSq,
+        MinMaxBounds.Doubles::new
+    );
+    public static final StreamCodec<ByteBuf, LocationPredicate.PositionPredicate> POSITION_PREDICATE = StreamCodec.composite(
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        LocationPredicate.PositionPredicate::x,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        LocationPredicate.PositionPredicate::y,
+        StreamCodecUtil.MIN_MAX_BOUNDS_DOUBLES,
+        LocationPredicate.PositionPredicate::z,
+        LocationPredicate.PositionPredicate::new
+    );
+    public static final StreamCodec<ByteBuf, LightPredicate> LIGHT_PREDICATE = StreamCodec.composite(
+        StreamCodecUtil.MIN_MAX_BOUNDS_INTS,
+        LightPredicate::composite,
+        LightPredicate::new
+    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, FluidPredicate> FLUID_PREDICATE = StreamCodec.composite(
+        ByteBufCodecs.optional(ByteBufCodecs.holderSet(Registries.FLUID)),
+        FluidPredicate::fluids,
+        ByteBufCodecs.optional(StatePropertiesPredicate.STREAM_CODEC),
+        FluidPredicate::properties,
+        FluidPredicate::new
+    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, LocationPredicate> LOCATION_PREDICATE = StreamCodecUtil.composite(
+        ByteBufCodecs.optional(StreamCodecUtil.POSITION_PREDICATE),
+        LocationPredicate::position,
+        ByteBufCodecs.optional(ByteBufCodecs.holderSet(Registries.BIOME)),
+        LocationPredicate::biomes,
+        ByteBufCodecs.optional(ByteBufCodecs.holderSet(Registries.STRUCTURE)),
+        LocationPredicate::structures,
+        ByteBufCodecs.optional(ResourceKey.streamCodec(Registries.DIMENSION)),
+        LocationPredicate::dimension,
+        ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+        LocationPredicate::smokey,
+        ByteBufCodecs.optional(StreamCodecUtil.LIGHT_PREDICATE),
+        LocationPredicate::light,
+        ByteBufCodecs.optional(BlockPredicate.STREAM_CODEC),
+        LocationPredicate::block,
+        ByteBufCodecs.optional(StreamCodecUtil.FLUID_PREDICATE),
+        LocationPredicate::fluid,
+        ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+        LocationPredicate::canSeeSky,
+        LocationPredicate::new
+    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, EntityPredicate.LocationWrapper> LOCATION_WRAPPER = StreamCodec.composite(
+        ByteBufCodecs.optional(StreamCodecUtil.LOCATION_PREDICATE),
+        EntityPredicate.LocationWrapper::located,
+        ByteBufCodecs.optional(StreamCodecUtil.LOCATION_PREDICATE),
+        EntityPredicate.LocationWrapper::steppingOn,
+        ByteBufCodecs.optional(StreamCodecUtil.LOCATION_PREDICATE),
+        EntityPredicate.LocationWrapper::affectsMovement,
+        EntityPredicate.LocationWrapper::new
+    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, MobEffectsPredicate.MobEffectInstancePredicate> MOB_EFFECT_INSTANCE_PREDICATE =
+        StreamCodec.composite(
+            StreamCodecUtil.MIN_MAX_BOUNDS_INTS,
+            MobEffectsPredicate.MobEffectInstancePredicate::amplifier,
+            StreamCodecUtil.MIN_MAX_BOUNDS_INTS,
+            MobEffectsPredicate.MobEffectInstancePredicate::duration,
+            ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+            MobEffectsPredicate.MobEffectInstancePredicate::ambient,
+            ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+            MobEffectsPredicate.MobEffectInstancePredicate::visible,
+            MobEffectsPredicate.MobEffectInstancePredicate::new
+        );
+    public static final StreamCodec<RegistryFriendlyByteBuf, MobEffectsPredicate> MOB_EFFECTS_PREDICATE = StreamCodec.composite(
+        ByteBufCodecs.map(HashMap::new, MobEffect.STREAM_CODEC, StreamCodecUtil.MOB_EFFECT_INSTANCE_PREDICATE),
+        MobEffectsPredicate::effectMap,
+        MobEffectsPredicate::new
+    );
+    public static final StreamCodec<ByteBuf, NbtPredicate> NBT_PREDICATE = StreamCodec.composite(
+        ByteBufCodecs.COMPOUND_TAG,
+        NbtPredicate::tag,
+        NbtPredicate::new
+    );
+    public static final StreamCodec<ByteBuf, EntityFlagsPredicate> ENTITY_FLAGS_PREDICATE = StreamCodecUtil.composite(
+        ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+        EntityFlagsPredicate::isOnGround,
+        ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+        EntityFlagsPredicate::isOnFire,
+        ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+        EntityFlagsPredicate::isCrouching,
+        ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+        EntityFlagsPredicate::isSprinting,
+        ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+        EntityFlagsPredicate::isSwimming,
+        ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+        EntityFlagsPredicate::isFlying,
+        ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+        EntityFlagsPredicate::isBaby,
+        EntityFlagsPredicate::new
+    );
+    public static final StreamCodec<ByteBuf, MinMaxBounds.Ints> MIN_MAX_BOUNDS_INTS = StreamCodec.composite(
+        ByteBufCodecs.optional(ByteBufCodecs.VAR_INT),
+        MinMaxBounds.Ints::min,
+        ByteBufCodecs.optional(ByteBufCodecs.VAR_INT),
+        MinMaxBounds.Ints::max,
+        ByteBufCodecs.optional(ByteBufCodecs.VAR_LONG),
+        MinMaxBounds.Ints::minSq,
+        ByteBufCodecs.optional(ByteBufCodecs.VAR_LONG),
+        MinMaxBounds.Ints::maxSq,
+        MinMaxBounds.Ints::new
+    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, ItemPredicate> ITEM_PREDICATE = StreamCodec.composite(
+        ByteBufCodecs.optional(ByteBufCodecs.holderSet(Registries.ITEM)),
+        ItemPredicate::items,
+        StreamCodecUtil.MIN_MAX_BOUNDS_INTS,
+        ItemPredicate::count,
+        DataComponentPredicate.STREAM_CODEC,
+        ItemPredicate::components,
+        ByteBufCodecs.fromCodecWithRegistries(ItemSubPredicate.CODEC),
+        ItemPredicate::subPredicates,
+        ItemPredicate::new
+    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, EntityEquipmentPredicate> ENTITY_EQUIPMENT_PREDICATE = StreamCodecUtil.composite(
+        ByteBufCodecs.optional(StreamCodecUtil.ITEM_PREDICATE),
+        EntityEquipmentPredicate::head,
+        ByteBufCodecs.optional(StreamCodecUtil.ITEM_PREDICATE),
+        EntityEquipmentPredicate::chest,
+        ByteBufCodecs.optional(StreamCodecUtil.ITEM_PREDICATE),
+        EntityEquipmentPredicate::legs,
+        ByteBufCodecs.optional(StreamCodecUtil.ITEM_PREDICATE),
+        EntityEquipmentPredicate::feet,
+        ByteBufCodecs.optional(StreamCodecUtil.ITEM_PREDICATE),
+        EntityEquipmentPredicate::body,
+        ByteBufCodecs.optional(StreamCodecUtil.ITEM_PREDICATE),
+        EntityEquipmentPredicate::mainhand,
+        ByteBufCodecs.optional(StreamCodecUtil.ITEM_PREDICATE),
+        EntityEquipmentPredicate::offhand,
+        EntityEquipmentPredicate::new
+    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, EntitySubPredicate> ENTITY_SUB_PREDICATE = StreamCodecUtil.codec2Stream(
+        EntitySubPredicate.CODEC
+    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, SlotsPredicate> SLOTS_PREDICATE = StreamCodec.composite(
+        ByteBufCodecs.map(HashMap::new, StreamCodecUtil.codec2Stream(SlotRanges.CODEC), StreamCodecUtil.ITEM_PREDICATE),
+        SlotsPredicate::slots,
+        SlotsPredicate::new
+    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, EntityPredicate> ENTITY_PREDICATE = StreamCodec.recursive(parent -> StreamCodecUtil.composite(
+        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_TYPE_PREDICATE),
+        EntityPredicate::entityType,
+        ByteBufCodecs.optional(StreamCodecUtil.DISTANCE_PREDICATE),
+        EntityPredicate::distanceToPlayer,
+        ByteBufCodecs.optional(StreamCodecUtil.MOVEMENT_PREDICATE),
+        EntityPredicate::movement,
+        StreamCodecUtil.LOCATION_WRAPPER,
+        EntityPredicate::location,
+        ByteBufCodecs.optional(StreamCodecUtil.MOB_EFFECTS_PREDICATE),
+        EntityPredicate::effects,
+        ByteBufCodecs.optional(StreamCodecUtil.NBT_PREDICATE),
+        EntityPredicate::nbt,
+        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_FLAGS_PREDICATE),
+        EntityPredicate::flags,
+        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_EQUIPMENT_PREDICATE),
+        EntityPredicate::equipment,
+        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_SUB_PREDICATE),
+        EntityPredicate::subPredicate,
+        ByteBufCodecs.optional(ByteBufCodecs.VAR_INT),
+        EntityPredicate::periodicTick,
+        ByteBufCodecs.optional(parent),
+        EntityPredicate::vehicle,
+        ByteBufCodecs.optional(parent),
+        EntityPredicate::passenger,
+        ByteBufCodecs.optional(parent),
+        EntityPredicate::targetedEntity,
+        ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8),
+        EntityPredicate::team,
+        ByteBufCodecs.optional(StreamCodecUtil.SLOTS_PREDICATE),
+        EntityPredicate::slots,
+        EntityPredicate::new
+    ));
+    public static final StreamCodec<RegistryFriendlyByteBuf, DamageSourcePredicate> DAMAGE_SOURCE_PREDICATE = StreamCodec.composite(
+        StreamCodecUtil.tagPredicate(Registries.DAMAGE_TYPE).apply(ByteBufCodecs.list()),
+        DamageSourcePredicate::tags,
+        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_PREDICATE),
+        DamageSourcePredicate::directEntity,
+        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_PREDICATE),
+        DamageSourcePredicate::sourceEntity,
+        ByteBufCodecs.optional(ByteBufCodecs.BOOL),
+        DamageSourcePredicate::isDirect,
+        DamageSourcePredicate::new
+    );
+
+    public static <T> StreamCodec<ByteBuf, TagPredicate<T>> tagPredicate(ResourceKey<? extends Registry<T>> registryKey) {
+        return StreamCodec.composite(
+            StreamCodecUtil.tagKey(registryKey),
+            TagPredicate::tag,
+            ByteBufCodecs.BOOL,
+            TagPredicate::expected,
+            TagPredicate::new
+        );
+    }
+
+    public static <T> StreamCodec<ByteBuf, TagKey<T>> tagKey(ResourceKey<? extends Registry<T>> registryKey) {
+        return ResourceLocation.STREAM_CODEC.map(location -> TagKey.create(registryKey, location), TagKey::location);
+    }
 
     /**
      * 将 {@link NumberProvider} 编码为带类型标记的二进制格式。
