@@ -341,7 +341,7 @@ public abstract class StreamCodecUtil {
         ItemPredicate::count,
         DataComponentPredicate.STREAM_CODEC,
         ItemPredicate::components,
-        ByteBufCodecs.fromCodecWithRegistries(ItemSubPredicate.CODEC),
+        StreamCodecUtil.codec2Stream(ItemSubPredicate.CODEC),
         ItemPredicate::subPredicates,
         ItemPredicate::new
     );
