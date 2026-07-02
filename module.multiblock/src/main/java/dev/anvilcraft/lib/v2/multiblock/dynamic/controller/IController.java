@@ -35,7 +35,6 @@ public interface IController {
     default void onFormed(Level level, MultiblockState state) {
     }
 
-
     /**
      * 多方块未成型回调
      *

@@ -6,6 +6,7 @@ import dev.anvilcraft.lib.v2.multiblock.AnvilLibMultiblock;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.controller.ControllerRecord;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.controller.IController;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.definition.MultiblockDefinition;
+import dev.anvilcraft.lib.v2.multiblock.dynamic.event.DynamicMultiblockEvent;
 import dev.anvilcraft.lib.v2.multiblock.init.LibRegistries;
 import dev.anvilcraft.lib.v2.multiblock.network.MultiblockFormPacket;
 import dev.anvilcraft.lib.v2.multiblock.network.MultiblockUnformPacket;
@@ -21,6 +22,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.UnknownNullability;
 import org.slf4j.Logger;
@@ -174,9 +176,23 @@ public class DynamicMultiblockManager extends SavedData {
                 throw e;
             }
             if (formed) {
-                controller.onFormed(level, cur);
+                DynamicMultiblockEvent.Form event = new DynamicMultiblockEvent.Form(level, controller, cur);
+                NeoForge.EVENT_BUS.post(event);
+                if (!event.isCanceled()) {
+                    controller.onFormed(level, cur);
+                } else {
+                    cur.setFormed(false);
+                    return;
+                }
             } else {
-                controller.onUnformed(level, cur);
+                DynamicMultiblockEvent.Unform event = new DynamicMultiblockEvent.Unform(level, controller, cur);
+                NeoForge.EVENT_BUS.post(event);
+                if (!event.isCanceled()) {
+                    controller.onUnformed(level, cur);
+                } else {
+                    cur.setFormed(true);
+                    return;
+                }
             }
         }
 

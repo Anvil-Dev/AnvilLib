@@ -4,6 +4,8 @@ import dev.anvilcraft.lib.v2.multiblock.AnvilLibMultiblock;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.DynamicMultiblockManager;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.MultiblockState;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.controller.ControllerRecord;
+import dev.anvilcraft.lib.v2.multiblock.dynamic.controller.IController;
+import dev.anvilcraft.lib.v2.multiblock.dynamic.event.DynamicMultiblockEvent;
 import dev.anvilcraft.lib.v2.network.packet.IClientboundPacket;
 import dev.anvilcraft.lib.v2.network.packet.IPacket;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +16,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.common.NeoForge;
 
 @Slf4j
 @SuppressWarnings("unused")
@@ -40,7 +43,14 @@ public record MultiblockUnformPacket(MultiblockState state) implements IClientbo
         BlockState state = level.getBlockState(pos);
         if (!this.state.getDefinition(level.registryAccess()).value().isController(level, state, level.getBlockEntity(pos))) return;
         try {
-            ControllerRecord.get(state.getBlock(), this.state.getDefinitionKey().identifier()).onUnformed(level, this.state);
+            IController controller = ControllerRecord.get(state.getBlock(), this.state.getDefinitionKey().identifier());
+            DynamicMultiblockEvent.Unform event = new DynamicMultiblockEvent.Unform(level, controller, this.state);
+            NeoForge.EVENT_BUS.post(event);
+            if (!event.isCanceled()) {
+                controller.onUnformed(level, this.state);
+            } else {
+                this.state.setFormed(true);
+            }
         } catch (IllegalArgumentException e) {
             log.error(e.getLocalizedMessage(), e);
             throw e;
