@@ -5,6 +5,7 @@ import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
 import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
 import dev.anvilcraft.lib.v2.rendering.bloom.BloomPostEffect;
 import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.main.GameConfig;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -30,19 +31,19 @@ public class MinecraftMixin {
         ALRPostEffects.createPostEffects();
     }
 
-    @Inject(
-        method = "resizeGui",
-        at = @At("RETURN")
-    )
-    private void onResizeGui(CallbackInfo ci) {
-        BloomPostEffect bloomPostEffect = ALRPostEffects.getBloomPostEffect();
-        if (bloomPostEffect != null) {
-            bloomPostEffect.resize(
-                this.window.getWidth(),
-                this.window.getHeight()
-            );
-        }
-    }
+//    @Inject(
+//        method = "resizeGui",
+//        at = @At("RETURN")
+//    )
+//    private void onResizeGui(CallbackInfo ci) {
+//        BloomPostEffect bloomPostEffect = ALRPostEffects.getBloomPostEffect();
+//        if (bloomPostEffect != null) {
+//            bloomPostEffect.resize(
+//                this.window.getWidth(),
+//                this.window.getHeight()
+//            );
+//        }
+//    }
 
     @Inject(
         method = "updateLevelInEngines(Lnet/minecraft/client/multiplayer/ClientLevel;Z)V",

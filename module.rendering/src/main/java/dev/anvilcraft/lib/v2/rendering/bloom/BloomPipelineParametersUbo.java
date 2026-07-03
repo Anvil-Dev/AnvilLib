@@ -1,23 +1,29 @@
 package dev.anvilcraft.lib.v2.rendering.bloom;
 
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutDefinition;
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutEntry;
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutDefinition;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutEntry;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.ShaderBufferObjectUsage;
 import lombok.Getter;
 import lombok.Setter;
 import org.joml.Vector2f;
 
 @Getter
 @Setter
-public class BloomPipelineParametersUbo extends UboObject<BloomPipelineParametersUbo> {
+public class BloomPipelineParametersUbo extends BufferObject<BloomPipelineParametersUbo> {
 
-    public static final UboLayoutDefinition<BloomPipelineParametersUbo> DEFINITION = UboLayoutDefinition.create(
-            UboLayoutEntry.<BloomPipelineParametersUbo>ofVec2f().forGetter(BloomPipelineParametersUbo::getResolution).build(),
-            UboLayoutEntry.<BloomPipelineParametersUbo>ofInt().forGetter(BloomPipelineParametersUbo::getFrameIndex).build()
+    public static final BufferObjectLayoutDefinition<BloomPipelineParametersUbo> DEFINITION = BufferObjectLayoutDefinition.create(
+            BufferObjectLayoutEntry.<BloomPipelineParametersUbo>ofVec2f().forGetter(BloomPipelineParametersUbo::getResolution).build(),
+            BufferObjectLayoutEntry.<BloomPipelineParametersUbo>ofInt().forGetter(BloomPipelineParametersUbo::getFrameIndex).build()
     );
 
     private final Vector2f      resolution = new Vector2f();
     private       int           frameIndex;
+
+    protected BloomPipelineParametersUbo() {
+        super(BufferLayout.STD140, ShaderBufferObjectUsage.UBO);
+    }
 
     public void setResolution(int width, int height) {
         this.resolution.set(
@@ -27,7 +33,7 @@ public class BloomPipelineParametersUbo extends UboObject<BloomPipelineParameter
     }
 
     @Override
-    protected UboLayoutDefinition<BloomPipelineParametersUbo> getDefinition() {
+    protected BufferObjectLayoutDefinition<BloomPipelineParametersUbo> getDefinition() {
         return                  DEFINITION;
     }
 }

@@ -1,5 +1,8 @@
 {
   "net/minecraft/world/level/block/piston/PistonMovingBlockEntity": [
     "dev/anvilcraft/lib/v2/piston/injection/IPistonMovingBlockEntityExtension"
+  ],
+  "net/minecraft/client/renderer/blockentity/state/PistonHeadRenderState": [
+    "dev/anvilcraft/lib/v2/piston/injection/IPistonHeadRenderStateExtension"
   ]
 }

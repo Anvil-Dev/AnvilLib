@@ -22,6 +22,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
 import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
 import dev.anvilcraft.lib.v2.rendering.foundation.compound.CompoundSubmitNodeStorage;
 import dev.anvilcraft.lib.v2.rendering.foundation.compound.DirtyTracked;
 import lombok.Getter;
@@ -43,9 +44,9 @@ import java.util.OptionalInt;
 
 @SuppressWarnings({"FieldMayBeFinal", "SameParameterValue"})
 public class BloomPostEffect implements DirtyTracked {
-    public static final int UNIFORM_TRANSFORM_SIZE = TransformsUbo.DEFINITION.size();
-    public static final int UNIFORM_BLOOM_SIZE = BloomParametersUbo.DEFINITION.size();
-    public static final int UNIFORM_ENHANCED_BLOOM_SIZE = BloomPipelineParametersUbo.DEFINITION.size();
+    public static final int UNIFORM_TRANSFORM_SIZE = TransformsUbo.DEFINITION.size(BufferLayout.STD140);
+    public static final int UNIFORM_BLOOM_SIZE = BloomParametersUbo.DEFINITION.size(BufferLayout.STD140);
+    public static final int UNIFORM_ENHANCED_BLOOM_SIZE = BloomPipelineParametersUbo.DEFINITION.size(BufferLayout.STD140);
 
     // todo: uses config or options
     private static final int PASSES_AMOUNT = 5;
@@ -61,25 +62,25 @@ public class BloomPostEffect implements DirtyTracked {
     private final GpuDevice device = RenderSystem.getDevice();
 
     private final GpuBuffer transformUBO = device.createBuffer(
-        () -> "BloomPostEffect->TransformUBO",
+        () -> "BloomPostEffect TransformUBO",
         GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
         UNIFORM_TRANSFORM_SIZE
     );
 
     private final GpuBuffer bloomUBO = device.createBuffer(
-        () -> "BloomPostEffect->BloomApplyUBO",
+        () -> "BloomPostEffect BloomApplyUBO",
         GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
         UNIFORM_BLOOM_SIZE
     );
 
     private final GpuBuffer enhancedBloomParametersUBO = device.createBuffer(
-        () -> "BloomPostEffect->BloomParametersUBO",
+        () -> "BloomPostEffect BloomParametersUBO",
         GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
         UNIFORM_ENHANCED_BLOOM_SIZE
     );
 
     private final GpuBuffer vertexBuffer = device.createBuffer(
-        () -> "BloomPostEffect->VertexBuffer",
+        () -> "BloomPostEffect VertexBuffer",
         GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_VERTEX,
         1024
     );
@@ -206,6 +207,7 @@ public class BloomPostEffect implements DirtyTracked {
 
     @SuppressWarnings("DataFlowIssue")
     public void process() {
+        if (!dirty) return;
         CommandEncoder commandEncoder = device.createCommandEncoder();
 
         transformsUbo.upload(commandEncoder, transformUBO.slice());
@@ -266,8 +268,6 @@ public class BloomPostEffect implements DirtyTracked {
         bloomPass.drawIndexed(0, 0, indexCount, 1);
         bloomPass.close();
     }
-
-
 
     private void doDownSample(
         CommandEncoder commandEncoder,

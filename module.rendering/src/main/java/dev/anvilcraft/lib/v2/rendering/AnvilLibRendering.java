@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering;
 
 import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeShaderManager;
 import dev.anvilcraft.lib.v2.rendering.gui.renderer.BlockStatePipRenderer;
 import dev.anvilcraft.lib.v2.rendering.gui.renderer.StructurePipRenderer;
 import dev.anvilcraft.lib.v2.rendering.gui.state.BlockStatePipRenderingState;
@@ -11,6 +12,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -37,10 +39,32 @@ public class AnvilLibRendering {
     }
 
     @SubscribeEvent
-    public static void on(RenderLevelStageEvent.AfterTranslucentParticles event) {
+    public static void on(AddClientReloadListenersEvent event) {
+        event.addListener(AnvilLibRendering.location("compute_shader_manager"), ALRComputeShaderManager.INSTANCE);
+    }
+
+    @SubscribeEvent
+    public static void on(RenderLevelStageEvent.AfterOpaqueBlocks event) {
         if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
-            CachedBlockEntityRenderingPipeline.getInstance().render(event.getLevelRenderState().cameraRenderState.cullFrustum);
+            CachedBlockEntityRenderingPipeline.getInstance().render(
+                event.getLevelRenderState().cameraRenderState.cullFrustum,
+                false
+            );
         }
+    }
+
+    @SubscribeEvent
+    public static void on(RenderLevelStageEvent.AfterTranslucentFeatures event) {
+        if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
+            CachedBlockEntityRenderingPipeline.getInstance().render(
+                event.getLevelRenderState().cameraRenderState.cullFrustum,
+                true
+            );
+        }
+    }
+
+    @SubscribeEvent
+    public static void on(RenderLevelStageEvent.AfterTranslucentParticles event) {
         ALRPostEffects.runBloomDraws(event.getModelViewMatrix());
     }
 

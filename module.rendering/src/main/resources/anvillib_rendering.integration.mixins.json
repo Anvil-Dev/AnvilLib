@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.anvilcraft.lib.v2.rendering.integration.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "anvillib.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+    "CachedBlockEntityRenderingPipelineMixin"
+  ],
+  "plugin": "dev.anvilcraft.lib.v2.rendering.integration.mixins.ALRIntegrationCompatMixinPlugin",
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

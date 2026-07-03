@@ -148,7 +148,7 @@ public class ItemCache {
         Vec3 elementPos,
         Vec3 elementRange
     ) {
-        ResourceHandler<ItemResource>inputHandler = cache.getInput();
+        ResourceHandler<ItemResource> inputHandler = cache.getInput();
         for (int i = 0; i < inputHandler.size(); i++) {
             ItemResourceHandlerCacheElement element = new ItemResourceHandlerCacheElement(
                 itemCache,
@@ -159,7 +159,7 @@ public class ItemCache {
             );
             input.add(element);
         }
-        ResourceHandler<ItemResource>outputHandler = cache.getOutput();
+        ResourceHandler<ItemResource> outputHandler = cache.getOutput();
         for (int i = 0; i < outputHandler.size(); i++) {
             ItemResourceHandlerCacheElement element = new ItemResourceHandlerCacheElement(
                 itemCache,
@@ -250,7 +250,7 @@ public class ItemCache {
         Set<ICacheElement> input = new HashSet<>();
         Set<ICacheElement> output = new HashSet<>();
         Vec3 elementPos = entity.getBlockPos().getCenter();
-        Vec3 elementRange = new Vec3(0.5, 0.5, 0.5);
+        Vec3 elementRange = new Vec3(1, 1, 1);
         Predicate<BlockEntity> inTag;
         Iterable<Holder<BlockEntityType<?>>> tagOrEmpty = BuiltInRegistries.BLOCK_ENTITY_TYPE.getTagOrEmpty(LibBlockEntityTags.ITEM_CACHE);
         List<ResourceKey<BlockEntityType<?>>> keys = new ArrayList<>();

@@ -12,18 +12,18 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix3x2f;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Render state for SDF text rendering.
  *
  * <p>Coordinates are in screen space and will be transformed via the pose matrix.</p>
  */
+@ApiStatus.Internal
 public record SdfTextRenderState(
     Matrix3x2f pose,
     List<SdfTextLayout.GlyphQuad> glyphs,
@@ -32,10 +32,10 @@ public record SdfTextRenderState(
     int atlasWidth,
     int atlasHeight,
     int color,
+    int originX,
+    int originY,
     @Nullable ScreenRectangle scissorArea
 ) implements LibGuiElementRenderState {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SdfTextRenderState.class);
-
     @Override
     public RenderPipeline pipeline() {
         return ALFPipelines.SDF_TEXT;
@@ -55,14 +55,16 @@ public record SdfTextRenderState(
 
     @Override
     public void buildVertices(VertexConsumer consumer) {
+        int ox = this.originX;
+        int oy = this.originY;
         for (SdfTextLayout.GlyphQuad quad : this.glyphs) {
             // Build quad vertices in screen space
             // The pose matrix will handle transformation to clip space
 
-            float x0 = quad.x0();
-            float y0 = quad.y0();
-            float x1 = quad.x1();
-            float y1 = quad.y1();
+            float x0 = quad.x0() + ox;
+            float y0 = quad.y0() + oy;
+            float x1 = quad.x1() + ox;
+            float y1 = quad.y1() + oy;
 
             float u0 = quad.u0();
             float v0 = quad.v0();

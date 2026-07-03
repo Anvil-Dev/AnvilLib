@@ -29,8 +29,12 @@ import org.slf4j.Logger;
 import java.util.List;
 import java.util.Optional;
 
+/// @deprecated 请使用 {@link dev.anvilcraft.lib.v2.util.UnlimitedItemStack} 以获得对 `26.1.2` 更好的支持
+/// @since 2.0.0+snapshot.463
+/// @see dev.anvilcraft.lib.v2.util.UnlimitedItemStack
 @Getter
 @Setter
+@Deprecated(since = "2.0.0+snapshot.463", forRemoval = true)
 public class UnlimitedItemStack {
     private static final Logger LOGGER = LogUtils.getLogger();
     public static final UnlimitedItemStack EMPTY = new UnlimitedItemStack(ItemStack.EMPTY, 0);

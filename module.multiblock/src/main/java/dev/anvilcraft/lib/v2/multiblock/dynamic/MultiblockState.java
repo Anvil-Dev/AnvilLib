@@ -16,6 +16,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
+import org.jspecify.annotations.Nullable;
 
 @Getter
 @Setter
@@ -42,8 +43,9 @@ public class MultiblockState {
 
     private final BlockPos controllerPos;
     private final ResourceKey<MultiblockDefinition> definitionKey;
+    @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
-    private Holder.Reference<MultiblockDefinition> definition;
+    private Holder.@Nullable Reference<MultiblockDefinition> definition;
     private boolean formed;
 
     public MultiblockState(BlockPos controllerPos, ResourceKey<MultiblockDefinition> definitionKey) {
@@ -54,10 +56,6 @@ public class MultiblockState {
         this.controllerPos = controllerPos;
         this.definitionKey = definitionKey;
         this.formed = formed;
-    }
-
-    public ResourceKey<MultiblockDefinition> getDefinitionKey() {
-        return this.definition.key();
     }
 
     public Holder.Reference<MultiblockDefinition> getDefinition(HolderLookup.Provider registries) {

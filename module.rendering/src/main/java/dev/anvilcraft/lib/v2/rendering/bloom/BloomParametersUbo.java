@@ -1,19 +1,21 @@
 package dev.anvilcraft.lib.v2.rendering.bloom;
 
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutDefinition;
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutEntry;
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutDefinition;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutEntry;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.ShaderBufferObjectUsage;
 import lombok.Getter;
 import lombok.Setter;
 
 @Setter
 @Getter
-public class BloomParametersUbo extends UboObject<BloomParametersUbo> {
+public class BloomParametersUbo extends BufferObject<BloomParametersUbo> {
 
-    public static final UboLayoutDefinition<BloomParametersUbo> DEFINITION = UboLayoutDefinition.create(
-            UboLayoutEntry.<BloomParametersUbo>ofFloat().forGetter(BloomParametersUbo::getBloomIntensity).build(),
-            UboLayoutEntry.<BloomParametersUbo>ofFloat().forGetter(BloomParametersUbo::getBloomBlendThreshold).build(),
-            UboLayoutEntry.<BloomParametersUbo>ofFloat().forGetter(BloomParametersUbo::getLuminanceSensitivity).build()
+    public static final BufferObjectLayoutDefinition<BloomParametersUbo> DEFINITION = BufferObjectLayoutDefinition.create(
+            BufferObjectLayoutEntry.<BloomParametersUbo>ofFloat().forGetter(BloomParametersUbo::getBloomIntensity).build(),
+            BufferObjectLayoutEntry.<BloomParametersUbo>ofFloat().forGetter(BloomParametersUbo::getBloomBlendThreshold).build(),
+            BufferObjectLayoutEntry.<BloomParametersUbo>ofFloat().forGetter(BloomParametersUbo::getLuminanceSensitivity).build()
     );
 
     private float bloomIntensity;
@@ -21,13 +23,14 @@ public class BloomParametersUbo extends UboObject<BloomParametersUbo> {
     private float luminanceSensitivity;
 
     public BloomParametersUbo(float bloomIntensity, float bloomBlendThreshold, float luminanceSensitivity) {
+        super(BufferLayout.STD140, ShaderBufferObjectUsage.UBO);
         this.bloomIntensity = bloomIntensity;
         this.bloomBlendThreshold = bloomBlendThreshold;
         this.luminanceSensitivity = luminanceSensitivity;
     }
 
     @Override
-    protected UboLayoutDefinition<BloomParametersUbo> getDefinition() {
+    protected BufferObjectLayoutDefinition<BloomParametersUbo> getDefinition() {
         return DEFINITION;
     }
 }

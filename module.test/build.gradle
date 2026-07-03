@@ -2,6 +2,7 @@ dependencies {
     implementation project(":anvillib-codec-neoforge-26.1")
     implementation project(":anvillib-collision-neoforge-26.1")
     implementation project(":anvillib-config-neoforge-26.1")
+    implementation project(":anvillib-explosion-neoforge-26.1")
     implementation project(":anvillib-font-neoforge-26.1")
     interfaceInjectionData(implementation project(":anvillib-font-neoforge-26.1"))
     implementation project(":anvillib-integration-neoforge-26.1")
@@ -11,9 +12,12 @@ dependencies {
     interfaceInjectionData(implementation project(":anvillib-recipe-neoforge-26.1"))
     implementation project(":anvillib-registrum-neoforge-26.1")
     implementation project(":anvillib-rendering-neoforge-26.1")
+    implementation project(":anvillib-rpc-neoforge-26.1")
     implementation project(":anvillib-space-select-neoforge-26.1")
     implementation project(":anvillib-sync-neoforge-26.1")
     implementation project(":anvillib-ui-neoforge-26.1")
     implementation project(":anvillib-util-neoforge-26.1")
     implementation project(":anvillib-wheel-neoforge-26.1")
+
+    runtimeOnly("dev.dubhe:anvilcraft-neoforge-26.1.2:1.6.0+snapshot.1921"){ transitive = false }
 }

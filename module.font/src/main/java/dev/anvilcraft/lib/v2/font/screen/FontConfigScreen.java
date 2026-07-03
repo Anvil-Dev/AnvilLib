@@ -8,12 +8,14 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.ModContainer;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+@ApiStatus.Internal
 public class FontConfigScreen extends Screen {
     protected final Screen lastScreen;
     private Dropdown.@Nullable Shielding shielding;
@@ -96,7 +98,7 @@ public class FontConfigScreen extends Screen {
 
         this.refreshFontOptions(this.familyDropdown.getValueId(), AnvilLibFont.CONFIG.getFont(), false);
 
-        this.familyDropdown.setValue(AnvilLibFont.CONFIG.getFont());
+        this.fontDropdown.setValue(AnvilLibFont.CONFIG.getFont());
 
         this.addRenderableWidget(this.testBtn);
         this.addRenderableWidget(this.fontDropdown);

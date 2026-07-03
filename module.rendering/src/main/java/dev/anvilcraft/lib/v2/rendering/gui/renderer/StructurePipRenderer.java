@@ -1,9 +1,22 @@
 package dev.anvilcraft.lib.v2.rendering.gui.renderer;
 
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.TransformingVertexConsumerWrapper;
 import dev.anvilcraft.lib.v2.rendering.foundation.fakeworld.SimpleTintedEmptyLevelAccess;
+import dev.anvilcraft.lib.v2.rendering.glitch.GlitchPostEffect;
 import dev.anvilcraft.lib.v2.rendering.gui.state.StructurePipRenderingState;
 import dev.anvilcraft.lib.v2.rendering.util.Timer;
 import net.minecraft.client.Minecraft;
@@ -11,6 +24,7 @@ import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
@@ -26,9 +40,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.OptionalInt;
 
 
 public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipRenderingState> {
@@ -49,12 +67,16 @@ public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipR
     protected void renderToTexture(StructurePipRenderingState renderState, PoseStack poseStack) {
         Minecraft minecraft = Minecraft.getInstance();
         int guiScale = minecraft.gameRenderer.getGameRenderState().windowRenderState.guiScale;
-        float width = (renderState.fx1() - renderState.fx0()) * guiScale;
-        float height = (renderState.fy1() - renderState.fy0()) * guiScale;
+        int width = (renderState.x1() - renderState.x0()) * guiScale;
+        int height = (renderState.y1() - renderState.y0()) * guiScale;
         float scale = guiScale * renderState.scale();
         BlockAndTintGetter level = renderState.structureAccess();
 
-        ModelBlockRenderer blockRenderer = new ModelBlockRenderer(renderState.ambientOcclusion(), true, minecraft.getBlockColors());
+        ModelBlockRenderer blockRenderer = new ModelBlockRenderer(
+            renderState.ambientOcclusion(),
+            true,
+            minecraft.getBlockColors()
+        );
         FluidRenderer fluidRenderer = new FluidRenderer(minecraft.getModelManager().getFluidStateModelSet());
 
         poseStack.pushPose();
@@ -125,25 +147,25 @@ public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipR
         }
 
         bufferSource.endBatch();
+
+        RenderBuffers renderBuffers = minecraft.renderBuffers();
+        SubmitNodeStorage submitNodeStorage = new SubmitNodeStorage();
+        GameRenderer gameRenderer = minecraft.gameRenderer;
+        FeatureRenderDispatcher frd = new FeatureRenderDispatcher(
+            submitNodeStorage,
+            minecraft.getModelManager(),
+            renderBuffers.bufferSource(),
+            minecraft.getAtlasManager(),
+            renderBuffers.outlineBufferSource(),
+            renderBuffers.crumblingBufferSource(),
+            minecraft.font,
+            gameRenderer.getGameRenderState()
+        );
         for (BlockPos blockPos : BlockPos.betweenClosed(renderState.startPos(), renderState.endPos())) {
             BlockEntity blockEntity = level.getBlockEntity(blockPos);
             if (blockEntity == null) continue;
             BlockEntityRenderer blockEntityRenderer = minecraft.getBlockEntityRenderDispatcher().getRenderer(blockEntity);
             if (blockEntityRenderer == null) continue;
-
-            RenderBuffers renderBuffers = minecraft.renderBuffers();
-            SubmitNodeStorage submitNodeStorage = new SubmitNodeStorage();
-            GameRenderer gameRenderer = minecraft.gameRenderer;
-            FeatureRenderDispatcher frd = new FeatureRenderDispatcher(
-                submitNodeStorage,
-                minecraft.getModelManager(),
-                renderBuffers.bufferSource(),
-                minecraft.getAtlasManager(),
-                renderBuffers.outlineBufferSource(),
-                renderBuffers.crumblingBufferSource(),
-                minecraft.font,
-                gameRenderer.getGameRenderState()
-            );
             poseStack.pushPose();
             poseStack.translate(blockPos.getX(), blockPos.getY(), blockPos.getZ());
             BlockEntityRenderState blockEntityRenderState = blockEntityRenderer.createRenderState();
@@ -160,12 +182,72 @@ public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipR
                 submitNodeStorage,
                 gameRenderer.getGameRenderState().levelRenderState.cameraRenderState
             );
-            frd.renderAllFeatures();
             poseStack.popPose();
         }
+        if (renderState.drawAdditionalCallback() != null) {
+            renderState.drawAdditionalCallback().accept(submitNodeStorage, poseStack);
+        }
+        frd.renderAllFeatures();
+        bufferSource.endBatch();
 
         poseStack.popPose();
         poseStack.popPose();
+        if (!poseStack.isEmpty()) {
+            throw new IllegalStateException("Pose stack not empty");
+        }
+        if (renderState.glitched()) {
+            applyGlitchEffect(width, height);
+        }
+    }
+
+    public void applyGlitchEffect(int width, int height) {
+        GlitchPostEffect glitchPostEffect = ALRPostEffects.getGlitchPostEffect();
+        GpuTextureView processed = glitchPostEffect.process(
+            RenderSystem.outputColorTextureOverride,
+            width,
+            height
+        );
+        float u1 = width / (glitchPostEffect.getGlitchOutputTarget().width * 1.0f);
+        float v1 = height / (glitchPostEffect.getGlitchOutputTarget().height * 1.0f);
+        Tesselator tesselator = Tesselator.getInstance();
+        VertexFormat format = DefaultVertexFormat.POSITION_TEX_COLOR;
+        BufferBuilder builder = tesselator.begin(VertexFormat.Mode.QUADS, format);
+
+        builder.addVertex(0, 0, 100).setUv(0, 0).setColor(-1);
+        builder.addVertex(0, height, 100).setUv(0, v1).setColor(-1);
+        builder.addVertex(width, height, 100).setUv(u1, v1).setColor(-1);
+        builder.addVertex(width, 0, 100).setUv(u1, 0).setColor(-1);
+
+        MeshData data = builder.buildOrThrow();
+        GpuBuffer buffer = format.uploadImmediateVertexBuffer(data.vertexBuffer());
+        int indexCount = data.drawState().indexCount();
+        data.close();
+        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+        GpuBuffer indexBuffer = sequentialBuffer.getBuffer(indexCount);
+
+        CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+
+        GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms()
+            .writeTransform(
+                new Matrix4f(),
+                new Vector4f(1.0F, 1.0F, 1.0F, 1.0F),
+                new Vector3f(),
+                new Matrix4f()
+            );
+
+        try (RenderPass renderPass = commandEncoder.createRenderPass(
+            () -> "Immediate draw for blitGlitchEffect",
+            RenderSystem.outputColorTextureOverride,
+            OptionalInt.of(0)
+        )) {
+            renderPass.setPipeline(RenderPipelines.GUI_TEXTURED);
+            renderPass.bindTexture("Sampler0", processed, glitchPostEffect.getSampler());
+            renderPass.setVertexBuffer(0, buffer);
+            renderPass.setIndexBuffer(indexBuffer, sequentialBuffer.type());
+            renderPass.setUniform("DynamicTransforms", dynamicTransforms);
+            RenderSystem.bindDefaultUniforms(renderPass);
+            renderPass.drawIndexed(0, 0, indexCount, 1);
+        }
     }
 
     public VertexConsumer createChunkSectionLayer(ChunkSectionLayer layer, PoseStack poseStack) {

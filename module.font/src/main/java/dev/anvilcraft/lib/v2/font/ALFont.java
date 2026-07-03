@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.font;
 
+import com.google.common.annotations.Beta;
 import dev.anvilcraft.lib.v2.font.sdf.SdfGlyphAtlas;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.FormattedText;
@@ -10,12 +11,12 @@ import net.minecraft.util.Mth;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Wraps {@link Font} with text measurement and layout utilities that
  * delegate to {@link SdfGlyphAtlas} for glyph metrics.
  */
+@Beta
 public class ALFont {
     public final int lineHeight = Minecraft.getInstance().font.lineHeight;
     private final Font font;
@@ -26,19 +27,16 @@ public class ALFont {
 
     public Font awtFont() { return this.font; }
 
-    private @Nullable SdfGlyphAtlas atlas() { return SdfGlyphAtlas.getIfReady(this.font); }
-    private SdfGlyphAtlas atlasBlocking() { return SdfGlyphAtlas.getOrCreate(this.font).join(); }
+    private SdfGlyphAtlas atlas() { return SdfGlyphAtlas.getOrCreate(this.font).join(); }
 
     private float scale() {
-        SdfGlyphAtlas a = atlas();
-        return a == null ? 1f : (float) lineHeight / a.awtHeight();
+        return (float) lineHeight / atlas().awtHeight();
     }
 
     // ── Width measurement ───────────────────────────────────────
 
     public int width(String str) {
-        SdfGlyphAtlas a = atlas();
-        return a == null ? 0 : Mth.ceil(a.measureText(str) * scale());
+        return Mth.ceil(atlas().measureText(str) * scale());
     }
 
     public int width(FormattedText text) { return width(text.getString()); }
@@ -58,7 +56,6 @@ public class ALFont {
 
     private String plainHeadByWidth(String str, int maxWidth) {
         SdfGlyphAtlas a = atlas();
-        if (a == null) return str;
         float s = scale();
         if (a.measureText(str) * s <= maxWidth) return str;
         int lo = 0, hi = str.length();
@@ -72,7 +69,6 @@ public class ALFont {
 
     private String plainTailByWidth(String str, int maxWidth) {
         SdfGlyphAtlas a = atlas();
-        if (a == null) return str;
         float s = scale();
         if (a.measureText(str) * s <= maxWidth) return str;
         int lo = 0, hi = str.length();
@@ -92,7 +88,6 @@ public class ALFont {
 
     public List<FormattedCharSequence> split(FormattedText input, int maxWidth) {
         SdfGlyphAtlas a = atlas();
-        if (a == null) return List.of(FormattedCharSequence.forward(input.getString(), Style.EMPTY));
         float s = scale();
         List<String> lines = wrapLines(a, input.getString(), maxWidth, s);
         List<FormattedCharSequence> result = new ArrayList<>(lines.size());

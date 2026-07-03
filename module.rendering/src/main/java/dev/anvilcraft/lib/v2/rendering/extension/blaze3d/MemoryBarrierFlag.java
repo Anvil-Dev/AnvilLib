@@ -1,0 +1,39 @@
+package dev.anvilcraft.lib.v2.rendering.extension.blaze3d;
+
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
+
+public enum MemoryBarrierFlag {
+    VERTEX_ATTRIB_ARRAY_BARRIER(GL42.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT),
+    ELEMENT_ARRAY_BARRIER(GL42.GL_ELEMENT_ARRAY_BARRIER_BIT),
+    UNIFORM_BARRIER(GL42.GL_UNIFORM_BARRIER_BIT),
+    TEXTURE_FETCH_BARRIER(GL42.GL_TEXTURE_FETCH_BARRIER_BIT),
+    SHADER_IMAGE_ACCESS_BARRIER(GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT),
+    COMMAND_BARRIER(GL42.GL_COMMAND_BARRIER_BIT),
+    PIXEL_BUFFER_BARRIER(GL42.GL_PIXEL_BUFFER_BARRIER_BIT),
+    TEXTURE_UPDATE_BARRIER(GL42.GL_TEXTURE_UPDATE_BARRIER_BIT),
+    BUFFER_UPDATE_BARRIER(GL42.GL_BUFFER_UPDATE_BARRIER_BIT),
+    FRAMEBUFFER_BARRIER(GL42.GL_FRAMEBUFFER_BARRIER_BIT),
+    TRANSFORM_FEEDBACK_BARRIER(GL42.GL_TRANSFORM_FEEDBACK_BARRIER_BIT),
+    ATOMIC_COUNTER_BARRIER(GL42.GL_ATOMIC_COUNTER_BARRIER_BIT),
+    SHADER_STORAGE_BARRIER(GL43.GL_SHADER_STORAGE_BARRIER_BIT),
+    ALL_BARRIER(GL42.GL_ALL_BARRIER_BITS);
+
+    private final int glEnum;
+
+    MemoryBarrierFlag(int glEnum) {
+        this.glEnum = glEnum;
+    }
+
+    public int glEnum() {
+        return glEnum;
+    }
+
+    public static int compound(MemoryBarrierFlag... flags){
+        int i = 0;
+        for (MemoryBarrierFlag flag : flags) {
+            i |= flag.glEnum;
+        }
+        return i;
+    }
+}

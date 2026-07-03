@@ -120,4 +120,4 @@ run/
 !gradle-wrapper.jar
 
 module.rendering/libs
-reference/
+ref/

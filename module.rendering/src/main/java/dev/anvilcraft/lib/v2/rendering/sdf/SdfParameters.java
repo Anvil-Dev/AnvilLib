@@ -1,21 +1,23 @@
 package dev.anvilcraft.lib.v2.rendering.sdf;
 
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutDefinition;
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutEntry;
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutDefinition;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutEntry;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.ShaderBufferObjectUsage;
 import lombok.Getter;
 import net.minecraft.util.Mth;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
 
 @Getter
-public class SdfParameters extends UboObject<SdfParameters> {
+public class SdfParameters extends BufferObject<SdfParameters> {
 
-    public static final UboLayoutDefinition<SdfParameters> DEFINITION = UboLayoutDefinition.create(
-            UboLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getSharedParams).build(),
-            UboLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getShapeParams).build(),
-            UboLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getRect).build(),
-            UboLayoutEntry.<SdfParameters>ofVec4i().forGetter(SdfParameters::getTypeParams).build()
+    public static final BufferObjectLayoutDefinition<SdfParameters> DEFINITION = BufferObjectLayoutDefinition.create(
+            BufferObjectLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getSharedParams).build(),
+            BufferObjectLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getShapeParams).build(),
+            BufferObjectLayoutEntry.<SdfParameters>ofVec4f().forGetter(SdfParameters::getRect).build(),
+            BufferObjectLayoutEntry.<SdfParameters>ofVec4i().forGetter(SdfParameters::getTypeParams).build()
     );
 
     private final   Vector4f    sharedParams    = new Vector4f();
@@ -23,9 +25,12 @@ public class SdfParameters extends UboObject<SdfParameters> {
     private final   Vector4f    rect            = new Vector4f();
     private final   Vector4i    typeParams      = new Vector4i();
 
-    private         int         color           = 0xFFFFFFFF;
-    private         float       rotation;
-    private         boolean     center;
+    int                         uboIndex        = -1;
+    boolean                     uploaded        = false;
+
+    protected SdfParameters() {
+        super(BufferLayout.STD140, ShaderBufferObjectUsage.UBO);
+    }
 
     public void box(float width, float height) {
         this                ._renderType(SdfRenderType.BOX);
@@ -90,6 +95,21 @@ public class SdfParameters extends UboObject<SdfParameters> {
         this.sharedParams.w = y2 - cy; // fill 模式下安全
     }
 
+    public void segment(float x0, float y0, float x1, float y1) {
+        this                ._renderType(SdfRenderType.SEGMENT);
+        this.shapeParams    .set(x0, y0, x1, y1);
+    }
+
+    public void triangleEquilateral(float radius) {
+        this                ._renderType(SdfRenderType.TRIANGLE_EQUILATERAL);
+        this.shapeParams    .set(radius, 0.0f, 0.0f, 0.0f);
+    }
+
+    public void triangleIsosceles(float base, float height) {
+        this                ._renderType(SdfRenderType.TRIANGLE_ISOSCELES);
+        this.shapeParams    .set(base, height, 0.0f, 0.0f);
+    }
+
     public void smooth(float smooth) {
         this                ._smooth(smooth);
     }
@@ -100,18 +120,6 @@ public class SdfParameters extends UboObject<SdfParameters> {
 
     public void round(float radius) {
         this                ._cornerRadius(radius);
-    }
-
-    public void color(int color) {
-        this.color          = color;
-    }
-
-    public void rotate(float rotation) {
-        this.rotation       = rotation;
-    }
-
-    public void center(boolean center) {
-        this.center         = center;
     }
 
     public void fill() {
@@ -162,30 +170,36 @@ public class SdfParameters extends UboObject<SdfParameters> {
 
     private void _smooth(float value) {
         this.sharedParams.x = value;
+        this.uploaded       = false;
     }
 
     private void _light(float value) {
         this.sharedParams.w = 4.605f / value;
+        this.uploaded       = false;
     }
 
     private void _width(float value) {
         this.sharedParams.y = value;
+        this.uploaded       = false;
     }
 
     private void _cornerRadius(float value) {
         this.sharedParams.z = value;
+        this.uploaded       = false;
     }
 
     private void _pass(SdfPassType value) {
-        this.typeParams.x = value.ordinal();
+        this.typeParams.x   = value.ordinal();
+        this.uploaded       = false;
     }
 
     private void _renderType(SdfRenderType value) {
-        this.typeParams.y = value.ordinal();
+        this.typeParams.y   = value.ordinal();
+        this.uploaded       = false;
     }
 
     @Override
-    protected UboLayoutDefinition<SdfParameters> getDefinition() {
+    protected BufferObjectLayoutDefinition<SdfParameters> getDefinition() {
         return              DEFINITION;
     }
 
@@ -195,8 +209,10 @@ public class SdfParameters extends UboObject<SdfParameters> {
         this.rect           .set(0.0f, 0.0f, 0.0f, 0.0f);
         this.typeParams     .set(0, 0, 0, 4);
 
-        this.color          = 0xFFFFFFFF;
-        this.rotation       = 0f;
-        this.center         = false;
+        this.uploaded       = false;
+    }
+
+    public boolean isShared() {
+        return              this.uboIndex != -1;
     }
 }

@@ -3,6 +3,7 @@ dependencies {
         jarJar(api("dev.anvilcraft.lib:anvillib-codec-neoforge-26.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-collision-neoforge-26.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-config-neoforge-26.1:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-explosion-neoforge-26.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-font-neoforge-26.1:latest.release"))
         interfaceInjectionData("dev.anvilcraft.lib:anvillib-font-neoforge-26.1:latest.release")
         jarJar(api("dev.anvilcraft.lib:anvillib-integration-neoforge-26.1:latest.release"))
@@ -14,6 +15,7 @@ dependencies {
         interfaceInjectionData("dev.anvilcraft.lib:anvillib-recipe-neoforge-26.1:latest.release")
         jarJar(api("dev.anvilcraft.lib:anvillib-registrum-neoforge-26.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-rendering-neoforge-26.1:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-rpc-neoforge-26.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-space-select-neoforge-26.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-sync-neoforge-26.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-ui-neoforge-26.1:latest.release"))
@@ -23,6 +25,7 @@ dependencies {
         jarJar(implementation project(":anvillib-codec-neoforge-26.1"))
         jarJar(implementation project(":anvillib-collision-neoforge-26.1"))
         jarJar(implementation project(":anvillib-config-neoforge-26.1"))
+        jarJar(implementation project(":anvillib-explosion-neoforge-26.1"))
         jarJar(implementation project(":anvillib-font-neoforge-26.1"))
         interfaceInjectionData project(":anvillib-font-neoforge-26.1")
         jarJar(implementation project(":anvillib-integration-neoforge-26.1"))
@@ -34,10 +37,33 @@ dependencies {
         interfaceInjectionData project(":anvillib-recipe-neoforge-26.1")
         jarJar(implementation project(":anvillib-registrum-neoforge-26.1"))
         jarJar(implementation project(":anvillib-rendering-neoforge-26.1"))
+        jarJar(implementation project(":anvillib-rpc-neoforge-26.1"))
         jarJar(implementation project(":anvillib-space-select-neoforge-26.1"))
         jarJar(implementation project(":anvillib-sync-neoforge-26.1"))
         jarJar(implementation project(":anvillib-ui-neoforge-26.1"))
         jarJar(implementation project(":anvillib-util-neoforge-26.1"))
         jarJar(implementation project(":anvillib-wheel-neoforge-26.1"))
+    }
+}
+
+publishMods {
+    file = jar.archiveFile
+    changelog = "Update"
+    type = BETA
+    modLoaders.add("neoforge")
+
+    additionalFiles.from(sourcesJar.archiveFile)
+    additionalFiles.from(javadocJar.archiveFile)
+
+    curseforge {
+        accessToken = System.getenv("CURSEFORGE_TOKEN")
+        projectId = "1484302"
+        minecraftVersions.add(libs.versions.minecraft.get())
+    }
+
+    modrinth {
+        accessToken = System.getenv("MODRINTH_TOKEN")
+        projectId = "nKAcAL9b"
+        minecraftVersions.add(libs.versions.minecraft.get())
     }
 }

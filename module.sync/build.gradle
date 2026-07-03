@@ -1,9 +1,11 @@
 dependencies {
     if (System.getenv("NOT_DEV") == 'true') {
+        jarJar(api("dev.anvilcraft.lib:anvillib-sync-processor-neoforge-26.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-codec-neoforge-26.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-network-neoforge-26.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-util-neoforge-26.1:latest.release"))
     } else {
+        jarJar(implementation project(":anvillib-sync-neoforge-26.1:anvillib-sync-processor-neoforge-26.1"))
         jarJar(implementation project(":anvillib-codec-neoforge-26.1"))
         jarJar(implementation project(":anvillib-network-neoforge-26.1"))
         jarJar(implementation project(":anvillib-util-neoforge-26.1"))

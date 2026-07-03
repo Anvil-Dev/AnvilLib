@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.util.AnvilLibUtil;
 import io.netty.buffer.ByteBuf;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
@@ -45,6 +46,7 @@ import java.util.stream.Collectors;
  * </p>
  */
 @Getter
+@EqualsAndHashCode
 public class BlockStatePredicate {
     /**
      * 空 Identifier

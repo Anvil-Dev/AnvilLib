@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
+import com.google.common.annotations.Beta;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
@@ -10,13 +11,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
+import org.joml.Matrix3x2f;
+import org.joml.Matrix3x2fStack;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.awt.Font;
 import java.util.List;
-import org.joml.Matrix3x2f;
 
 /**
  * SDF text renderer that draws strings via the SDF text render pipeline.
@@ -24,12 +24,20 @@ import org.joml.Matrix3x2f;
  * Uses a CPU-generated SDF glyph atlas uploaded to a GPU texture,
  * sampled by a custom fragment shader for smooth anti-aliased text.
  */
+@Beta
 public final class SdfTextRenderer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SdfTextRenderer.class);
-
     private final GpuSampler diffuseSampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
 
     public SdfTextRenderer() {
+    }
+
+    /**
+     * Get the SDF atlas for a font, blocking until it is ready on first access.
+     * The atlas is cached forever, so only the very first call for a particular
+     * font blocks (typically ~200-400 ms while the glyph atlas is built).
+     */
+    private static SdfGlyphAtlas getAtlas(@Nullable Font font) {
+        return SdfGlyphAtlas.getOrCreate(font).join();
     }
 
     public void drawString(
@@ -42,20 +50,19 @@ public final class SdfTextRenderer {
         boolean dropShadow
     ) {
         if (text == null || text.isEmpty()) return;
-        SdfGlyphAtlas atlas = SdfGlyphAtlas.getIfReady(font);
-        if (atlas == null) return;
-        drawStringWithAtlas(graphics, atlas, text, x, y, color);
+        drawStringWithAtlas(graphics, getAtlas(font), text, x, y, color);
     }
 
-    private void drawStringWithAtlas(GuiGraphicsExtractor graphics, SdfGlyphAtlas atlas,
-                                      String text, int x, int y, int color) {
+    private void drawStringWithAtlas(
+        GuiGraphicsExtractor graphics, SdfGlyphAtlas atlas,
+        String text, int x, int y, int color
+    ) {
         float scale = scaleFor(atlas);
-        int quadY = y - 2;
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
-        if (layout.pages().isEmpty()) return;
         SdfAtlasTexture.ensureUploaded(atlas);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
+        if (layout.pages().isEmpty()) return;
         for (SdfTextLayout.PageQuads pq : layout.pages()) {
-            drawAtlasPipeline(graphics, pq, this.diffuseSampler, color);
+            drawAtlasPipeline(graphics, pq, this.diffuseSampler, color, x, y);
         }
     }
 
@@ -103,7 +110,10 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        int[] pen = {x, x};
+        int[] pen = {
+            x,
+            x
+        };
         StringBuilder buf = new StringBuilder();
         int[] segColor = {color};
         boolean[] segBold = {false};
@@ -145,15 +155,13 @@ public final class SdfTextRenderer {
     }
 
     private int flushFormattedSegment(GuiGraphicsExtractor graphics, @Nullable Font font, String text, int x, int y, int color) {
-        SdfGlyphAtlas atlas = SdfGlyphAtlas.getIfReady(font);
-        if (atlas == null) return x;
+        SdfGlyphAtlas atlas = getAtlas(font);
         float scale = scaleFor(atlas);
-        int quadY = y - 2;
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, quadY, scale);
         SdfAtlasTexture.ensureUploaded(atlas);
+        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
         for (SdfTextLayout.PageQuads pq : layout.pages()) {
             if (pq.atlasTexture() != null && !pq.quads().isEmpty()) {
-                drawAtlasPipeline(graphics, pq, this.diffuseSampler, color);
+                drawAtlasPipeline(graphics, pq, this.diffuseSampler, color, x, y);
             }
         }
         return x + layout.width();
@@ -173,14 +181,18 @@ public final class SdfTextRenderer {
     ) {
         if (x1 <= x0) return;
         int lh = Minecraft.getInstance().font.lineHeight;
+        Matrix3x2fStack pose = graphics.pose();
+        pose.pushMatrix();
+        pose.scale(1.0f, 0.5f);
         if (strikethrough) {
-            int sy = y + lh / 2;
+            int sy = (y + lh / 2) * 2;
             graphics.fill(x0, sy, x1, sy + 1, color);
         }
         if (underline) {
-            int sy = y + lh;
+            int sy = (y + lh - 2) * 2;
             graphics.fill(x0, sy, x1, sy + 1, color);
         }
+        pose.popMatrix();
     }
 
     public void drawWrapped(
@@ -193,8 +205,7 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        SdfGlyphAtlas atlas = SdfGlyphAtlas.getIfReady(font);
-        if (atlas == null) return;
+        SdfGlyphAtlas atlas = getAtlas(font);
         float scale = scaleFor(atlas);
         List<String> lines = wrapLines(atlas, text.getString(), width, scale);
         int lineHeight = Minecraft.getInstance().font.lineHeight;
@@ -209,8 +220,7 @@ public final class SdfTextRenderer {
 
     public void drawCentered(GuiGraphicsExtractor graphics, @Nullable Font font, FormattedCharSequence text, int x, int y, int color) {
         String value = flattenToString(text);
-        SdfGlyphAtlas atlas = SdfGlyphAtlas.getIfReady(font);
-        if (atlas == null) return;
+        SdfGlyphAtlas atlas = getAtlas(font);
         float scale = scaleFor(atlas);
         int drawX = x - Math.round(atlas.measureText(value) * scale) / 2;
         this.drawFormatted(graphics, font, text, drawX, y, color, false);
@@ -237,7 +247,9 @@ public final class SdfTextRenderer {
         GuiGraphicsExtractor graphics,
         SdfTextLayout.PageQuads pq,
         GpuSampler diffuseSampler,
-        int color
+        int color,
+        int originX,
+        int originY
     ) {
         if (pq.atlasTexture() == null || pq.quads().isEmpty()) return;
         SdfTextRenderState state = new SdfTextRenderState(
@@ -248,6 +260,8 @@ public final class SdfTextRenderer {
             pq.pageWidth(),
             pq.pageHeight(),
             color,
+            originX,
+            originY,
             graphics.peekScissorStack()
         );
         graphics.submitGuiElementRenderState(state);

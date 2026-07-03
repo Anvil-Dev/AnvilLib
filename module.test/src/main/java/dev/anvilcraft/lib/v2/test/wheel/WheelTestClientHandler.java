@@ -45,12 +45,16 @@ public final class WheelTestClientHandler {
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.screen != null) {
+        if (mc.player == null) {
             return;
         }
         boolean holdDotKey = WheelTestKeys.HOLD_KEY.matches(event.getKeyEvent());
         boolean holdAnnularKey = WheelTestKeys.HOLD_ANNULAR_KEY.matches(event.getKeyEvent());
         if (!holdDotKey && !holdAnnularKey) {
+            return;
+        }
+        // 长按模式下松开按键时轮盘 Screen 已打开，必须放行 RELEASE 事件才能触发关闭
+        if (mc.screen != null && event.getAction() != GLFW.GLFW_RELEASE) {
             return;
         }
         if (event.getAction() == GLFW.GLFW_PRESS) {

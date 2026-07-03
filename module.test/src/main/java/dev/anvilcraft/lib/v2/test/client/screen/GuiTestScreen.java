@@ -1,9 +1,16 @@
 package dev.anvilcraft.lib.v2.test.client.screen;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 import dev.anvilcraft.lib.v2.rendering.foundation.fakeworld.FakeDisplayLevel;
 import dev.anvilcraft.lib.v2.rendering.gui.GuiRenderExtras;
+import dev.anvilcraft.lib.v2.test.client.compute.ComputeSupport;
+import dev.anvilcraft.lib.v2.test.client.compute.TestPipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -14,6 +21,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
+
+import java.util.Random;
 
 public class GuiTestScreen extends Screen {
 
@@ -52,6 +61,7 @@ public class GuiTestScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         super.extractRenderState(graphics, mouseX, mouseY, a);
+        dispatchComputeTest(graphics);
         graphics.pose().pushMatrix().scale(1);
         int startX = 10;
         int startY = 30;
@@ -187,10 +197,49 @@ public class GuiTestScreen extends Screen {
             startY + 16 * 4 + 144,
             18,
             true,
+            true,
             poseStack
         );
-
         graphics.pose().popMatrix();
+    }
+
+    public void dispatchComputeTest(GuiGraphicsExtractor graphics) {
+        if (!ALRComputeCapabilities.isComputeSupported()) return;
+        ALRCommandEncoderExtension commandEncoder = ALRCommandEncoderExtension.of(RenderSystem.getDevice().createCommandEncoder());
+        try (ALRComputePass pass = commandEncoder.alrCreateComputePass()) {
+            pass.setPipeline(TestPipelines.EMPTY);
+            pass.dispatchWorkgroups(16, 16, 1);
+        }
+
+        try {
+            float[] fs = new float[32];
+            Random random = new Random(System.nanoTime());
+            for (int i = 0; i < 32; i++) {
+                fs[i] = random.nextInt(0, 10);
+            }
+            float with = 10;
+            ComputeSupport.INSTANCE.add(fs, with);
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+        }
+
+        GpuSampler sampler = ComputeSupport.INSTANCE.getTheSampler();
+        int scaledWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        int scaledHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+
+        GuiRenderExtras.blitDynamicTexture(
+            graphics,
+            ComputeSupport.INSTANCE::getOutputTextureView,
+            sampler,
+            0,
+            0,
+            scaledWidth,
+            scaledHeight,
+            0,
+            1,
+            1,
+            0
+        );
     }
 
     @Override

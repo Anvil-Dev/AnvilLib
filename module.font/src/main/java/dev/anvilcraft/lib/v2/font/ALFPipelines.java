@@ -6,12 +6,12 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
+import lombok.extern.slf4j.Slf4j;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Font module render pipeline registration.
@@ -19,10 +19,10 @@ import org.slf4j.LoggerFactory;
  * <p>The pipeline is ready for SDF text quad rendering and will be consumed by the
  * runtime text render state in a follow-up step.</p>
  */
+@ApiStatus.Internal
+@Slf4j
 @EventBusSubscriber(modid = AnvilLibFont.MOD_ID, value = Dist.CLIENT)
 public final class ALFPipelines {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ALFPipelines.class);
-
     public static final VertexFormat SDF_TEXT_FORMAT = VertexFormat.builder()
         .add("Position", VertexFormatElement.POSITION)
         .add("Color", VertexFormatElement.COLOR)
@@ -47,7 +47,7 @@ public final class ALFPipelines {
     @SubscribeEvent
     public static void on(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(SDF_TEXT);
-        LOGGER.info("Registered SDF_TEXT pipeline: {}", SDF_TEXT);
+        log.info("Registered SDF_TEXT pipeline: {}", SDF_TEXT);
     }
 }
 

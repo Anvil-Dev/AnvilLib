@@ -23,6 +23,7 @@ repositories {
         )
         filter {
             includeGroup "dev.anvilcraft.lib"
+            includeGroup "dev.dubhe"
         }
     }
     maven { url = "https://server.cjsah.net:1002/maven/" }
@@ -61,6 +62,7 @@ neoForge {
                 systemProperty 'anvillib.rendering.debugMode', 'true'
                 systemProperty('neoforge.rendernurse.renderdoc.library', rootProject.file("libs/renderdoc.dll").absolutePath)
                 taskBefore(rootProject.project('renderdoc-loader-internal').tasks.getByName('jar'))
+                programArgument("--renderDebugLabels")
                 jvmArgument("-javaagent:" + rootProject.project('renderdoc-loader-internal').tasks.getByName('jar').archiveFile.get().asFile.absolutePath)
             }
         }
@@ -90,7 +92,7 @@ neoForge {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-tasks.withType(ProcessResources).configureEach {
+tasks.named("processResources") {
     var replaceProperties = [minecraft_version      : libs.versions.minecraft.get(),
                              minecraft_version_range: minecraft_version_range,
                              neo_version            : libs.versions.neoForge.get(),
@@ -106,6 +108,10 @@ tasks.withType(ProcessResources).configureEach {
 
     filesMatching(['META-INF/neoforge.mods.toml']) {
         expand replaceProperties
+    }
+
+    if (project.name != "anvillib-test-neoforge-26.1") {
+        finalizedBy 'changeModsToml'
     }
 }
 

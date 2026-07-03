@@ -1,19 +1,22 @@
 package dev.anvilcraft.lib.v2.piston.injection;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 public interface IPistonMovingBlockEntityExtension {
-    default @Nullable CompoundTag anvillib$clearData() {
-        throw new AssertionError();
+    @ApiStatus.Internal
+    default @Nullable BlockEntity anvillib$clearBlockEntity() {
+        throw new AssertionError("No Implemented!");
     }
 
-    default void anvillib$setData(@Nullable CompoundTag nbt) {
-        throw new AssertionError();
+    @ApiStatus.Internal
+    default @Nullable BlockEntity anvillib$getBlockEntity() {
+        throw new AssertionError("No Implemented!");
     }
 
-    default @Nullable BlockState anvillib$getMoveState() {
-        throw new AssertionError();
+    @ApiStatus.Internal
+    default void anvillib$setBlockEntity(@Nullable BlockEntity blockEntity) {
+        throw new AssertionError("No Implemented!");
     }
 }

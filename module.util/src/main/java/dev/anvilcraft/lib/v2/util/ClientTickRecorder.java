@@ -8,7 +8,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import org.jetbrains.annotations.ApiStatus;
 
-@EventBusSubscriber(modid = AnvilLibUtil.MAIN_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = AnvilLibUtil.MOD_ID, value = Dist.CLIENT)
 public class ClientTickRecorder {
     @Getter
     private static int ticks;

@@ -5,8 +5,10 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "anvillib.refmap.json",
   "mixins": [
+    "ChestBlockMixin"
   ],
   "client": [
+    "MinecraftMixin"
   ],
   "injectors": {
     "defaultRequire": 1

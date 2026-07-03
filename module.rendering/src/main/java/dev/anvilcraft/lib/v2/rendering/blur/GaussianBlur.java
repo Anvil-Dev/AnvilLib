@@ -19,8 +19,8 @@ import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
-import dev.anvilcraft.lib.v2.rendering.bloom.BlurParametersUbo;
 import dev.anvilcraft.lib.v2.rendering.bloom.TransformsUbo;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import org.joml.Matrix4f;
@@ -38,7 +38,7 @@ public class GaussianBlur implements AutoCloseable {
     private final GpuBuffer blurUBO = device.createBuffer(
         () -> "BloomPostEffect->BlurUBO",
         GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
-        BlurParametersUbo.DEFINITION.size()
+        BlurParametersUbo.DEFINITION.size(BufferLayout.STD140)
     );
 
     private final GpuBuffer vertexBuffer = device.createBuffer(
@@ -50,7 +50,7 @@ public class GaussianBlur implements AutoCloseable {
     private final GpuBuffer transformUBO = device.createBuffer(
         () -> "BloomPostEffect->TransformUBO",
         GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
-        TransformsUbo.DEFINITION.size()
+        TransformsUbo.DEFINITION.size(BufferLayout.STD140)
     );
 
     @Getter

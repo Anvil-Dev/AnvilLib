@@ -1,11 +1,17 @@
 package dev.anvilcraft.lib.v2.rendering.gui;
 
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.anvilcraft.lib.v2.rendering.ALRSharedMath;
 import dev.anvilcraft.lib.v2.rendering.extension.GuiGraphicsExtractorExtension;
 import dev.anvilcraft.lib.v2.rendering.gui.state.BlockStatePipRenderingState;
+import dev.anvilcraft.lib.v2.rendering.gui.state.DynamicTextureBlitRenderState;
 import dev.anvilcraft.lib.v2.rendering.gui.state.StructurePipRenderingState;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.render.TextureSetup;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -13,10 +19,51 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix3x2f;
 import org.jspecify.annotations.Nullable;
 
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+
 public class GuiRenderExtras {
 
-    public static void itemWithTransparency(GuiGraphicsExtractor guiGraphicsExtractor, ItemStack stack, int x, int y, float alpha) {
+    public static void itemWithTransparency(
+        GuiGraphicsExtractor guiGraphicsExtractor,
+        ItemStack stack,
+        int x,
+        int y,
+        float alpha
+    ) {
         GuiGraphicsExtractorExtension.of(guiGraphicsExtractor).translucentItem(stack, x, y, alpha);
+    }
+
+    public static void blitDynamicTexture(
+        GuiGraphicsExtractor extractor,
+        Supplier<GpuTextureView> texture,
+        GpuSampler sampler,
+        int x0,
+        int y0,
+        int x1,
+        int y1,
+        float u0,
+        float v0,
+        float u1,
+        float v1
+    ) {
+        extractor.submitGuiElementRenderState(
+            new DynamicTextureBlitRenderState(
+                RenderPipelines.GUI_TEXTURED,
+                () -> TextureSetup.singleTexture(texture.get(), sampler),
+                new Matrix3x2f(extractor.pose()),
+                x0,
+                y0,
+                x1,
+                y1,
+                u0,
+                v0,
+                u1,
+                v1,
+                -1,
+                extractor.peekScissorStack()
+            )
+        );
     }
 
     public static void tessellateBlock(
@@ -63,7 +110,19 @@ public class GuiRenderExtras {
         boolean ambientOcclusion,
         PoseStack poseStack3D
     ) {
-        tessellateBlock(guiGraphicsExtractor, blockState, level, blockPos, x0, y0, x1, y1, color, ambientOcclusion, poseStack3D.last().copy());
+        tessellateBlock(
+            guiGraphicsExtractor,
+            blockState,
+            level,
+            blockPos,
+            x0,
+            y0,
+            x1,
+            y1,
+            color,
+            ambientOcclusion,
+            poseStack3D.last().copy()
+        );
     }
 
     public static void tessellateBlock(
@@ -78,7 +137,19 @@ public class GuiRenderExtras {
         boolean ambientOcclusion,
         PoseStack poseStack3D
     ) {
-        tessellateBlock(guiGraphicsExtractor, blockState, level, blockPos, x0, y0, x1, y1, -1, ambientOcclusion, poseStack3D);
+        tessellateBlock(
+            guiGraphicsExtractor,
+            blockState,
+            level,
+            blockPos,
+            x0,
+            y0,
+            x1,
+            y1,
+            -1,
+            ambientOcclusion,
+            poseStack3D
+        );
     }
 
     public static void tessellateBlock(
@@ -92,7 +163,19 @@ public class GuiRenderExtras {
         boolean ambientOcclusion,
         PoseStack poseStack3D
     ) {
-        tessellateBlock(guiGraphicsExtractor, blockState, level, blockPos, x0, y0, x0 + width, y0 + width, -1, ambientOcclusion, poseStack3D);
+        tessellateBlock(
+            guiGraphicsExtractor,
+            blockState,
+            level,
+            blockPos,
+            x0,
+            y0,
+            x0 + width,
+            y0 + width,
+            -1,
+            ambientOcclusion,
+            poseStack3D
+        );
     }
 
     public static void tessellateBlock(
@@ -105,7 +188,19 @@ public class GuiRenderExtras {
         boolean ambientOcclusion,
         PoseStack poseStack3D
     ) {
-        tessellateBlock(guiGraphicsExtractor, blockState, level, blockPos, x0, y0, x0 + 32f, y0 + 32f, -1, ambientOcclusion, poseStack3D);
+        tessellateBlock(
+            guiGraphicsExtractor,
+            blockState,
+            level,
+            blockPos,
+            x0,
+            y0,
+            x0 + 32f,
+            y0 + 32f,
+            -1,
+            ambientOcclusion,
+            poseStack3D
+        );
     }
 
     public static void tessellateBlock(
@@ -115,7 +210,19 @@ public class GuiRenderExtras {
         float y0,
         PoseStack poseStack3D
     ) {
-        tessellateBlock(guiGraphicsExtractor, blockState, null, null, x0, y0, x0 + 32f, y0 + 32f, -1, false, poseStack3D);
+        tessellateBlock(
+            guiGraphicsExtractor,
+            blockState,
+            null,
+            null,
+            x0,
+            y0,
+            x0 + 32f,
+            y0 + 32f,
+            -1,
+            false,
+            poseStack3D
+        );
     }
 
     public static void tessellateBlock(
@@ -126,7 +233,19 @@ public class GuiRenderExtras {
         boolean ambientOcclusion,
         PoseStack poseStack3D
     ) {
-        tessellateBlock(guiGraphicsExtractor, blockState, null, null, x0, y0, x0 + 32f, y0 + 32f, -1, ambientOcclusion, poseStack3D);
+        tessellateBlock(
+            guiGraphicsExtractor,
+            blockState,
+            null,
+            null,
+            x0,
+            y0,
+            x0 + 32f,
+            y0 + 32f,
+            -1,
+            ambientOcclusion,
+            poseStack3D
+        );
     }
 
     public static void tessellateBlock(
@@ -135,7 +254,19 @@ public class GuiRenderExtras {
         float x0,
         float y0
     ) {
-        tessellateBlock(guiGraphicsExtractor, blockState, null, null, x0, y0, x0 + 32f, y0 + 32f, -1, false, ALRSharedMath.IDENTITY_POSE_3D);
+        tessellateBlock(
+            guiGraphicsExtractor,
+            blockState,
+            null,
+            null,
+            x0,
+            y0,
+            x0 + 32f,
+            y0 + 32f,
+            -1,
+            false,
+            ALRSharedMath.IDENTITY_POSE_3D
+        );
     }
 
     public static void submitStructure(
@@ -149,6 +280,7 @@ public class GuiRenderExtras {
         float y1,
         float scale,
         boolean ambientOcclusion,
+        boolean glitched,
         PoseStack poseStack
     ) {
         guiGraphicsExtractor.submitPictureInPictureRenderState(
@@ -156,15 +288,17 @@ public class GuiRenderExtras {
                 structureAccess,
                 startPos,
                 endPos,
-                x0,
-                y0,
-                x1,
-                y1,
+                (int) x0,
+                (int) y0,
+                (int) x1,
+                (int) y1,
                 scale,
                 ambientOcclusion,
+                glitched,
                 poseStack.last().copy(),
                 guiGraphicsExtractor.pose().get(new Matrix3x2f()),
-                guiGraphicsExtractor.peekScissorStack()
+                guiGraphicsExtractor.peekScissorStack(),
+                (BiConsumer<SubmitNodeCollector, PoseStack>) null
             )
         );
     }
@@ -180,6 +314,7 @@ public class GuiRenderExtras {
         float y1,
         float scale,
         boolean ambientOcclusion,
+        boolean glitched,
         PoseStack.Pose pose3D
     ) {
         guiGraphicsExtractor.submitPictureInPictureRenderState(
@@ -187,15 +322,17 @@ public class GuiRenderExtras {
                 structureAccess,
                 startPos,
                 endPos,
-                x0,
-                y0,
-                x1,
-                y1,
+                (int) x0,
+                (int) y0,
+                (int) x1,
+                (int) y1,
                 scale,
                 ambientOcclusion,
+                glitched,
                 pose3D,
                 guiGraphicsExtractor.pose().get(new Matrix3x2f()),
-                guiGraphicsExtractor.peekScissorStack()
+                guiGraphicsExtractor.peekScissorStack(),
+                (BiConsumer<SubmitNodeCollector, PoseStack>)null
             )
         );
     }
@@ -211,6 +348,118 @@ public class GuiRenderExtras {
         float y1,
         PoseStack.Pose pose3D
     ) {
-        submitStructure(guiGraphicsExtractor, structureAccess, startPos, endPos, x0, y0, x1, y1, 32.0f, false, pose3D);
+        submitStructure(
+            guiGraphicsExtractor,
+            structureAccess,
+            startPos,
+            endPos,
+            x0,
+            y0,
+            x1,
+            y1,
+            32.0f,
+            false,
+            false,
+            pose3D
+        );
+    }
+
+    public static void submitStructure(
+        GuiGraphicsExtractor guiGraphicsExtractor,
+        BlockAndTintGetter structureAccess,
+        BlockPos startPos,
+        BlockPos endPos,
+        float x0,
+        float y0,
+        float x1,
+        float y1,
+        float scale,
+        boolean ambientOcclusion,
+        boolean glitched,
+        PoseStack poseStack,
+        BiConsumer<SubmitNodeCollector, PoseStack> drawAdditionalCallback
+    ) {
+        guiGraphicsExtractor.submitPictureInPictureRenderState(
+            new StructurePipRenderingState(
+                structureAccess,
+                startPos,
+                endPos,
+                (int) x0,
+                (int) y0,
+                (int) x1,
+                (int) y1,
+                scale,
+                ambientOcclusion,
+                glitched,
+                poseStack.last().copy(),
+                guiGraphicsExtractor.pose().get(new Matrix3x2f()),
+                guiGraphicsExtractor.peekScissorStack(),
+                drawAdditionalCallback
+            )
+        );
+    }
+
+    public static void submitStructure(
+        GuiGraphicsExtractor guiGraphicsExtractor,
+        BlockAndTintGetter structureAccess,
+        BlockPos startPos,
+        BlockPos endPos,
+        float x0,
+        float y0,
+        float x1,
+        float y1,
+        float scale,
+        boolean ambientOcclusion,
+        boolean glitched,
+        PoseStack.Pose pose3D,
+        BiConsumer<SubmitNodeCollector, PoseStack> drawAdditionalCallback
+    ) {
+        guiGraphicsExtractor.submitPictureInPictureRenderState(
+            new StructurePipRenderingState(
+                structureAccess,
+                startPos,
+                endPos,
+                (int) x0,
+                (int) y0,
+                (int) x1,
+                (int) y1,
+                scale,
+                ambientOcclusion,
+                glitched,
+                pose3D,
+                guiGraphicsExtractor.pose().get(new Matrix3x2f()),
+                guiGraphicsExtractor.peekScissorStack(),
+                drawAdditionalCallback
+            )
+        );
+    }
+
+    public static void submitStructure(
+        GuiGraphicsExtractor guiGraphicsExtractor,
+        BlockAndTintGetter structureAccess,
+        BlockPos startPos,
+        BlockPos endPos,
+        float x0,
+        float y0,
+        float x1,
+        float y1,
+        PoseStack.Pose pose3D,
+        BiConsumer<SubmitNodeCollector, PoseStack> drawAdditionalCallback
+    ) {
+        submitStructure(
+            guiGraphicsExtractor,
+            structureAccess,
+            startPos,
+            endPos,
+            x0,
+            y0,
+            x1,
+            y1,
+            32.0f,
+            false,
+            false,
+            pose3D,
+            drawAdditionalCallback
+        );
     }
 }

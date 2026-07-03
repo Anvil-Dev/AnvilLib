@@ -1,28 +1,31 @@
 package dev.anvilcraft.lib.v2.rendering.bloom;
 
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutDefinition;
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboLayoutEntry;
-import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.UboObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutDefinition;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutEntry;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObject;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.ShaderBufferObjectUsage;
 import lombok.Getter;
 import lombok.Setter;
 import org.joml.Matrix4f;
 
 @Setter
 @Getter
-public class TransformsUbo extends UboObject<TransformsUbo> {
+public class TransformsUbo extends BufferObject<TransformsUbo> {
 
-    public static final UboLayoutDefinition<TransformsUbo> DEFINITION = UboLayoutDefinition.create(
-            UboLayoutEntry.<TransformsUbo>ofMat4f().forGetter(TransformsUbo::getProjMat).build()
+    public static final BufferObjectLayoutDefinition<TransformsUbo> DEFINITION = BufferObjectLayoutDefinition.create(
+            BufferObjectLayoutEntry.<TransformsUbo>ofMat4f().forGetter(TransformsUbo::getProjMat).build()
     );
 
     private Matrix4f projMat;
 
     public TransformsUbo(Matrix4f projMat) {
+        super(BufferLayout.STD140, ShaderBufferObjectUsage.UBO);
         this.projMat = projMat;
     }
 
     @Override
-    protected UboLayoutDefinition<TransformsUbo> getDefinition() {
+    protected BufferObjectLayoutDefinition<TransformsUbo> getDefinition() {
         return DEFINITION;
     }
 }

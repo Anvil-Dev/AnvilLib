@@ -10,6 +10,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+@ApiStatus.Internal
 public class Dropdown extends AbstractWidget {
     private final List<DropdownEntry> allows = new ArrayList<>();
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -164,7 +166,10 @@ public class Dropdown extends AbstractWidget {
 
     public int calcMaxHeight() {
         int startHeight = this.getY() + this.getHeight();
-        return Math.clamp((long) this.allows.size() * this.getHeight(), 0, this.screenHeight - startHeight - 10);
+        int maxHeight = Math.clamp((long) this.allows.size() * this.getHeight(), 0, this.screenHeight - startHeight - 10);
+        // Round down to a multiple of the row height so the last visible row
+        // fills the entire area without trailing blank space.
+        return (maxHeight / this.getHeight()) * this.getHeight();
     }
 
     private int visibleRowCount() {

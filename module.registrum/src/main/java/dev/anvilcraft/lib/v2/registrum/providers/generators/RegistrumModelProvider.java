@@ -43,7 +43,7 @@ public class RegistrumModelProvider extends ModelProvider implements RegistrumPr
 
     @Override
     public Stream<? extends Holder<Block>> getKnownBlocks() {
-        return super.getKnownBlocks();
+        return Stream.empty(); // make mojang happy
     }
 
     @Override

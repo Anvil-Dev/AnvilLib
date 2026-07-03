@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.font.extension;
 
+import com.google.common.annotations.Beta;
 import dev.anvilcraft.lib.v2.font.sdf.SdfTextRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -11,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.awt.Font;
 
+@Beta
 public interface GuiGraphicsExtractorExtension {
     default GuiGraphicsExtractor self() {
         return (GuiGraphicsExtractor) this;

@@ -6,6 +6,7 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.neoforged.fml.loading.FMLLoader;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.io.File;
@@ -41,6 +42,7 @@ public class AnvilLibFontConfig {
         AnvilLibFontConfigManager.saveConfig(this);
     }
 
+    @ApiStatus.Internal
     @Slf4j
     public static class AnvilLibFontConfigManager {
         public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();

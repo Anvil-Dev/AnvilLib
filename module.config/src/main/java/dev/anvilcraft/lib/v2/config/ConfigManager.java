@@ -37,7 +37,7 @@ public class ConfigManager {
     }
 
     public static <T> T register(String modId, Supplier<T> configFactory) {
-        Optional<? extends ModContainer> byId = ModList.get().getModContainerById(modId);
+        Optional<? extends ModContainer> byId = Optional.of(ModList.get()).flatMap(list -> list.getModContainerById(modId));
         ModContainer container;
         if (byId.isPresent()) {
             container = byId.get();

@@ -1,2 +1,33 @@
 dependencies {
+    compileOnly("maven.modrinth:AANobbMI:775xoFNg") // sodium mc26.1.2-0.8.12-neoforge
+    compileOnly("maven.modrinth:YL57xq9U:YEGDGnJM") // iris 1.10.9+26.1-neoforge
+}
+
+repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
+}
+
+tasks.register('runStd140LayoutRulesTest', JavaExec) {
+    group = 'verification'
+    description = 'Runs lightweight std140 layout rule checks.'
+    classpath = sourceSets.test.runtimeClasspath + sourceSets.main.compileClasspath
+    mainClass = 'dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.Std140LayoutRulesTest'
+}
+
+tasks.named('test') {
+    failOnNoDiscoveredTests = false
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('runStd140LayoutRulesTest')
 }
