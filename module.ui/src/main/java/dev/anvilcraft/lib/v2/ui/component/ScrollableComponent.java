@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
 import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.LayoutHelper;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
@@ -39,6 +40,7 @@ public class ScrollableComponent implements UIComponent {
     @Getter
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
+    private List<LayoutRect> childRects = Collections.emptyList();
 
     @Getter
     private float scrollY;
@@ -61,7 +63,11 @@ public class ScrollableComponent implements UIComponent {
 
 
     public MeasuredSize measure(Constraints constraints) {
-        if (this.children.isEmpty()) return MeasuredSize.ZERO;
+        if (this.children.isEmpty()) {
+            this.contentHeight = 0;
+            this.childSizes = Collections.emptyList();
+            return MeasuredSize.ZERO;
+        }
 
         float maxW = 0;
         float totalH = 0;
@@ -69,9 +75,7 @@ public class ScrollableComponent implements UIComponent {
         Constraints childC = new Constraints(0, constraints.maxWidth() - ScrollableComponent.SCROLLBAR_W - 1, 0, Float.MAX_VALUE);
 
         for (UIComponent child : this.children) {
-            MeasuredSize s = child.measure(childC);
-            // 修饰符会扩展尺寸（如 padding），需要计入内容高度
-            s = child.modifier().foldOut(s, (el, sz) -> el.modifyMeasuredSize(child, childC, sz));
+            MeasuredSize s = LayoutHelper.measureChild(child, childC);
             sizes.add(s);
             totalH += s.height();
             maxW = Math.max(maxW, s.width());
@@ -79,7 +83,10 @@ public class ScrollableComponent implements UIComponent {
         this.childSizes = sizes;
         this.contentHeight = totalH;
 
-        return MeasuredSize.of(constraints.constrainWidth(maxW), constraints.constrainHeight(Math.min(totalH, this.maxHeight)));
+        return MeasuredSize.of(
+            constraints.constrainWidth(maxW + ScrollableComponent.SCROLLBAR_W + 1),
+            constraints.constrainHeight(Math.min(totalH, this.maxHeight))
+        );
     }
 
     public void layout(float x, float y, float width, float height) {
@@ -88,33 +95,36 @@ public class ScrollableComponent implements UIComponent {
         this.width = width;
         this.height = height;
 
-        // resize 后重新钳制滚动位置
         float maxScroll = Math.max(0, this.contentHeight - height);
         this.scrollY = Mth.clamp(this.scrollY, -maxScroll, 0);
 
         float currentY = y + this.scrollY;
         float childW = width - ScrollableComponent.SCROLLBAR_W - 1;
+        List<LayoutRect> rects = new ArrayList<>(this.children.size());
         for (int i = 0; i < this.children.size(); i++) {
             UIComponent child = this.children.get(i);
             MeasuredSize size = this.childSizes.get(i);
-            child.layout(x, currentY, childW, size.height());
+            LayoutRect rect = LayoutRect.of(x, currentY, childW, size.height());
+            rects.add(rect);
+            LayoutHelper.layoutChild(child, x, currentY, childW, size.height());
             currentY += size.height();
         }
+        this.childRects = rects;
     }
 
     public void extractRenderState(GuiGraphicsExtractor extractor) {
         int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
 
-        // 裁剪到容器范围
         extractor.enableScissor(ix, iy, ix + iw, iy + ih);
 
-        for (UIComponent child : this.sortedChildren()) {
-            child.extractRenderState(extractor);
+        for (int i = 0; i < this.children.size(); i++) {
+            UIComponent child = this.children.get(i);
+            LayoutRect r = this.childRects.get(i);
+            LayoutHelper.renderChild(child, extractor, r.x(), r.y(), r.width(), r.height());
         }
 
         extractor.disableScissor();
 
-        // 滚动条
         if (this.contentHeight > this.height) {
             float bh = barH();
             float by = barY();
@@ -150,6 +160,7 @@ public class ScrollableComponent implements UIComponent {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() != 0) return false;
         this.stopScrollbarDrag();
         return false;
     }
@@ -196,7 +207,7 @@ public class ScrollableComponent implements UIComponent {
         float bh = this.barH();
         float maxScroll = this.contentHeight - this.height;
         float newBarY = my - this.dragAnchorY;
-        float ratio = Mth.clamp(newBarY / (this.height - bh), 0f, 1f);
+        float ratio = Mth.clamp((newBarY - this.y) / (this.height - bh), 0f, 1f);
         this.scrollY = -(ratio * maxScroll);
     }
 
@@ -228,9 +239,19 @@ public class ScrollableComponent implements UIComponent {
     }
 
     @Override
+    public void updateHover(float mouseX, float mouseY) {
+        if (!this.hitRect().contains(mouseX, mouseY)) return;
+        for (UIComponent child : this.children) {
+            child.updateHover(mouseX, mouseY);
+        }
+    }
+
+    @Override
     public void copyRuntimeState(UIComponent old) {
         if (old instanceof ScrollableComponent oldSc) {
             this.setScrollY(oldSc.scrollY());
+            this.scrollbarDragging = oldSc.scrollbarDragging;
+            this.dragAnchorY = oldSc.dragAnchorY;
         }
     }
 }

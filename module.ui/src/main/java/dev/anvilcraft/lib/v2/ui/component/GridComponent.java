@@ -1,6 +1,8 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
 import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.LayoutHelper;
+import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
@@ -29,6 +31,7 @@ public class GridComponent implements UIComponent {
     private List<UIComponent> children = Collections.emptyList();
     @SuppressWarnings("FieldCanBeLocal")
     private List<MeasuredSize> childSizes = Collections.emptyList();
+    private List<LayoutRect> childRects = Collections.emptyList();
     private float hSpacing, vSpacing;
 
     @Getter
@@ -58,7 +61,7 @@ public class GridComponent implements UIComponent {
         Constraints childC = new Constraints(0, Float.MAX_VALUE, 0, Float.MAX_VALUE);
 
         for (UIComponent child : this.children) {
-            MeasuredSize s = child.measure(childC);
+            MeasuredSize s = LayoutHelper.measureChild(child, childC);
             sizes.add(s);
             maxW = Math.max(maxW, s.width());
             maxH = Math.max(maxH, s.height());
@@ -81,16 +84,24 @@ public class GridComponent implements UIComponent {
         this.width = width;
         this.height = height;
 
+        List<LayoutRect> rects = new ArrayList<>(this.children.size());
         for (int i = 0; i < this.children.size(); i++) {
             int col = i % this.columns;
             int row = i / this.columns;
             float cx = this.x + col * (this.cellW + this.hSpacing);
             float cy = this.y + row * (this.cellH + this.vSpacing);
-            this.children.get(i).layout(cx, cy, this.cellW, this.cellH);
+            LayoutRect rect = LayoutRect.of(cx, cy, this.cellW, this.cellH);
+            rects.add(rect);
+            LayoutHelper.layoutChild(this.children.get(i), cx, cy, this.cellW, this.cellH);
         }
+        this.childRects = rects;
     }
 
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        for (UIComponent child : this.sortedChildren()) child.extractRenderState(extractor);
+        for (int i = 0; i < this.children.size(); i++) {
+            UIComponent child = this.children.get(i);
+            LayoutRect r = this.childRects.get(i);
+            LayoutHelper.renderChild(child, extractor, r.x(), r.y(), r.width(), r.height());
+        }
     }
 }

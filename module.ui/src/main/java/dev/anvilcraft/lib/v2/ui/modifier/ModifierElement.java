@@ -22,25 +22,25 @@ public interface ModifierElement {
     }
 
     static ModifierElement width(float w) {
-        return new SizeElement(0, Float.MAX_VALUE, w, w);
+        return new SizeElement(w, w, 0, Float.MAX_VALUE);
     }
 
     static ModifierElement height(float h) {
-        return new SizeElement(h, 0, h, Float.MAX_VALUE);
+        return new SizeElement(0, Float.MAX_VALUE, h, h);
     }
 
     static ModifierElement fillMaxWidth() {
-        return new SizeElement(0, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
+        return new FillElement(true, false);
     }
 
     // ── 工厂方法 ──
 
     static ModifierElement fillMaxHeight() {
-        return new SizeElement(Float.MAX_VALUE, Float.MAX_VALUE, 0, Float.MAX_VALUE);
+        return new FillElement(false, true);
     }
 
     static ModifierElement fillMaxSize() {
-        return new SizeElement(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
+        return new FillElement(true, true);
     }
 
     static ModifierElement padding(float all) {

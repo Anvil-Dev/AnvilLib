@@ -133,6 +133,7 @@ public class SliderComponent implements UIComponent {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() != 0) return false;
         this.dragging = false;
         return false;
     }
@@ -164,7 +165,8 @@ public class SliderComponent implements UIComponent {
     @Override
     public void copyRuntimeState(UIComponent old) {
         if (old instanceof SliderComponent oldSl) {
-            this.setDragging(oldSl.dragging());
+            this.value = oldSl.value;
+            this.dragging = oldSl.dragging;
         }
     }
 }

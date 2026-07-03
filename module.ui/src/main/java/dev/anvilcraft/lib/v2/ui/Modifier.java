@@ -86,6 +86,10 @@ public interface Modifier {
         return prepend(ModifierElement.background(color));
     }
 
+    default Modifier background(int color, float round) {
+        return prepend(ModifierElement.background(color, round));
+    }
+
     default Modifier border(float width, int color) {
         return prepend(ModifierElement.border(width, color));
     }

@@ -1,73 +1,138 @@
 package dev.anvilcraft.lib.v2.ui;
 
-import lombok.Getter;
-import net.minecraft.util.Mth;
+import org.jspecify.annotations.Nullable;
+
+import java.util.function.Consumer;
 
 /**
- * 基于游戏 tick 的动画值。从当前值平滑过渡到目标值。
- * 每 tick 调用 {@link #tick()} 推进动画。
+ * 通用补间动画。帧时间驱动，精度到每渲染帧。
+ *
+ * @param <T> 动画值类型
  */
-@SuppressWarnings(
-    {
-        "unused",
-        "UnusedReturnValue"
-    }
-)
-public class Animatable {
-    @Getter
-    private float value;
-    private float startValue;
-    private float targetValue;
-    private int durationTicks;
-    private int elapsed;
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class Animatable<T> {
+    private final Interpolator<T> interpolator;
+    private T from;
+    private T to;
+    private T value;
+    private float duration;
+    private float delay;
+    private float elapsed;
+    private Easing easing = Easing.EASE_IN_OUT;
+    private boolean running;
+    private int repeatCount;
+    private boolean yoyo;
+    private int currentRepeat;
+    private boolean forward = true;
+    @Nullable
+    private Consumer<Animatable<T>> onFinish;
 
-    public Animatable(float initialValue) {
+    public Animatable(Interpolator<T> interpolator, T initialValue) {
+        this.interpolator = interpolator;
+        this.from = initialValue;
+        this.to = initialValue;
         this.value = initialValue;
-        this.targetValue = initialValue;
+    }
+
+    public static Animatable<Float> ofFloat(float initialValue) {
+        return new Animatable<>(Interpolator.FLOAT, initialValue);
+    }
+
+    public static Animatable<Integer> ofColor(int initialValue) {
+        return new Animatable<>(Interpolator.COLOR, initialValue);
+    }
+
+    public T value() {
+        return this.value;
+    }
+
+    public boolean isRunning() {
+        return this.running;
+    }
+
+    /**
+     * 启动动画到目标值。
+     *
+     * @param target   目标值
+     * @param duration 时长（秒）
+     */
+    public Animatable<T> animateTo(T target, float duration) {
+        this.from = this.value;
+        this.to = target;
+        this.duration = duration;
+        this.elapsed = -this.delay;
+        this.running = true;
+        this.currentRepeat = 0;
+        this.forward = true;
+        return this;
+    }
+
+    public Animatable<T> easing(Easing easing) {
+        this.easing = easing;
+        return this;
+    }
+
+    public Animatable<T> delay(float delaySeconds) {
+        this.delay = delaySeconds;
+        return this;
+    }
+
+    /**
+     * 设置重复次数。0 = 不重复（默认），-1 = 无限重复。
+     */
+    public Animatable<T> repeat(int count) {
+        this.repeatCount = count;
+        return this;
+    }
+
+    public Animatable<T> yoyo(boolean yoyo) {
+        this.yoyo = yoyo;
+        return this;
+    }
+
+    public Animatable<T> onFinish(@Nullable Consumer<Animatable<T>> callback) {
+        this.onFinish = callback;
+        return this;
     }
 
     /**
      * 直接设置值（无动画）。
      */
-    public void setValue(float value) {
+    public void setValue(T value) {
         this.value = value;
-        this.targetValue = value;
-        this.elapsed = 0;
+        this.from = value;
+        this.to = value;
+        this.running = false;
     }
 
     /**
-     * 动画到目标值，durationTicks 帧内完成。
+     * 每帧调用。返回 true 表示动画仍在进行中（需 recompose）。
+     *
+     * @param deltaTime 自上帧经过的秒数
      */
-    public void animateTo(float target, int durationTicks) {
-        if (durationTicks <= 0) {
-            this.value = target;
-            this.targetValue = target;
-            this.elapsed = 0;
-            return;
+    public boolean tick(float deltaTime) {
+        if (!this.running) return false;
+
+        this.elapsed += deltaTime;
+        if (this.elapsed < 0) return true; // still in delay
+
+        float t = this.duration > 0 ? Math.min(this.elapsed / this.duration, 1f) : 1f;
+        float eased = this.easing.apply(this.forward ? t : 1f - t);
+        this.value = this.interpolator.interpolate(this.from, this.to, eased);
+
+        if (t >= 1f) {
+            if (this.repeatCount == -1 || this.currentRepeat < this.repeatCount) {
+                this.currentRepeat++;
+                this.elapsed = 0;
+                if (this.yoyo) {
+                    this.forward = !this.forward;
+                }
+            } else {
+                this.running = false;
+                this.value = this.forward ? this.to : this.from;
+                if (this.onFinish != null) this.onFinish.accept(this);
+            }
         }
-        this.startValue = this.getValue();
-        this.targetValue = target;
-        this.durationTicks = durationTicks;
-        this.elapsed = 0;
-    }
-
-    /**
-     * 每 tick 调用一次以推进动画。返回 true 表示动画进行中。
-     */
-    public boolean tick() {
-        if (this.elapsed >= this.durationTicks) return false;
-        this.elapsed++;
-        float t = this.durationTicks > 0 ? (float) this.elapsed / this.durationTicks : 1f;
-        // 缓入缓出
-        float eased = t < 0.5f ? 2f * t * t : -1f + (4f - 2f * t) * t;
-        this.value = Mth.lerp(eased, this.startValue, this.targetValue);
-        return this.elapsed < this.durationTicks;
-    }
-
-    /**
-     * 动画是否进行中。
-     */
-    public boolean isRunning() {
-        return this.elapsed < this.durationTicks;
+        return this.running;
     }
 }

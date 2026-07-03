@@ -145,6 +145,7 @@ public class DropdownComponent implements UIComponent {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (event.button() != 0) return false;
         if (!this.scrollbarDragging()) return false;
         var mc = Minecraft.getInstance();
         int my = (int) mc.mouseHandler.getScaledYPos(mc.getWindow());
@@ -154,6 +155,7 @@ public class DropdownComponent implements UIComponent {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() != 0) return false;
         this.stopPopupScrollbarDrag();
         return false;
     }
@@ -175,6 +177,11 @@ public class DropdownComponent implements UIComponent {
 
     @Override
     public int renderingPriority() {
+        return this.open ? 100 : 0;
+    }
+
+    @Override
+    public int eventPriority() {
         return this.open ? 100 : 0;
     }
 
@@ -406,6 +413,9 @@ public class DropdownComponent implements UIComponent {
         if (old instanceof DropdownComponent oldDd) {
             this.setOpen(oldDd.open());
             this.setPopupScrollY(oldDd.popupScrollY());
+            this.selectedIndex = oldDd.selectedIndex;
+            this.scrollbarDragging = oldDd.scrollbarDragging;
+            this.dragAnchorY = oldDd.dragAnchorY;
         }
     }
 }

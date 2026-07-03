@@ -1,6 +1,5 @@
 package dev.anvilcraft.lib.v2.ui;
 
-import dev.anvilcraft.lib.v2.ui.modifier.ModifierElement;
 import lombok.Setter;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.jspecify.annotations.Nullable;
@@ -36,7 +35,7 @@ public class Composition {
     private final Map<Integer, Object> rememberedValues = new HashMap<>();
 
     // ── slot table ──
-    private final List<Animatable> animatables = new ArrayList<>();
+    private final List<Animatable<?>> animatables = new ArrayList<>();
     private final @Nullable UIScope rootScope;
     /**
      * 当前正在 emit 的 slot（在 {@link #emit} 期间设置）。
@@ -45,6 +44,7 @@ public class Composition {
     private int currentIndex;
     private int currentRememberKey;
     private boolean dirty = true;
+    private long lastFrameNanos = -1;
     // ── 状态 ──
     @Setter
     private @Nullable Consumer<UIScope> content;
@@ -80,11 +80,11 @@ public class Composition {
     }
 
     /**
-     * 注册动画值，每帧自动 tick。动画进行中时自动触发 recompose。
+     * 注册 Tween 动画，每帧自动 tick。动画进行中时自动触发 recompose。
      */
-    public void watch(Animatable anim) {
-        if (!this.animatables.contains(anim)) {
-            this.animatables.add(anim);
+    public void watch(Animatable<?> animatable) {
+        if (!this.animatables.contains(animatable)) {
+            this.animatables.add(animatable);
         }
     }
 
@@ -144,8 +144,12 @@ public class Composition {
     public void renderFrame(GuiGraphicsExtractor extractor, float screenWidth, float screenHeight) {
         CURRENT.set(this);
         try {
-            for (Animatable anim : this.animatables) {
-                if (anim.tick()) this.dirty = true;
+            long now = System.nanoTime();
+            float deltaTime = this.lastFrameNanos < 0 ? 0f : (now - this.lastFrameNanos) / 1_000_000_000f;
+            this.lastFrameNanos = now;
+            deltaTime = Math.min(deltaTime, 0.1f);
+            for (Animatable<?> animatable : this.animatables) {
+                if (animatable.tick(deltaTime)) this.dirty = true;
             }
             if (this.dirty || this.hasDirtySlots()) {
                 this.recompose();
@@ -177,7 +181,11 @@ public class Composition {
             this.content.accept(this.rootScope);
         }
         while (this.slots.size() > this.currentIndex) {
-            this.slots.removeLast();
+            Slot removed = this.slots.removeLast();
+            for (Ref<?> ref : removed.readStates) {
+                ref.removeReader(removed);
+            }
+            removed.readStates.clear();
         }
     }
 
@@ -198,33 +206,10 @@ public class Composition {
     // 6. 递归子组件（容器组件的 measure/layout/extractRenderState 自行处理）
 
     private void renderTree(UIComponent component, GuiGraphicsExtractor extractor, Constraints constraints) {
-        // 1. Apply modifier to constraints
-        Constraints modConstraints = component.modifier().foldIn(constraints, (c, el) -> el.modifyConstraints(c));
-
-        // 2. Measure
-        MeasuredSize size = component.measure(modConstraints);
-        size = component.modifier().foldOut(size, (el, s) -> el.modifyMeasuredSize(component, modConstraints, s));
-
-        // 3. Layout
+        MeasuredSize size = LayoutHelper.measureChild(component, constraints);
         LayoutRect rect = LayoutRect.of(0, 0, size.width(), size.height());
-        rect = component.modifier().foldOut(rect, ModifierElement::modifyLayout);
-        component.layout(rect.x(), rect.y(), rect.width(), rect.height());
-
-        // 4. Emit modifier render states (background, border, etc.)
-        final LayoutRect finalRect = rect;
-        component.modifier().foldOut(
-            extractor, (el, e) -> {
-                el.emitRenderState(e, finalRect);
-                return e;
-            }
-        );
-
-        // 5. Emit component's own render states
-        component.extractRenderState(extractor);
-
-        // 6. Recurse into children (container components handle their own children
-        //    in measure/layout/extractRenderState, but we also walk them here
-        //    so the external renderTree call drives the full tree)
+        LayoutHelper.layoutChild(component, rect.x(), rect.y(), rect.width(), rect.height());
+        LayoutHelper.renderChild(component, extractor, rect.x(), rect.y(), rect.width(), rect.height());
     }
 
     // ── slot ──

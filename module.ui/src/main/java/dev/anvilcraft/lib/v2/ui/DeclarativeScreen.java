@@ -102,10 +102,10 @@ public abstract class DeclarativeScreen extends Screen {
         if (event.button() != 0) return super.mouseClicked(event, isDoubleClick);
 
         this.clearAllFocus();
+        this.closeAllDropdowns();
 
         if (this.dispatchMouseClicked(event, isDoubleClick)) return true;
 
-        this.closeAllDropdowns();
         return super.mouseClicked(event, isDoubleClick);
     }
 

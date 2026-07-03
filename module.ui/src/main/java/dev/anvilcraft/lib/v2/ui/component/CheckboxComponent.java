@@ -125,4 +125,11 @@ public class CheckboxComponent implements UIComponent {
     public LayoutRect hitRect() {
         return LayoutRect.of(this.x, this.y, SIZE, SIZE);
     }
+
+    @Override
+    public void copyRuntimeState(UIComponent old) {
+        if (old instanceof CheckboxComponent oldCb) {
+            this.checked = oldCb.checked;
+        }
+    }
 }

@@ -60,7 +60,7 @@ public final class Arrangement {
                     }
                 }
                 case Vertical.SpaceBetween -> {
-                    float gap = n > 1 ? (extra + gapTotal) / (n - 1) : 0;
+                    float gap = n > 1 ? Math.max(0, (extra + gapTotal) / (n - 1)) : 0;
                     float y = 0;
                     for (int i = 0; i < n; i++) {
                         offsets[i] = y;
@@ -68,19 +68,19 @@ public final class Arrangement {
                     }
                 }
                 case Vertical.SpaceAround -> {
-                    float halfGap = n > 0 ? (extra + gapTotal) / (n * 2f) : 0;
+                    float halfGap = n > 0 ? Math.max(0, (extra + gapTotal) / (n * 2f)) : 0;
                     float y = halfGap;
                     for (int i = 0; i < n; i++) {
                         offsets[i] = y;
-                        y += childHeights.get(i) + spacing + halfGap * 2 - spacing;
+                        y += childHeights.get(i) + halfGap * 2;
                     }
                 }
                 case Vertical.SpaceEvenly -> {
-                    float gap = n > 0 ? (extra + gapTotal) / (n + 1) : 0;
+                    float gap = n > 0 ? Math.max(0, (extra + gapTotal) / (n + 1)) : 0;
                     float y = gap;
                     for (int i = 0; i < n; i++) {
                         offsets[i] = y;
-                        y += childHeights.get(i) + spacing + gap - spacing;
+                        y += childHeights.get(i) + gap;
                     }
                 }
             }
@@ -133,7 +133,7 @@ public final class Arrangement {
                     }
                 }
                 case Horizontal.SpaceBetween -> {
-                    float gap = n > 1 ? (extra + gapTotal) / (n - 1) : 0;
+                    float gap = n > 1 ? Math.max(0, (extra + gapTotal) / (n - 1)) : 0;
                     float x = 0;
                     for (int i = 0; i < n; i++) {
                         offsets[i] = x;
@@ -141,19 +141,19 @@ public final class Arrangement {
                     }
                 }
                 case Horizontal.SpaceAround -> {
-                    float halfGap = n > 0 ? (extra + gapTotal) / (n * 2f) : 0;
+                    float halfGap = n > 0 ? Math.max(0, (extra + gapTotal) / (n * 2f)) : 0;
                     float x = halfGap;
                     for (int i = 0; i < n; i++) {
                         offsets[i] = x;
-                        x += childWidths.get(i) + spacing + halfGap * 2 - spacing;
+                        x += childWidths.get(i) + halfGap * 2;
                     }
                 }
                 case Horizontal.SpaceEvenly -> {
-                    float gap = n > 0 ? (extra + gapTotal) / (n + 1) : 0;
+                    float gap = n > 0 ? Math.max(0, (extra + gapTotal) / (n + 1)) : 0;
                     float x = gap;
                     for (int i = 0; i < n; i++) {
                         offsets[i] = x;
-                        x += childWidths.get(i) + spacing + gap - spacing;
+                        x += childWidths.get(i) + gap;
                     }
                 }
             }

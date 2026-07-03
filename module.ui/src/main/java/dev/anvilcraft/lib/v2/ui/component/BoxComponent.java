@@ -2,6 +2,8 @@ package dev.anvilcraft.lib.v2.ui.component;
 
 import dev.anvilcraft.lib.v2.ui.Alignment;
 import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.LayoutHelper;
+import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
@@ -32,6 +34,7 @@ public class BoxComponent implements UIComponent {
     @Getter
     private List<UIComponent> children = Collections.emptyList();
     private List<MeasuredSize> childSizes = Collections.emptyList();
+    private List<LayoutRect> childRects = Collections.emptyList();
 
     private Alignment.Horizontal contentAlignmentH = Alignment.Horizontal.Start;
     private Alignment.Vertical contentAlignmentV = Alignment.Vertical.Top;
@@ -62,8 +65,9 @@ public class BoxComponent implements UIComponent {
         float maxHeight = 0;
         List<MeasuredSize> sizes = new ArrayList<>(this.children.size());
 
+        Constraints childC = new Constraints(0, constraints.maxWidth(), 0, constraints.maxHeight());
         for (UIComponent child : this.children) {
-            MeasuredSize size = child.measure(constraints);
+            MeasuredSize size = LayoutHelper.measureChild(child, childC);
             sizes.add(size);
             maxWidth = Math.max(maxWidth, size.width());
             maxHeight = Math.max(maxHeight, size.height());
@@ -83,19 +87,25 @@ public class BoxComponent implements UIComponent {
         this.width = width;
         this.height = height;
 
+        List<LayoutRect> rects = new ArrayList<>(this.children.size());
         for (int i = 0; i < this.children.size(); i++) {
             UIComponent child = this.children.get(i);
             MeasuredSize size = this.childSizes.get(i);
             float childX = x + this.contentAlignmentH.align(width, size.width());
             float childY = y + this.contentAlignmentV.align(height, size.height());
-            child.layout(childX, childY, size.width(), size.height());
+            LayoutRect rect = LayoutRect.of(childX, childY, size.width(), size.height());
+            rects.add(rect);
+            LayoutHelper.layoutChild(child, childX, childY, size.width(), size.height());
         }
+        this.childRects = rects;
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        for (UIComponent child : this.sortedChildren()) {
-            child.extractRenderState(extractor);
+        for (int i = 0; i < this.children.size(); i++) {
+            UIComponent child = this.children.get(i);
+            LayoutRect r = this.childRects.get(i);
+            LayoutHelper.renderChild(child, extractor, r.x(), r.y(), r.width(), r.height());
         }
     }
 }

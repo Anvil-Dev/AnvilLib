@@ -13,6 +13,18 @@ import dev.anvilcraft.lib.v2.ui.UIComponent;
 )
 public record PaddingElement(float left, float top, float right, float bottom) implements ModifierElement {
     @Override
+    public Constraints modifyConstraints(Constraints constraints) {
+        float padW = this.left() + this.right();
+        float padH = this.top() + this.bottom();
+        return constraints.copy(
+            Math.max(0, constraints.minWidth() - padW),
+            Math.max(0, constraints.maxWidth() - padW),
+            Math.max(0, constraints.minHeight() - padH),
+            Math.max(0, constraints.maxHeight() - padH)
+        );
+    }
+
+    @Override
     public MeasuredSize modifyMeasuredSize(UIComponent component, Constraints constraints, MeasuredSize childSize) {
         return MeasuredSize.of(
             childSize.width() + this.left() + this.right(),

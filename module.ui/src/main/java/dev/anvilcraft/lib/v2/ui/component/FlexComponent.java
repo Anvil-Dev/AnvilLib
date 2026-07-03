@@ -2,6 +2,8 @@ package dev.anvilcraft.lib.v2.ui.component;
 
 import dev.anvilcraft.lib.v2.ui.Alignment;
 import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.LayoutHelper;
+import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
 import dev.anvilcraft.lib.v2.ui.UIComponent;
@@ -31,6 +33,7 @@ public class FlexComponent implements UIComponent {
     private final Direction direction;
     private List<MeasuredSize> childSizes = Collections.emptyList();
     private List<Float> childFlexGrows = Collections.emptyList();
+    private List<LayoutRect> childRects = Collections.emptyList();
 
     @Setter
     private float spacing;
@@ -39,6 +42,7 @@ public class FlexComponent implements UIComponent {
     @Setter
     private Alignment.Vertical crossAlignV = Alignment.Vertical.Top;
 
+    @Getter
     private float x, y, width, height;
 
     public FlexComponent(Modifier modifier, Direction direction) {
@@ -58,13 +62,17 @@ public class FlexComponent implements UIComponent {
         float maxCross = 0;
         List<MeasuredSize> sizes = new ArrayList<>(this.children.size());
         Constraints childC = isRow
-                ? new Constraints(0, Float.MAX_VALUE, constraints.minHeight(), constraints.maxHeight())
-                : new Constraints(constraints.minWidth(), constraints.maxWidth(), 0, Float.MAX_VALUE);
+                ? new Constraints(0, Float.MAX_VALUE, 0, constraints.maxHeight())
+                : new Constraints(0, constraints.maxWidth(), 0, Float.MAX_VALUE);
 
-        for (UIComponent child : this.children) {
-            MeasuredSize s = child.measure(childC);
+        for (int i = 0; i < this.children.size(); i++) {
+            UIComponent child = this.children.get(i);
+            MeasuredSize s = LayoutHelper.measureChild(child, childC);
             sizes.add(s);
-            totalMain += isRow ? s.width() : s.height();
+            float w = i < this.childFlexGrows.size() ? this.childFlexGrows.get(i) : 1f;
+            if (w <= 0) {
+                totalMain += isRow ? s.width() : s.height();
+            }
             maxCross = Math.max(maxCross, isRow ? s.height() : s.width());
         }
         totalMain += this.spacing * (this.children.size() - 1);
@@ -95,6 +103,7 @@ public class FlexComponent implements UIComponent {
         float available = (isRow ? width : height) - totalFixed - this.spacing * (this.children.size() - 1);
 
         float currentMain = isRow ? x : y;
+        List<LayoutRect> rects = new ArrayList<>(this.children.size());
         for (int i = 0; i < this.children.size(); i++) {
             UIComponent child = this.children.get(i);
             MeasuredSize size = this.childSizes.get(i);
@@ -103,22 +112,31 @@ public class FlexComponent implements UIComponent {
             if (w <= 0 || totalWeight <= 0) {
                 childMain = isRow ? size.width() : size.height();
             } else {
-                childMain = (isRow ? size.width() : size.height()) + (w / totalWeight) * Math.max(0, available);
+                childMain = (w / totalWeight) * Math.max(0, available);
             }
+            LayoutRect rect;
             if (isRow) {
                 float childY = y + this.crossAlignV.align(height, size.height());
-                child.layout(currentMain, childY, childMain, size.height());
+                rect = LayoutRect.of(currentMain, childY, childMain, size.height());
+                LayoutHelper.layoutChild(child, currentMain, childY, childMain, size.height());
                 currentMain += childMain + this.spacing;
             } else {
                 float childX = x + this.crossAlignH.align(width, size.width());
-                child.layout(childX, currentMain, size.width(), childMain);
+                rect = LayoutRect.of(childX, currentMain, size.width(), childMain);
+                LayoutHelper.layoutChild(child, childX, currentMain, size.width(), childMain);
                 currentMain += childMain + this.spacing;
             }
+            rects.add(rect);
         }
+        this.childRects = rects;
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        for (UIComponent child : this.sortedChildren()) child.extractRenderState(extractor);
+        for (int i = 0; i < this.children.size(); i++) {
+            UIComponent child = this.children.get(i);
+            LayoutRect r = this.childRects.get(i);
+            LayoutHelper.renderChild(child, extractor, r.x(), r.y(), r.width(), r.height());
+        }
     }
 }

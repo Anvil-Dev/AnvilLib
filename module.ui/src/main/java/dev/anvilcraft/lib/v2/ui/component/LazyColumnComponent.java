@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.ui.component;
 
 import dev.anvilcraft.lib.v2.ui.Constraints;
+import dev.anvilcraft.lib.v2.ui.LayoutHelper;
 import dev.anvilcraft.lib.v2.ui.LayoutRect;
 import dev.anvilcraft.lib.v2.ui.MeasuredSize;
 import dev.anvilcraft.lib.v2.ui.Modifier;
@@ -13,7 +14,9 @@ import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 虚拟化纵向列表。仅渲染可见区域的项，支持滚动。
@@ -34,6 +37,8 @@ public class LazyColumnComponent implements UIComponent {
     private final List<?> items;
     private final ItemBuilder<?> builder;
     private List<UIComponent> children = Collections.emptyList();
+    private List<LayoutRect> childRects = Collections.emptyList();
+    private Map<Integer, UIComponent> itemCache = new HashMap<>();
     private float scrollOffset;
 
     @Getter
@@ -70,28 +75,42 @@ public class LazyColumnComponent implements UIComponent {
     @Override
     public void layout(float x, float y, float width, float height) {
         this.x = x; this.y = y; this.width = width; this.height = height;
-        rebuildChildren();
         float maxScroll = Math.max(0, this.items.size() * this.itemHeight - height);
         this.scrollOffset = Mth.clamp(this.scrollOffset, 0, maxScroll);
+        rebuildChildren();
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void rebuildChildren() {
         int first = (int) (this.scrollOffset / this.itemHeight);
-        int visible = Math.min((int) (this.height / this.itemHeight) + 1, this.items.size() - first);
+        int visible = Math.min((int) (this.height / this.itemHeight) + 2, this.items.size() - first);
+        visible = Math.max(0, visible);
         List<UIComponent> newChildren = new ArrayList<>(visible);
+        List<LayoutRect> rects = new ArrayList<>(visible);
+        float childW = this.width - SCROLLBAR_W - 1;
+        Map<Integer, UIComponent> newCache = new HashMap<>();
         for (int i = 0; i < visible; i++) {
-            Object item = this.items.get(first + i);
-            newChildren.add(((ItemBuilder) this.builder).build(item));
+            int index = first + i;
+            UIComponent child = this.itemCache.get(index);
+            if (child == null) {
+                Object item = this.items.get(index);
+                UIComponent newChild = ((ItemBuilder) this.builder).build(item);
+                if (child != null) {
+                    newChild.copyRuntimeState(child);
+                }
+                child = newChild;
+            }
+            newCache.put(index, child);
+            newChildren.add(child);
+            float childY = this.y - (this.scrollOffset % this.itemHeight) + i * this.itemHeight;
+            LayoutHelper.measureChild(child, new Constraints(0, childW, 0, this.itemHeight));
+            LayoutRect rect = LayoutRect.of(this.x, childY, childW, this.itemHeight);
+            rects.add(rect);
+            LayoutHelper.layoutChild(child, this.x, childY, childW, this.itemHeight);
         }
         this.children = newChildren;
-        // Position each child
-        for (int i = 0; i < visible; i++) {
-            UIComponent child = newChildren.get(i);
-            float childY = this.y - (this.scrollOffset % this.itemHeight) + i * this.itemHeight;
-            child.measure(Constraints.NONE);
-            child.layout(this.x, childY, this.width, this.itemHeight);
-        }
+        this.childRects = rects;
+        this.itemCache = newCache;
     }
 
     @Override
@@ -99,8 +118,10 @@ public class LazyColumnComponent implements UIComponent {
         int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
         extractor.enableScissor(ix, iy, ix + iw, iy + ih);
 
-        for (UIComponent child : this.children) {
-            child.extractRenderState(extractor);
+        for (int i = 0; i < this.children.size(); i++) {
+            UIComponent child = this.children.get(i);
+            LayoutRect r = this.childRects.get(i);
+            LayoutHelper.renderChild(child, extractor, r.x(), r.y(), r.width(), r.height());
         }
 
         extractor.disableScissor();
@@ -165,6 +186,14 @@ public class LazyColumnComponent implements UIComponent {
     }
 
     @Override
+    public void updateHover(float mouseX, float mouseY) {
+        if (!this.hitRect().contains(mouseX, mouseY)) return;
+        for (UIComponent child : this.children) {
+            child.updateHover(mouseX, mouseY);
+        }
+    }
+
+    @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean isDouble) {
         if (event.button() != 0) return false;
         var mc = net.minecraft.client.Minecraft.getInstance();
@@ -188,7 +217,18 @@ public class LazyColumnComponent implements UIComponent {
 
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        if (event.button() != 0) return false;
         this.stopScrollbarDrag();
         return false;
+    }
+
+    @Override
+    public void copyRuntimeState(UIComponent old) {
+        if (old instanceof LazyColumnComponent oldLc) {
+            this.scrollOffset = oldLc.scrollOffset;
+            this.scrollbarDragging = oldLc.scrollbarDragging;
+            this.dragAnchorY = oldLc.dragAnchorY;
+            this.itemCache = new HashMap<>(oldLc.itemCache);
+        }
     }
 }

@@ -177,6 +177,7 @@ public class TextInputComponent implements UIComponent, Focusable {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (event.button() != 0) return false;
         if (!this.focused) return false;
         var mc = Minecraft.getInstance();
         int mx = (int) mc.mouseHandler.getScaledXPos(mc.getWindow());
@@ -213,7 +214,7 @@ public class TextInputComponent implements UIComponent, Focusable {
         if (key < 259 || key > 269) {
             if (event.isSelectAll()) { this.setCursorPos(this.value.length()); this.highlightPos = 0; return true; }
             if (event.isCopy()) { Minecraft.getInstance().keyboardHandler.setClipboard(this.getHighlighted()); return true; }
-            if (event.isPaste()) { this.insertText(Minecraft.getInstance().keyboardHandler.getClipboard()); return true; }
+            if (event.isPaste()) { this.insertText(StringUtil.filterText(Minecraft.getInstance().keyboardHandler.getClipboard())); return true; }
             if (event.isCut()) {
                 Minecraft.getInstance().keyboardHandler.setClipboard(this.getHighlighted());
                 this.insertText("");
@@ -234,12 +235,12 @@ public class TextInputComponent implements UIComponent, Focusable {
         }
         if (key == 262) { // Right
             if (ctrl) { this.setCursorPos(this.getWordPosition(1), shift); }
-            else { this.setCursorPos(this.cursorPos + 1, shift); }
+            else { this.setCursorPos(this.nextCodepointPos(1), shift); }
             return true;
         }
         if (key == 263) { // Left
             if (ctrl) { this.setCursorPos(this.getWordPosition(-1), shift); }
-            else { this.setCursorPos(this.cursorPos - 1, shift); }
+            else { this.setCursorPos(this.nextCodepointPos(-1), shift); }
             return true;
         }
         if (key == 268) { this.setCursorPos(0, shift); return true; } // Home
@@ -248,12 +249,27 @@ public class TextInputComponent implements UIComponent, Focusable {
     }
 
     private void deleteChars(int dir) {
-        int start = Math.min(this.cursorPos, this.cursorPos + dir);
-        int end = Math.max(this.cursorPos, this.cursorPos + dir);
+        int target = this.nextCodepointPos(dir);
+        int start = Math.min(this.cursorPos, target);
+        int end = Math.max(this.cursorPos, target);
         if (start == end) return;
         this.value = new StringBuilder(this.value).delete(start, end).toString();
         this.setCursorPos(start);
         this.fireChange();
+    }
+
+    private int nextCodepointPos(int dir) {
+        if (dir > 0) {
+            if (this.cursorPos >= this.value.length()) return this.value.length();
+            int pos = this.cursorPos + 1;
+            if (pos < this.value.length() && Character.isLowSurrogate(this.value.charAt(pos))) pos++;
+            return pos;
+        } else {
+            if (this.cursorPos <= 0) return 0;
+            int pos = this.cursorPos - 1;
+            if (pos > 0 && Character.isHighSurrogate(this.value.charAt(pos - 1))) pos--;
+            return pos;
+        }
     }
 
     private int getWordPosition(int dir) {

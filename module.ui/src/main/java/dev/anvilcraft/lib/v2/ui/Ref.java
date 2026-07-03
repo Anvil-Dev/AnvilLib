@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -27,7 +28,7 @@ import java.util.function.Supplier;
 public class Ref<T extends @Nullable Object> implements Supplier<T>, Consumer<T> {
     final Set<Composition.Slot> readers = new HashSet<>();
     final Map<Long, Consumer<Ref<T>>> observers = new HashMap<>();
-    private long used = 0;
+    private long nextObserverId = 0;
     private T value;
 
     public Ref(T initialValue) {
@@ -47,7 +48,7 @@ public class Ref<T extends @Nullable Object> implements Supplier<T>, Consumer<T>
     }
 
     /**
-     * 设置新值。若值发生变化，标记所有 reader slot 为脏。
+     * 设置新值。若值发生变化，标记所有 reader slot 为脏，并通知 observer。
      */
     public void accept(T newValue) {
         if (!Objects.equals(this.value, newValue)) {
@@ -55,7 +56,17 @@ public class Ref<T extends @Nullable Object> implements Supplier<T>, Consumer<T>
             for (Composition.Slot slot : this.readers) {
                 slot.markDirty();
             }
+            for (Consumer<Ref<T>> observer : this.observers.values()) {
+                observer.accept(this);
+            }
         }
+    }
+
+    /**
+     * 移除指定 slot 的 reader 追踪。由 Composition 在 slot 被回收时调用。
+     */
+    void removeReader(Composition.Slot slot) {
+        this.readers.remove(slot);
     }
 
     @Override
@@ -63,12 +74,41 @@ public class Ref<T extends @Nullable Object> implements Supplier<T>, Consumer<T>
         return "State(" + this.value + ")";
     }
 
+    /**
+     * 注册值变化观察者。返回 ID 用于后续取消。
+     */
     public Long watch(Consumer<Ref<T>> watcher) {
-        this.observers.put(this.used, watcher);
-        return this.used++;
+        long id = this.nextObserverId++;
+        this.observers.put(id, watcher);
+        return id;
     }
 
     public Consumer<Ref<T>> unwatch(Long id) {
         return this.observers.remove(id);
+    }
+
+    /**
+     * 创建只读映射属性。源变化时自动触发 recompose。
+     */
+    public <R> Ref<R> map(Function<T, R> mapper) {
+        Ref<R> mapped = new Ref<>(mapper.apply(this.value));
+        this.watch(src -> mapped.accept(mapper.apply(src.get())));
+        return mapped;
+    }
+
+    /**
+     * 双向绑定两个 Ref。一方变化时自动同步另一方。
+     */
+    public void bindBidirectional(Ref<T> other) {
+        this.watch(src -> {
+            if (!Objects.equals(other.get(), src.get())) {
+                other.accept(src.get());
+            }
+        });
+        other.watch(src -> {
+            if (!Objects.equals(this.get(), src.get())) {
+                this.accept(src.get());
+            }
+        });
     }
 }
