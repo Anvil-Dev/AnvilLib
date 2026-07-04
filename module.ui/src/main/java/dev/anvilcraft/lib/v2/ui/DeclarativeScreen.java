@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.ui;
 
 import dev.anvilcraft.lib.v2.ui.component.DropdownComponent;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
@@ -105,10 +106,12 @@ public abstract class DeclarativeScreen extends Screen {
         if (event.button() != 0) return super.mouseClicked(event, isDoubleClick);
 
         this.clearAllFocus();
-        this.closeAllDropdowns();
 
-        if (this.dispatchMouseClicked(event, isDoubleClick)) return true;
+        boolean consumed = this.dispatchMouseClicked(event, isDoubleClick);
 
+        this.closeUnrelatedDropdowns();
+
+        if (consumed) return true;
         return super.mouseClicked(event, isDoubleClick);
     }
 
@@ -163,15 +166,22 @@ public abstract class DeclarativeScreen extends Screen {
         for (UIComponent child : component.children()) clearFocusRecursive(child);
     }
 
-    private void closeAllDropdowns() {
-        for (UIComponent child : this.rootScope.getChildren()) closeDropdownsRecursive(child);
+    private void closeUnrelatedDropdowns() {
+        var mc = Minecraft.getInstance();
+        float mx = (float) mc.mouseHandler.getScaledXPos(mc.getWindow());
+        float my = (float) mc.mouseHandler.getScaledYPos(mc.getWindow());
+        for (UIComponent child : this.rootScope.getChildren()) closeUnrelatedDropdownsRecursive(child, mx, my);
     }
 
     // ── 鼠标释放 ──
 
-    private void closeDropdownsRecursive(UIComponent component) {
-        if (component instanceof DropdownComponent dd) dd.setOpen(false);
-        for (UIComponent child : component.children()) closeDropdownsRecursive(child);
+    private void closeUnrelatedDropdownsRecursive(UIComponent component, float mx, float my) {
+        if (component instanceof DropdownComponent dd && dd.open()) {
+            if (!dd.hitRect().contains(mx, my) && !dd.popupRect().contains(mx, my)) {
+                dd.setOpen(false);
+            }
+        }
+        for (UIComponent child : component.children()) closeUnrelatedDropdownsRecursive(child, mx, my);
     }
 
     private boolean dispatchMouseClicked(MouseButtonEvent event, boolean isDouble) {
