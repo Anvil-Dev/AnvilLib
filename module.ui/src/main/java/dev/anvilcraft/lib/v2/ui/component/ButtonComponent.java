@@ -83,9 +83,12 @@ public class ButtonComponent implements UIComponent {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor) {
-        int bg = this.hovered ? ButtonComponent.BG_HOVER_COLOR : ButtonComponent.BG_COLOR;
-        int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
-        extractor.fill(ix, iy, ix + iw, iy + ih, bg);
+        // 仅在没有自定义 modifier 背景时画默认灰底
+        if (this.modifier == Modifier.NONE) {
+            int bg = this.hovered ? ButtonComponent.BG_HOVER_COLOR : ButtonComponent.BG_COLOR;
+            int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
+            extractor.fill(ix, iy, ix + iw, iy + ih, bg);
+        }
 
         var font = Minecraft.getInstance().font;
         float textW = font.width(this.label);

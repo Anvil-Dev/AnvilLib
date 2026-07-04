@@ -201,6 +201,7 @@ public class DropdownComponent implements UIComponent {
         float hs = DropdownComponent.ARROW_SIZE / 2f;
         if (this.open) {
             SdfGraphics.instance
+                .reset()
                 .triangle(
                     arrowCx - hs, arrowCy + hs * 0.6f,
                     arrowCx + hs, arrowCy + hs * 0.6f,
@@ -211,6 +212,7 @@ public class DropdownComponent implements UIComponent {
                 .draw(extractor);
         } else {
             SdfGraphics.instance
+                .reset()
                 .triangle(
                     arrowCx - hs, arrowCy - hs * 0.6f,
                     arrowCx + hs, arrowCy - hs * 0.6f,
