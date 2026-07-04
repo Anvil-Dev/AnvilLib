@@ -359,11 +359,8 @@ public class DropdownComponent implements UIComponent {
         int py = (int) (this.y + this.height);
         float totalH = this.options.length * this.itemHeight();
         if (totalH <= ph) return false;
-        float bh = Math.max(12, ph * ph / totalH);
-        float maxScroll = totalH - ph;
-        float by = py + (-this.popupScrollY / maxScroll) * (ph - bh);
         int bx = (int) (this.x + this.width - DropdownComponent.SCROLLBAR_W - 1);
-        return mx >= bx && mx < bx + DropdownComponent.SCROLLBAR_W && my >= by && my < by + bh;
+        return mx >= bx && mx < bx + DropdownComponent.SCROLLBAR_W && my >= py && my < py + ph;
     }
 
     public void startPopupScrollbarDrag(float my) {
@@ -374,7 +371,14 @@ public class DropdownComponent implements UIComponent {
         float bh = Math.max(12, ph * ph / totalH);
         float maxScroll = totalH - ph;
         float by = py + (-this.popupScrollY / maxScroll) * (ph - bh);
-        this.dragAnchorY = my - by;
+        if (my >= by && my < by + bh) {
+            this.dragAnchorY = my - by;
+        } else {
+            this.dragAnchorY = bh / 2f;
+            float newBarY = my - this.dragAnchorY;
+            float ratio = Mth.clamp((newBarY - py) / (ph - bh), 0f, 1f);
+            this.popupScrollY = -(ratio * maxScroll);
+        }
     }
 
     public void onPopupScrollbarDrag(float my) {
