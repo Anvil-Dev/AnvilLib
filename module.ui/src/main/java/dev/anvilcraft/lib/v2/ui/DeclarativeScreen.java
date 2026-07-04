@@ -9,6 +9,9 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Comparator;
+import java.util.List;
+
 /**
  * 声明式 UI 的 {@link Screen} 宿主。
  * <p>
@@ -111,7 +114,10 @@ public abstract class DeclarativeScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        for (UIComponent child : this.rootScope.getChildren()) {
+        List<UIComponent> sorted = this.rootScope.getChildren().stream()
+            .sorted(Comparator.comparingInt(UIComponent::eventPriority).reversed())
+            .toList();
+        for (UIComponent child : sorted) {
             dispatchMouseReleased(child, event);
         }
         return super.mouseReleased(event);
@@ -119,7 +125,10 @@ public abstract class DeclarativeScreen extends Screen {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        for (UIComponent child : this.rootScope.getChildren()) {
+        List<UIComponent> sorted = this.rootScope.getChildren().stream()
+            .sorted(Comparator.comparingInt(UIComponent::eventPriority).reversed())
+            .toList();
+        for (UIComponent child : sorted) {
             if (dispatchMouseDragged(child, event, deltaX, deltaY)) return true;
         }
         return super.mouseDragged(event, deltaX, deltaY);
@@ -127,7 +136,10 @@ public abstract class DeclarativeScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        for (UIComponent child : this.rootScope.getChildren()) {
+        List<UIComponent> sorted = this.rootScope.getChildren().stream()
+            .sorted(Comparator.comparingInt(UIComponent::eventPriority).reversed())
+            .toList();
+        for (UIComponent child : sorted) {
             if (dispatchMouseScrolled(child, mouseX, mouseY, scrollX, scrollY)) return true;
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
@@ -163,7 +175,10 @@ public abstract class DeclarativeScreen extends Screen {
     }
 
     private boolean dispatchMouseClicked(MouseButtonEvent event, boolean isDouble) {
-        for (UIComponent child : this.rootScope.getChildren()) {
+        List<UIComponent> sorted = this.rootScope.getChildren().stream()
+            .sorted(Comparator.comparingInt(UIComponent::eventPriority).reversed())
+            .toList();
+        for (UIComponent child : sorted) {
             if (dispatchMouseClickedRecursive(child, event, isDouble)) return true;
         }
         return false;

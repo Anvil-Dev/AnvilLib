@@ -118,11 +118,7 @@ public class LazyColumnComponent implements UIComponent {
         int ix = (int) this.x, iy = (int) this.y, iw = (int) this.width, ih = (int) this.height;
         extractor.enableScissor(ix, iy, ix + iw, iy + ih);
 
-        for (int i = 0; i < this.children.size(); i++) {
-            UIComponent child = this.children.get(i);
-            LayoutRect r = this.childRects.get(i);
-            LayoutHelper.renderChild(child, extractor, r.x(), r.y(), r.width(), r.height());
-        }
+        LayoutHelper.renderChildrenSorted(this.children, this.childRects, extractor);
 
         extractor.disableScissor();
 

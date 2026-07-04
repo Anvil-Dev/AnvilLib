@@ -3,6 +3,10 @@ package dev.anvilcraft.lib.v2.ui;
 import dev.anvilcraft.lib.v2.ui.modifier.ModifierElement;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.IntStream;
+
 /**
  * 子组件遍历辅助。统一处理 modifier 的约束收缩、尺寸扩展、布局偏移和渲染状态发射。
  * 所有容器组件应通过此类访问子组件的 measure/layout/render,而非直接调用。
@@ -40,5 +44,22 @@ public final class LayoutHelper {
             return null;
         });
         child.extractRenderState(ext);
+    }
+
+    /**
+     * 按 renderingPriority 升序渲染子组件列表（低优先级先渲染，高优先级后渲染覆盖在上层）。
+     */
+    public static void renderChildrenSorted(List<UIComponent> children, List<LayoutRect> childRects,
+                                            GuiGraphicsExtractor ext) {
+        int[] order = IntStream.range(0, children.size())
+            .boxed()
+            .sorted(Comparator.comparingInt(i -> children.get(i).renderingPriority()))
+            .mapToInt(Integer::intValue)
+            .toArray();
+        for (int i : order) {
+            UIComponent child = children.get(i);
+            LayoutRect r = childRects.get(i);
+            renderChild(child, ext, r.x(), r.y(), r.width(), r.height());
+        }
     }
 }

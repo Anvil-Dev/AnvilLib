@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -157,7 +158,10 @@ public class Composition {
             }
             Constraints rootConstraints = new Constraints(0, screenWidth, 0, screenHeight);
             if (this.rootScope != null) {
-                for (UIComponent child : this.rootScope.getChildren()) {
+                List<UIComponent> sorted = this.rootScope.getChildren().stream()
+                    .sorted(Comparator.comparingInt(UIComponent::renderingPriority))
+                    .toList();
+                for (UIComponent child : sorted) {
                     this.renderTree(child, extractor, rootConstraints);
                 }
             }
