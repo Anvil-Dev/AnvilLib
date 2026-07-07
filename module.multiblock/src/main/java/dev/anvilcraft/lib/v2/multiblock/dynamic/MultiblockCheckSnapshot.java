@@ -14,11 +14,11 @@ import javax.annotation.Nullable;
  * <p>快照在主线程上构建，包含所有必要的方块状态与（可选的）序列化 NBT 数据，
  * 因此工作线程无需访问 {@code Level}。
  *
- * @param controllerPosLong 控制器位置（{@link BlockPos#asLong()} 编码）
- * @param entries           每个检测位置对应的快照条目（位置 → 条目）
+ * @param controllerPos 控制器位置
+ * @param entries       每个检测位置对应的快照条目（位置 → 条目）
  */
 public record MultiblockCheckSnapshot(
-    long controllerPosLong,
+    BlockPos controllerPos,
     Map<BlockPos, Entry> entries
 ) {
 

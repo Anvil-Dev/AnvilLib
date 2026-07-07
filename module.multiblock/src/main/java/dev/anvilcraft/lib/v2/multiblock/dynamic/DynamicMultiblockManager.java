@@ -405,7 +405,11 @@ public class DynamicMultiblockManager extends SavedData {
             BlockPos pos = entry.getKey();
             BlockStatePredicate predicate = entry.getValue();
             if (!level.isLoaded(pos)) {
-                entries.put(pos, old.entries().get(pos));
+                MultiblockCheckSnapshot.Entry snapshotEntry = old.entries().get(pos);
+                if (snapshotEntry == null) {
+                    snapshotEntry = new MultiblockCheckSnapshot.Entry(null, null, predicate);
+                }
+                entries.put(pos, snapshotEntry);
                 continue;
             }
             BlockState blockState = level.getBlockState(pos);
@@ -418,7 +422,7 @@ public class DynamicMultiblockManager extends SavedData {
             }
             entries.put(pos, new MultiblockCheckSnapshot.Entry(blockState, entityNbt, predicate));
         }
-        return new MultiblockCheckSnapshot(state.getControllerPos().asLong(), entries);
+        return new MultiblockCheckSnapshot(state.getControllerPos(), entries);
     }
 
     /**
