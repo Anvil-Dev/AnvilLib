@@ -362,6 +362,7 @@ public class DynamicMultiblockManager extends SavedData {
         ExecutorService executor = getOrCreateExecutor();
         for (MultiblockState mstate : candidates) {
             MultiblockCheckSnapshot snapshot = buildSnapshot(level, mstate);
+            mstate.setSnapshot(snapshot);
 
             BlockPos pos = mstate.getControllerPos().immutable();
             manager.pendingChecks.add(pos);
@@ -396,12 +397,17 @@ public class DynamicMultiblockManager extends SavedData {
      * @return 快照；若定义不存在则返回 {@code null}
      */
     private static MultiblockCheckSnapshot buildSnapshot(ServerLevel level, MultiblockState state) {
+        MultiblockCheckSnapshot old = state.getSnapshot();
         MultiblockDefinition def = state.getDefinition(level.registryAccess()).value();
         Map<BlockPos, BlockStatePredicate> global = def.toGlobal(state.getControllerPos());
         Map<BlockPos, MultiblockCheckSnapshot.Entry> entries = new LinkedHashMap<>(global.size());
         for (Map.Entry<BlockPos, BlockStatePredicate> entry : global.entrySet()) {
             BlockPos pos = entry.getKey();
             BlockStatePredicate predicate = entry.getValue();
+            if (!level.isLoaded(pos)) {
+                entries.put(pos, old.entries().get(pos));
+                continue;
+            }
             BlockState blockState = level.getBlockState(pos);
             CompoundTag entityNbt = null;
             if (predicate.requiresBlockEntity()) {

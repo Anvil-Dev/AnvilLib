@@ -29,7 +29,7 @@ public record MultiblockCheckSnapshot(
      */
     public boolean test() {
         for (Entry entry : entries.values()) {
-            if (!entry.predicate().testOffThread(entry.blockState(), entry.entityNbt())) {
+            if (!entry.test()) {
                 return false;
             }
         }
@@ -44,10 +44,16 @@ public record MultiblockCheckSnapshot(
      * @param predicate  应用于此位置的谓词
      */
     public record Entry(
-        BlockState blockState,
+        @Nullable BlockState blockState,
         @Nullable CompoundTag entityNbt,
         BlockStatePredicate predicate
     ) {
+        public boolean test() {
+            if (this.blockState == null) {
+                return true;
+            }
+            return this.predicate.testOffThread(this.blockState, this.entityNbt);
+        }
     }
 }
 

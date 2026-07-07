@@ -47,6 +47,7 @@ public class MultiblockState {
     @Setter(AccessLevel.NONE)
     private Holder.@Nullable Reference<MultiblockDefinition> definition;
     private boolean formed;
+    private MultiblockCheckSnapshot snapshot;
 
     public MultiblockState(BlockPos controllerPos, ResourceKey<MultiblockDefinition> definitionKey) {
         this(controllerPos, definitionKey, false);
