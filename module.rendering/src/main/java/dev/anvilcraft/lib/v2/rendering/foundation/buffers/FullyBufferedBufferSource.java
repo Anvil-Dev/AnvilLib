@@ -78,10 +78,10 @@ public class FullyBufferedBufferSource extends MultiBufferSource.BufferSource im
     private void uploadNow(VertexBufferHost host, RenderType renderType) {
         BufferBuilder bufferBuilder = bufferBuilders.get(renderType);
         ByteBufferBuilder byteBuffer = byteBuffers.get(renderType);
-        int compiledVertices = bufferBuilder.vertices * renderType.format().getVertexSize();
+        int compiledVertices = bufferBuilder.vertices * bufferBuilder.format.getVertexSize();
         if (compiledVertices >= 0) {
             MeshData mesh = bufferBuilder.build();
-            indexCountMap.put(renderType, renderType.mode().indexCount(bufferBuilder.vertices));
+            indexCountMap.put(renderType, bufferBuilder.mode.indexCount(bufferBuilder.vertices));
             if (mesh != null) {
                 if (renderType.sortOnUpload()) {
                     MeshData.SortState sortState = mesh.sortQuads(

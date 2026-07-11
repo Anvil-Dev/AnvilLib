@@ -18,5 +18,5 @@ dependencies {
     implementation project(":anvillib-util-neoforge-26.1")
     implementation project(":anvillib-wheel-neoforge-26.1")
 
-    runtimeOnly("dev.dubhe:anvilcraft-neoforge-26.1.2:1.6.0+snapshot.1921"){ transitive = false }
+    runtimeOnly("dev.dubhe:anvilcraft-neoforge-26.1.2:1.6.0+snapshot.2008"){ transitive = false }
 }

@@ -22,6 +22,10 @@ public class ALRIntegrationCompatMixinPlugin implements IMixinConfigPlugin {
                 "dev.anvilcraft.lib.v2.rendering.integration.mixins.CachedBlockEntityRenderingPipelineMixin",
                 isPresent("iris")
             )
+            .put(
+                "dev.anvilcraft.lib.v2.rendering.integration.mixins.RebuildTaskMixin",
+                isPresent("iris")
+            )
             .build();
     }
 

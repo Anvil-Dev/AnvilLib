@@ -41,45 +41,73 @@ neoForge {
             it1.publish file('src/main/resources/interface_injections.json')
         }
     }
-    runs {
-        client {
-            client()
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-        }
-
-        server {
-            server()
-            programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-        }
-
-        if (project.properties.get("anvillib.clientRenderDocRun").toString() == "true") {
-
-            renderDocClient {
-                client()
-
-                systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-                systemProperty 'anvillib.rendering.debugMode', 'true'
-                systemProperty('neoforge.rendernurse.renderdoc.library', rootProject.file("libs/renderdoc.dll").absolutePath)
-                taskBefore(rootProject.project('renderdoc-loader-internal').tasks.getByName('jar'))
-                programArgument("--renderDebugLabels")
-                jvmArgument("-javaagent:" + rootProject.project('renderdoc-loader-internal').tasks.getByName('jar').archiveFile.get().asFile.absolutePath)
+    if (project.properties.get("anvillib.needRunConfig").toString() == "true") {
+        runs {
+            if (project.properties.get("anvillib.needRunConfig.client").toString() == "true") {
+                client {
+                    client()
+                    systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+                }
+                clientIrisWorkaround {
+                    client()
+                    systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
+                    systemProperty("neoforge.disableGlValidation", "true")
+                }
             }
-        }
 
-        gameTestServer {
-            type = "gameTestServer"
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-        }
+            if (project.properties.get("anvillib.needRunConfig.server").toString() == "true") {
+                server {
+                    server()
+                    programArgument '--nogui'
+                    systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+                }
+            }
 
-        data {
-            clientData()
-            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
-        }
 
-        configureEach {
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
-            logLevel = org.slf4j.event.Level.DEBUG
+            if (project.properties.get("anvillib.needRunConfig.clientRenderDoc").toString() == "true") {
+
+                clientRenderDoc {
+                    client()
+
+                    systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+                    systemProperty 'anvillib.rendering.debugMode', 'true'
+                    systemProperty('neoforge.rendernurse.renderdoc.library', rootProject.file("libs/renderdoc.dll").absolutePath)
+                    taskBefore(rootProject.project('renderdoc-loader-internal').tasks.getByName('jar'))
+                    programArgument("--renderDebugLabels")
+                    jvmArgument("-javaagent:" + rootProject.project('renderdoc-loader-internal').tasks.getByName('jar').archiveFile.get().asFile.absolutePath)
+                }
+
+                clientRenderDocIrisWorkaround {
+                    client()
+
+                    systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+                    systemProperty 'anvillib.rendering.debugMode', 'true'
+                    systemProperty('neoforge.rendernurse.renderdoc.library', rootProject.file("libs/renderdoc.dll").absolutePath)
+                    taskBefore(rootProject.project('renderdoc-loader-internal').tasks.getByName('jar'))
+                    programArgument("--renderDebugLabels")
+                    systemProperty("neoforge.disableGlValidation", "true")
+                    jvmArgument("-javaagent:" + rootProject.project('renderdoc-loader-internal').tasks.getByName('jar').archiveFile.get().asFile.absolutePath)
+                }
+            }
+
+            if (project.properties.get("anvillib.needRunConfig.gameTest").toString() == "true") {
+                gameTestServer {
+                    type = "gameTestServer"
+                    systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+                }
+            }
+
+            if (project.properties.get("anvillib.needRunConfig.data").toString() == "true") {
+                data {
+                    clientData()
+                    programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+                }
+            }
+
+            configureEach {
+                systemProperty 'forge.logging.markers', 'REGISTRIES'
+                logLevel = org.slf4j.event.Level.DEBUG
+            }
         }
     }
 
