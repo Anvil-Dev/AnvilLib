@@ -27,6 +27,7 @@ import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
 
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -334,6 +335,29 @@ public abstract class CodecUtil {
                 }, () -> property.value(holderSupplier.get())
             )
         ).xmap(pair -> pair.getFirst().setValue(property, pair.getSecond().value()), state -> Pair.of(state, property.value(state)));
+    }
+
+    /**
+     * 构建一个 `ZOM列表`（零/一/多元素列表）MapCodec
+     *
+     * @param codec 元素编解码器
+     * @param name 名称
+     * @return `ZOM列表`（零/一/多元素列表）MapCodec
+     */
+    public static <T> MapCodec<List<T>> zomListMap(Codec<T> codec, String name) {
+        return Codec.mapEither(codec.optionalFieldOf(name), codec.listOf().fieldOf(name)).xmap(
+            either -> either.map(
+                op -> op
+                    .map(Collections::singletonList)
+                    .orElse(List.of()),
+                Function.identity()
+            ),
+            list -> list.size() <= 1
+                    ? list.isEmpty()
+                      ? Either.left(Optional.empty())
+                      : Either.left(Optional.of(list.getFirst()))
+                    : Either.right(list)
+        );
     }
 
     /**
