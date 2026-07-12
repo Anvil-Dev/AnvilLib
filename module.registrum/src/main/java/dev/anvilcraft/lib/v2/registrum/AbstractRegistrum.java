@@ -1681,8 +1681,9 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      *
      * @author Gugle
      */
-    public <E> DataComponentBuilder<E, S> dataComponentPredicate(String name) {
-        return dataComponent(self(), name);
+    public <E extends DataComponentPredicate, P> DataComponentPredicateBuilder<E, P> dataComponentPredicate(String name) {
+        //noinspection unchecked
+        return (DataComponentPredicateBuilder<E, P>) dataComponentPredicate(self(), name);
     }
 
     /**
@@ -1690,8 +1691,9 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      *
      * @author Gugle
      */
-    public <E> DataComponentBuilder<E, S> dataComponentPredicate(String name, Class<E> clazz) {
-        return dataComponent(self(), name);
+    public <E extends DataComponentPredicate, P> DataComponentPredicateBuilder<E, P> dataComponentPredicate(String name, Class<E> clazz) {
+        //noinspection unchecked
+        return (DataComponentPredicateBuilder<E, P>) dataComponentPredicate(self(), name);
     }
 
     // Biome Modifier
