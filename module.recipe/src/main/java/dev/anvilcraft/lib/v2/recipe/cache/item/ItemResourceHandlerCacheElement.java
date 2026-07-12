@@ -57,9 +57,9 @@ public class ItemResourceHandlerCacheElement extends AbstractCacheElement implem
 
     private static ItemStack extract(ResourceHandler<ItemResource> iItemHandler, int slot) {
         ItemResource resource = iItemHandler.getResource(slot);
+        if (resource.isEmpty()) return ItemStack.EMPTY;
         try (Transaction transaction = Transaction.openRoot()) {
             int extract = iItemHandler.extract(slot, resource, Integer.MAX_VALUE, transaction);
-            transaction.commit();
             return resource.toStack(extract);
         }
     }
@@ -94,12 +94,18 @@ public class ItemResourceHandlerCacheElement extends AbstractCacheElement implem
     public void sync() {
         this.growSimulateStack.clear();
         this.shrinkSimulateStack.clear();
-        ItemResource resource = this.iItemHandler.getResource(this.slot);
         try (Transaction transaction = Transaction.openRoot()) {
-            if (resource.isEmpty()) {
-                this.iItemHandler.insert(this.slot, ItemResource.of(this.simulate), this.simulate.getCount(), transaction);
-            } else {
-                this.iItemHandler.insert(this.slot, ItemResource.of(resource.toStack()), this.simulate.getCount(), transaction);
+            ItemResource resource = this.iItemHandler.getResource(this.slot);
+            if (!resource.isEmpty()) {
+                this.iItemHandler.extract(this.slot, resource, Integer.MAX_VALUE, transaction);
+            }
+            if (!this.simulate.isEmpty()) {
+                this.iItemHandler.insert(
+                    this.slot,
+                    ItemResource.of(this.simulate),
+                    this.simulate.getCount(),
+                    transaction
+                );
             }
             transaction.commit();
         }

@@ -53,6 +53,7 @@ abstract class PistonBaseBlockMixin {
         @Local(name = "i") int i,
         @Share(value = "sharedBlockEntity", namespace = AnvilLibMoveableEntityBlock.MAIN_ID) LocalRef<BlockEntity> sharedBlockEntity
     ) {
+        sharedBlockEntity.set(null);
         BlockPos relative = pos.relative(pushDirection.getOpposite());
         if (
             toPushShapes.get(i).getBlock() instanceof IMoveableEntityBlock
