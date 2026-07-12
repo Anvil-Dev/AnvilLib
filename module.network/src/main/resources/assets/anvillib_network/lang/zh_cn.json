@@ -1,6 +1,6 @@
 {
   "anvillib_network.configuration.default_compression_algorithm": "默认压缩算法",
-  "anvillib_network.configuration.default_compression_algorithm.tooltip": "用于网络数据包的默认压缩算法。\n默认值：ZSTD\n- NONE 无压缩\n- LZ4 极快的压缩和解压速度\n- GZIP 最大兼容性",
+  "anvillib_network.configuration.default_compression_algorithm.tooltip": "用于网络数据包的默认压缩算法。\n默认值：LZ4\n- NONE 无压缩\n- LZ4 极快的压缩和解压速度\n- GZIP 最大兼容性",
   "anvillib_network.configuration.max_decompressed_size": "最大解压大小",
   "anvillib_network.configuration.max_decompressed_size.tooltip": "最大解压大小（以字节为单位）。\n默认值：16777216",
   "anvillib_network.configuration.section.anvillib.network.server.toml": "AnvilLib 网络 服务器 配置",
