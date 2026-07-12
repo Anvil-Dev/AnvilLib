@@ -25,6 +25,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import net.minecraft.advancements.criterion.DamageSourcePredicate;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.codec.StreamCodec;
@@ -42,6 +43,7 @@ import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
 
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -310,13 +312,11 @@ public abstract class CodecUtil {
         );
     }
 
-    /**
-     * 构建方块状态属性编解码器，将每个属性作为可选字段暴露。
-     *
-     * @param state 提供属性定义和默认值的原型状态
-     * @param <T>   属性值类型
-     * @return 该状态对应的属性 MapCodec
-     */
+    /// 构建方块状态属性编解码器，将每个属性作为可选字段暴露。
+    ///
+    /// @param state 提供属性定义和默认值的原型状态
+    /// @param <T>   属性值类型
+    /// @return 该状态对应的属性 MapCodec
     public static <T extends Comparable<T>> MapCodec<BlockState> blockStatePropertiesCodec(BlockState state) {
         AtomicReference<MapCodec<BlockState>> mapcodec = new AtomicReference<>(MapCodec.of(Encoder.empty(), Decoder.unit(state)));
         state.getValues().forEach((value) -> {
@@ -333,17 +333,15 @@ public abstract class CodecUtil {
         return mapcodec.get();
     }
 
-    /**
-     * 向现有方块状态 MapCodec 追加一个属性字段编解码器。
-     *
-     * @param propertyCodec  现有 MapCodec 累加器
-     * @param holderSupplier 用于回退默认值的状态提供器
-     * @param value          序列化字段名
-     * @param property       目标属性
-     * @param defValue       默认属性值
-     * @param <T>            属性可比较类型
-     * @return 追加该属性后的 MapCodec
-     */
+    /// 向现有方块状态 MapCodec 追加一个属性字段编解码器。
+    ///
+    /// @param propertyCodec  现有 MapCodec 累加器
+    /// @param holderSupplier 用于回退默认值的状态提供器
+    /// @param value          序列化字段名
+    /// @param property       目标属性
+    /// @param defValue       默认属性值
+    /// @param <T>            属性可比较类型
+    /// @return 追加该属性后的 MapCodec
     public static <T extends Comparable<T>> MapCodec<BlockState> appendBlockStatePropertyCodec(
         MapCodec<BlockState> propertyCodec,
         Supplier<BlockState> holderSupplier,
@@ -357,6 +355,27 @@ public abstract class CodecUtil {
                 }, () -> property.value(holderSupplier.get())
             )
         ).xmap(pair -> pair.getFirst().setValue(property, pair.getSecond().value()), state -> Pair.of(state, property.value(state)));
+    }
+
+    /// 构建一个 `ZOM列表`（零/一/多元素列表）MapCodec
+    ///
+    /// @param codec 元素编解码器
+    /// @param name 名称
+    /// @return `ZOM列表`（零/一/多元素列表）MapCodec
+    public static <T> MapCodec<List<T>> zomListMap(Codec<T> codec, String name) {
+        return Codec.mapEither(codec.optionalFieldOf(name), codec.listOf().fieldOf(name)).xmap(
+            either -> either.map(
+                op -> op
+                    .map(Collections::singletonList)
+                    .orElse(List.of()),
+                Function.identity()
+            ),
+            list -> list.size() <= 1
+                    ? list.isEmpty()
+                      ? Either.left(Optional.empty())
+                      : Either.left(Optional.of(list.getFirst()))
+                    : Either.right(list)
+        );
     }
 
     /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
