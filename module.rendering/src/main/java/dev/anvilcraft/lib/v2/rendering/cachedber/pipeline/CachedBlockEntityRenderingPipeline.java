@@ -16,6 +16,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.jspecify.annotations.Nullable;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL46;
 
 import java.util.ArrayDeque;
@@ -44,8 +45,10 @@ public class CachedBlockEntityRenderingPipeline {
     private static int glMaxLabelLength = 0;
 
     public static void create() {
-        glMaxLabelLength = GL46.glGetInteger(GL46.GL_MAX_LABEL_LENGTH);
-        glMaxLabelLength /= 2;
+        if (GL.getCapabilities().GL_KHR_debug) {
+            glMaxLabelLength = GL46.glGetInteger(GL46.GL_MAX_LABEL_LENGTH);
+            glMaxLabelLength /= 2;
+        }
     }
 
     public CachedRenderingChunk getRenderRegion(ChunkPos chunkPos) {
