@@ -11,7 +11,6 @@ import net.neoforged.neoforge.client.event.ConfigureMainRenderTargetEvent;
 @EventBusSubscriber(modid = AnvilLibWheel.MOD_ID, value = Dist.CLIENT)
 public class AnvilLibWheel {
     public static final String MOD_ID = "anvillib_wheel";
-    public static final String MAIN_ID = "anvillib";
     @Getter
     private static LibDynamicUniforms libDynamicUniforms;
 
@@ -21,6 +20,6 @@ public class AnvilLibWheel {
     }
 
     public static Identifier of(String path) {
-        return Identifier.fromNamespaceAndPath(AnvilLibWheel.MAIN_ID, path);
+        return Identifier.fromNamespaceAndPath(AnvilLibWheel.MOD_ID, path);
     }
 }

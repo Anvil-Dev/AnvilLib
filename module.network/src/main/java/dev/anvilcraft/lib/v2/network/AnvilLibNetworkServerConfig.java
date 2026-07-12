@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.network;
 
+import dev.anvilcraft.lib.v2.config.BoundedDiscrete;
 import dev.anvilcraft.lib.v2.config.Comment;
 import dev.anvilcraft.lib.v2.config.Config;
 import dev.anvilcraft.lib.v2.network.compression.CompressionAlgorithm;
@@ -25,6 +26,7 @@ public class AnvilLibNetworkServerConfig {
             Default: 128
             """
     )
+    @BoundedDiscrete(min = 1, max = 1024)
     public volatile int threshold = 128;
     @Comment(
         """
@@ -32,5 +34,6 @@ public class AnvilLibNetworkServerConfig {
             Default: 16777216
             """
     )
+    @BoundedDiscrete(min = 1048576, max = 268435456)
     public volatile int maxDecompressedSize = 16777216;
 }

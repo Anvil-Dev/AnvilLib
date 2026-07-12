@@ -1,0 +1,7 @@
+{
+  "anvillib_recipe.configuration.in_world_recipe_max_efficiency": "世界配方最大效率",
+  "anvillib_recipe.configuration.in_world_recipe_max_efficiency.tooltip": "世界配方最大效率值",
+  "anvillib_recipe.configuration.section.anvillib.recipe.common.toml": "AnvilLib 配方 通用 配置",
+  "anvillib_recipe.configuration.section.anvillib.recipe.common.toml.title": "AnvilLib 配方 通用 配置",
+  "anvillib_recipe.configuration.title": "AnvilLib 配方 配置"
+}
