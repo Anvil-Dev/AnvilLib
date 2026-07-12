@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  */
 @EventBusSubscriber(modid = AnvilLibRpc.MOD_ID)
 public class AnvilLibRpcNetwork {
-    public static final String NETWORK_VERSION = "1";
+    public static final String NETWORK_VERSION = "2";
 
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {

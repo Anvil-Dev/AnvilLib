@@ -9,7 +9,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 @EventBusSubscriber(modid = AnvilLibSync.MOD_ID)
 public class AnvilLibSyncNetwork {
-    public static final String NETWORK_VERSION = "1";
+    public static final String NETWORK_VERSION = "2";
 
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {

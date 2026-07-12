@@ -2,12 +2,12 @@ package dev.anvilcraft.lib.v2.rpc;
 
 import dev.anvilcraft.lib.v2.network.packet.IInsensitiveBiPacket;
 import dev.anvilcraft.lib.v2.network.packet.IPacket;
+import dev.anvilcraft.lib.v2.network.compression.PayloadCompression;
 import dev.anvilcraft.lib.v2.rpc.client.AnvilLibRpcClient;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.player.Player;
@@ -28,7 +28,7 @@ import java.util.concurrent.CompletionException;
 public class RpcResponsePayload implements IInsensitiveBiPacket {
     public static final Type<RpcResponsePayload> TYPE = IPacket.type(AnvilLibRpc.mod("rpc_response"));
     public static final StreamCodec<ByteBuf, RpcResponsePayload> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.BYTE_ARRAY,
+        PayloadCompression.STREAM_CODEC,
         RpcResponsePayload::data,
         RpcResponsePayload::new
     );

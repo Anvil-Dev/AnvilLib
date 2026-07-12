@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.sync.network.payload;
 
 import dev.anvilcraft.lib.v2.network.packet.IInsensitiveBiPacket;
 import dev.anvilcraft.lib.v2.network.packet.IPacket;
+import dev.anvilcraft.lib.v2.network.compression.PayloadCompression;
 import dev.anvilcraft.lib.v2.sync.AnvilLibSync;
 import dev.anvilcraft.lib.v2.sync.client.AnvilLibSyncClient;
 import dev.anvilcraft.lib.v2.sync.management.SyncProxy;
@@ -12,7 +13,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import lombok.SneakyThrows;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -27,7 +27,7 @@ public record SyncPayload(
 ) implements IInsensitiveBiPacket {
     public static final Type<SyncPayload> TYPE = IPacket.type(AnvilLibSync.of("sync"));
     public static final StreamCodec<ByteBuf, SyncPayload> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.BYTE_ARRAY,
+        PayloadCompression.STREAM_CODEC,
         SyncPayload::array,
         SyncPayload::new
     );
