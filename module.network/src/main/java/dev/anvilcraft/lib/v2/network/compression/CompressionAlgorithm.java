@@ -5,9 +5,8 @@ package dev.anvilcraft.lib.v2.network.compression;
  */
 public enum CompressionAlgorithm {
     NONE(0),
-    ZSTD(1),
-    LZ4(2),
-    GZIP(3);
+    LZ4(1),
+    GZIP(2);
 
     private final int id;
 

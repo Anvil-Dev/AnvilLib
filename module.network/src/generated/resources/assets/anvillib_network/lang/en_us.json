@@ -1,6 +1,6 @@
 {
   "anvillib_network.configuration.default_compression_algorithm": "Default Compression Algorithm",
-  "anvillib_network.configuration.default_compression_algorithm.tooltip": "The default compression algorithm to use for network packets.\nOptions: NONE, ZSTD, LZ4, GZIP\nDefault: ZSTD\n- NONE No compression\n- ZSTD Excellent balance between compression ratio, compression speed, and decompression speed\n- LZ4 Extremely fast compression and decompression speed\n- GZIP Maximum compatibility\n",
+  "anvillib_network.configuration.default_compression_algorithm.tooltip": "The default compression algorithm to use for network packets.\nDefault: LZ4\n- NONE No compression\n- LZ4 Extremely fast compression and decompression speed\n- GZIP Maximum compatibility\n",
   "anvillib_network.configuration.max_decompressed_size": "Max Decompressed Size",
   "anvillib_network.configuration.max_decompressed_size.tooltip": "The maximum decompressed size in bytes.\nDefault: 16777216\n",
   "anvillib_network.configuration.section.anvillib.network.server.toml": "Anvillib Network Server Configuration",

@@ -1,6 +1,5 @@
 package dev.anvilcraft.lib.v2.network.compression;
 
-import com.github.luben.zstd.Zstd;
 import dev.anvilcraft.lib.v2.network.AnvilLibNetwork;
 import io.netty.buffer.ByteBuf;
 import net.jpountz.lz4.LZ4Factory;
@@ -45,13 +44,14 @@ public final class PayloadCompression {
 
     public static byte[] encode(byte[] data) {
         Objects.requireNonNull(data, "data");
-        if (data.length > AnvilLibNetwork.CONFIG.maxDecompressedSize) {
+        int threshold = threshold();
+        int maxSize = maxDecompressedSize();
+        CompressionAlgorithm algo = algorithm();
+        if (data.length > maxSize) {
             throw new IllegalArgumentException("Payload exceeds maximum uncompressed size: " + data.length);
         }
 
-        CompressionAlgorithm selected = data.length >= AnvilLibNetwork.CONFIG.threshold
-                                        ? AnvilLibNetwork.CONFIG.defaultCompressionAlgorithm
-                                        : CompressionAlgorithm.NONE;
+        CompressionAlgorithm selected = data.length >= threshold ? algo : CompressionAlgorithm.NONE;
         if (selected == CompressionAlgorithm.NONE) return uncompressed(data);
 
         byte[] compressed = compress(selected, data);
@@ -67,19 +67,20 @@ public final class PayloadCompression {
 
     public static byte[] decode(byte[] envelope) {
         Objects.requireNonNull(envelope, "envelope");
+        int maxSize = maxDecompressedSize();
         if (envelope.length == 0) throw new IllegalArgumentException("Compressed payload envelope is empty");
 
         CompressionAlgorithm selected = CompressionAlgorithm.byId(Byte.toUnsignedInt(envelope[0]));
         if (selected == CompressionAlgorithm.NONE) {
             int size = envelope.length - 1;
-            if (size > AnvilLibNetwork.CONFIG.maxDecompressedSize) {
+            if (size > maxSize) {
                 throw new IllegalArgumentException("Payload exceeds maximum uncompressed size: " + size);
             }
             return Arrays.copyOfRange(envelope, 1, envelope.length);
         }
 
         VarInt length = readVarInt(envelope, 1);
-        if (length.value() < 0 || length.value() > AnvilLibNetwork.CONFIG.maxDecompressedSize) {
+        if (length.value() < 0 || length.value() > maxSize) {
             throw new IllegalArgumentException("Invalid decompressed payload size: " + length.value());
         }
         if (length.nextOffset() >= envelope.length) {
@@ -89,9 +90,7 @@ public final class PayloadCompression {
         byte[] compressed = Arrays.copyOfRange(envelope, length.nextOffset(), envelope.length);
         byte[] data = decompress(selected, compressed, length.value());
         if (data.length != length.value()) {
-            throw new IllegalArgumentException(
-                "Decompressed payload size mismatch: expected " + length.value() + ", got " + data.length
-            );
+            throw new IllegalArgumentException("Decompressed payload size mismatch: expected " + length.value() + ", got " + data.length);
         }
         return data;
     }
@@ -105,7 +104,6 @@ public final class PayloadCompression {
 
     private static byte[] compress(CompressionAlgorithm selected, byte[] data) {
         return switch (selected) {
-            case ZSTD -> Zstd.compress(data);
             case LZ4 -> LZ4Factory.fastestInstance().fastCompressor().compress(data);
             case GZIP -> gzipCompress(data);
             case NONE -> throw new IllegalArgumentException("NONE does not compress data");
@@ -114,7 +112,6 @@ public final class PayloadCompression {
 
     private static byte[] decompress(CompressionAlgorithm selected, byte[] data, int originalLength) {
         return switch (selected) {
-            case ZSTD -> Zstd.decompress(data, originalLength);
             case LZ4 -> LZ4Factory.fastestInstance().safeDecompressor().decompress(data, originalLength);
             case GZIP -> gzipDecompress(data, originalLength);
             case NONE -> throw new IllegalArgumentException("NONE does not decompress data");

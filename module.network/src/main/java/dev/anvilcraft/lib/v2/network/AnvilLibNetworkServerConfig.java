@@ -11,15 +11,13 @@ public class AnvilLibNetworkServerConfig {
     @Comment(
         """
             The default compression algorithm to use for network packets.
-            Options: NONE, ZSTD, LZ4, GZIP
-            Default: ZSTD
+            Default: LZ4
             - NONE No compression
-            - ZSTD Excellent balance between compression ratio, compression speed, and decompression speed
             - LZ4 Extremely fast compression and decompression speed
             - GZIP Maximum compatibility
             """
     )
-    public volatile CompressionAlgorithm defaultCompressionAlgorithm = CompressionAlgorithm.ZSTD;
+    public volatile CompressionAlgorithm defaultCompressionAlgorithm = CompressionAlgorithm.LZ4;
     @Comment(
         """
             The threshold for compression in bytes.

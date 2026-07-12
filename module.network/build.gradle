@@ -5,5 +5,4 @@ dependencies {
         jarJar(implementation project(":anvillib-config-neoforge-26.1"))
     }
     jarJar(implementation("at.yawk.lz4:lz4-java:1.10.1"))
-    jarJar(implementation("com.github.luben:zstd-jni:1.5.7-7"))
 }
