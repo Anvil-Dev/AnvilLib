@@ -25,7 +25,6 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import net.minecraft.advancements.criterion.DamageSourcePredicate;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.codec.StreamCodec;
@@ -312,11 +311,13 @@ public abstract class CodecUtil {
         );
     }
 
-    /// 构建方块状态属性编解码器，将每个属性作为可选字段暴露。
-    ///
-    /// @param state 提供属性定义和默认值的原型状态
-    /// @param <T>   属性值类型
-    /// @return 该状态对应的属性 MapCodec
+    /**
+     * 构建方块状态属性编解码器，将每个属性作为可选字段暴露。
+     *
+     * @param state 提供属性定义和默认值的原型状态
+     * @param <T>   属性值类型
+     * @return 该状态对应的属性 MapCodec
+     */
     public static <T extends Comparable<T>> MapCodec<BlockState> blockStatePropertiesCodec(BlockState state) {
         AtomicReference<MapCodec<BlockState>> mapcodec = new AtomicReference<>(MapCodec.of(Encoder.empty(), Decoder.unit(state)));
         state.getValues().forEach((value) -> {
@@ -333,15 +334,17 @@ public abstract class CodecUtil {
         return mapcodec.get();
     }
 
-    /// 向现有方块状态 MapCodec 追加一个属性字段编解码器。
-    ///
-    /// @param propertyCodec  现有 MapCodec 累加器
-    /// @param holderSupplier 用于回退默认值的状态提供器
-    /// @param value          序列化字段名
-    /// @param property       目标属性
-    /// @param defValue       默认属性值
-    /// @param <T>            属性可比较类型
-    /// @return 追加该属性后的 MapCodec
+    /**
+     * 向现有方块状态 MapCodec 追加一个属性字段编解码器。
+     *
+     * @param propertyCodec  现有 MapCodec 累加器
+     * @param holderSupplier 用于回退默认值的状态提供器
+     * @param value          序列化字段名
+     * @param property       目标属性
+     * @param defValue       默认属性值
+     * @param <T>            属性可比较类型
+     * @return 追加该属性后的 MapCodec
+     */
     public static <T extends Comparable<T>> MapCodec<BlockState> appendBlockStatePropertyCodec(
         MapCodec<BlockState> propertyCodec,
         Supplier<BlockState> holderSupplier,
