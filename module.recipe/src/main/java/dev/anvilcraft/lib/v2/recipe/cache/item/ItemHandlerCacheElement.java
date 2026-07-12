@@ -84,10 +84,11 @@ public class ItemHandlerCacheElement extends AbstractCacheElement implements ICa
         this.growSimulateStack.clear();
         this.shrinkSimulateStack.clear();
         ItemStack stack = this.iItemHandler.getStackInSlot(this.slot);
-        if (stack.isEmpty()) {
-            this.iItemHandler.insertItem(this.slot, this.simulate, false);
-        } else {
-            stack.setCount(this.simulate.getCount());
+        if (!stack.isEmpty()) {
+            this.iItemHandler.extractItem(this.slot, Integer.MAX_VALUE, false);
+        }
+        if (!this.simulate.isEmpty()) {
+            this.iItemHandler.insertItem(this.slot, this.simulate.copy(), false);
         }
     }
 }
