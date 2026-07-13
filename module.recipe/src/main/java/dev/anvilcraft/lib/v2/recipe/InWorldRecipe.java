@@ -226,9 +226,10 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
      */
     @Override
     public boolean matches(InWorldRecipeContext context, Level level) {
+        int initialStackSize = context.getStack().size();
         boolean nonConflicting = ShapelessMatcher.compatible(this.nonConflicting, context);
         if (!nonConflicting) {
-            context.getStack().clear();
+            InWorldRecipe.rollbackPredicates(context, initialStackSize);
             return false;
         }
         boolean flag;
@@ -238,10 +239,21 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
             flag = ShapelessMatcher.incompatible(this.conflicting, context);
         }
         if (!flag) {
-            context.getStack().clear();
+            InWorldRecipe.rollbackPredicates(context, initialStackSize);
+            return false;
         }
-        context.getStack().forEach(predicate -> predicate.clearStack(context));
-        return flag;
+        List<IRecipePredicate<?>> stack = context.getStack();
+        for (int i = initialStackSize; i < stack.size(); i++) {
+            stack.get(i).clearStack(context);
+        }
+        return true;
+    }
+
+    private static void rollbackPredicates(InWorldRecipeContext context, int initialStackSize) {
+        List<IRecipePredicate<?>> stack = context.getStack();
+        while (stack.size() > initialStackSize) {
+            context.pop(stack.getLast());
+        }
     }
 
     /**
