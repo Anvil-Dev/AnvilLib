@@ -6,6 +6,7 @@ import lombok.Getter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 import javax.annotation.Nullable;
 
@@ -84,11 +85,30 @@ public class ItemHandlerCacheElement extends AbstractCacheElement implements ICa
         this.growSimulateStack.clear();
         this.shrinkSimulateStack.clear();
         ItemStack stack = this.iItemHandler.getStackInSlot(this.slot);
+        if (ItemHandlerCacheElement.matches(stack, this.simulate)) return;
+        if (this.iItemHandler instanceof IItemHandlerModifiable modifiable) {
+            modifiable.setStackInSlot(this.slot, this.simulate.copy());
+            return;
+        }
+        if (ItemStack.isSameItemSameComponents(stack, this.simulate)) {
+            int difference = this.simulate.getCount() - stack.getCount();
+            if (difference > 0) {
+                this.iItemHandler.insertItem(this.slot, this.simulate.copyWithCount(difference), false);
+            } else {
+                this.iItemHandler.extractItem(this.slot, -difference, false);
+            }
+            return;
+        }
         if (!stack.isEmpty()) {
             this.iItemHandler.extractItem(this.slot, Integer.MAX_VALUE, false);
         }
         if (!this.simulate.isEmpty()) {
             this.iItemHandler.insertItem(this.slot, this.simulate.copy(), false);
         }
+    }
+
+    private static boolean matches(ItemStack first, ItemStack second) {
+        if (first.isEmpty() || second.isEmpty()) return first.isEmpty() && second.isEmpty();
+        return first.getCount() == second.getCount() && ItemStack.isSameItemSameComponents(first, second);
     }
 }
