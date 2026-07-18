@@ -109,9 +109,9 @@ public class UnlimitedItemStack implements ItemInstance, MutableDataComponentHol
     }
 
     public UnlimitedItemStack(ItemStack stack, int count) {
-        this.setCount(Math.max(count, 0));
-        if (this.getCount() != 0) {
-            this.setStack(stack.copyWithCount(1));
+        this.count = Math.max(count, 0);
+        if (this.count != 0) {
+            this.setStack(stack);
         }
     }
 
