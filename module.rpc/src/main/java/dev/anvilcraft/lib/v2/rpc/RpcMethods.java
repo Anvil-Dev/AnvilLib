@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.rpc;
 
 import io.netty.buffer.ByteBuf;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -66,6 +68,7 @@ final class RpcMethods {
         DEFAULTS.put(String.class, ByteBufCodecs.STRING_UTF8);
         DEFAULTS.put(byte[].class, ByteBufCodecs.BYTE_ARRAY);
         DEFAULTS.put(long[].class, ByteBufCodecs.LONG_ARRAY);
+        DEFAULTS.put(UUID.class, UUIDUtil.STREAM_CODEC);
         DEFAULTS.put(Tag.class, ByteBufCodecs.TAG);
         DEFAULTS.put(CompoundTag.class, ByteBufCodecs.COMPOUND_TAG);
     }
