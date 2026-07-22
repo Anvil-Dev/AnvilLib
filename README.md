@@ -23,6 +23,7 @@ AnvilLib 采用模块化设计，包含以下功能模块：
 | **Registrum**             | 简化的注册系统        |
 | **Util**                  | 可共享的工具方法       |
 | **Wheel**                 | 轮盘菜单客户端 API    |
+| **Yukkuri**               | 大型炼药锅液体气化 API 与运行时 |
 | **Main**                  | 聚合模块（包含全部子模块）  |
 
 ## 模块介绍
@@ -312,6 +313,7 @@ controller.onHoldKeyReleased();
 - `registrum`
 - `util`
 - `wheel`
+- `yukkuri`
 
 `anvillib-test-neoforge-1.21.1` 为开发/测试模块，不包含在聚合运行时产物中。
 
@@ -339,6 +341,7 @@ dependencies {
     implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-util-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-yukkuri-neoforge-1.21.1:2.0.0"
 }
 ```
 
@@ -364,6 +367,7 @@ dependencies {
     implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-yukkuri-neoforge-1.21.1:2.0.0")
 }
 ```
 
