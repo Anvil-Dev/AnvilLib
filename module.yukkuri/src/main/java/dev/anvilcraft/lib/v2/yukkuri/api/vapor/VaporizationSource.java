@@ -19,7 +19,11 @@ public interface VaporizationSource {
     @Nullable
     VaporizationOffer createOffer(VaporizationContext context, FluidStack availableInput, int maxVapor);
 
-    /** Consumes source-specific resources and emits source-specific effects after the cauldron input is drained. */
+    /**
+     * Consumes source-specific resources and emits source-specific effects after the cauldron input is drained.
+     * The committed input amount is the exact amount vaporized this tick, so effects should derive their density,
+     * lifetime, and travel distance from {@code offer.input().getAmount()}.
+     */
     default void commit(VaporizationContext context, VaporizationOffer offer) {
     }
 }
