@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.yukkuri.api.vapor;
 
 import dev.anvilcraft.lib.v2.yukkuri.Yukkuri;
 import dev.anvilcraft.lib.v2.yukkuri.api.event.LargeCauldronProcessEvent;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.common.NeoForge;
@@ -43,9 +44,28 @@ public final class VaporizationManager {
         );
     }
 
+    /**
+     * Returns whether all nine cells directly above the cauldron are sealed by full collision blocks.
+     * Consumers handle their own exhaust path because their input structure may itself occupy these cells.
+     */
+    public static boolean isOutletBlocked(VaporizationContext context) {
+        BlockPos center = context.outletPos();
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                BlockPos pos = center.offset(x, 0, z);
+                if (!context.level().getBlockState(pos).isCollisionShapeFullBlock(context.level(), pos)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private static void processFirstSource(VaporizationContext context) {
         IVaporConsumer consumer = findConsumer(context);
-        boolean sealedOutlet = consumer != null && consumer.sealsOutlet(context);
+        boolean sealedOutlet = consumer == null
+            ? isOutletBlocked(context)
+            : consumer.sealsOutlet(context);
         for (VaporizationSource source : VaporizationSources.getSources()) {
             FluidStack available = context.topFluid();
             if (available.isEmpty()) return;
@@ -86,7 +106,7 @@ public final class VaporizationManager {
                     0,
                     delivery.amount()
                 );
-                if (delivered != delivery.amount()) {
+                if (delivered != delivery.amount() && consumer.sealsOutlet(context)) {
                     Yukkuri.LOGGER.error("Vapor consumer at {} accepted {} mB after simulating {} mB",
                         context.outletPos(), delivered, delivery.amount());
                 }
