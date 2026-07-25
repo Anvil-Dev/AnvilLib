@@ -31,10 +31,20 @@ import java.util.List;
 import java.util.OptionalDouble;
 
 public class ComputeSupport {
-    public static final ComputeSupport INSTANCE = new ComputeSupport();
+    public static final ComputeSupport INSTANCE;
     public static final float[] UNSUPPORTED = {};
     @Getter
     private final GpuDevice device = RenderSystem.getDevice();
+
+    static {
+        ComputeSupport instance;
+        if (ALRComputeCapabilities.isComputeSupported()) {
+            instance = new ComputeSupport();
+        } else {
+            instance = null;
+        }
+        INSTANCE = instance;
+    }
 
     private final GpuBuffer addInputSSBO = device.createBuffer(
         () -> "Test Compute Input SSBO",
@@ -144,7 +154,7 @@ public class ComputeSupport {
         ByteBuffer counterData = mappedCounterBuffer.data();
 
         int anInt = counterData.getInt();
-        if (anInt != input.length){
+        if (anInt != input.length) {
             System.out.printf("Compute counter does not match with input size: %d/%d%n", anInt, input.length);
         }
         return result;
@@ -239,5 +249,6 @@ public class ComputeSupport {
 
 
     public static void init() {
+
     }
 }

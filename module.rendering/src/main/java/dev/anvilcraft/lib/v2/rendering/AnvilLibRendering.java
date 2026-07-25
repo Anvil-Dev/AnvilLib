@@ -6,6 +6,7 @@ import dev.anvilcraft.lib.v2.rendering.gui.renderer.BlockStatePipRenderer;
 import dev.anvilcraft.lib.v2.rendering.gui.renderer.StructurePipRenderer;
 import dev.anvilcraft.lib.v2.rendering.gui.state.BlockStatePipRenderingState;
 import dev.anvilcraft.lib.v2.rendering.gui.state.StructurePipRenderingState;
+import lombok.extern.slf4j.Slf4j;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -17,6 +18,7 @@ import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEven
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
+@Slf4j
 @Mod(value = AnvilLibRendering.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber(Dist.CLIENT)
 public class AnvilLibRendering {
@@ -70,7 +72,12 @@ public class AnvilLibRendering {
 
     @SubscribeEvent
     public static void on(RenderLevelStageEvent.AfterLevel event) {
-        ALRPostEffects.getBloomPostEffect().process();
+        try {
+            ALRPostEffects.getBloomPostEffect().process();
+        } catch (Exception e) {
+            log.error("ALRPostEffects BloomPostEffect", e);
+        }
+
     }
 
     @SubscribeEvent

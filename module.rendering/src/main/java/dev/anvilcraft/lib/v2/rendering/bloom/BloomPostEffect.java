@@ -2,10 +2,8 @@ package dev.anvilcraft.lib.v2.rendering.bloom;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.pipeline.MainTarget;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
@@ -21,7 +19,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
-import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
 import dev.anvilcraft.lib.v2.rendering.foundation.compound.CompoundSubmitNodeStorage;
 import dev.anvilcraft.lib.v2.rendering.foundation.compound.DirtyTracked;
@@ -30,12 +27,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
-import net.neoforged.neoforge.client.pipeline.PipelineModifier;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
-import org.joml.Vector2f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -168,8 +161,19 @@ public class BloomPostEffect implements DirtyTracked {
     }
 
     public void beginBloomDraw() {
+        RenderTarget mainRenderTarget = Minecraft.getInstance().getMainRenderTarget();
+
+        this.guardSize(mainRenderTarget);
+
+        bloomInputTarget.copyDepthFrom(mainRenderTarget);
+
         setupOutputOverride();
-        bloomInputTarget.copyDepthFrom(Minecraft.getInstance().getMainRenderTarget());
+    }
+
+    private void guardSize(RenderTarget mainRenderTarget) {
+        if (mainRenderTarget.width != this.bloomInputTarget.width || mainRenderTarget.height != this.bloomInputTarget.height) {
+            this.resize(mainRenderTarget.width, mainRenderTarget.height);
+        }
     }
 
     public void endBloomDraw() {
@@ -190,25 +194,32 @@ public class BloomPostEffect implements DirtyTracked {
 
     public void runBloomDraws(Matrix4fc modelViewMatrix, FeatureRenderDispatcher featureRenderDispatcher) {
         if (!dirty) return;
-        beginBloomDraw();
+
         PoseStack poseStack = new PoseStack();
         RenderSystem.getModelViewStack().pushMatrix();
         RenderSystem.getModelViewStack().set(modelViewMatrix);
-        if (!bloomCalls.isEmpty()) {
-            for (BloomRenderCallback bloomCall : bloomCalls) {
-                bloomCall.render(featureRenderDispatcher.getSubmitNodeStorage(), poseStack);
+        try {
+            beginBloomDraw();
+            if (!bloomCalls.isEmpty()) {
+                for (BloomRenderCallback bloomCall : bloomCalls) {
+                    bloomCall.render(featureRenderDispatcher.getSubmitNodeStorage(), poseStack);
+                }
             }
+            featureRenderDispatcher.renderAllFeatures();
+            Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
+        } finally {
+            endBloomDraw();
+            RenderSystem.getModelViewStack().popMatrix();
         }
-        featureRenderDispatcher.renderAllFeatures();
-        Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
-        RenderSystem.getModelViewStack().popMatrix();
-        endBloomDraw();
     }
 
     @SuppressWarnings("DataFlowIssue")
     public void process() {
         if (!dirty) return;
         CommandEncoder commandEncoder = device.createCommandEncoder();
+        RenderTarget mainRenderTarget = Minecraft.getInstance().getMainRenderTarget();
+
+        this.guardSize(mainRenderTarget);
 
         transformsUbo.upload(commandEncoder, transformUBO.slice());
 
@@ -216,13 +227,13 @@ public class BloomPostEffect implements DirtyTracked {
         this.doUpSample(commandEncoder);
 
         // backup depth texture
-        bloomInputTarget.copyDepthFrom(Minecraft.getInstance().getMainRenderTarget());
+        bloomInputTarget.copyDepthFrom(mainRenderTarget);
 
         clearColorAndDepth(bloomTempTarget, 0);
-        applyBloom(commandEncoder, this.upsampleTargets[0], Minecraft.getInstance().getMainRenderTarget().getColorTextureView(), bloomTempTarget);
+        applyBloom(commandEncoder, this.upsampleTargets[0], mainRenderTarget.getColorTextureView(), bloomTempTarget);
         commandEncoder.copyTextureToTexture(
             bloomTempTarget.getColorTexture(),
-            Minecraft.getInstance().getMainRenderTarget().getColorTexture(),
+            mainRenderTarget.getColorTexture(),
             0,
             0,
             0,
@@ -231,7 +242,7 @@ public class BloomPostEffect implements DirtyTracked {
             width,
             height
         );
-        Minecraft.getInstance().getMainRenderTarget().copyDepthFrom(bloomInputTarget);
+        mainRenderTarget.copyDepthFrom(bloomInputTarget);
     }
 
     @SuppressWarnings("DataFlowIssue")

@@ -29,6 +29,9 @@ public class MinecraftMixin {
         at = @At("RETURN")
     )
     private void onCreateInstance(GameConfig gameConfig, CallbackInfo ci) {
+        if (ALRComputeCapabilities.isComputeSupported()) {
+            return;
+        }
         ComputeSupport.init();
     }
 

@@ -223,6 +223,10 @@ public class GuiTestScreen extends Screen {
             ex.printStackTrace();
         }
 
+        if (!ALRComputeCapabilities.isComputeSupported()) {
+            return;
+        }
+
         GpuSampler sampler = ComputeSupport.INSTANCE.getTheSampler();
         int scaledWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
         int scaledHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
