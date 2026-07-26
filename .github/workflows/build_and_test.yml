@@ -121,7 +121,6 @@ jobs:
           MAVEN_URL: ${{ secrets.maven_url }}
           MAVEN_USERNAME: ${{ secrets.maven_user }}
           MAVEN_PASSWORD: ${{ secrets.maven_pass }}
-        continue-on-error: true
 
       - name: capture maven artifacts
         uses: actions/upload-artifact@v7
@@ -148,3 +147,4 @@ jobs:
         env:
           CURSEFORGE_TOKEN: ${{ secrets.curseforge_token }}
           MODRINTH_TOKEN: ${{ secrets.modrinth_token }}
+        continue-on-error: true
