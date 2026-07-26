@@ -9,9 +9,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @EventBusSubscriber(modid = AnvilLibRecipe.MOD_ID)
+@ApiStatus.Internal
 public class ItemEntityEventListener {
     @SubscribeEvent
     public static void onItemEntityInToBlock(@NotNull ItemEntityEvent.InToBlock event) {

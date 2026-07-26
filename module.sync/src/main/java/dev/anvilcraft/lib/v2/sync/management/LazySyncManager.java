@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code ItemStack}）的原地修改，且复用网络线格式，代价是每 tick 对每个被跟踪字段编码一次。</p>
  */
 @Slf4j
+@ApiStatus.Internal
 public class LazySyncManager {
     /**
      * 单侧状态：被跟踪的实例 / 静态目标及其字段快照。

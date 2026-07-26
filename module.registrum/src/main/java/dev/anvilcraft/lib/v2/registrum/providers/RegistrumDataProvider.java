@@ -26,6 +26,7 @@ import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
 @Log4j2
+@ApiStatus.Internal
 public class RegistrumDataProvider implements DataProvider {
 
     @SuppressWarnings("null")

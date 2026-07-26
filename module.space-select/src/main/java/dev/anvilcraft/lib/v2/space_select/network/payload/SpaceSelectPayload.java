@@ -10,7 +10,9 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForge;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public record SpaceSelectPayload(
     boolean offhand,
     BlockPos start,

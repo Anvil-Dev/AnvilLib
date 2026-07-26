@@ -1,7 +1,9 @@
 package dev.anvilcraft.lib.v2.recipe.init.recipe;
 
 import net.neoforged.bus.api.IEventBus;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class LibRecipeInits {
     public static void init(IEventBus modEventBus) {
         LibRecipeTriggers.TRIGGER.register(modEventBus);

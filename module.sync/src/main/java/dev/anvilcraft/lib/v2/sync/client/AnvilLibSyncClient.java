@@ -10,8 +10,10 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import org.jetbrains.annotations.ApiStatus;
 
 @Mod(value = AnvilLibSync.MOD_ID, dist = Dist.CLIENT)
+@ApiStatus.Internal
 public class AnvilLibSyncClient {
     public static final SyncConfigManager SYNC_CONFIG_MANAGER = new SyncConfigManager();
 

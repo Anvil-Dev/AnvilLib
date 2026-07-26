@@ -6,8 +6,10 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import org.jetbrains.annotations.ApiStatus;
 
 @EventBusSubscriber(modid = AnvilLibSpaceSelect.MOD_ID)
+@ApiStatus.Internal
 public class AnvilLibSpaceSelectNetwork {
     public static final String NETWORK_VERSION = "1";
 

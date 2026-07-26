@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.Unique;
 
 @SuppressWarnings("AddedMixinMembersNamePattern")
 @Mixin(GpuDevice.class)
+@org.jetbrains.annotations.ApiStatus.Internal
 public class GpuDeviceMixin implements ALRGpuDeviceExtension {
     @Shadow
     @Final

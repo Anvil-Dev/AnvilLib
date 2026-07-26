@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 @Mixin(GuiRenderer.class)
+@org.jetbrains.annotations.ApiStatus.Internal
 public class GuiRendererMixin {
     @Unique
     private GuiElementRenderState anvillib$renderState = null;

@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(targets = "com.mojang.blaze3d.opengl.GlCommandEncoder")
+@org.jetbrains.annotations.ApiStatus.Internal
 public class GlCommandEncoderMixin implements ALRCommandEncoderBackendExtension {
     @Shadow
     @Final

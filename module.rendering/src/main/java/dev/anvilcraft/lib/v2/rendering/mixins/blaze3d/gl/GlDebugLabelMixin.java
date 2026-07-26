@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public class GlDebugLabelMixin {
     @Mixin(GlDebugLabel.class)
     public static class Self implements ALRDebugLabelExtension {

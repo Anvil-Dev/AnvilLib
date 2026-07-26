@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(CommandEncoder.class)
+@org.jetbrains.annotations.ApiStatus.Internal
 public class CommandEncoderMixin implements ALRCommandEncoderExtension {
     @Shadow
     @Final

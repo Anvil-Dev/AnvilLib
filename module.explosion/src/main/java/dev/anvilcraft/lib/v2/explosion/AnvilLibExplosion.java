@@ -23,6 +23,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -36,10 +37,15 @@ public class AnvilLibExplosion {
     public static final AnvilLibExplosionConfig CONFIG = ConfigManager.register(MOD_ID, AnvilLibExplosionConfig::new);
     public static final Map<Block, Block> MELTING_CACHE = new ConcurrentHashMap<>();
 
+    @ApiStatus.Internal
+    public AnvilLibExplosion() {
+    }
+
     public static Identifier of(String path) {
         return Identifier.fromNamespaceAndPath(AnvilLibExplosion.MAIN_ID, path);
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void onDatapackSync(OnDatapackSyncEvent event) {
         if (event.getPlayer() != null) {
@@ -48,6 +54,7 @@ public class AnvilLibExplosion {
         AnvilLibExplosion.registerMelting(event.getPlayerList().getServer());
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
         AnvilLibExplosion.registerMelting(event.getServer());

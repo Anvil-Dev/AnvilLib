@@ -11,6 +11,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * 客户端侧入口，持有仅采纳服务端下发映射的客户端索引表。
@@ -19,6 +20,7 @@ import net.neoforged.neoforge.common.NeoForge;
  * 从而保证客户端断开后开启局域网时，集成服务端仍下发其本地扫描得到的正确映射。</p>
  */
 @Mod(value = AnvilLibRpc.MOD_ID, dist = Dist.CLIENT)
+@ApiStatus.Internal
 public class AnvilLibRpcClient {
     /**
      * 客户端索引表：仅通过 {@link RpcRegistry#adopt} 采纳服务端下发的映射。

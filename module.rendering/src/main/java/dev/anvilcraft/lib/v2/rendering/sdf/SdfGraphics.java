@@ -24,6 +24,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ConfigureMainRenderTargetEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix3x2f;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -371,6 +372,7 @@ public final class SdfGraphics {
 
     private static  int             index;
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void init(ConfigureMainRenderTargetEvent event) {
         GpuDevice device    = RenderSystem.getDevice();

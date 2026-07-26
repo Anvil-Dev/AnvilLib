@@ -5,8 +5,10 @@ import dev.anvilcraft.lib.v2.space_select.SpaceSelectItem;
 import dev.anvilcraft.lib.v2.space_select.event.PlayerCreateDistrictEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import org.jetbrains.annotations.ApiStatus;
 
 @EventBusSubscriber(modid = AnvilLibSpaceSelect.MOD_ID)
+@ApiStatus.Internal
 public class PlayerCreateDistrictEventHandler {
     @SubscribeEvent
     public static void onPlayerCreateDistrict(PlayerCreateDistrictEvent event) {

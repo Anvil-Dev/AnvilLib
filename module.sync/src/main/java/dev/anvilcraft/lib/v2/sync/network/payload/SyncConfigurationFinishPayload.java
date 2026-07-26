@@ -7,7 +7,9 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class SyncConfigurationFinishPayload implements IServerboundPacket {
     public static final SyncConfigurationFinishPayload INSTANCE = new SyncConfigurationFinishPayload();
     public static final Type<SyncConfigurationFinishPayload> TYPE = IPacket.type(AnvilLibSync.of("sync_config_finish"));

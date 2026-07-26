@@ -7,6 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import org.jetbrains.annotations.ApiStatus;
 
 @Mod(AnvilLibRecipe.MOD_ID)
 public class AnvilLibRecipe {
@@ -14,6 +15,7 @@ public class AnvilLibRecipe {
     public static final String MOD_ID = "anvillib_recipe";
     public static final AnvilLibRecipeConfig CONFIG = ConfigManager.register(AnvilLibRecipe.MOD_ID, AnvilLibRecipeConfig::new);
 
+    @ApiStatus.Internal
     public AnvilLibRecipe(IEventBus modEventBus, ModContainer modContainer) {
         LibDataComponentPredicates.initialize(modEventBus);
         LibRecipeInits.init(modEventBus);

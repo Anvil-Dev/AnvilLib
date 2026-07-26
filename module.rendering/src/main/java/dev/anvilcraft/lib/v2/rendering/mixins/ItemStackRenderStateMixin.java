@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(ItemStackRenderState.class)
+@org.jetbrains.annotations.ApiStatus.Internal
 public class ItemStackRenderStateMixin implements ItemStackRenderStateInternals.Extension {
     @Unique
     private float anvillib_rendering$alpha = 1f;

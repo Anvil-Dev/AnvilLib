@@ -15,6 +15,7 @@ import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -58,6 +59,7 @@ public class ConfigManager {
         return config;
     }
 
+    @ApiStatus.Internal
     public <T> T register(T configObj) {
         Class<?> configClass = configObj.getClass();
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -78,10 +80,12 @@ public class ConfigManager {
         return configObj;
     }
 
+    @ApiStatus.Internal
     public void register(IEventBus bus) {
         bus.register(this);
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public void onModConstruct(FMLConstructModEvent event) {
         ModContainer container = ModLoadingContext.get().getActiveContainer();
@@ -95,11 +99,13 @@ public class ConfigManager {
         }
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public void loading(ModConfigEvent event) {
         this.configSpecMap.values().forEach(ConfigRecord::load);
     }
 
+    @ApiStatus.Internal
     public void registerScreen(ModContainer container) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
     }
@@ -135,6 +141,7 @@ public class ConfigManager {
         }
     }
 
+    @ApiStatus.Internal
     public static ModConfigSpec.ConfigValue<?> define(ModConfigSpec.Builder builder, String name, Field field, Object object) {
         return switch (object) {
             case Number num -> ConfigManager.defineInRange(builder, name, field, num);
@@ -145,10 +152,12 @@ public class ConfigManager {
     }
 
     @SuppressWarnings("unchecked")
+    @ApiStatus.Internal
     public static <E extends Enum<E>> ModConfigSpec.EnumValue<E> defineEnum(ModConfigSpec.Builder builder, String name, Enum<?> enumValue) {
         return builder.defineEnum(name, (E) enumValue);
     }
 
+    @ApiStatus.Internal
     public static ModConfigSpec.ConfigValue<?> defineInRange(ModConfigSpec.Builder builder, String name, Field field, Number number) {
         if (field.isAnnotationPresent(BoundedDiscrete.class)) {
             BoundedDiscrete discrete = field.getAnnotation(BoundedDiscrete.class);

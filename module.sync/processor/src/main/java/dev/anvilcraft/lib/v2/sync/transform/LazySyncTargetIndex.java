@@ -19,6 +19,7 @@ import java.util.Set;
  * 通过反射读取，故此处仅需记录类的集合。</p>
  */
 @Slf4j
+@org.jetbrains.annotations.ApiStatus.Internal
 public class LazySyncTargetIndex {
     public static final String LAZY_SYNC_DESCRIPTOR = "Ldev/anvilcraft/lib/v2/sync/annotation/LazySync;";
     private static final Set<String> TARGETS = new HashSet<>();

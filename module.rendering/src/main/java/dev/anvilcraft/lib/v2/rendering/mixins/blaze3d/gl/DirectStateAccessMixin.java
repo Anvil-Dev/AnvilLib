@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public class DirectStateAccessMixin {
 
     @Mixin(targets = "com.mojang.blaze3d.opengl.DirectStateAccess$Emulated")

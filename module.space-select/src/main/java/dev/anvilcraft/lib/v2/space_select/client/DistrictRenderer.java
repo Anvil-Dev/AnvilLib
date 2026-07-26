@@ -18,11 +18,13 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @EventBusSubscriber(modid = AnvilLibSpaceSelect.MOD_ID, value = Dist.CLIENT)
+@ApiStatus.Internal
 public class DistrictRenderer {
     @SubscribeEvent
     public static void addLevelRenderMainPass(RenderLevelStageEvent.AfterTranslucentParticles event) {

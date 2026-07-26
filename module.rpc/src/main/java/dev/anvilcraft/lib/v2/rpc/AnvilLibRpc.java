@@ -10,8 +10,10 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 @Mod(AnvilLibRpc.MOD_ID)
+@ApiStatus.Internal
 public class AnvilLibRpc {
     public static final String MAIN_ID = "anvillib";
     public static final String MOD_ID = "anvillib_rpc";

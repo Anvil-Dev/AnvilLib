@@ -13,6 +13,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.HashMap;
 import java.util.Map;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public record SyncConfigurationPayload(
     Map<Integer, String> syncMap
 ) implements IClientboundPacket {

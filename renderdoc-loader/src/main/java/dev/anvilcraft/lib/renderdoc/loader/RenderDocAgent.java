@@ -1,5 +1,7 @@
 package dev.anvilcraft.lib.renderdoc.loader;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.lang.instrument.Instrumentation;
 
 /**
@@ -9,6 +11,7 @@ import java.lang.instrument.Instrumentation;
  * for graphics debugging purposes.
  * </p>
  */
+@ApiStatus.Internal
 public class RenderDocAgent {
 
     /**

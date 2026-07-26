@@ -22,6 +22,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.lang.reflect.Field;
 import java.util.Objects;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public record SyncPayload(
     byte[] array
 ) implements IInsensitiveBiPacket {

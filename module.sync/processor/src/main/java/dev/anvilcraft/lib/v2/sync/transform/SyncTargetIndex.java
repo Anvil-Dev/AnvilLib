@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
+@org.jetbrains.annotations.ApiStatus.Internal
 public class SyncTargetIndex {
     public static final String SYNC_DESCRIPTOR = "Ldev/anvilcraft/lib/v2/sync/annotation/Sync;";
     private static final Map<String, String> TARGETS = new HashMap<>();

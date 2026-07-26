@@ -8,6 +8,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.awt.Font;
 import java.util.List;
@@ -19,6 +20,7 @@ public class AnvilLibFont {
     public static final String MOD_ID = "anvillib_font";
     public static final AnvilLibFontConfig CONFIG = new AnvilLibFontConfig();
 
+    @ApiStatus.Internal
     public AnvilLibFont(ModContainer container) {
         AnvilLibFontConfig.AnvilLibFontConfigManager.readConfig(AnvilLibFont.CONFIG);
         container.registerExtensionPoint(IConfigScreenFactory.class, FontConfigScreen::new);

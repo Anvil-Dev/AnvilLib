@@ -11,10 +11,12 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import org.joml.Vector2fc;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.nio.ByteBuffer;
 
 @EventBusSubscriber(modid = AnvilLibWheel.MOD_ID, value = Dist.CLIENT)
+@ApiStatus.Internal
 public class LibDynamicUniforms {
     private final DynamicUniformStorage<RingUniform> ringUbo = new DynamicUniformStorage<>(
         "RingUniform UBO",

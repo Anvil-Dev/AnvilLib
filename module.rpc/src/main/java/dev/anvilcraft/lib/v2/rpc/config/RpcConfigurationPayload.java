@@ -9,6 +9,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +21,7 @@ import java.util.Map;
  * {@code 索引 -> 规范键} 映射，保证双向 RPC 的索引一致；随后回复
  * {@link RpcConfigurationFinishPayload} 以结束该配置任务。</p>
  */
+@ApiStatus.Internal
 public record RpcConfigurationPayload(Map<Integer, String> indexMap) implements IClientboundPacket {
     public static final Type<RpcConfigurationPayload> TYPE = IPacket.type(AnvilLibRpc.mod("rpc_config"));
     public static final StreamCodec<ByteBuf, RpcConfigurationPayload> STREAM_CODEC = StreamCodec.composite(

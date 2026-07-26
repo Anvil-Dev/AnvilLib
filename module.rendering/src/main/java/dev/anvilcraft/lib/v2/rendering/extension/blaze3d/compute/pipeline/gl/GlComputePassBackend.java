@@ -25,6 +25,7 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL46;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public class GlComputePassBackend implements ALRComputePassBackend {
     private final ALRGpuDeviceBackendExtension backendExtension;
     private final ALRCommandEncoderBackendExtension commandEncoderExtension;

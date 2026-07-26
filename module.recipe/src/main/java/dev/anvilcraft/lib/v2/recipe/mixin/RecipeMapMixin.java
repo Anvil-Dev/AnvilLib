@@ -12,6 +12,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeMap;
 import net.minecraft.world.item.crafting.RecipeType;
+import org.jetbrains.annotations.ApiStatus;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Mixin(RecipeMap.class)
+@ApiStatus.Internal
 public class RecipeMapMixin implements IRecipeMapExtension {
     @Mutable
     @Final

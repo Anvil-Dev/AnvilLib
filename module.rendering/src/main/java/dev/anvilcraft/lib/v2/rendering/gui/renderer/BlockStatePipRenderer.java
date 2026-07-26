@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePipRenderingState> {
     public BlockStatePipRenderer(MultiBufferSource.BufferSource bufferSource) {
         super(bufferSource);

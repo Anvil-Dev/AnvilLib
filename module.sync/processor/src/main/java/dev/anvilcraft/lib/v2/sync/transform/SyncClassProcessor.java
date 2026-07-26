@@ -7,6 +7,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 
 @Slf4j
+@org.jetbrains.annotations.ApiStatus.Internal
 public class SyncClassProcessor implements ClassProcessor {
     @Override
     public ProcessorName name() {

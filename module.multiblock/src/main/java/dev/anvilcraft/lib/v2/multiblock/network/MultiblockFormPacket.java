@@ -17,9 +17,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.NeoForge;
+import org.jetbrains.annotations.ApiStatus;
 
 @Slf4j
 @SuppressWarnings("unused")
+@ApiStatus.Internal
 public record MultiblockFormPacket(MultiblockState state) implements IClientboundPacket {
     public static final Type<MultiblockFormPacket> TYPE = IPacket.type(AnvilLibMultiblock.of("multiblock_form"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MultiblockFormPacket> STREAM_CODEC = StreamCodec.composite(

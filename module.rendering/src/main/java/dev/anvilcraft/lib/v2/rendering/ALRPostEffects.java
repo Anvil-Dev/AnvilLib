@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix4fc;
 
 @Slf4j
@@ -45,6 +46,7 @@ public class ALRPostEffects {
         }
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void on(MainTargetResizeEvent event) {
         BloomPostEffect bloomPostEffect = ALRPostEffects.getBloomPostEffect();

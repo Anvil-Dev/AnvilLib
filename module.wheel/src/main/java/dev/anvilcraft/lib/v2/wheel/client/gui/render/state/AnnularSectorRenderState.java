@@ -7,10 +7,12 @@ import dev.anvilcraft.lib.v2.rendering.state.LibQuadGuiElementRenderState;
 import dev.anvilcraft.lib.v2.wheel.client.init.LibRenders;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import org.joml.Matrix3x2f;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Map;
 import javax.annotation.Nullable;
 
+@ApiStatus.Internal
 public record AnnularSectorRenderState(
     Matrix3x2f pose,
     float x0,

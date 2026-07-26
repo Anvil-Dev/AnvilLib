@@ -23,6 +23,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 @SuppressWarnings("AddedMixinMembersNamePattern")
 @Mixin(GuiGraphicsExtractor.class)
+@org.jetbrains.annotations.ApiStatus.Internal
 public class GuiGraphicsExtractorMixin implements GuiGraphicsExtractorExtension {
 
     @Shadow

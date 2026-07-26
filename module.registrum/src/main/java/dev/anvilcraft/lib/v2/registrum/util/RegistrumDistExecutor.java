@@ -15,9 +15,11 @@ package dev.anvilcraft.lib.v2.registrum.util;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLLoader;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.Supplier;
 
+@ApiStatus.Internal
 public class RegistrumDistExecutor {
     public static void unsafeRunWhenOn(Dist dist, Supplier<Runnable> toRun) {
         if (dist == FMLLoader.getCurrent().getDist()) {

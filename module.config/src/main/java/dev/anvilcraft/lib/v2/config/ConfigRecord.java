@@ -2,11 +2,13 @@ package dev.anvilcraft.lib.v2.config;
 
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@ApiStatus.Internal
 public record ConfigRecord(
     String group,
     String modId,

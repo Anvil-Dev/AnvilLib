@@ -11,6 +11,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 @EventBusSubscriber(Dist.CLIENT)
 public class ALRPipelines {
@@ -76,6 +77,7 @@ public class ALRPipelines {
         .build();
 
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void on(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(BLUR);

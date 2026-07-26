@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipRenderingState> {
 
     private final BlockAndTintGetter emptyTintedLevel = new SimpleTintedEmptyLevelAccess();

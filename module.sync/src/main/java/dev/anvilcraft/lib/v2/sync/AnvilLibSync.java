@@ -21,12 +21,14 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.configuration.ICustomConfigurationTask;
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
 @Mod(AnvilLibSync.MOD_ID)
+@ApiStatus.Internal
 public class AnvilLibSync {
     public static final String MOD_ID = "anvillib_sync";
     public static final SyncManager SYNC_MANAGER = new SyncManager();

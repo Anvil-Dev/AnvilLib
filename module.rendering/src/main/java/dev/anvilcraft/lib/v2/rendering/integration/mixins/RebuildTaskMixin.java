@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(RebuildTask.class)
+@org.jetbrains.annotations.ApiStatus.Internal
 public class RebuildTaskMixin {
     @Inject(
         method = "run",

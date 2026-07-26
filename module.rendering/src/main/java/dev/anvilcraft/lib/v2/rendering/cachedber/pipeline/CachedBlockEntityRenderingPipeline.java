@@ -15,6 +15,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL46;
@@ -163,6 +164,7 @@ public class CachedBlockEntityRenderingPipeline {
         getRenderRegion(ChunkPos.containing(pos)).forcedUpdate();
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void on(RenderLevelStageEvent.AfterSky event) {
         Vec3 pos = event.getLevelRenderState().cameraRenderState.pos;
@@ -174,6 +176,7 @@ public class CachedBlockEntityRenderingPipeline {
         cameraMoved = true;
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void on(RenderFrameEvent.Pre event) {
         if (instance != null) {

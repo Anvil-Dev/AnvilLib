@@ -8,6 +8,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.registries.NewRegistryEvent;
 import net.neoforged.neoforge.registries.RegistryBuilder;
+import org.jetbrains.annotations.ApiStatus;
 
 @EventBusSubscriber(modid = AnvilLibSync.MOD_ID)
 public class AnvilLibSyncRegistries {
@@ -18,6 +19,7 @@ public class AnvilLibSyncRegistries {
         .maxId(512)
         .create();
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void registerRegistries(NewRegistryEvent event) {
         event.register(SYNC_ENTRY_REGISTRY);

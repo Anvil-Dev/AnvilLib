@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
+@ApiStatus.Internal
 public class SyncConfigManager {
     public static final String SYNC_DESCRIPTOR = "Ldev/anvilcraft/lib/v2/sync/annotation/Sync;";
     public static final String LAZY_SYNC_DESCRIPTOR = "Ldev/anvilcraft/lib/v2/sync/annotation/LazySync;";

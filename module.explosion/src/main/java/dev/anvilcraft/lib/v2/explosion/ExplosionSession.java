@@ -17,6 +17,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.apache.logging.log4j.util.TriConsumer;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
  * <p>Uses dynamic layer-by-layer generation with virtual thread pre-computation
  * to avoid memory issues with large radii and improve performance through async processing.
  */
+@ApiStatus.Internal
 class ExplosionSession {
     // Shared virtual thread executor for async layer pre-computation
     private static final Executor THREAD_EXECUTOR = Executors.newWorkStealingPool();

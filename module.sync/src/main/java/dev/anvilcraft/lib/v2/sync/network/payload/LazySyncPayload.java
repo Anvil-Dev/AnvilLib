@@ -40,6 +40,7 @@ import java.util.List;
  * </pre>
  */
 @Slf4j
+@org.jetbrains.annotations.ApiStatus.Internal
 public record LazySyncPayload(
     byte[] array
 ) implements IInsensitiveBiPacket {

@@ -17,10 +17,12 @@ import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 @Slf4j
 @Mod(value = AnvilLibRendering.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber(Dist.CLIENT)
+@ApiStatus.Internal
 public class AnvilLibRendering {
     public static final boolean DEBUG = System.getProperty("anvillib.rendering.debugMode") != null;
     public static final String MODID = "anvillib_rendering";

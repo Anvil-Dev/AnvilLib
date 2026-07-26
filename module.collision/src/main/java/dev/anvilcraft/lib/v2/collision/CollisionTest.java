@@ -4,11 +4,13 @@ import org.joml.Vector3d;
 import org.joml.Vector3dc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
+import org.jetbrains.annotations.ApiStatus;
 
 import static dev.anvilcraft.lib.v2.collision.AnvilLibCollision.intersectsAABBTriangle;
 import static dev.anvilcraft.lib.v2.collision.AnvilLibCollision.overlapOnAxis;
 import static dev.anvilcraft.lib.v2.collision.AnvilLibCollision.sweptCollisionAABBTriangle;
 
+@ApiStatus.Internal
 public class CollisionTest {
 
     static void main() {

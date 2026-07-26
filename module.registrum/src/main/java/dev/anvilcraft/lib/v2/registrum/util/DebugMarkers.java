@@ -15,8 +15,10 @@ package dev.anvilcraft.lib.v2.registrum.util;
 
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
 @SuppressWarnings("null")
+@ApiStatus.Internal
 public class DebugMarkers {
 
     private static final String PREFIX = "REGISTRATE.";

@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public class ALRIntegrationCompatMixinPlugin implements IMixinConfigPlugin {
 
     private ImmutableMap<String, Boolean> mixinConditions;

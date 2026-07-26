@@ -28,6 +28,7 @@ import java.util.function.Supplier;
  * Static fields    → proxy.setParent(Owner.class) in <clinit> (created if absent)
  */
 @Slf4j
+@org.jetbrains.annotations.ApiStatus.Internal
 public class SyncBytecodeInjector {
     private static final String SYNC_PROXY_DESC = "Ldev/anvilcraft/lib/v2/sync/management/SyncProxy;";
     private static final String SYNC_PROXY_INTERNAL = "dev/anvilcraft/lib/v2/sync/management/SyncProxy";

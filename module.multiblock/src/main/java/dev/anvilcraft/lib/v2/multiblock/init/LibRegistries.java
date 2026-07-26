@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceKey;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 @EventBusSubscriber(modid = AnvilLibMultiblock.MOD_ID)
 public class LibRegistries {
@@ -14,6 +15,7 @@ public class LibRegistries {
         AnvilLibMultiblock.of("definitions")
     );
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void registerDataRegistries(DataPackRegistryEvent.NewRegistry event) {
         event.dataPackRegistry(DEFINITIONS_KEY, MultiblockDefinition.CODEC.codec(), MultiblockDefinition.CODEC.codec());

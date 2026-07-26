@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Slf4j
+@ApiStatus.Internal
 public class SyncManager {
     private final Map<Class<?>, SyncRegisterEntry<?, ?>> syncRegisterEntryMap = new HashMap<>();
 

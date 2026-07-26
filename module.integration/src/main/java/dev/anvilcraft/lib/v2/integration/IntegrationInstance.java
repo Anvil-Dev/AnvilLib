@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.neoforged.fml.loading.moddiscovery.ModInfo;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -14,6 +15,7 @@ import java.util.List;
 @Slf4j
 @Getter
 @EqualsAndHashCode
+@ApiStatus.Internal
 public final class IntegrationInstance {
     private final String modid;
     private final ModVersionRange versionRange;

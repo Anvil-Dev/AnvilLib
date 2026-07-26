@@ -4,6 +4,7 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRCom
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstanceKey;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public interface ALRGpuDeviceBackendExtension {
     ALRComputeProgramInstance alrCompileComputeShader(ALRComputeProgramInstanceKey instanceKey);
 

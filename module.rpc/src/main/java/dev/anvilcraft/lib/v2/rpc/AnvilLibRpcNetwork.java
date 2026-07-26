@@ -5,11 +5,13 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * 注册 RPC 网络包。
  */
 @EventBusSubscriber(modid = AnvilLibRpc.MOD_ID)
+@ApiStatus.Internal
 public class AnvilLibRpcNetwork {
     public static final String NETWORK_VERSION = "1";
 

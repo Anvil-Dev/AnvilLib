@@ -27,6 +27,7 @@ import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.function.Consumer;
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
 @Log4j2
+@ApiStatus.Internal
 public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullType T> {
 
 

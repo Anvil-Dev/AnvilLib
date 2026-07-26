@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(RenderType.class)
+@org.jetbrains.annotations.ApiStatus.Internal
 public class RenderTypeMixin implements ALRRenderTypeExtension {
 
     @Unique

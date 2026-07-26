@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 
 import static dev.anvilcraft.lib.v2.rendering.ALRSharedMath.SQRT_2;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public record BlockStatePipRenderingState(
     BlockState blockState,
     @Nullable BlockAndTintGetter level,

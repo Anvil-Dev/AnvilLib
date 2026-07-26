@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.rendering.extension.blaze3d;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public interface ALRCommandEncoderBackendExtension {
     void alrDispatchWorkgroups(
         int groupCountX,

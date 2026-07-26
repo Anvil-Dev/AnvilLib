@@ -7,7 +7,9 @@ import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.wheel.AnvilLibWheel;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class LibRenders {
     public static final RenderPipeline.Snippet SNIPPET_COMMON = RenderPipeline.builder()
         .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)

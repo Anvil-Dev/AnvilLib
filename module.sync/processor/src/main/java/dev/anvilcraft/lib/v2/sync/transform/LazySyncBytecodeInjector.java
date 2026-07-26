@@ -32,6 +32,7 @@ import java.util.function.Supplier;
  * 每 tick 扫描差分，故此处无需注入任何字段写入拦截。</p>
  */
 @Slf4j
+@org.jetbrains.annotations.ApiStatus.Internal
 public class LazySyncBytecodeInjector {
     private static final String LAZY_SYNC_DESC = "Ldev/anvilcraft/lib/v2/sync/annotation/LazySync;";
     private static final String ANVIL_LIB_SYNC_INTERNAL = "dev/anvilcraft/lib/v2/sync/AnvilLibSync";

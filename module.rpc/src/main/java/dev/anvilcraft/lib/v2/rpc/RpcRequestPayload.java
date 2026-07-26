@@ -13,6 +13,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.connection.ConnectionType;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -23,6 +24,7 @@ import java.lang.reflect.Method;
  *
  * @see RPC#invoke
  */
+@ApiStatus.Internal
 public class RpcRequestPayload implements IRpcPayload, IInsensitiveBiPacket {
     public static final Type<RpcRequestPayload> TYPE = IPacket.type(AnvilLibRpc.mod("rpc_request"));
     public static final StreamCodec<ByteBuf, RpcRequestPayload> STREAM_CODEC = StreamCodec.composite(

@@ -10,6 +10,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import org.jetbrains.annotations.ApiStatus;
 
 @Mod(AnvilLibMultiblock.MOD_ID)
 @EventBusSubscriber(modid = AnvilLibMultiblock.MOD_ID)
@@ -21,6 +22,7 @@ public class AnvilLibMultiblock {
         AnvilLibMultiblockConfig::new
     );
 
+    @ApiStatus.Internal
     public AnvilLibMultiblock(IEventBus modEventBus, ModContainer modContainer) {
     }
 
@@ -28,6 +30,7 @@ public class AnvilLibMultiblock {
         return Identifier.fromNamespaceAndPath(MAIN_ID, path);
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void onNetwork(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");

@@ -9,6 +9,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.jetbrains.annotations.ApiStatus;
 
 @SuppressWarnings("SameParameterValue")
 public class LibRecipeTypes {
@@ -36,6 +37,7 @@ public class LibRecipeTypes {
         );
     }
 
+    @ApiStatus.Internal
     public static void register(IEventBus bus) {
         RECIPE_TYPES.register(bus);
         RECIPE_SERIALIZERS.register(bus);

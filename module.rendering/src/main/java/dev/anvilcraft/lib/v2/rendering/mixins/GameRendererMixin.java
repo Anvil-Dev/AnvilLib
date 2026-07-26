@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GameRenderer.class)
+@org.jetbrains.annotations.ApiStatus.Internal
 public class GameRendererMixin {
 
     @Inject(

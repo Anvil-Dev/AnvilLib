@@ -7,10 +7,12 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * 客户端在采纳服务端 RPC 索引映射后回复的结束包，用于标记 {@link RpcConfigurationTask} 完成。
  */
+@ApiStatus.Internal
 public class RpcConfigurationFinishPayload implements IServerboundPacket {
     public static final RpcConfigurationFinishPayload INSTANCE = new RpcConfigurationFinishPayload();
     public static final Type<RpcConfigurationFinishPayload> TYPE = IPacket.type(AnvilLibRpc.mod("rpc_config_finish"));

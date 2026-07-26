@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public record DynamicTextureBlitRenderState(
     RenderPipeline pipeline,
     Supplier<TextureSetup> textureSetupSupplier,

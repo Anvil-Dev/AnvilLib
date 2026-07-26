@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.ArrayList;
 
+@org.jetbrains.annotations.ApiStatus.Internal
 public class RebuildTask implements Runnable {
     private final CachedRenderingChunk owner;
     private boolean cancelled = false;
