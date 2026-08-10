@@ -1,4 +1,4 @@
-#version                330
+#version 150
 
 #define MAX_SDFS        256
 

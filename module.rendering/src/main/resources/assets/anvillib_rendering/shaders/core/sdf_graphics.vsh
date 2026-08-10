@@ -1,7 +1,4 @@
-#version                330
-
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+#version 150
 
 #define MAX_SDFS 256
 
@@ -20,6 +17,9 @@ in      vec3            Position;
 in      vec4            Color;
 in      vec2            UV0;
 in      ivec2           UV1;
+
+uniform mat4            ModelViewMat;
+uniform mat4            ProjMat;
 
 out     vec2            vPosition;
 out     vec4            vColor;

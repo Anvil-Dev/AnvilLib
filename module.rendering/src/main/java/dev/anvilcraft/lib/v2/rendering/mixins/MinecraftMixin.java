@@ -1,5 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.mixins;
 
+import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
+import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.main.GameConfig;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -18,8 +20,10 @@ public class MinecraftMixin {
         at = @At("RETURN")
     )
     private void onCreateInstance(GameConfig gameConfig, CallbackInfo ci) {
-        // #P7b: ALRPostEffects.createPostEffects();
-        // #P7d: CachedBlockEntityRenderingPipeline.create();
+        // #P7b: creates the post-processing effects (bloom/glitch) once the main render target exists.
+        ALRPostEffects.createPostEffects();
+        // #P7d: initializes the cached BER pipeline (GL debug label support).
+        CachedBlockEntityRenderingPipeline.create();
     }
 
     @Inject(
@@ -27,6 +31,7 @@ public class MinecraftMixin {
         at = @At("RETURN")
     )
     private void onUpdateLevel(ClientLevel level, CallbackInfo ci) {
-        // #P7d: CachedBlockEntityRenderingPipeline.updateLevel(level);
+        // #P7d: swap the cached BER pipeline instance when the client level changes.
+        CachedBlockEntityRenderingPipeline.updateLevel(level);
     }
 }

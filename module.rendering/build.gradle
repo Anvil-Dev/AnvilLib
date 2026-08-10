@@ -116,6 +116,17 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
     compileOnly "org.jspecify:jspecify:1.0.0"
+
+    // #P7d: optional Iris integration (integration/IrisSupport.java + the two integration mixins).
+    // The dev/26.1 branch used compileOnly("maven.modrinth:YL57xq9U:...") (Iris) from the Modrinth
+    // maven; that maven has been shut down, and no other reachable mirror hosts Iris 1.8.x for 1.21.1
+    // (the API was verified by downloading iris-neoforge-1.8.12+mc1.21.1.jar manually). The integration
+    // therefore accesses the Iris classes through reflection and needs no compile-time dependency; it
+    // activates at runtime only when Iris is loaded (gated by ALRIntegrationCompatMixinPlugin + the
+    // ModList check inside IrisSupport). To restore a compile-time dependency once a mirror is available:
+    //     compileOnly("maven.modrinth:YL57xq9U:t3ruzodq") // iris 1.8.12+1.21.1-neoforge (needs the Modrinth maven repository)
+    // and revert IrisSupport to direct references (net.irisshaders.iris.api.v0.IrisApi /
+    // net.irisshaders.iris.vertices.ImmediateState).
 }
 
 tasks.register('runStd140LayoutRulesTest', JavaExec) {
