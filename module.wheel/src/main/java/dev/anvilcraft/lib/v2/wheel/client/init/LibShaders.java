@@ -20,6 +20,8 @@ public class LibShaders {
     static @Nullable ShaderInstance ringShader;
     @Getter
     static @Nullable ShaderInstance selectionShader;
+    @Getter
+    static @Nullable ShaderInstance annularSectorShader;
 
     @SubscribeEvent
     public static void register(RegisterShadersEvent event) {
@@ -39,6 +41,14 @@ public class LibShaders {
                     DefaultVertexFormat.POSITION_COLOR
                 ),
                 it -> selectionShader = it
+            );
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    AnvilLibWheel.of("annular_sector"),
+                    DefaultVertexFormat.POSITION_COLOR
+                ),
+                it -> annularSectorShader = it
             );
         } catch (IOException e) {
             log.error(e.getLocalizedMessage(), e);

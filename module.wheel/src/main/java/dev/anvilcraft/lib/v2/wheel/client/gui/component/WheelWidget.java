@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.util.MathUtil;
+import dev.anvilcraft.lib.v2.wheel.api.WheelSelectionEffect;
 import dev.anvilcraft.lib.v2.wheel.client.init.LibShaders;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +30,10 @@ import javax.annotation.Nullable;
 
 public class WheelWidget extends AbstractWidget {
     public static final int IGNORE_CURSOR_MOVE_LENGTH = 15;
+    public static final int DEFAULT_SELECTION_EFFECT_COLOR = 0xFFFABC02;
+    private static final float SELECTION_DOT_DIAMETER_RATIO = 0.9f;
+    private static final float TAU = (float) (Math.PI * 2.0);
+    private static final float ANGLE_AA_RAD = 0.06f;
     private static final float RING_Z = 60f;
     private static final float SELECTION_Z = 80f;
     private static final Vector2f ROTATION_START = new Vector2f(0, 1);
@@ -41,8 +46,7 @@ public class WheelWidget extends AbstractWidget {
     private final int animationMs; // ms
     private final int closingAnimationMs; // ms
     private final int ringColor;
-    private final int selectionEffectColor;
-    private final int selectionEffectRadius;
+    private int selectionEffectColor;
     private final float selectionAnimationSpeedFactor;
     private final int textColor;
     private final float textScale;
@@ -58,6 +62,7 @@ public class WheelWidget extends AbstractWidget {
     @Setter
     private boolean closingAnimationStarted = false;
     private final int deadZone;
+    private WheelSelectionEffect selectionEffect = WheelSelectionEffect.DOT;
 
     public WheelWidget(
         int x, int y, int width, int height,
@@ -93,7 +98,7 @@ public class WheelWidget extends AbstractWidget {
             ringInnerRadius, ringOuterRadius,
             150, 300, 150,
             0x88000000,
-            0xddffff00, 20, 5f,
+            DEFAULT_SELECTION_EFFECT_COLOR, 5f,
             0xfdfdfd, textScale, degreeOffsetAngle,
             sections, deadZone
         );
@@ -109,7 +114,7 @@ public class WheelWidget extends AbstractWidget {
             ringInnerRadius, ringOuterRadius,
             150, 300, 150,
             0x88000000,
-            0xddffff00, 20, 5f,
+            DEFAULT_SELECTION_EFFECT_COLOR, 5f,
             0xfdfdfd, 1f, 0f,
             sections, deadZone
         );
@@ -125,7 +130,7 @@ public class WheelWidget extends AbstractWidget {
             ringInnerRadius, ringOuterRadius,
             150, 300, 150,
             0x88000000,
-            0xddffff00, 20, 5f,
+            DEFAULT_SELECTION_EFFECT_COLOR, 5f,
             0xfdfdfd, 1f, degreeOffsetAngle,
             sections, deadZone
         );
@@ -136,7 +141,7 @@ public class WheelWidget extends AbstractWidget {
         float ringInnerRadius, float ringOuterRadius,
         int delay, int animationMs, int closingAnimationMs,
         int ringColor,
-        int selectionEffectColor, int selectionEffectRadius, float selectionAnimationSpeedFactor,
+        int selectionEffectColor, float selectionAnimationSpeedFactor,
         int textColor, float textScale,
         List<RawSection> sections, int deadZone
     ) {
@@ -145,7 +150,7 @@ public class WheelWidget extends AbstractWidget {
             ringInnerRadius, ringOuterRadius,
             delay, animationMs, closingAnimationMs,
             ringColor,
-            selectionEffectColor, selectionEffectRadius, selectionAnimationSpeedFactor,
+            selectionEffectColor, selectionAnimationSpeedFactor,
             textColor, textScale, 0f,
             sections, deadZone
         );
@@ -156,7 +161,7 @@ public class WheelWidget extends AbstractWidget {
         float ringInnerRadius, float ringOuterRadius,
         int delay, int animationMs, int closingAnimationMs,
         int ringColor,
-        int selectionEffectColor, int selectionEffectRadius, float selectionAnimationSpeedFactor,
+        int selectionEffectColor, float selectionAnimationSpeedFactor,
         int textColor, float textScale, float degreeOffsetAngle,
         List<RawSection> sections, int deadZone
     ) {
@@ -169,7 +174,6 @@ public class WheelWidget extends AbstractWidget {
         this.closingAnimationMs = closingAnimationMs;
         this.ringColor = ringColor;
         this.selectionEffectColor = selectionEffectColor;
-        this.selectionEffectRadius = selectionEffectRadius;
         this.selectionAnimationSpeedFactor = selectionAnimationSpeedFactor;
         this.textColor = textColor;
         this.textScale = textScale;
@@ -194,11 +198,17 @@ public class WheelWidget extends AbstractWidget {
                 section
             ));
         }
-        this.selectionEffectPos = MathUtil.rotate(
-            MathUtil.copy(ROTATION_START)
-                .mul(this.getSectionCircleDiameter()),
-            this.currentAngle
-        );
+        this.selectionEffectPos = MathUtil.rotate(MathUtil.copy(ROTATION_START).mul(this.getSectionCircleDiameter()), this.currentAngle);
+    }
+
+    public WheelWidget setSelectionEffect(WheelSelectionEffect selectionEffect) {
+        this.selectionEffect = Objects.requireNonNull(selectionEffect, "selectionEffect");
+        return this;
+    }
+
+    public WheelWidget setSelectionEffectColor(int selectionEffectColor) {
+        this.selectionEffectColor = selectionEffectColor;
+        return this;
     }
 
     public WheelWidget setCurrentIndex(int index) {
@@ -206,11 +216,7 @@ public class WheelWidget extends AbstractWidget {
         if (!this.sections.get(index).selectable()) return this;
         this.currentSectionIndex = index;
         this.currentAngle = this.sections.get(index).angle;
-        this.selectionEffectPos = MathUtil.rotate(
-            MathUtil.copy(ROTATION_START)
-                .mul(this.getSectionCircleDiameter()),
-            this.currentAngle
-        );
+        this.selectionEffectPos = MathUtil.rotate(MathUtil.copy(ROTATION_START).mul(this.getSectionCircleDiameter()), this.currentAngle);
         return this;
     }
 
@@ -344,8 +350,9 @@ public class WheelWidget extends AbstractWidget {
             var renderer = value.renderer();
             if (renderer != null) {
                 poseStack.pushPose();
-                poseStack.translate(x - 10, y - 10, 100);
-                renderer.render(guiGraphics, poseStack, 20, 20);
+                poseStack.translate(x, y, 100);
+                int renderSize = this.getRendererSize(this.ringOuterRadius - this.ringInnerRadius);
+                renderer.render(guiGraphics, poseStack, renderSize, renderSize);
                 poseStack.popPose();
             }
             poseStack.pushPose();
@@ -353,14 +360,13 @@ public class WheelWidget extends AbstractWidget {
             float offsetX = 0.1f * this.width;
             float offsetY = 0.1f * this.height;
             float adjustedX = (x - offsetX) / coordinateScale;
-            float adjustedY = (y - offsetY - 20 * this.textScale) / coordinateScale;
+            float adjustedY = renderer == null
+                ? (y - offsetY - (minecraft.font.lineHeight * this.textScale) / 2.0f) / coordinateScale
+                : (y - offsetY - 20 * this.textScale) / coordinateScale;
 
             poseStack.translate(offsetX, offsetY, 0);
             poseStack.scale(coordinateScale, coordinateScale, coordinateScale);
             poseStack.translate(adjustedX, adjustedY, 0);
-            if (renderer == null) {
-                poseStack.translate(0, ((this.selectionEffectRadius / 2.0f) + minecraft.font.lineHeight) * this.textScale, 0);
-            }
             poseStack.scale(this.textScale / coordinateScale, this.textScale / coordinateScale, this.textScale / coordinateScale);
             guiGraphics.drawCenteredString(
                 minecraft.font,
@@ -400,18 +406,33 @@ public class WheelWidget extends AbstractWidget {
         );
         poseStack.popPose();
         if (this.currentSectionIndex != -1) {
-            WheelSection section = this.sections.get(this.currentSectionIndex);
-            Vector2f center = new Vector2f(
-                (section.center.x - this.centerPos.x) / this.getSectionCircleDiameter(),
-                (section.center.y - this.centerPos.y) / this.getSectionCircleDiameter()
-            ).mul(this.getSectionCircleDiameter() * progress).add(this.centerPos.x, this.centerPos.y);
-            WheelWidget.renderSelectionEffect(
-                guiGraphics,
-                center.x,
-                center.y,
-                this.selectionEffectColor,
-                this.selectionEffectRadius
-            );
+            if (this.selectionEffect == WheelSelectionEffect.ANNULAR_SECTOR) {
+                WheelSection section = this.sections.get(this.currentSectionIndex);
+                float rangeAngle = this.normalizePositiveAngle(section.angleEnd - section.angleStart) / 2.0f;
+                this.renderAnnularSectorSelection(
+                    guiGraphics,
+                    this.centerPos.x,
+                    this.centerPos.y,
+                    this.selectionEffectColor,
+                    this.ringInnerRadius * 2 * progress,
+                    this.ringOuterRadius * 2 * progress,
+                    section.angle,
+                    rangeAngle
+                );
+            } else {
+                WheelSection section = this.sections.get(this.currentSectionIndex);
+                Vector2f center = new Vector2f(
+                    (section.center.x - this.centerPos.x) / this.getSectionCircleDiameter(),
+                    (section.center.y - this.centerPos.y) / this.getSectionCircleDiameter()
+                ).mul(this.getSectionCircleDiameter() * progress).add(this.centerPos.x, this.centerPos.y);
+                WheelWidget.renderSelectionEffect(
+                    guiGraphics,
+                    center.x,
+                    center.y,
+                    this.selectionEffectColor,
+                    this.getSelectionDotDiameter((this.ringOuterRadius - this.ringInnerRadius) * progress)
+                );
+            }
         }
         for (WheelSection value : this.sections) {
             Vector2f center = new Vector2f(
@@ -423,8 +444,9 @@ public class WheelWidget extends AbstractWidget {
             var renderer = value.renderer();
             if (renderer != null) {
                 poseStack.pushPose();
-                poseStack.translate(x - 10, y - 10, 100);
-                renderer.render(guiGraphics, poseStack, 20, 20);
+                poseStack.translate(x, y, 100);
+                int renderSize = this.getRendererSize((this.ringOuterRadius - this.ringInnerRadius) * progress);
+                renderer.render(guiGraphics, poseStack, renderSize, renderSize);
                 poseStack.popPose();
             }
             final int textAlpha = (int) (progress * 0xff) << 24;
@@ -433,14 +455,13 @@ public class WheelWidget extends AbstractWidget {
             float offsetX = 0.1f * this.width;
             float offsetY = 0.1f * this.height;
             float adjustedX = (x - offsetX) / coordinateScale;
-            float adjustedY = (y - offsetY - 20 * this.textScale) / coordinateScale;
+            float adjustedY = renderer == null
+                ? (y - offsetY - (minecraft.font.lineHeight * this.textScale) / 2.0f) / coordinateScale
+                : (y - offsetY - 20 * this.textScale) / coordinateScale;
 
             poseStack.translate(offsetX, offsetY, 0);
             poseStack.scale(coordinateScale, coordinateScale, coordinateScale);
             poseStack.translate(adjustedX, adjustedY, 0);
-            if (renderer == null) {
-                poseStack.translate(0, ((this.selectionEffectRadius / 2.0f) + minecraft.font.lineHeight) * this.textScale, 0);
-            }
             poseStack.scale(this.textScale / coordinateScale, this.textScale / coordinateScale, this.textScale / coordinateScale);
             guiGraphics.drawCenteredString(
                 this.minecraft.font,
@@ -454,10 +475,11 @@ public class WheelWidget extends AbstractWidget {
     }
 
     private void renderSelection(GuiGraphics guiGraphics) {
-        float selectionEffectAngle = MathUtil.angle(
-            MathUtil.copy(ROTATION_START),
-            this.selectionEffectPos
-        );
+        if (this.selectionEffect == WheelSelectionEffect.ANNULAR_SECTOR) {
+            this.renderSelectionAnnularSector(guiGraphics);
+            return;
+        }
+        float selectionEffectAngle = MathUtil.angle(MathUtil.copy(ROTATION_START), this.selectionEffectPos);
 
         float diffAngle = this.currentAngle - selectionEffectAngle;
 
@@ -467,22 +489,45 @@ public class WheelWidget extends AbstractWidget {
             diffAngle += (float) (Math.PI * 2);
         }
 
-        this.selectionEffectPos = MathUtil.rotate(
-            this.selectionEffectPos,
-            diffAngle / this.selectionAnimationSpeedFactor
-        );
+        this.selectionEffectPos = MathUtil.rotate(this.selectionEffectPos, diffAngle / this.selectionAnimationSpeedFactor);
 
-        Vector2f pos = MathUtil.copy(this.selectionEffectPos)
-            .mul(1, -1)
-            .add(this.centerPos);
+        Vector2f pos = MathUtil.copy(this.selectionEffectPos).mul(1, -1).add(this.centerPos);
 
         WheelWidget.renderSelectionEffect(
             guiGraphics,
             pos.x,
             pos.y,
             this.selectionEffectColor,
-            this.selectionEffectRadius
+            this.getSelectionDotDiameter(this.ringOuterRadius - this.ringInnerRadius)
         );
+    }
+
+    private void renderSelectionAnnularSector(GuiGraphics guiGraphics) {
+        WheelSection currentSection = this.sections.get(this.currentSectionIndex);
+        float rangeAngle = this.normalizePositiveAngle(currentSection.angleEnd - currentSection.angleStart) / 2.0f;
+        this.renderAnnularSectorSelection(
+            guiGraphics,
+            this.centerPos.x,
+            this.centerPos.y,
+            this.selectionEffectColor,
+            this.ringInnerRadius * 2,
+            this.ringOuterRadius * 2,
+            currentSection.angle,
+            rangeAngle
+        );
+    }
+
+    private float normalizePositiveAngle(float angle) {
+        float normalized = angle % TAU;
+        return normalized < 0 ? normalized + TAU : normalized;
+    }
+
+    private float getSelectionDotDiameter(float ringWidth) {
+        return ringWidth * SELECTION_DOT_DIAMETER_RATIO;
+    }
+
+    private int getRendererSize(float ringWidth) {
+        return Math.max(1, Math.round(this.getSelectionDotDiameter(ringWidth)));
     }
 
     public void onClosing() {
@@ -628,6 +673,82 @@ public class WheelWidget extends AbstractWidget {
         RenderSystem.enableDepthTest();
     }
 
+    public void renderAnnularSectorSelection(
+        GuiGraphics guiGraphics,
+        float centerX,
+        float centerY,
+        int color,
+        float innerDiameter,
+        float outerDiameter,
+        float centerAngleRad,
+        float rangeAngleRad
+    ) {
+        float outerRadius = outerDiameter + 5;
+        float x1 = centerX - outerRadius;
+        float y1 = centerY - outerRadius;
+        float x2 = centerX + outerRadius;
+        float y2 = centerY + outerRadius;
+        PoseStack poseStack = guiGraphics.pose();
+        Matrix4f matrix4f = poseStack.last().pose();
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder bufferBuilder = tesselator.begin(
+            VertexFormat.Mode.QUADS,
+            DefaultVertexFormat.POSITION_COLOR
+        );
+        bufferBuilder.addVertex(matrix4f, x1, y1, SELECTION_Z).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x1, y2, SELECTION_Z).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x2, y2, SELECTION_Z).setColor(color);
+        bufferBuilder.addVertex(matrix4f, x2, y1, SELECTION_Z).setColor(color);
+
+        Window window = Minecraft.getInstance().getWindow();
+        float guiScale = (float) window.getGuiScale();
+        RenderSystem.disableDepthTest();
+        ShaderInstance annularSectorShader = LibShaders.getAnnularSectorShader();
+        if (annularSectorShader == null) {
+            renderAnnularSectorFallback(
+                guiGraphics,
+                centerX,
+                centerY,
+                color,
+                innerDiameter,
+                outerDiameter,
+                centerAngleRad,
+                rangeAngleRad
+            );
+            RenderSystem.enableDepthTest();
+            return;
+        }
+        RenderSystem.setShader(() -> annularSectorShader);
+
+        // Wheel section angle uses "up" as zero; shader atan uses +X as zero.
+        float shaderCenterAngle = centerAngleRad + TAU / 4.0f;
+        annularSectorShader
+            .safeGetUniform("Center")
+            .set(centerX * guiScale, centerY * guiScale);
+        annularSectorShader
+            .safeGetUniform("InnerDiameter")
+            .set(innerDiameter * guiScale);
+        annularSectorShader
+            .safeGetUniform("OuterDiameter")
+            .set(outerDiameter * guiScale);
+        annularSectorShader
+            .safeGetUniform("AntiAliasingRadius")
+            .set(1.25f);
+        annularSectorShader
+            .safeGetUniform("AngleAntiAliasingRad")
+            .set(ANGLE_AA_RAD);
+        annularSectorShader
+            .safeGetUniform("CenterAngleRad")
+            .set(shaderCenterAngle);
+        annularSectorShader
+            .safeGetUniform("RangeAngleRad")
+            .set(rangeAngleRad);
+
+        RenderSystem.setShaderColor(1, 1, 1, 1);
+        BufferUploader.drawWithShader(Objects.requireNonNull(bufferBuilder.build()));
+        RenderSystem.enableDepthTest();
+    }
+
     private static void renderRingFallback(
         GuiGraphics guiGraphics,
         float centerX,
@@ -666,6 +787,40 @@ public class WheelWidget extends AbstractWidget {
         float radius
     ) {
         renderDisc(guiGraphics, centerX, centerY, radius, color);
+    }
+
+    private static void renderAnnularSectorFallback(
+        GuiGraphics guiGraphics,
+        float centerX,
+        float centerY,
+        int color,
+        float innerDiameter,
+        float outerDiameter,
+        float centerAngleRad,
+        float rangeAngleRad
+    ) {
+        PoseStack poseStack = guiGraphics.pose();
+        Matrix4f matrix4f = poseStack.last().pose();
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder bufferBuilder = tesselator.begin(
+            VertexFormat.Mode.TRIANGLE_STRIP,
+            DefaultVertexFormat.POSITION_COLOR
+        );
+        float innerRadius = innerDiameter / 2f;
+        float outerRadius = outerDiameter / 2f;
+        int segments = 48;
+        float startAngle = centerAngleRad - rangeAngleRad;
+        float sweepAngle = rangeAngleRad * 2;
+        for (int i = 0; i <= segments; i++) {
+            float angle = startAngle + sweepAngle * i / segments;
+            float sin = (float) Math.sin(angle);
+            float cos = (float) Math.cos(angle);
+            bufferBuilder.addVertex(matrix4f, centerX + cos * outerRadius, centerY + sin * outerRadius, SELECTION_Z).setColor(color);
+            bufferBuilder.addVertex(matrix4f, centerX + cos * innerRadius, centerY + sin * innerRadius, SELECTION_Z).setColor(color);
+        }
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShaderColor(1, 1, 1, 1);
+        BufferUploader.drawWithShader(Objects.requireNonNull(bufferBuilder.build()));
     }
 
     private static void renderDisc(
