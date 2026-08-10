@@ -6,10 +6,10 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import net.minecraft.advancements.critereon.ItemSubPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryCodecs;
 import net.minecraft.core.component.DataComponentPredicate;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -20,6 +20,7 @@ import net.minecraft.world.level.ItemLike;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * 物品谓词
@@ -117,11 +118,12 @@ public record ItemPredicate(
         /**
          * 设置物品标签
          *
-         * @param tag 物品标签
+         * @param items 物品注册表访问器
+         * @param tag   物品标签
          * @return 构建器实例
          */
-        public Builder of(TagKey<Item> tag) {
-            this.items = Optional.of(BuiltInRegistries.ITEM.getOrCreateTag(tag));
+        public Builder of(HolderGetter<Item> items, TagKey<Item> tag) {
+            this.items = items.get(tag).map(Function.identity());
             return this;
         }
 

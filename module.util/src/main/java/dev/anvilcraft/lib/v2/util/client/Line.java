@@ -1,0 +1,47 @@
+package dev.anvilcraft.lib.v2.util.client;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.world.phys.Vec3;
+
+public record Line(Vec3 start, Vec3 end, int thickness, float length) {
+    public Line(Vec3 start, Vec3 end, float length) {
+        this(start, end, 4, length);
+    }
+
+    public Line(Vec3 start, Vec3 end, int thickness) {
+        this(start, end, thickness, (float) start.distanceTo(end));
+    }
+
+    public Line(Vec3 start, Vec3 end) {
+        this(start, end, (float) start.distanceTo(end));
+    }
+
+    @Deprecated(forRemoval = true)
+    public void render(PoseStack pose, VertexConsumer vertex, Vec3 camera, int color) {
+        this.render(pose.last(), vertex, camera, color);
+    }
+
+    public void render(PoseStack.Pose pose, VertexConsumer vertex, Vec3 camera, int color) {
+        float dx = (float) (this.start().x - this.end().x);
+        float dy = (float) (this.start().y - this.end().y);
+        float dz = (float) (this.start().z - this.end().z);
+        // 1.21.1 的 VertexConsumer 无 setLineWidth（1.21.2 渲染管线改造后引入），线宽忽略
+        vertex.addVertex(
+                pose.pose(),
+                (float) (this.start().x - camera.x),
+                (float) (this.start().y - camera.y),
+                (float) (this.start().z - camera.z)
+            )
+            .setColor(color)
+            .setNormal(pose, dx /= this.length(), dy /= this.length(), dz /= this.length());
+        vertex.addVertex(
+                pose.pose(),
+                (float) (this.end().x - camera.x),
+                (float) (this.end().y - camera.y),
+                (float) (this.end().z - camera.z)
+            )
+            .setColor(color)
+            .setNormal(pose, dx, dy, dz);
+    }
+}

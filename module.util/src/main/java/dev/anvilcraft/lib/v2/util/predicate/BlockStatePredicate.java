@@ -6,11 +6,12 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.util.AnvilLibUtil;
 import dev.anvilcraft.lib.v2.util.Util;
 import io.netty.buffer.ByteBuf;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryCodecs;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
  * </p>
  */
 @Getter
+@EqualsAndHashCode
 public class BlockStatePredicate {
     /**
      * 空 ResourceLocation
@@ -315,11 +317,12 @@ public class BlockStatePredicate {
         /**
          * 设置方块标签
          *
-         * @param tag 方块标签
+         * @param blocks 方块注册表访问器
+         * @param tag    方块标签
          * @return 构建器实例
          */
-        public Builder of(TagKey<Block> tag) {
-            this.blocks = BuiltInRegistries.BLOCK.getOrCreateTag(tag);
+        public Builder of(HolderGetter<Block> blocks, TagKey<Block> tag) {
+            this.blocks = blocks.getOrThrow(tag);
             return this;
         }
 

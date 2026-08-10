@@ -13,6 +13,7 @@ import lombok.Getter;
 import net.minecraft.advancements.critereon.ItemSubPredicate;
 import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -180,11 +181,12 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
         /**
          * 设置物品标签
          *
-         * @param tag 物品标签
+         * @param items 物品注册表访问器
+         * @param tag   物品标签
          * @return 构建器实例
          */
-        public Builder of(TagKey<Item> tag) {
-            this.item.of(tag);
+        public Builder of(HolderGetter<Item> items, TagKey<Item> tag) {
+            this.item.of(items, tag);
             return this;
         }
 
