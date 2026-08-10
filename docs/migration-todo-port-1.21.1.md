@@ -19,7 +19,7 @@
 | #P4  | module.collision 整模块（3 文件）                            | 极低  | ✅ 已完成 | `c25dd465` |
 | #P5  | module.space-select 整模块（18 文件）                        | 中    | ✅ 已完成 | `1706feaa` |
 | #P6  | module.font 整模块（25 文件）                                | 中    | ✅ 已完成 | `91533730` |
-| #P7  | module.rendering（#P7a–#P7e 分批）                           | 高    | ✅ 已完成（#P7a） | `b0e179e8` |
+| #P7  | module.rendering（#P7a–#P7e 分批）                           | 高    | ✅ 已完成 | `b0e179e8` + `a6544e6b` |
 | #P8  | renderdoc-loader（2 文件）                                   | 低    | ✅ 已完成 | `c62a262e` |
 | #P9  | module.config：group + TranslatableEnum + TOML 点分隔        | 低    | ✅ 已完成 | `65aa5e11` |
 | #P10 | module.integration：数据加载拆分 + meter 递增                | 低    | ✅ 已完成 | `adc23468` |
@@ -191,13 +191,13 @@
 | 编号 | 事项                                                                               | 涉及项          | 状态   |
 |------|------------------------------------------------------------------------------------|-----------------|--------|
 | V-1  | `Mth.roundToward`/`VertexSorting`/`CompactVectorArray`/`MeshData.sortQuads` 存在性 | #P7a            | ✅ 已验证（roundToward 存在；CompactVectorArray 不存在改 VertexSorting.sort，V-1 计划修正） |
-| V-2  | Iris 1.7.x `ImmediateState` 字段                                                   | #P7d            | 未验证（#P7d 未执行） |
+| V-2  | Iris 1.7.x `ImmediateState` 字段                                                   | #P7d            | ✅ 已验证（Iris 1.8.12 签名一致，改反射访问） |
 | V-3  | `MultiBufferSource.BufferSource` 构造器参数                                        | #P7a            | ✅ 已验证（super(null,null) 兼容） |
 | V-4  | `renderVoxelShape` 颜色语义                                                        | #P5             | 未验证（需 runClient 目测） |
 | V-5  | port 侧 run 配置自建模式                                                           | #P3/#P5/#P8     | ✅ 已验证（#P3 runData 通过、#P5 processResources 通过） |
-| V-6  | Iris 1.21.1 Modrinth 坐标                                                          | #P7d            | 未验证（#P7d 未执行） |
+| V-6  | Iris 1.21.1 Modrinth 坐标                                                          | #P7d            | ✅ 已验证（Modrinth maven 停服，改反射访问，坐标注释占位） |
 | V-7  | mods.toml 模板变量注入                                                             | #P7             | ✅ 已验证（port 模板展开正常） |
-| V-8  | ShaderDefines → Map<String,String>                                                 | #P7e            | 未验证（#P7e 未执行） |
+| V-8  | ShaderDefines → Map<String,String>                                                 | #P7e            | ✅ 已验证（编译通过） |
 | V-9  | CoreMod jar-in-jar services 可见性                                                 | #P2             | 未验证（需打包启动实测） |
 | V-10 | CoreMod GETSTATIC 类可解析性                                                       | #P2             | 未验证（需启动日志核对） |
 | V-11 | `getSecureJar().getPath` 签名                                                      | #P2             | ✅ 已验证（javap 确认返回 Path） |
@@ -222,5 +222,6 @@
 | L-7 | rendering 运行验证（#P7a） | mixin 注入、AT 生效、mods.toml 加载 | runClient 启动日志 |
 | L-8 | multiblock 行为验证（#P15） | 事件可取消回滚、快照复用、懒解析 | runServer |
 | L-9 | wheel 运行验证（#P17） | 环形扇区效果、颜色配置、旧路径无回归 | runClient + T10 |
-| L-10 | Iris 集成（#P7d，V-2/V-6） | #P7d 未执行，随后续批次 | — |
-| L-11 | Compute（#P7e，V-8） | #P7e 未执行，随后续批次 | — |
+| L-10 | Iris 集成（#P7d，V-2/V-6） | ✅ 已解决：#P7d 完成，Iris 经反射访问（签名一致），运行时需装 Iris 客户端验证 | — |
+| L-11 | Compute（#P7e，V-8） | ✅ 已解决：#P7e 完成（编译通过），dispatch/内存屏障运行验证待 runClient | — |
+| L-12 | rendering 执行层运行验证（#P7b-e） | 后处理效果/SDF GUI/CachedBER/GLSL 编译链接需 runClient | 运行 runClient 核对 7.2 清单 |
