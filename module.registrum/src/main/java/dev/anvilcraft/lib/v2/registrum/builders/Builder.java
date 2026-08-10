@@ -18,9 +18,11 @@ import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
 import dev.anvilcraft.lib.v2.registrum.providers.RegistrumProvider;
 import dev.anvilcraft.lib.v2.registrum.util.entry.RegistryEntry;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullBiConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiFunction;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullConsumer;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
@@ -165,6 +167,22 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
         getOwner().addDataGenerator(ProviderType.DATA_MAP, e -> {
             var ctx = DataGenContext.from(this);
             e.builder(type).add(ctx.getId(), factory.apply(ctx), false);
+        });
+        return (S) this;
+    }
+
+    /**
+     * Add data map associated with this builder, with context and {@link HolderLookup.Provider}
+     * <p>
+     * Note: 1.21.1 的 {@code DataMapProvider.gather()} 无参数重载已被弃用；此处通过
+     * {@link dev.anvilcraft.lib.v2.registrum.providers.RegistrumDataMapProvider#getProvider()} 获取
+     * {@link HolderLookup.Provider}（datagen 线程内安全）。
+     */
+    @SuppressWarnings("unchecked")
+    default <D> S dataMap(DataMapType<R, D> type, NonNullBiFunction<DataGenContext<R, T>, HolderLookup.Provider, D> factory) {
+        getOwner().addDataGenerator(ProviderType.DATA_MAP, e -> {
+            var ctx = DataGenContext.from(this);
+            e.builder(type).add(ctx.getId(), factory.apply(ctx, e.getProvider()), false);
         });
         return (S) this;
     }

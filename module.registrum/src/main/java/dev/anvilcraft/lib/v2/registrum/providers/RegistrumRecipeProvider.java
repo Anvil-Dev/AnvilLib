@@ -15,6 +15,7 @@ package dev.anvilcraft.lib.v2.registrum.providers;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
@@ -51,6 +52,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
@@ -335,6 +338,85 @@ public class RegistrumRecipeProvider extends RecipeProvider implements Registrum
 
     @Override
     public CompletableFuture<?> buildAdvancement(CachedOutput p_253674_, HolderLookup.Provider p_323646_, AdvancementHolder p_301116_) { return super.buildAdvancement(p_253674_, p_323646_, p_301116_); }
+
+    // === 1.21.1 公开包装方法（内调 RecipeProvider 的 protected static 方法，而非 override） ===
+
+    public void oneToOneConversionRecipe(ItemLike product, ItemLike resource, @Nullable String group) {
+        RecipeProvider.oneToOneConversionRecipe(this, product, resource, group);
+    }
+
+    public void oneToOneConversionRecipe(ItemLike product, ItemLike resource, @Nullable String group, int productCount) {
+        RecipeProvider.oneToOneConversionRecipe(this, product, resource, group, productCount);
+    }
+
+    public void oreSmelting(List<ItemLike> smeltables, RecipeCategory category, ItemLike result, float experience, int cookingTime, String group) {
+        RecipeProvider.oreSmelting(this, smeltables, category, result, experience, cookingTime, group);
+    }
+
+    public void oreBlasting(List<ItemLike> blasting, RecipeCategory category, ItemLike result, float experience, int cookingTime, String group) {
+        RecipeProvider.oreBlasting(this, blasting, category, result, experience, cookingTime, group);
+    }
+
+    public <T extends AbstractCookingRecipe> void oreCooking(RecipeSerializer<T> serializer, AbstractCookingRecipe.Factory<T> factory, List<ItemLike> smeltables, RecipeCategory craftingCategory, ItemLike result, float experience, int cookingTime, String group, String fromDesc) {
+        RecipeProvider.oreCooking(this, serializer, factory, smeltables, craftingCategory, result, experience, cookingTime, group, fromDesc);
+    }
+
+    /**
+     * 书架类装饰方块配方：6 个去皮原木 → 6 个 shelf。<p>
+     * 注：26.1 的 vanilla {@code RecipeProvider.shelf} 在 1.21.1 不存在，此处按其配方手动实现。
+     */
+    public void shelf(ItemLike result, ItemLike strippedLogs) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, result, 6)
+            .define('#', strippedLogs)
+            .pattern("###")
+            .pattern("   ")
+            .pattern("###")
+            .group("shelf")
+            .unlockedBy(getHasName(strippedLogs), has(strippedLogs))
+            .save(this, safeId(result));
+    }
+
+    /**
+     * 注：26.1 的 vanilla {@code RecipeProvider.colorItemWithDye} 在 1.21.1 不存在，此处按其配方手动实现。
+     */
+    public void colorItemWithDye(List<Item> dyeItems, List<Item> dyeableItems, String group, RecipeCategory category) {
+        colorWithDye(dyeItems, dyeableItems, null, group, category);
+    }
+
+    /**
+     * 注：26.1 的 vanilla {@code RecipeProvider.colorWithDye} 在 1.21.1 不存在，此处按其配方手动实现。
+     */
+    public void colorWithDye(List<Item> dyes, List<Item> dyeableItems, @Nullable Item dye, String group, RecipeCategory category) {
+        for (int i = 0; i < dyes.size(); i++) {
+            Item dyeItem = dyes.get(i);
+            Item dyeableItem = dyeableItems.get(i);
+            Stream<Item> ingredient = dyeableItems.stream().filter(dyeableItem::equals);
+            if (dye != null) {
+                ingredient = Stream.concat(ingredient, Stream.of(dye));
+            }
+            ShapelessRecipeBuilder.shapeless(category, dyeableItem)
+                .requires(dyeItem)
+                .requires(Ingredient.of(ingredient.map(ItemStack::new)))
+                .group(group)
+                .unlockedBy("has_needed_dye", has(dyeItem))
+                .save(this, "dye_" + getItemName(dyeableItem));
+        }
+    }
+
+    /**
+     * 注：26.1 的 vanilla {@code RecipeProvider.dryGhast} 在 1.21.1 不存在，此处按其配方手动实现。
+     */
+    public void dryGhast(ItemLike result) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, result)
+            .define('#', Items.GHAST_TEAR)
+            .define('X', Items.SOUL_SAND)
+            .pattern("###")
+            .pattern("#X#")
+            .pattern("###")
+            .group("dry_ghast")
+            .unlockedBy(getHasName(Items.GHAST_TEAR), has(Items.GHAST_TEAR))
+            .save(this, safeId(result));
+    }
 
     @Override
     public CompletableFuture<?> buildAdvancement(CachedOutput p_253674_, HolderLookup.Provider p_323646_, AdvancementHolder p_301116_, ICondition... conditions) { return super.buildAdvancement(p_253674_, p_323646_, p_301116_, conditions); }

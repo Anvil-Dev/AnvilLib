@@ -17,12 +17,15 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.neoforge.common.data.DataMapProvider;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
 public class RegistrumDataMapProvider extends DataMapProvider implements RegistrumProvider {
 
 	private final AbstractRegistrum<?> parent;
+
+	private HolderLookup.@Nullable Provider provider;
 
 	protected RegistrumDataMapProvider(AbstractRegistrum<?> parent, PackOutput output, CompletableFuture<HolderLookup.Provider> pvd) {
 		super(output, pvd);
@@ -34,10 +37,26 @@ public class RegistrumDataMapProvider extends DataMapProvider implements Registr
 		return LogicalSide.SERVER;
 	}
 
+    /**
+     * Generate data map entries.
+     *
+     * @param provider HolderLookup.Provider
+     */
     @Override
-    @SuppressWarnings("removal")
-	protected void gather() {
-		parent.genData(ProviderType.DATA_MAP, this);
-	}
+    protected void gather(HolderLookup.Provider provider) {
+        this.provider = provider;
+        parent.genData(ProviderType.DATA_MAP, this);
+        this.provider = null;
+    }
+
+    /**
+     * 当前 datagen 运行中可用的 {@link HolderLookup.Provider}。
+     *
+     * @throws IllegalStateException 若不在 {@link #gather(HolderLookup.Provider)} 调用期间
+     */
+    public HolderLookup.Provider getProvider() {
+        if (provider == null) throw new IllegalStateException("Holder Lookup Provider is not available now");
+        return provider;
+    }
 
 }
