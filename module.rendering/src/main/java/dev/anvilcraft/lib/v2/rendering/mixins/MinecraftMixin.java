@@ -6,6 +6,7 @@ import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRende
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.main.GameConfig;
 import net.minecraft.client.multiplayer.ClientLevel;
+import org.jetbrains.annotations.ApiStatus;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -14,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Minecraft.class)
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class MinecraftMixin {
 
     @Shadow

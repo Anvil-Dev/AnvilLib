@@ -9,6 +9,7 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExte
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.gl.GlComputePassBackend;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.opengl.ARBComputeShader;
 import org.lwjgl.opengl.ARBShaderImageLoadStore;
 import org.lwjgl.opengl.GL46;
@@ -17,7 +18,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(targets = "com.mojang.blaze3d.opengl.GlCommandEncoder")
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class GlCommandEncoderMixin implements ALRCommandEncoderBackendExtension {
     @Shadow
     @Final

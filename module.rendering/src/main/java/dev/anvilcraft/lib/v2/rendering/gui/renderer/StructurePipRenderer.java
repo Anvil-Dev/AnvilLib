@@ -40,6 +40,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -49,7 +50,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 
 
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipRenderingState> {
 
     private final BlockAndTintGetter emptyTintedLevel = new SimpleTintedEmptyLevelAccess();

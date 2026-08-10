@@ -7,12 +7,13 @@ import net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix3x2f;
 import org.jspecify.annotations.Nullable;
 
 import static dev.anvilcraft.lib.v2.rendering.ALRSharedMath.SQRT_2;
 
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public record BlockStatePipRenderingState(
     BlockState blockState,
     @Nullable BlockAndTintGetter level,

@@ -18,11 +18,12 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
 
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public record SyncPayload(
     byte[] array
 ) implements IInsensitiveBiPacket {

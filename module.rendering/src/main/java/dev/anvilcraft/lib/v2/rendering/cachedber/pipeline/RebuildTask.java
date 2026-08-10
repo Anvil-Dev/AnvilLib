@@ -12,10 +12,11 @@ import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class RebuildTask implements Runnable {
     private final CachedRenderingChunk owner;
     private boolean cancelled = false;

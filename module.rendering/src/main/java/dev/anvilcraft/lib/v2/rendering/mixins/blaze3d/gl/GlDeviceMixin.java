@@ -6,6 +6,7 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRDebugLabelEx
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstanceKey;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeShaderManager;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.opengl.ARBComputeShader;
 import org.lwjgl.opengl.GL46;
 import org.slf4j.Logger;
@@ -14,7 +15,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(targets = "com.mojang.blaze3d.opengl.GlDevice")
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
 
     @Shadow

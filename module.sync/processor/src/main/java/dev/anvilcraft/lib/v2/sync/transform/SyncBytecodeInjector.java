@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.sync.transform;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.ApiStatus;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -28,7 +29,7 @@ import java.util.function.Supplier;
  * Static fields    → proxy.setParent(Owner.class) in <clinit> (created if absent)
  */
 @Slf4j
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class SyncBytecodeInjector {
     private static final String SYNC_PROXY_DESC = "Ldev/anvilcraft/lib/v2/sync/management/SyncProxy;";
     private static final String SYNC_PROXY_INTERNAL = "dev/anvilcraft/lib/v2/sync/management/SyncProxy";

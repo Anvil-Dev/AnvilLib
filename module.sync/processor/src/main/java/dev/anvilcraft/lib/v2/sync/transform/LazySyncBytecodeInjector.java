@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.sync.transform;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.ApiStatus;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -32,7 +33,7 @@ import java.util.function.Supplier;
  * 每 tick 扫描差分，故此处无需注入任何字段写入拦截。</p>
  */
 @Slf4j
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class LazySyncBytecodeInjector {
     private static final String LAZY_SYNC_DESC = "Ldev/anvilcraft/lib/v2/sync/annotation/LazySync;";
     private static final String ANVIL_LIB_SYNC_INTERNAL = "dev/anvilcraft/lib/v2/sync/AnvilLibSync";

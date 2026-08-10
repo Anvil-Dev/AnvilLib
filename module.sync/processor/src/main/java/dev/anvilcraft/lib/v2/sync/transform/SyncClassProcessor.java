@@ -3,11 +3,12 @@ package dev.anvilcraft.lib.v2.sync.transform;
 import lombok.extern.slf4j.Slf4j;
 import net.neoforged.neoforgespi.transformation.ClassProcessor;
 import net.neoforged.neoforgespi.transformation.ProcessorName;
+import org.jetbrains.annotations.ApiStatus;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 
 @Slf4j
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class SyncClassProcessor implements ClassProcessor {
     @Override
     public ProcessorName name() {

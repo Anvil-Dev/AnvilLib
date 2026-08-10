@@ -4,13 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.moddiscovery.ModFileInfo;
 import net.neoforged.neoforgespi.language.ModFileScanData;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.annotation.ElementType;
 import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class SyncTargetIndex {
     public static final String SYNC_DESCRIPTOR = "Ldev/anvilcraft/lib/v2/sync/annotation/Sync;";
     private static final Map<String, String> TARGETS = new HashMap<>();

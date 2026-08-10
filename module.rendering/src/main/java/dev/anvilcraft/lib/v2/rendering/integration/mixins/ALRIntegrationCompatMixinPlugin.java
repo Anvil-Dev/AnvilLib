@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import dev.anvilcraft.lib.v2.rendering.integration.IrisSupport;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.LoadingModList;
+import org.jetbrains.annotations.ApiStatus;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -11,7 +12,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class ALRIntegrationCompatMixinPlugin implements IMixinConfigPlugin {
 
     private ImmutableMap<String, Boolean> mixinConditions;

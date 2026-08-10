@@ -7,6 +7,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,7 +87,7 @@ public final class SdfTextLayout {
     @Nullable
     private static SdfTextLayout computeLayout(SdfGlyphAtlas atlas, String text, float scale, int scaleInt) {
         int penX = 0, maxHeight = 0;
-        java.util.Map<Integer, List<GlyphQuad>> buckets = new java.util.LinkedHashMap<>();
+        Map<Integer, List<GlyphQuad>> buckets = new LinkedHashMap<>();
         boolean allAvailable = true;
 
         Set<SdfGlyphPage> glyphPages = new HashSet<>();

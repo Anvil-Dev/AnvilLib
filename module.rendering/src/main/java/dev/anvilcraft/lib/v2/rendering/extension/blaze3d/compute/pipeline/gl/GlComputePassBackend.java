@@ -18,6 +18,7 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRCompu
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeShaderManager;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.opengl.ARBShaderAtomicCounters;
 import org.lwjgl.opengl.ARBShaderImageLoadStore;
 import org.lwjgl.opengl.ARBShaderStorageBufferObject;
@@ -25,7 +26,7 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL46;
 
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class GlComputePassBackend implements ALRComputePassBackend {
     private final ALRGpuDeviceBackendExtension backendExtension;
     private final ALRCommandEncoderBackendExtension commandEncoderExtension;

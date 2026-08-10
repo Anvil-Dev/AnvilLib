@@ -9,11 +9,12 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public record SyncConfigurationPayload(
     Map<Integer, String> syncMap
 ) implements IClientboundPacket {

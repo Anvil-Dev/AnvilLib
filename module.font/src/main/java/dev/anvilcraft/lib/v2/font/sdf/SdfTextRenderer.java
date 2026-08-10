@@ -4,6 +4,7 @@ import com.google.common.annotations.Beta;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
+import dev.anvilcraft.lib.v2.font.ALFont;
 import dev.anvilcraft.lib.v2.font.sdf.state.SdfTextRenderState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -231,7 +232,7 @@ public final class SdfTextRenderer {
     }
 
     private static List<String> wrapLines(SdfGlyphAtlas atlas, String text, int maxWidth, float scale) {
-        return dev.anvilcraft.lib.v2.font.ALFont.wrapLines(atlas, text, maxWidth, scale);
+        return ALFont.wrapLines(atlas, text, maxWidth, scale);
     }
 
     private static String flattenToString(FormattedCharSequence text) {

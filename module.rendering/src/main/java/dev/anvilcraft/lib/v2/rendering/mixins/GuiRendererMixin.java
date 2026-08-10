@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import net.minecraft.client.renderer.state.gui.GuiItemRenderState;
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
 import net.minecraft.util.ARGB;
+import org.jetbrains.annotations.ApiStatus;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @Mixin(GuiRenderer.class)
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class GuiRendererMixin {
     @Unique
     private GuiElementRenderState anvillib$renderState = null;

@@ -484,7 +484,7 @@ public class RegistrumRecipeProvider extends RecipeProvider implements RecipeOut
     }
 
     @Override
-    public void oneToOneConversionRecipe(ItemLike product, ItemLike resource, @org.jspecify.annotations.Nullable String group) {
+    public void oneToOneConversionRecipe(ItemLike product, ItemLike resource, @Nullable String group) {
         super.oneToOneConversionRecipe(product, resource, group);
     }
 
@@ -492,7 +492,7 @@ public class RegistrumRecipeProvider extends RecipeProvider implements RecipeOut
     public void oneToOneConversionRecipe(
         ItemLike product,
         ItemLike resource,
-        @org.jspecify.annotations.Nullable String group,
+        @Nullable String group,
         int productCount
     ) {
         super.oneToOneConversionRecipe(product, resource, group, productCount);

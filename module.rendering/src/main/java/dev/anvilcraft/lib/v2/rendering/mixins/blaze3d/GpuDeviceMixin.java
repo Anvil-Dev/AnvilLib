@@ -7,6 +7,7 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstanceKey;
+import org.jetbrains.annotations.ApiStatus;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -14,7 +15,7 @@ import org.spongepowered.asm.mixin.Unique;
 
 @SuppressWarnings("AddedMixinMembersNamePattern")
 @Mixin(GpuDevice.class)
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class GpuDeviceMixin implements ALRGpuDeviceExtension {
     @Shadow
     @Final

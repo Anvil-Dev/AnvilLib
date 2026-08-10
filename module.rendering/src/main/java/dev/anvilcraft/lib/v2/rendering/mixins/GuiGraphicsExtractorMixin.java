@@ -14,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fStack;
 import org.jspecify.annotations.Nullable;
@@ -23,7 +24,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 @SuppressWarnings("AddedMixinMembersNamePattern")
 @Mixin(GuiGraphicsExtractor.class)
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class GuiGraphicsExtractorMixin implements GuiGraphicsExtractorExtension {
 
     @Shadow

@@ -3,13 +3,14 @@ package dev.anvilcraft.lib.v2.rendering.integration.mixins;
 import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.RebuildTask;
 import dev.anvilcraft.lib.v2.rendering.integration.IrisSupport;
 import net.irisshaders.iris.vertices.ImmediateState;
+import org.jetbrains.annotations.ApiStatus;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(RebuildTask.class)
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public class RebuildTaskMixin {
     @Inject(
         method = "run",

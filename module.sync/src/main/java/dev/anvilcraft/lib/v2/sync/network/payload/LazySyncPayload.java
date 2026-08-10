@@ -18,6 +18,7 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +41,7 @@ import java.util.List;
  * </pre>
  */
 @Slf4j
-@org.jetbrains.annotations.ApiStatus.Internal
+@ApiStatus.Internal
 public record LazySyncPayload(
     byte[] array
 ) implements IInsensitiveBiPacket {
