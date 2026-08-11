@@ -51,15 +51,13 @@ public class IntegrationManager {
                     type = typeHolders.stream().map(holder -> switch (holder.value()) {
                         case "DEDICATED_SERVER" -> IntegrationType.DEDICATED_SERVER;
                         case "CLIENT" -> IntegrationType.CLIENT;
-                        case "CLIENT_DATA" -> IntegrationType.CLIENT_DATA;
-                        case "SERVER_DATA" -> IntegrationType.SERVER_DATA;
+                        case "DATA" -> IntegrationType.DATA;
                         default -> throw new IllegalArgumentException("Unknown integration type: " + holder.value());
                     }).toList();
                 }
                 log.info("Considering integration {} for {id:{}, version:{}}", annotation.memberName(), modid, version);
                 IntegrationInstance instance = new IntegrationInstance(modid, ModVersionRange.of(version), annotation.memberName(), type);
                 this.instances.put(modid, instance);
-                meter.increment();
             }
         }
         StartupNotificationManager.popBar(meter);
@@ -87,22 +85,12 @@ public class IntegrationManager {
     }
 
     @SuppressWarnings("DataFlowIssue")
-    public void loadClientData(String modid, ModInfo info) {
+    public void loadData(String modid, ModInfo info) {
         for (IntegrationInstance instance : instances.get(modid)) {
             if (!instance.is(info)) continue;
             instance.newInstance();
-            log.info("Loading client data integration {} for {}.", instance.getInstance(), modid);
-            instance.invokeClientData();
-        }
-    }
-
-    @SuppressWarnings("DataFlowIssue")
-    public void loadServerData(String modid, ModInfo info) {
-        for (IntegrationInstance instance : instances.get(modid)) {
-            if (!instance.is(info)) continue;
-            instance.newInstance();
-            log.info("Loading server data integration {} for {}.", instance.getInstance(), modid);
-            instance.invokeServerData();
+            log.info("Loading data integration {} for {}.", instance.getInstance(), modid);
+            instance.invokeData();
         }
     }
 
@@ -120,17 +108,10 @@ public class IntegrationManager {
         }
     }
 
-    public void loadAllClientDataIntegrations() {
+    public void loadAllDataIntegrations() {
         for (String key : instances.keySet()) {
             Optional<ModInfo> info = LoadingModList.get().getMods().stream().filter(it -> it.getModId().equals(key)).findFirst();
-            info.ifPresent(modInfo -> loadClientData(key, modInfo));
-        }
-    }
-
-    public void loadAllServerDataIntegrations() {
-        for (String key : instances.keySet()) {
-            Optional<ModInfo> info = LoadingModList.get().getMods().stream().filter(it -> it.getModId().equals(key)).findFirst();
-            info.ifPresent(modInfo -> loadServerData(key, modInfo));
+            info.ifPresent(modInfo -> loadData(key, modInfo));
         }
     }
 }

@@ -24,8 +24,7 @@ public final class IntegrationInstance {
     private MethodHandle constructor;
     private MethodHandle loader;
     private MethodHandle clientLoader;
-    private MethodHandle clientDataLoader;
-    private MethodHandle serverDataLoader;
+    private MethodHandle dataLoader;
 
     @SneakyThrows
     public IntegrationInstance(String modid, ModVersionRange versionRange, String className, List<IntegrationType> type) {
@@ -55,18 +54,12 @@ public final class IntegrationInstance {
             }
             this.clientLoader = loader;
             try {
-                loader = lookup.findVirtual(clazz, "applyClientData", MethodType.methodType(void.class));
+                loader = lookup.findVirtual(clazz, "applyData", MethodType.methodType(void.class));
             } catch (Throwable e) {
                 loader = null;
             }
-            this.clientDataLoader = loader;
-            try {
-                loader = lookup.findVirtual(clazz, "applyServerData", MethodType.methodType(void.class));
-            } catch (Throwable e) {
-                loader = null;
-            }
-            this.serverDataLoader = loader;
-            if (this.loader == null && this.clientLoader == null && this.clientDataLoader == null && this.serverDataLoader == null) {
+            this.dataLoader = loader;
+            if (this.loader == null && this.clientLoader == null && this.dataLoader == null) {
                 log.warn("Integration {} does not declare any loader method.", className);
             }
         }
@@ -90,16 +83,9 @@ public final class IntegrationInstance {
     }
 
     @SneakyThrows
-    public void invokeClientData() {
-        if (clientDataLoader != null) {
-            clientDataLoader.invoke(instance);
-        }
-    }
-
-    @SneakyThrows
-    public void invokeServerData() {
-        if (serverDataLoader != null) {
-            serverDataLoader.invoke(instance);
+    public void invokeData() {
+        if (dataLoader != null) {
+            dataLoader.invoke(instance);
         }
     }
 
@@ -119,8 +105,7 @@ public final class IntegrationInstance {
                + "instance=" + instance + ", "
                + "loader=" + loader + ", "
                + "clientLoader=" + clientLoader + ", "
-               + "clientDataLoader=" + clientDataLoader + ", "
-               + "serverDataLoader=" + serverDataLoader
+               + "dataLoader=" + dataLoader
                + ']';
     }
 }
