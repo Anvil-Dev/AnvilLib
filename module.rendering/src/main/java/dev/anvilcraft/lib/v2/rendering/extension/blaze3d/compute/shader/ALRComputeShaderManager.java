@@ -15,8 +15,8 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.neoforged.fml.ModLoader;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.UnknownNullability;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.lwjgl.opengl.ARBComputeShader;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL20;
@@ -53,7 +53,7 @@ public class ALRComputeShaderManager extends SimplePreparableReloadListener<ALRC
     private final Map<ALRComputePipeline, ALRComputeProgramInstance> pipelineToProgramMap = new HashMap<>();
 
     @Override
-    protected @NonNull ComputeShaderSource prepare(ResourceManager manager, ProfilerFiller profiler) {
+    protected @Nonnull ComputeShaderSource prepare(ResourceManager manager, ProfilerFiller profiler) {
         ImmutableMap.Builder<ResourceLocation, String> sources = new ImmutableMap.Builder<>();
 
         Map<ResourceLocation, Resource> shaders = manager.listResources(

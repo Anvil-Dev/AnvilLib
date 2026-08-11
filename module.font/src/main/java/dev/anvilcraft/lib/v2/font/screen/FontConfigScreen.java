@@ -9,7 +9,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.ModContainer;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -18,7 +18,7 @@ import java.util.List;
 @ApiStatus.Internal
 public class FontConfigScreen extends Screen {
     protected final Screen lastScreen;
-    private Dropdown.@Nullable Shielding shielding;
+    private @Nullable Dropdown.Shielding shielding;
     @SuppressWarnings("FieldCanBeLocal")
     private @Nullable Dropdown familyDropdown;
     private @Nullable Dropdown fontDropdown;
@@ -127,13 +127,13 @@ public class FontConfigScreen extends Screen {
         guiGraphics.drawString(this.font, this.fontComponent, dropdownLabelX, fontDropdownLabelY, 0xFFFFFFFF);
     }
 
-    private void updateSelectedFamily(Dropdown.@Nullable DropdownEntry entry) {
+    private void updateSelectedFamily(@Nullable Dropdown.DropdownEntry entry) {
         this.selectedFamilyText = entry == null
                                   ? Component.literal("Current family: <none>")
                                   : Component.literal("Current family: " + entry.id());
     }
 
-    private void updateSelectedFont(Dropdown.@Nullable DropdownEntry entry) {
+    private void updateSelectedFont(@Nullable Dropdown.DropdownEntry entry) {
         this.selectedFontText = entry == null
                                 ? Component.literal("Current font: <none>")
                                 : Component.literal("Current font: " + entry.id());

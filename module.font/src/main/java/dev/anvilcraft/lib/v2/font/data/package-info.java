@@ -1,4 +1,9 @@
-@NullMarked
+@FieldsAreNonnullByDefault
+@MethodsReturnNonnullByDefault
+@ParametersAreNonnullByDefault
 package dev.anvilcraft.lib.v2.font.data;
 
-import org.jspecify.annotations.NullMarked;
+import com.mojang.logging.annotations.FieldsAreNonnullByDefault;
+import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+
+import javax.annotation.ParametersAreNonnullByDefault;

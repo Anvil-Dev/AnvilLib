@@ -8,7 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -237,7 +237,7 @@ public class RpcIntegrationTest {
     /**
      * future 异常处理器：记录失败并吞掉异常，避免污染后续回调链。
      */
-    private static <T> Function<Throwable, @Nullable T> logFailure(String name) {
+    private static <T> Function<Throwable, T> logFailure(String name) {
         return ex -> {
             LOGGER.error("RPC call FAILED [{}]: {}", name, ex.getMessage(), ex);
             return null;

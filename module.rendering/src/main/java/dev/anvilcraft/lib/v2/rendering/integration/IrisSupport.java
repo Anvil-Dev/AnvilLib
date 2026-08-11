@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.integration;
 
 import net.neoforged.fml.ModList;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

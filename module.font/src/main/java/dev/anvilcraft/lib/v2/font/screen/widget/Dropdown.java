@@ -10,7 +10,7 @@ import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +25,7 @@ public class Dropdown extends AbstractWidget {
     private @Nullable DropdownEntry value = null;
     private boolean expanded = false;
     @Setter
-    private Consumer<@Nullable DropdownEntry> onValueChanged = ignored -> {
+    private Consumer<DropdownEntry> onValueChanged = ignored -> {
     };
     @Setter
     private Consumer<Shielding> onShieldingAdd = ignored -> {
@@ -34,7 +34,7 @@ public class Dropdown extends AbstractWidget {
     private Runnable onShieldingRemove = () -> {
     };
     @Setter
-    private Supplier<@Nullable Shielding> shieldingGetter = () -> null;
+    private Supplier<Shielding> shieldingGetter = () -> null;
     private final int screenWidth;
     private final int screenHeight;
     private int scrollOffset = 0;

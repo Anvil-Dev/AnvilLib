@@ -27,10 +27,6 @@ neoForge {
     version = libs.versions.neoForge.get()
 }
 
-dependencies {
-    compileOnly "org.jspecify:jspecify:1.0.0"
-}
-
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)

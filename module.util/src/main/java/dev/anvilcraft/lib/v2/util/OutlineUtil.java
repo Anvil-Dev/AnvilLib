@@ -3,7 +3,7 @@ package dev.anvilcraft.lib.v2.util;
 import dev.anvilcraft.lib.v2.util.client.Line;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.BitSet;

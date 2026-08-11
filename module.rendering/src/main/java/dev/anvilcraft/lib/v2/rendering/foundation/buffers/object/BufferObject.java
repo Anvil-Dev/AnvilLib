@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.foundation.buffers.object;
 
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
-import org.jspecify.annotations.NonNull;
+import javax.annotation.Nonnull;
 
 import java.nio.ByteBuffer;
 
@@ -25,7 +25,7 @@ public abstract class BufferObject<T extends BufferObject<T>> {
      * user-provided buffer instead.
      */
     @SuppressWarnings("unchecked")
-    public void write(@NonNull ByteBuffer buffer) {
+    public void write(@Nonnull ByteBuffer buffer) {
         getDefinition().write(buffer, (T) this, this.layout);
     }
 }

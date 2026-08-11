@@ -17,7 +17,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.Map;
 
@@ -40,7 +40,7 @@ public class MultiblockState {
     private final ResourceKey<MultiblockDefinition> definitionKey;
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
-    private Holder.@Nullable Reference<MultiblockDefinition> definition;
+    private @Nullable Holder.Reference<MultiblockDefinition> definition;
     private boolean formed;
     private MultiblockCheckSnapshot snapshot;
 

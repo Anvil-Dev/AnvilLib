@@ -2,7 +2,7 @@ package dev.anvilcraft.lib.v2.font.sdf;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import java.awt.Color;
 import java.awt.Font;

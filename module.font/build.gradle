@@ -120,7 +120,6 @@ dependencies {
     } else {
         jarJar(implementation project(":anvillib-rendering-neoforge-1.21.1"))
     }
-    compileOnly "org.jspecify:jspecify:1.0.0"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

@@ -6,7 +6,7 @@ import dev.anvilcraft.lib.v2.sync.util.SideUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.minecraft.resources.ResourceKey;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;

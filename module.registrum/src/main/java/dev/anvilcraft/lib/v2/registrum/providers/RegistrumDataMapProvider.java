@@ -17,7 +17,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.neoforge.common.data.DataMapProvider;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -25,7 +25,7 @@ public class RegistrumDataMapProvider extends DataMapProvider implements Registr
 
 	private final AbstractRegistrum<?> parent;
 
-	private HolderLookup.@Nullable Provider provider;
+	private @Nullable HolderLookup.Provider provider;
 
 	protected RegistrumDataMapProvider(AbstractRegistrum<?> parent, PackOutput output, CompletableFuture<HolderLookup.Provider> pvd) {
 		super(output, pvd);

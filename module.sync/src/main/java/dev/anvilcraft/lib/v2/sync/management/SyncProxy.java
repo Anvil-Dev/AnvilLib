@@ -24,7 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.joml.Quaternionfc;
 import org.joml.Vector3fc;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

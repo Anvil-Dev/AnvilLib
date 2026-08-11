@@ -115,7 +115,6 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
-    compileOnly "org.jspecify:jspecify:1.0.0"
 
     if (System.getenv("NOT_DEV") == 'true') {
         jarJar(api("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.1:latest.release"))
