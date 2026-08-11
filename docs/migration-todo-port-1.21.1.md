@@ -1,6 +1,6 @@
 # AnvilLib 回移植执行跟踪：`dev/26.1` → `port/1.21.1`
 
-> 本文件是 `docs/migration-plan-port-1.21.1.md`（#P1–#P19）的执行跟踪清单。每完成一项，将对应状态更新为「✅
+> 本文件是 `docs/migration-plan-port-1.21.1.md`（#P1–#P19）的执行跟踪清单（另有计划外追加项 #P20，见「逐项日志」末尾）。每完成一项，将对应状态更新为「✅
 > 已完成」并记录提交号；未完成项保持「⬜ 未开始 / 🔄 进行中」。待验证事项（附录 B 的 V-1…V-18）在验证后同步销账。
 
 - 基线：`port/1.21.1`（执行起点 `96c3a34f`，计划基线 `bd25229`）
@@ -32,6 +32,7 @@
 | #P17 | module.wheel：环形扇区选择效果                               | 中-高 | ✅ 已完成 | `142e3296` |
 | #P18 | module.test：T2/T8/T9/T10 可选测试                           | 低-中 | ✅ 已完成 | `a4ab3acd` |
 | #P19 | 构建体系：roseauCheck                                        | 中    | ✅ 已完成（运行待补验） | `544c9eb0` |
+| #P20 | module.codec：CodecUtil 便携 create/mapCodec（计划外追加）     | 低    | ✅ 已完成（待提交） | 来源 `173a454` |
 
 ## 执行顺序（计划第 6 章）
 
@@ -183,6 +184,17 @@
 - [ ] roseau.yaml + gradle/scripts/roseau.gradle + 根 build.gradle 接入
 - [ ] `gradlew roseauCheck` 运行通过
 - [ ] 提交
+
+### #P20 module.codec：CodecUtil 便携 create/mapCodec（计划外追加 · 2026-08-11）
+
+> 来源：`dev/26.1` 提交 `173a454`（feat(codec): add portable methods for creating Codec and MapCodec with varying parameters）
+> 落点：`module.codec/src/main/java/dev/anvilcraft/lib/v2/codec/CodecUtil.java`
+
+- [x] 提取改动：16 个 `create`（Codec）+ 16 个 `mapCodec`（MapCodec）重载 + `App`/`Function3–16`/`StreamCodec` 导入
+- [x] 冲突消解：26.1 `Identifier` → 1.21.1 `ResourceLocation`；保留 port 侧既有 `zomListMap`/`encodeStart` 并追加在其后
+- [x] API 核实：1.21.1 DFU 6.0.8 含 `Function3–16`（javap 实测），无需反向替换
+- [x] `gradlew :anvillib-codec-neoforge-1.21.1:compileJava --rerun-tasks` 通过
+- [ ] 提交（conventional commit）
 
 ---
 
