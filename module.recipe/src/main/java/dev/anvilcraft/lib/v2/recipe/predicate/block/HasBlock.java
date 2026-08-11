@@ -3,7 +3,6 @@ package dev.anvilcraft.lib.v2.recipe.predicate.block;
 import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipePredicateTypes;
 import dev.anvilcraft.lib.v2.util.predicate.BlockStatePredicate;
 import lombok.Getter;
-import net.minecraft.core.HolderGetter;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -160,12 +159,11 @@ public class HasBlock extends HasBlockBase<HasBlock> {
         /**
          * 设置方块标签
          *
-         * @param blocks 方块注册表访问器
-         * @param tag    方块标签
+         * @param tag 方块标签
          * @return 构建器实例
          */
-        public Builder of(HolderGetter<Block> blocks, TagKey<Block> tag) {
-            this.predicate.of(blocks, tag);
+        public Builder of(TagKey<Block> tag) {
+            this.predicate.of(tag);
             return this;
         }
 

@@ -19,7 +19,6 @@ import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
-import net.minecraft.core.HolderGetter;
 import net.minecraft.core.NonNullList;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.data.recipes.RecipeOutput;
@@ -292,24 +291,22 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 添加物品谓词
      *
-     * @param items 物品注册表访问器
-     * @param tag   物品标签
+     * @param items 物品标签
      * @return 当前构建器实例
      */
-    public T hasItem(HolderGetter<Item> items, TagKey<Item> tag) {
-        return this.with(HasItem.builder().of(items, tag).offset(this.offset).build());
+    public T hasItem(TagKey<Item> items) {
+        return this.with(HasItem.builder().of(items).offset(this.offset).build());
     }
 
     /**
      * 添加物品谓词
      *
      * @param offset 偏移向量
-     * @param items  物品注册表访问器
-     * @param tag    物品标签
+     * @param items  物品标签
      * @return 当前构建器实例
      */
-    public T hasItem(Vec3 offset, HolderGetter<Item> items, TagKey<Item> tag) {
-        return this.with(HasItem.builder().of(items, tag).offset(offset).build());
+    public T hasItem(Vec3 offset, TagKey<Item> items) {
+        return this.with(HasItem.builder().offset(offset).build());
     }
 
     /**
@@ -318,12 +315,11 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param x     X轴偏移量
      * @param y     Y轴偏移量
      * @param z     Z轴偏移量
-     * @param items 物品注册表访问器
-     * @param tag   物品标签
+     * @param items 物品标签
      * @return 当前构建器实例
      */
-    public T hasItem(double x, double y, double z, HolderGetter<Item> items, TagKey<Item> tag) {
-        return this.with(HasItem.builder().of(items, tag).offset(x, y, z).build());
+    public T hasItem(double x, double y, double z, TagKey<Item> items) {
+        return this.with(HasItem.builder().offset(x, y, z).build());
     }
 
     /**
@@ -376,24 +372,22 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 添加物品原料谓词
      *
-     * @param items 物品注册表访问器
-     * @param tag   物品标签
+     * @param items 物品标签
      * @return 当前构建器实例
      */
-    public T hasItemIngredient(HolderGetter<Item> items, TagKey<Item> tag) {
-        return this.with(HasItemIngredient.builder().of(items, tag).offset(this.offset).build());
+    public T hasItemIngredient(TagKey<Item> items) {
+        return this.with(HasItemIngredient.builder().of(items).offset(this.offset).build());
     }
 
     /**
      * 添加物品原料谓词
      *
      * @param offset 偏移向量
-     * @param items  物品注册表访问器
-     * @param tag    物品标签
+     * @param items  物品标签
      * @return 当前构建器实例
      */
-    public T hasItemIngredient(Vec3 offset, HolderGetter<Item> items, TagKey<Item> tag) {
-        return this.with(HasItemIngredient.builder().of(items, tag).offset(offset).build());
+    public T hasItemIngredient(Vec3 offset, TagKey<Item> items) {
+        return this.with(HasItemIngredient.builder().of(items).offset(offset).build());
     }
 
     /**
@@ -402,12 +396,11 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param x     X轴偏移量
      * @param y     Y轴偏移量
      * @param z     Z轴偏移量
-     * @param items 物品注册表访问器
-     * @param tag   物品标签
+     * @param items 物品标签
      * @return 当前构建器实例
      */
-    public T hasItemIngredient(double x, double y, double z, HolderGetter<Item> items, TagKey<Item> tag) {
-        return this.with(HasItemIngredient.builder().of(items, tag).offset(x, y, z).build());
+    public T hasItemIngredient(double x, double y, double z, TagKey<Item> items) {
+        return this.with(HasItemIngredient.builder().of(items).offset(x, y, z).build());
     }
 
     /**
@@ -494,38 +487,35 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 添加方块谓词
      *
-     * @param blocks 方块注册表访问器
-     * @param tag    方块标签
+     * @param tag 方块标签
      * @return 当前构建器实例
      */
-    public T hasBlock(HolderGetter<Block> blocks, TagKey<Block> tag) {
-        return this.with(HasBlock.builder().of(blocks, tag).offset(this.offset).build());
+    public T hasBlock(TagKey<Block> tag) {
+        return this.with(HasBlock.builder().of(tag).offset(this.offset).build());
     }
 
     /**
      * 添加方块谓词
      *
      * @param offset 偏移向量
-     * @param blocks 方块注册表访问器
      * @param tag    方块标签
      * @return 当前构建器实例
      */
-    public T hasBlock(Vec3 offset, HolderGetter<Block> blocks, TagKey<Block> tag) {
-        return this.with(HasBlock.builder().of(blocks, tag).offset(offset).build());
+    public T hasBlock(Vec3 offset, TagKey<Block> tag) {
+        return this.with(HasBlock.builder().of(tag).offset(offset).build());
     }
 
     /**
      * 添加方块谓词
      *
-     * @param x      X轴偏移量
-     * @param y      Y轴偏移量
-     * @param z      Z轴偏移量
-     * @param blocks 方块注册表访问器
-     * @param tag    方块标签
+     * @param x   X轴偏移量
+     * @param y   Y轴偏移量
+     * @param z   Z轴偏移量
+     * @param tag 方块标签
      * @return 当前构建器实例
      */
-    public T hasBlock(double x, double y, double z, HolderGetter<Block> blocks, TagKey<Block> tag) {
-        return this.with(HasBlock.builder().of(blocks, tag).offset(x, y, z).build());
+    public T hasBlock(double x, double y, double z, TagKey<Block> tag) {
+        return this.with(HasBlock.builder().of(tag).offset(x, y, z).build());
     }
 
     /**
@@ -659,38 +649,35 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 添加方块原料谓词
      *
-     * @param blocks 方块注册表访问器
-     * @param tag    方块标签
+     * @param tag 方块标签
      * @return 当前构建器实例
      */
-    public T hasBlockIngredient(HolderGetter<Block> blocks, TagKey<Block> tag) {
-        return this.with(HasBlockIngredient.builder().of(blocks, tag).offset(this.offset).build());
+    public T hasBlockIngredient(TagKey<Block> tag) {
+        return this.with(HasBlockIngredient.builder().of(tag).offset(this.offset).build());
     }
 
     /**
      * 添加方块原料谓词
      *
      * @param offset 偏移向量
-     * @param blocks 方块注册表访问器
      * @param tag    方块标签
      * @return 当前构建器实例
      */
-    public T hasBlockIngredient(Vec3 offset, HolderGetter<Block> blocks, TagKey<Block> tag) {
-        return this.with(HasBlockIngredient.builder().of(blocks, tag).offset(offset).build());
+    public T hasBlockIngredient(Vec3 offset, TagKey<Block> tag) {
+        return this.with(HasBlockIngredient.builder().of(tag).offset(offset).build());
     }
 
     /**
      * 添加方块原料谓词
      *
-     * @param x      X轴偏移量
-     * @param y      Y轴偏移量
-     * @param z      Z轴偏移量
-     * @param blocks 方块注册表访问器
-     * @param tag    方块标签
+     * @param x   X轴偏移量
+     * @param y   Y轴偏移量
+     * @param z   Z轴偏移量
+     * @param tag 方块标签
      * @return 当前构建器实例
      */
-    public T hasBlockIngredient(double x, double y, double z, HolderGetter<Block> blocks, TagKey<Block> tag) {
-        return this.with(HasBlockIngredient.builder().of(blocks, tag).offset(new Vec3(x, y, z)).build());
+    public T hasBlockIngredient(double x, double y, double z, TagKey<Block> tag) {
+        return this.with(HasBlockIngredient.builder().of(tag).offset(new Vec3(x, y, z)).build());
     }
 
     /**

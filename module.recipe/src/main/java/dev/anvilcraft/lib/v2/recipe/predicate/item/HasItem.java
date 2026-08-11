@@ -9,7 +9,6 @@ import dev.anvilcraft.lib.v2.recipe.predicate.function.SaveComponentToTag;
 import lombok.Getter;
 import net.minecraft.advancements.critereon.ItemSubPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
-import net.minecraft.core.HolderGetter;
 import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -200,12 +199,11 @@ public class HasItem extends HasItemBase<HasItem, ItemPredicate> {
         /**
          * 设置物品标签
          *
-         * @param items 物品注册表访问器
-         * @param tag   物品标签
+         * @param tag 物品标签
          * @return 构建器实例
          */
-        public Builder of(HolderGetter<Item> items, TagKey<Item> tag) {
-            this.item.of(items, tag);
+        public Builder of(TagKey<Item> tag) {
+            this.item.of(tag);
             return this;
         }
 

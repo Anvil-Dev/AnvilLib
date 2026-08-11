@@ -53,27 +53,27 @@ AnvilLib 的两个长期分支在 merge-base `81c5a9c` 之后完全分叉：`dev
 
 ### 1.4 回移植项一览（结论先行）
 
-| #P  | 内容                                                                         | 难度      | 一句话结论                                                                                     |
-|-----|------------------------------------------------------------------------------|-----------|------------------------------------------------------------------------------------------------|
-| #P1 | `module.rpc` 整模块（注解式远程调用，25 文件）                               | 低        | 整模块拷贝 + 3 处机械 API 反替换（Identifier / FMLLoader / accessFlags）                        |
-| #P2 | `module.sync` + processor（同步框架，31 文件）                               | 中-高     | 约 50/56 文件直接搬；processor 的 26.1 SPI 需 CoreMod（ICoreMod + ITransformer<ClassNode>）重写 |
-| #P3 | `module.explosion` 整模块（10 文件）                                         | 低        | 6 处 26.1 API 反替换，其余逐字可搬；依赖 port module.config                                  |
-| #P4 | `module.collision` 整模块（纯数学，3 文件）                                  | 极低      | 零 MC/NeoForge API 依赖，逐字搬移                                                              |
-| #P5 | `module.space-select` 整模块（18 文件）                                      | 中        | 唯一实现重写点是 DistrictRenderer 线框路径（ShapeRenderer → LevelRenderer.renderVoxelShape）   |
-| #P6 | `module.font` 整模块（25 文件）                                              | 中        | 约 60% 纯 CPU 逻辑直接搬；GPU 上传/绘制层与 GUI 按 1.21.1 改写；依赖 #P7                        |
-| #P7 | `module.rendering`（113 文件，按功能块分 5 批）                              | 高（分批）| 纯逻辑 19 项直接搬；后处理 / SDF GUI / CachedBER / Compute 四块执行层按 1.21.1 重写             |
-| #P8 | renderdoc-loader（Java Agent，2 文件）                                       | 低        | 源码逐字搬；构建脚本按 port 侧（Java 21、无 jreleaser 别名）改写                               |
-| #P9 | `module.config`：group 分组 + TranslatableEnum + TOML key 点分隔             | 低        | 三处纯逻辑/配置演进，1.21.1 加载链路原生支持子目录文件名                                       |
-| #P10 | `module.integration`：数据加载客户端/服务端拆分 + meter 递增                 | 低        | 纯反射逻辑，可移植；破坏性 API（applyData 改名）需提示下游                                    |
-| #P11 | `module.network`：PacketData 泛型检查修复 + NetworkUtil Included 方法 + PacketProtocol public | 低        | 三处纯逻辑/修饰符改动，无平台依赖                                                             |
-| #P12 | `module.util`：OutlineUtil + predicate HolderGetter 重构 + withCount + @EqualsAndHashCode | 中        | 四处功能演进；HolderGetter 重构连带 module.recipe 四个调用方                                   |
-| #P13 | `module.registrum`：14 种新注册表 builder/entry                              | 低        | 绝大多数仅 Identifier 改名或个别签名微调；VillagerProfession 需按 1.21.1 6 元 record 适配        |
-| #P14 | `module.registrum` datagen 增强（RecipeProvider public 化 + dataMap(provider)）| 中        | 方法 public 化改「公开包装内调静态方法」；Runner / 模型生成器不迁                               |
-| #P15 | `module.multiblock`：DynamicMultiblockEvent + 快照复用 + BlockPos 键化 + 懒解析 | 中        | 四项修复/演进均可移植；Config.group 依赖 #P9                                                  |
-| #P16 | `module.recipe`：SpawnItem 零数量守卫 + SetBlock nbt 默认值                  | 低        | 两处纯逻辑修复（含一个潜在 NPE），与 dev 侧其它改动无关                                       |
-| #P17 | `module.wheel`：环形扇区选择效果（WheelSelectionEffect + fsh + 渲染适配）    | 中-高     | 纯 UI 功能可移植；渲染必须落在 port 旧 Tesselator/ShaderInstance 体系，切断 dev 渲染依赖       |
-| #P18 | `module.test`：可选集成测试（T2 / T8 / T9 / T10）                            | 低-中     | 仅带回不依赖 dev 新渲染模块的测试；随 #P1/#P3/#P9/#P17 落地                                  |
-| #P19 | 构建体系：roseauCheck API 兼容检查（+ module.gradle 集中化可选）             | 中        | roseau-cli 无 MC 绑定直接搬；集中化需裁剪 26.1 特有内容                                        |
+| #P   | 内容                                                                                          | 难度       | 一句话结论                                                                                      |
+|------|-----------------------------------------------------------------------------------------------|------------|-------------------------------------------------------------------------------------------------|
+| #P1  | `module.rpc` 整模块（注解式远程调用，25 文件）                                                | 低         | 整模块拷贝 + 3 处机械 API 反替换（Identifier / FMLLoader / accessFlags）                        |
+| #P2  | `module.sync` + processor（同步框架，31 文件）                                                | 中-高      | 约 50/56 文件直接搬；processor 的 26.1 SPI 需 CoreMod（ICoreMod + ITransformer<ClassNode>）重写 |
+| #P3  | `module.explosion` 整模块（10 文件）                                                          | 低         | 6 处 26.1 API 反替换，其余逐字可搬；依赖 port module.config                                     |
+| #P4  | `module.collision` 整模块（纯数学，3 文件）                                                   | 极低       | 零 MC/NeoForge API 依赖，逐字搬移                                                               |
+| #P5  | `module.space-select` 整模块（18 文件）                                                       | 中         | 唯一实现重写点是 DistrictRenderer 线框路径（ShapeRenderer → LevelRenderer.renderVoxelShape）    |
+| #P6  | `module.font` 整模块（25 文件）                                                               | 中         | 约 60% 纯 CPU 逻辑直接搬；GPU 上传/绘制层与 GUI 按 1.21.1 改写；依赖 #P7                        |
+| #P7  | `module.rendering`（113 文件，按功能块分 5 批）                                               | 高（分批） | 纯逻辑 19 项直接搬；后处理 / SDF GUI / CachedBER / Compute 四块执行层按 1.21.1 重写             |
+| #P8  | renderdoc-loader（Java Agent，2 文件）                                                        | 低         | 源码逐字搬；构建脚本按 port 侧（Java 21、无 jreleaser 别名）改写                                |
+| #P9  | `module.config`：group 分组 + TranslatableEnum + TOML key 点分隔                              | 低         | 三处纯逻辑/配置演进，1.21.1 加载链路原生支持子目录文件名                                        |
+| #P10 | `module.integration`：数据加载客户端/服务端拆分 + meter 递增                                  | 低         | 纯反射逻辑，可移植；破坏性 API（applyData 改名）需提示下游                                      |
+| #P11 | `module.network`：PacketData 泛型检查修复 + NetworkUtil Included 方法 + PacketProtocol public | 低         | 三处纯逻辑/修饰符改动，无平台依赖                                                               |
+| #P12 | `module.util`：OutlineUtil + withCount + @EqualsAndHashCode                                   | 中         | 四处功能演进；                                                                                  |
+| #P13 | `module.registrum`：14 种新注册表 builder/entry                                               | 低         | 绝大多数仅 Identifier 改名或个别签名微调；VillagerProfession 需按 1.21.1 6 元 record 适配       |
+| #P14 | `module.registrum` datagen 增强（RecipeProvider public 化 + dataMap(provider)）               | 中         | 方法 public 化改「公开包装内调静态方法」；Runner / 模型生成器不迁                               |
+| #P15 | `module.multiblock`：DynamicMultiblockEvent + 快照复用 + BlockPos 键化 + 懒解析               | 中         | 四项修复/演进均可移植；Config.group 依赖 #P9                                                    |
+| #P16 | `module.recipe`：SpawnItem 零数量守卫 + SetBlock nbt 默认值                                   | 低         | 两处纯逻辑修复（含一个潜在 NPE），与 dev 侧其它改动无关                                         |
+| #P17 | `module.wheel`：环形扇区选择效果（WheelSelectionEffect + fsh + 渲染适配）                     | 中-高      | 纯 UI 功能可移植；渲染必须落在 port 旧 Tesselator/ShaderInstance 体系，切断 dev 渲染依赖        |
+| #P18 | `module.test`：可选集成测试（T2 / T8 / T9 / T10）                                             | 低-中      | 仅带回不依赖 dev 新渲染模块的测试；随 #P1/#P3/#P9/#P17 落地                                     |
+| #P19 | 构建体系：roseauCheck API 兼容检查（+ module.gradle 集中化可选）                              | 中         | roseau-cli 无 MC 绑定直接搬；集中化需裁剪 26.1 特有内容                                         |
 
 ---
 
@@ -1113,8 +1113,6 @@ done
 
 | 不迁移内容 | 理由 |
 |---|---|
-| 新版 `UnlimitedItemStack`（util 包，`fd18fe9` #55，445 行） | 实现 `ItemInstance`/`MutableDataComponentHolder`，方法签名依赖 `ItemStackTemplate`/`DataComponentGetter`/`TooltipDisplay`/`Item.CODEC_WITH_BOUND_COMPONENTS`/`Item.STREAM_CODEC`——1.21.1 mappings 核实全部不存在；其功能（不限数量 ItemStack）由 port 侧已有的 `stack/UnlimitedItemStack`（NBT 序列化版）承担 |
-| 旧 `stack/UnlimitedItemStack` 的 `@Deprecated(forRemoval)`、`typeHolder()` 改名、去 `INBTSerializable` | 均为 26.1 序列化体系适配（`b1484bc` #86 的构造器优化已在 port 侧存在）；port 侧无替代新类，不应加弃用标记 |
 | `ClientTickRecorder` 修复（`6b4d6bd` #61，删除 level 判空与 LoggingOut 归零） | dev 的修复针对 26.1 事件触发时机变化（主菜单 tick 行为）；1.21.1 的 `ClientTickEvent.Pre` 行为与 port 现状一致，照搬会破坏计时器正确性（反向移植引入 bug） |
 | `ChanceItemStack`/`ChanceBlockState`/`WeightedChanceBlockStates`/`NbtPredicate` 的 26.1 版 | `ItemStackTemplate` 化、`ContextMap/ContextKeySet` LootParams 构造、`TagValueOutput`+`ProblemReporter`——均为 26.1 专属；port 侧 ItemStack 版/LootParams 旧构造器实现完整可用 |
 | package-info `@NullMarked` 迁移 | 同 5.5，注解风格迁移无功能价值 |

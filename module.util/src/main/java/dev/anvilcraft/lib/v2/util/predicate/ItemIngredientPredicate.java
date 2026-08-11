@@ -7,12 +7,12 @@ import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.advancements.critereon.ItemSubPredicate;
-import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryCodecs;
 import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.TypedDataComponent;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -24,7 +24,6 @@ import net.minecraft.world.level.ItemLike;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * 物品原料谓词
@@ -74,22 +73,11 @@ public record ItemIngredientPredicate(
     /**
      * 创建一个标签构建器
      *
-     * @param items 物品注册表访问器
-     * @param tag   物品标签
+     * @param tag 物品标签
      * @return 构建器实例
      */
-    public static Builder of(HolderGetter<Item> items, TagKey<Item> tag) {
-        return new Builder().of(items, tag);
-    }
-
-    /**
-     * 返回一个指定数量的新实例，不修改原实例。
-     *
-     * @param count 数量
-     * @return 新实例
-     */
-    public ItemIngredientPredicate withCount(int count) {
-        return new ItemIngredientPredicate(this.items, count, this.components, this.subPredicates);
+    public static Builder of(TagKey<Item> tag) {
+        return new Builder().of(tag);
     }
 
     @Override
@@ -175,12 +163,11 @@ public record ItemIngredientPredicate(
         /**
          * 设置物品标签
          *
-         * @param items 物品注册表访问器
-         * @param tag   物品标签
+         * @param tag 物品标签
          * @return 构建器实例
          */
-        public Builder of(HolderGetter<Item> items, TagKey<Item> tag) {
-            this.items = items.get(tag).map(Function.identity());
+        public Builder of(TagKey<Item> tag) {
+            this.items = Optional.of(BuiltInRegistries.ITEM.getOrCreateTag(tag));
             return this;
         }
 
