@@ -1,6 +1,6 @@
 {
-    "vertex": "sdf_text",
-    "fragment": "sdf_text",
+    "vertex": "anvillib_font:sdf_text",
+    "fragment": "anvillib_font:sdf_text",
     "samplers": [
         { "name": "Sampler0" }
     ],
