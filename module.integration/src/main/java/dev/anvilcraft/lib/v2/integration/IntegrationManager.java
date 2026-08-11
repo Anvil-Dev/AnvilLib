@@ -58,6 +58,7 @@ public class IntegrationManager {
                 log.info("Considering integration {} for {id:{}, version:{}}", annotation.memberName(), modid, version);
                 IntegrationInstance instance = new IntegrationInstance(modid, ModVersionRange.of(version), annotation.memberName(), type);
                 this.instances.put(modid, instance);
+                meter.increment();
             }
         }
         StartupNotificationManager.popBar(meter);
