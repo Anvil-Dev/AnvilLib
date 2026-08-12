@@ -1039,6 +1039,8 @@ done
 
 ### 4.19 回移植项 #P19：构建体系——roseauCheck（中）
 
+> ✅ 2026-08-12：#P19 已落地并随模块化 CI 重构一并收尾——roseauCheck 本机验证通过（roseau-cli 0.6.0 需 Java 25，降为 0.4.0；基线构件经 rootProject 解析；CSV/HTML 双报告），并回移植 `aa59e372`（#53）的模块化构建矩阵（`.github/modules.json` + `generate-matrix.js`，l0/l1/l2 分层构建/部署 + roseau_check/roseau_comment 工作流）；module.gradle 集中化维持「不做」结论（port 侧独立构建脚本自洽）。
+
 #### 4.19.1 目标
 
 把 dev 侧构建体系中最具迁移价值的两项回移植：**roseauCheck API 兼容检查**（核心项，可直接搬）；**module.gradle 集中化**（可选工程决策，需裁剪 26.1 特有内容）。
@@ -1068,8 +1070,8 @@ done
 
 #### 4.19.4 验收方式
 
-1. `gradlew roseauCheck`（或对应任务）在 port/1.21.1 基线上运行通过，输出 API 差分报告（可对 1.21.1 基线跑差分）。
-2. 若做集中化：全量 `gradlew build` 通过（全部模块聚合构建无回归）。
+1. `gradlew roseauCheck`（或对应任务）在 port/1.21.1 基线上运行通过，输出 API 差分报告（可对 1.21.1 基线跑差分）。——✅ 2026-08-12：`gradlew :anvillib-codec-neoforge-1.21.1:roseauCheck` 通过，`module.codec/build/reports/roseau/` 产出 report.csv（0 BC）与 report.html；rpc 模块同步验证通过。
+2. 若做集中化：全量 `gradlew build` 通过（全部模块聚合构建无回归）。——未做集中化（port 侧维持独立构建脚本）。
 
 ---
 

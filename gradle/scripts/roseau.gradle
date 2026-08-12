@@ -3,12 +3,21 @@ configurations {
 }
 
 dependencies {
-    roseau 'io.github.alien-tools:roseau-cli:0.6.0'
+    roseau 'io.github.alien-tools:roseau-cli:0.4.0'
 }
 
-def jarFileProvider = tasks.named('jar', Jar)
-def reportsDirProvider = layout.buildDirectory.dir('reports/roseau')
-def compileClasspathProvider = provider { sourceSets.main.compileClasspath.asPath }
+// 基线构件统一由根工程解析：子工程在设置 group/version 后解析自身坐标会被
+// Gradle 解析成本地工程组件（'default' 配置缺失），故借根工程仓库规避自引用。
+def ensureRootRepositories = {
+    if (!rootProject.repositories.any { it instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository && it.url.toString().contains('server.cjsah.net') }) {
+        rootProject.repositories.maven { it.url = 'https://server.cjsah.net:1002/maven/' }
+    }
+    if (!rootProject.repositories.any { it instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository && it.url.toString().startsWith('file:') }) {
+        rootProject.repositories.mavenLocal()
+    }
+}
+ensureRootRepositories()
+
 def roseauGroup = project.group.toString()
 def roseauArtifact = project.name
 def roseauBaselineVersion = project.findProperty('roseauBaselineVersion') ?: {
@@ -39,41 +48,49 @@ def roseauBaselineVersion = project.findProperty('roseauBaselineVersion') ?: {
     return version.toString()
 }()
 def roseauMvnCoord = "${roseauGroup}:${roseauArtifact}:${roseauBaselineVersion}"
-def roseauBaselineDep = dependencies.create(group: roseauGroup, name: roseauArtifact, version: roseauBaselineVersion)
-def roseauBaselineConfig = configurations.detachedConfiguration(roseauBaselineDep)
-roseauBaselineConfig.transitive = false
-def roseauBaselineJarProvider = provider { roseauBaselineConfig.singleFile }
 def roseauConfig = rootProject.file("roseau.yaml").absolutePath
+def roseauLauncher = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(21)
+}
 
-tasks.register('roseauCheck', JavaExec) {
+tasks.register('roseauCheck') {
     group = 'verification'
     description = 'Detects API breaking changes against a baseline version using Roseau'
 
     dependsOn tasks.named('jar', Jar)
 
-    classpath = configurations.roseau
-    mainClass = 'io.github.alien.roseau.cli.RoseauCLI'
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+    notCompatibleWithConfigurationCache('roseauCheck 基线解析依赖 detached configuration，无法参与配置缓存')
 
     doFirst {
-        def currentJar = jarFileProvider.get().archiveFile.get().asFile
-        def baselineJar = roseauBaselineJarProvider.get()
-        def reportsDir = reportsDirProvider.get().asFile
+        def currentJar = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        def baselineDep = dependencies.create(group: roseauGroup, name: roseauArtifact, version: roseauBaselineVersion)
+        def baselineConfig = rootProject.configurations.detachedConfiguration(baselineDep)
+        baselineConfig.transitive = false
+        def baselineJar = baselineConfig.singleFile
+        def reportsDir = layout.buildDirectory.dir('reports/roseau').get().asFile
         reportsDir.mkdirs()
 
         logger.lifecycle("Roseau: comparing baseline ${roseauMvnCoord} against ${currentJar.name}")
 
-        args(
-                '--diff',
-                '--v1', baselineJar.absolutePath,
-                '--v2', currentJar.absolutePath,
-                '--classpath', compileClasspathProvider.get(),
-                '--fail-on-bc',
-                '--report', "HTML=${new File(reportsDir, 'report.html').absolutePath}",
-                '--report', "CSV=${new File(reportsDir, 'report.csv').absolutePath}",
-                '--config', roseauConfig
-        )
+        // roseau-cli 0.4.0（Java 21 兼容）每次 --report 仅支持单一格式，故分别产出 CSV 与 HTML
+        def runRoseau = { String format, String reportFile ->
+            javaexec {
+                executable = roseauLauncher.get().executablePath.asFile.absolutePath
+                classpath = configurations.roseau
+                mainClass = 'io.github.alien.roseau.cli.RoseauCLI'
+                args(
+                        '--diff',
+                        '--v1', baselineJar.absolutePath,
+                        '--v2', currentJar.absolutePath,
+                        '--classpath', sourceSets.main.compileClasspath.asPath,
+                        '--fail-on-bc',
+                        '--report', reportFile,
+                        '--format', format,
+                        '--config', roseauConfig
+                )
+            }
+        }
+        runRoseau('CSV', new File(reportsDir, 'report.csv').absolutePath)
+        runRoseau('HTML', new File(reportsDir, 'report.html').absolutePath)
     }
 }

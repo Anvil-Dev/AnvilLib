@@ -31,8 +31,8 @@
 | #P16 | module.recipe：SpawnItem 守卫 + SetBlock nbt                 | 低    | ✅ 已完成 | `71bf9e54` |
 | #P17 | module.wheel：环形扇区选择效果                               | 中-高 | ✅ 已完成 | `142e3296` |
 | #P18 | module.test：T2/T8/T9/T10 可选测试                           | 低-中 | ✅ 已完成 | `a4ab3acd` |
-| #P19 | 构建体系：roseauCheck                                        | 中    | ✅ 已完成（运行待补验） | `544c9eb0` |
-| #P20 | module.codec：CodecUtil 便携 create/mapCodec（计划外追加）     | 低    | ✅ 已完成（待提交） | 来源 `173a454` |
+| #P19 | 构建体系：roseauCheck + 模块化 CI 构建矩阵                    | 中    | ✅ 已完成 | `544c9eb0` + 本轮 |
+| #P20 | module.codec：CodecUtil 便携 create/mapCodec（计划外追加）     | 低    | ✅ 已完成 | `05235aa`（来源 `173a454`） |
 
 > ⚠️ 2026-08-12 状态更新：#P7（module.rendering）与 #P8（renderdoc-loader）已从 `port/1.21.1` 分支整体移除；同时清理了 `module.font` / `module.main` 的渲染依赖、CI 工作流（ci / release / pull_request）中的渲染任务与相关文档引用。
 
@@ -187,9 +187,10 @@
 
 ### #P19 构建体系（中）
 
-- [ ] roseau.yaml + gradle/scripts/roseau.gradle + 根 build.gradle 接入
-- [ ] `gradlew roseauCheck` 运行通过
-- [ ] 提交
+- [x] roseau.yaml + gradle/scripts/roseau.gradle + 根 build.gradle 接入（`544c9eb0`）
+- [x] `gradlew roseauCheck` 运行通过（2026-08-12 本机验证 codec/rpc；roseau-cli 0.4.0，CSV+HTML 双报告）
+- [x] 模块化 CI 构建矩阵回移植（来源 `aa59e372`：#53）：`.github/modules.json` + `generate-matrix.js` + l0/l1/l2 分层矩阵 + roseau_check/roseau_comment 工作流
+- [x] 提交
 
 ### #P20 module.codec：CodecUtil 便携 create/mapCodec（计划外追加 · 2026-08-11）
 
@@ -231,7 +232,7 @@
 
 | 编号 | 事项 | 说明 | 复现/补验步骤 |
 |------|------|------|----------------|
-| L-1 | roseauCheck 运行验证（#P19） | 本机运行 roseauCheck 时 Gradle daemon 崩溃（疑似 roseau-cli 0.6.0 与本地 Java 21 环境兼容问题）；任务可注册、配置阶段通过 | CI 或人工：`./gradlew :anvillib-<模块>:roseauCheck` |
+| L-1 | roseauCheck 运行验证（#P19） | ✅ 已解决（2026-08-12）：roseau-cli 0.6.0 按 Java 25 编译，降至 0.4.0（Java 21 兼容）；roseauCheck 改为普通任务并在 doFirst 内以 javaexec 分两次产出 CSV/HTML；基线构件改由 rootProject 解析；已声明与配置缓存不兼容；本机 codec/rpc 验证通过 | `./gradlew :anvillib-<模块>-neoforge-1.21.1:roseauCheck` |
 | L-2 | RPC 行为验证（#P1/#P18 T8） | 远程调用往返、@CallableParam 编解码、tick 超时 | runClient/runServer，`-Danvillib.test.rpc.auto` 系统属性 |
 | L-3 | sync 行为验证（#P2） | @Sync 字段同步、LazySync、processor 字节码注入生效 | runClient 启动日志 + 反编译核对注入点 |
 | L-4 | explosion 行为验证（#P3/#P18 T9） | 分层球壳破坏、熔化替换、实体 hurt | runClient/runServer 执行测试命令 |
