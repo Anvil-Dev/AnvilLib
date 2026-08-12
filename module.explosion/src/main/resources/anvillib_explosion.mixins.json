@@ -5,7 +5,6 @@
   "compatibilityLevel": "JAVA_21",
   "refmap": "anvillib.refmap.json",
   "mixins": [
-    "SingleItemRecipeAccessor"
   ],
   "client": [
   ],

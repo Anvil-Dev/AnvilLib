@@ -1,8 +1,8 @@
 package dev.anvilcraft.lib.v2.explosion;
 
 import dev.anvilcraft.lib.v2.config.ConfigManager;
-import dev.anvilcraft.lib.v2.explosion.mixin.SingleItemRecipeAccessor;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -78,16 +78,15 @@ public class AnvilLibExplosion {
         for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
             Recipe<?> value = holder.value();
             if (value instanceof SmeltingRecipe || value instanceof BlastingRecipe) {
-                AnvilLibExplosion.registerAbstractCookingRecipe((AbstractCookingRecipe) value);
+                AnvilLibExplosion.registerAbstractCookingRecipe((AbstractCookingRecipe) value, server.registryAccess());
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private static void registerAbstractCookingRecipe(AbstractCookingRecipe recipe) {
-        Ingredient input = recipe.getIngredients().get(0);
+    private static void registerAbstractCookingRecipe(AbstractCookingRecipe recipe, HolderLookup.Provider registries) {
+        Ingredient input = recipe.getIngredients().getFirst();
         List<Item> items = Arrays.stream(input.getItems()).map(ItemStack::getItem).toList();
-        ItemStack result = ((SingleItemRecipeAccessor) recipe).getResult();
+        ItemStack result = recipe.getResultItem(registries);
         if (result.getCount() != 1) {
             return;
         }
