@@ -1,9 +1,0 @@
-{
-  "vertex": "anvillib_rendering:blit",
-  "fragment": "anvillib_rendering:apply_bloom",
-  "samplers": [
-    { "name": "GameSampler" },
-    { "name": "DiffuseSampler" }
-  ],
-  "uniforms": []
-}

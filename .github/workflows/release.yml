@@ -118,8 +118,6 @@ jobs:
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
   font:
     uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - rendering
     with:
       module: font
       module_id: anvillib-font
@@ -182,7 +180,6 @@ jobs:
       - network
       - recipe
       - registrum
-      - rendering
       - rpc
       - space-select
       - sync
@@ -342,31 +339,6 @@ jobs:
     with:
       module: registrum
       module_id: anvillib-registrum
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-  rendering:
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: rendering
-      module_id: anvillib-rendering
-      mod_id: anvillib_rendering
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-  rendering-maven-central-deploy:
-    uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - rendering
-    with:
-      module: rendering
-      module_id: anvillib-rendering
     secrets:
       maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
       maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}

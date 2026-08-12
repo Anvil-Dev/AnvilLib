@@ -19,8 +19,8 @@
 | #P4  | module.collision 整模块（3 文件）                            | 极低  | ✅ 已完成 | `c25dd465` |
 | #P5  | module.space-select 整模块（18 文件）                        | 中    | ✅ 已完成 | `1706feaa` |
 | #P6  | module.font 整模块（25 文件）                                | 中    | ✅ 已完成 | `91533730` |
-| #P7  | module.rendering（#P7a–#P7e 分批）                           | 高    | ✅ 已完成 | `b0e179e8` + `a6544e6b` |
-| #P8  | renderdoc-loader（2 文件）                                   | 低    | ✅ 已完成 | `c62a262e` |
+| #P7  | module.rendering（#P7a–#P7e 分批）                           | 高    | ✅ 已完成（已移除）| `b0e179e8` + `a6544e6b` |
+| #P8  | renderdoc-loader（2 文件）                                   | 低    | ✅ 已完成（已移除）| `c62a262e` |
 | #P9  | module.config：group + TranslatableEnum + TOML 点分隔        | 低    | ✅ 已完成 | `65aa5e11` |
 | #P10 | module.integration：数据加载拆分 + meter 递增                | 低    | ✅ 已完成 | `adc23468` |
 | #P11 | module.network：泛型修复 + Included + public                 | 低    | ✅ 已完成 | `20934ac4` |
@@ -33,6 +33,8 @@
 | #P18 | module.test：T2/T8/T9/T10 可选测试                           | 低-中 | ✅ 已完成 | `a4ab3acd` |
 | #P19 | 构建体系：roseauCheck                                        | 中    | ✅ 已完成（运行待补验） | `544c9eb0` |
 | #P20 | module.codec：CodecUtil 便携 create/mapCodec（计划外追加）     | 低    | ✅ 已完成（待提交） | 来源 `173a454` |
+
+> ⚠️ 2026-08-12 状态更新：#P7（module.rendering）与 #P8（renderdoc-loader）已从 `port/1.21.1` 分支整体移除；同时清理了 `module.font` / `module.main` 的渲染依赖、CI 工作流（ci / release / pull_request）中的渲染任务与相关文档引用。
 
 ## 执行顺序（计划第 6 章）
 
@@ -59,6 +61,8 @@
 - [ ] 提交
 
 ### #P7 module.rendering（高 · 分批）
+
+> ⚠️ 2026-08-12：该模块已从 `port/1.21.1` 移除，本清单仅保留历史记录。
 
 - [ ] #P7a 纯逻辑 19 项 + 模块骨架
 - [ ] #P7b 后处理三件套（Bloom/GaussianBlur/Glitch）
@@ -94,6 +98,8 @@
 - [ ] 提交
 
 ### #P8 renderdoc-loader（低）
+
+> ⚠️ 2026-08-12：该模块已从 `port/1.21.1` 移除，本清单仅保留历史记录。
 
 - [ ] 2 文件提取 + 构建脚本改写（Java 21）
 - [ ] 提交
@@ -231,9 +237,9 @@
 | L-4 | explosion 行为验证（#P3/#P18 T9） | 分层球壳破坏、熔化替换、实体 hurt | runClient/runServer 执行测试命令 |
 | L-5 | space-select 渲染（#P5，V-4/V-16） | 线框绘制颜色/平移语义、滚轮交互、网络收发 | runClient 目测 |
 | L-6 | font 运行验证（#P6） | SDF 文字渲染、anvillib$text 扩展、FontConfigScreen | runClient |
-| L-7 | rendering 运行验证（#P7a） | mixin 注入、AT 生效、mods.toml 加载 | runClient 启动日志 |
+| L-7 | rendering 运行验证（#P7a） | ⚠️ 2026-08-12：module.rendering 已移除，不再适用 | — |
 | L-8 | multiblock 行为验证（#P15） | 事件可取消回滚、快照复用、懒解析 | runServer |
 | L-9 | wheel 运行验证（#P17） | 环形扇区效果、颜色配置、旧路径无回归 | runClient + T10 |
 | L-10 | Iris 集成（#P7d，V-2/V-6） | ✅ 已解决：#P7d 完成，Iris 经反射访问（签名一致），运行时需装 Iris 客户端验证 | — |
 | L-11 | Compute（#P7e，V-8） | ✅ 已解决：#P7e 完成（编译通过），dispatch/内存屏障运行验证待 runClient | — |
-| L-12 | rendering 执行层运行验证（#P7b-e） | 后处理效果/SDF GUI/CachedBER/GLSL 编译链接需 runClient | 运行 runClient 核对 7.2 清单 |
+| L-12 | rendering 执行层运行验证（#P7b-e） | ⚠️ 2026-08-12：module.rendering 已移除，不再适用 | — |

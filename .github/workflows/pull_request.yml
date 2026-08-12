@@ -50,8 +50,6 @@ jobs:
       pr_build: true
   font:
     uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - rendering
     with:
       module: font
       module_id: anvillib-font
@@ -80,7 +78,6 @@ jobs:
       - network
       - recipe
       - registrum
-      - rendering
       - rpc
       - space-select
       - sync
@@ -143,14 +140,6 @@ jobs:
       module: registrum
       module_id: anvillib-registrum
       mod_id: anvillib_registrum
-      ci_build: true
-      pr_build: true
-  rendering:
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: rendering
-      module_id: anvillib-rendering
-      mod_id: anvillib_rendering
       ci_build: true
       pr_build: true
   rpc:

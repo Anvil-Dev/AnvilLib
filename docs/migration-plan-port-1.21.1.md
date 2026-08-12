@@ -1,5 +1,7 @@
 # AnvilLib 回移植计划：`dev/26.1` → `port/1.21.1`（功能回移植执行方案）
 
+> ⚠️ 状态更新（2026-08-12）：#P7（`module.rendering`）与 #P8（`renderdoc-loader`）已从 `port/1.21.1` 分支整体移除；#P6（`module.font`）与 `module.main` 的渲染 jarJar 依赖、CI 工作流（ci / release / pull_request）中的渲染任务亦已同步清理。本文为历史计划文档，相关章节仅作记录保留。
+
 > 文档信息
 >
 > - 生成日期：2026-08-10
@@ -423,6 +425,8 @@ done
 
 ### 4.6 回移植项 #P6：module.font 整模块（中）
 
+> ⚠️ 2026-08-12：module.font 已落地为独立模块，其与 module.rendering 的依赖已随渲染模块移除而删除（build.gradle 不再声明 anvillib-rendering-neoforge-1.21.1）。
+
 #### 4.6.1 目标
 
 把 dev 侧 SDF 字体模块 `module.font`（25 文件，AWT 字体 → CPU 生成 SDF 图集 → GPU 采样渲染）整体回移植，作为新模块 `anvillib-font-neoforge-1.21.1`；约 60% 纯 CPU 逻辑直接搬，GPU 上传/绘制层与 GUI 屏幕按 1.21.1 API 改写。**依赖 module.rendering 的 1.21.1 版（#P7）**（build.gradle jarJar 依赖 `anvillib-rendering-neoforge-1.21.1`；纯逻辑部分可在 #P7a 完成后先行落地）。
@@ -474,6 +478,8 @@ done
 ---
 
 ### 4.7 回移植项 #P7：module.rendering（高 · 按功能块分批）
+
+> ⚠️ 2026-08-12：module.rendering 已从 port/1.21.1 整体移除，本节内容仅为历史计划记录。
 
 #### 4.7.0 总体说明与拆批依据
 
@@ -598,6 +604,8 @@ done
 ---
 
 ### 4.8 回移植项 #P8：renderdoc-loader（低）
+
+> ⚠️ 2026-08-12：renderdoc-loader 已随 module.rendering 一并从 port/1.21.1 移除，本节内容仅为历史计划记录。
 
 #### 4.8.1 目标
 

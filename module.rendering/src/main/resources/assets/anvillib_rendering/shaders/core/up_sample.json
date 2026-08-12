@@ -1,9 +1,0 @@
-{
-  "vertex": "anvillib_rendering:blit",
-  "fragment": "anvillib_rendering:up_sample",
-  "samplers": [
-    { "name": "DiffuseSampler" },
-    { "name": "PreviousSampler" }
-  ],
-  "uniforms": []
-}
