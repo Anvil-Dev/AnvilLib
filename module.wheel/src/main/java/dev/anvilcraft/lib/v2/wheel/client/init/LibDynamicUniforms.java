@@ -36,6 +36,12 @@ public class LibDynamicUniforms {
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST
     );
 
+    private final DynamicUniformStorage<FrostedDiscUniform> frostedDiscUbo = new DynamicUniformStorage<>(
+        "FrostedDiscUniform UBO",
+        FrostedDiscUniform.size(),
+        GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST
+    );
+
     public GpuBufferSlice writeRing(Vector2fc center, float innerDiameter, float outerDiameter, float antiAliasingRadius) {
         return this.ringUbo.writeUniform(new RingUniform(
             center,
@@ -56,8 +62,8 @@ public class LibDynamicUniforms {
 
     public GpuBufferSlice writeAnnularSector(
         Vector2fc center,
-        float innerDiameter,
-        float outerDiameter,
+        float innerRadius,
+        float outerRadius,
         float antiAliasingRadius,
         float angleAntiAliasingRad,
         float centerAngleRad,
@@ -65,8 +71,8 @@ public class LibDynamicUniforms {
     ) {
         return this.annularSectorUbo.writeUniform(new AnnularSectorUniform(
             center,
-            innerDiameter,
-            outerDiameter,
+            innerRadius,
+            outerRadius,
             antiAliasingRadius,
             angleAntiAliasingRad,
             centerAngleRad,
@@ -74,10 +80,25 @@ public class LibDynamicUniforms {
         ));
     }
 
+    public GpuBufferSlice writeFrostedDisc(
+        Vector2fc framebufferSize,
+        Vector2fc center,
+        float radius,
+        float antiAliasingRadius
+    ) {
+        return this.frostedDiscUbo.writeUniform(new FrostedDiscUniform(
+            framebufferSize,
+            center,
+            radius,
+            antiAliasingRadius
+        ));
+    }
+
     public void reset() {
         this.ringUbo.endFrame();
         this.selectionUbo.endFrame();
         this.annularSectorUbo.endFrame();
+        this.frostedDiscUbo.endFrame();
     }
 
     @SubscribeEvent
@@ -139,8 +160,8 @@ public class LibDynamicUniforms {
 
     public record AnnularSectorUniform(
         Vector2fc center,
-        float innerDiameter,
-        float outerDiameter,
+        float innerRadius,
+        float outerRadius,
         float antiAliasingRadius,
         float angleAntiAliasingRad,
         float centerAngleRad,
@@ -151,9 +172,9 @@ public class LibDynamicUniforms {
             return new Std140SizeCalculator()
                 // Center
                 .putVec2()
-                // InnerDiameter
+                // InnerRadius
                 .putFloat()
-                // OuterDiameter
+                // OuterRadius
                 .putFloat()
                 // AntiAliasingRadius
                 .putFloat()
@@ -170,12 +191,42 @@ public class LibDynamicUniforms {
         public void write(ByteBuffer buffer) {
             Std140Builder.intoBuffer(buffer)
                 .putVec2(this.center)
-                .putFloat(this.innerDiameter)
-                .putFloat(this.outerDiameter)
+                .putFloat(this.innerRadius)
+                .putFloat(this.outerRadius)
                 .putFloat(this.antiAliasingRadius)
                 .putFloat(this.angleAntiAliasingRad)
                 .putFloat(this.centerAngleRad)
                 .putFloat(this.rangeAngleRad);
+        }
+    }
+
+    public record FrostedDiscUniform(
+        Vector2fc framebufferSize,
+        Vector2fc center,
+        float radius,
+        float antiAliasingRadius
+    ) implements DynamicUniformStorage.DynamicUniform {
+
+        public static int size() {
+            return new Std140SizeCalculator()
+                // FramebufferSize
+                .putVec2()
+                // Center
+                .putVec2()
+                // Radius
+                .putFloat()
+                // AntiAliasingRadius
+                .putFloat()
+                .get();
+        }
+
+        @Override
+        public void write(ByteBuffer buffer) {
+            Std140Builder.intoBuffer(buffer)
+                .putVec2(this.framebufferSize)
+                .putVec2(this.center)
+                .putFloat(this.radius)
+                .putFloat(this.antiAliasingRadius);
         }
     }
 }

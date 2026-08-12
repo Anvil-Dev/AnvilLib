@@ -17,26 +17,50 @@ public final class WheelDemoMenus {
             .slotsPerPage(slotsPerPage)
             .selectionEffect(selectionEffect)
             .action(
-                "action_1", Component.literal("Action 1"), ctx -> {
+                "action_1", Component.literal("Action 1"), WheelDemoMenus::render, ctx -> {
                 }
             )
             .action(
-                "action_2", Component.literal("Action 2"), ctx -> {
+                "action_2", Component.literal("Action 2"), WheelDemoMenus::render, ctx -> {
                 }
             )
             .submenu(
-                "tools", Component.literal("Tools"), submenu -> submenu
+                "tools", Component.literal("Tools"), WheelDemoMenus::render, submenu -> submenu
                     .action(
-                        "tool_a", Component.literal("Tool A"), ctx -> {
+                        "tool_a", Component.literal("Tool A"), WheelDemoMenus::render, ctx -> {
                         }
                     )
                     .action(
-                        "tool_b", Component.literal("Tool B"), ctx -> {
+                        "tool_b", Component.literal("Tool B"), WheelDemoMenus::render, ctx -> {
                         }
                     )
             )
             .action(
-                "action_3", Component.literal("Action 3"), ctx -> {
+                "action_3", Component.literal("Action 3"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "action_4", Component.literal("Action 4"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "action_5", Component.literal("Action 5"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "action_6", Component.literal("Action 6"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "action_7", Component.literal("Action 7"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "action_8", Component.literal("Action 8"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "action_9", Component.literal("Action 9"), WheelDemoMenus::render, ctx -> {
                 }
             )
             .build();
@@ -50,6 +74,30 @@ public final class WheelDemoMenus {
                 "hold_1", Component.literal("Hold 1"), WheelDemoMenus::render, ctx -> {
                 }
             )
+            .action(
+                "hold_2", Component.literal("Hold 2"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "hold_3", Component.literal("Hold 3"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "hold_4", Component.literal("Hold 4"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "hold_5", Component.literal("Hold 5"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "hold_6", Component.literal("Hold 6"), WheelDemoMenus::render, ctx -> {
+                }
+            )
+            .action(
+                "hold_7", Component.literal("Hold 7"), WheelDemoMenus::render, ctx -> {
+                }
+            )
             .submenu(
                 "ignored_submenu", Component.literal("Ignored Submenu"), WheelDemoMenus::render, submenu -> submenu
                     .action(
@@ -58,7 +106,7 @@ public final class WheelDemoMenus {
                     )
             )
             .action(
-                "hold_2", Component.literal("Hold 2"), WheelDemoMenus::render, ctx -> {
+                "hold_8", Component.literal("Hold 8"), WheelDemoMenus::render, ctx -> {
                 }
             )
             .build();
@@ -68,4 +116,3 @@ public final class WheelDemoMenus {
         graphics.item(Items.APPLE.getDefaultInstance(), -8, -8);
     }
 }
-

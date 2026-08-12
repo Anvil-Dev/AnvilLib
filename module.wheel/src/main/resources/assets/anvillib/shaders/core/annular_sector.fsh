@@ -4,8 +4,9 @@ in vec4 vertexColor;
 
 layout (std140) uniform AnnularSectorUniform {
     vec2 Center;
-    float InnerDiameter;
-    float OuterDiameter;
+    // 注意：以下为半径而非直径（历史命名遗留，调用方按半径传入）
+    float InnerRadius;
+    float OuterRadius;
     float AntiAliasingRadius;
     float AngleAntiAliasingRad;
     float CenterAngleRad;
@@ -48,8 +49,8 @@ void main() {
     float angle = atan(fragPos.y - Center.y, fragPos.x - Center.x);
     float radialAa = max(min(AntiAliasingRadius, fwidth(distance) * 1.5), 0.0001);
 
-    color.a *= smoothstep(InnerDiameter - radialAa, InnerDiameter + radialAa, distance)
-             * (1.0 - smoothstep(OuterDiameter - radialAa, OuterDiameter + radialAa, distance))
+    color.a *= smoothstep(InnerRadius - radialAa, InnerRadius + radialAa, distance)
+             * (1.0 - smoothstep(OuterRadius - radialAa, OuterRadius + radialAa, distance))
              * calcAngleAlpha(angle, CenterAngleRad, RangeAngleRad, AngleAntiAliasingRad);
 
     fragColor = color;

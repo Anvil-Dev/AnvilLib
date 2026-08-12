@@ -40,4 +40,13 @@ public class LibRenders {
         .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
         .withUniform("AnnularSectorUniform", UniformType.UNIFORM_BUFFER)
         .build();
+
+    public static final RenderPipeline FROSTED_DISC_PIPELINE = RenderPipeline.builder(SNIPPET_COMMON)
+        .withLocation(AnvilLibWheel.of("pipeline/frosted_disc"))
+        .withVertexShader("core/position_tex_color")
+        .withFragmentShader(AnvilLibWheel.of("core/frosted_disc"))
+        .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
+        .withSampler("Sampler0")
+        .withUniform("FrostedDiscUniform", UniformType.UNIFORM_BUFFER)
+        .build();
 }

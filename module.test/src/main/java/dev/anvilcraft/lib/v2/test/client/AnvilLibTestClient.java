@@ -3,7 +3,6 @@ package dev.anvilcraft.lib.v2.test.client;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import dev.anvilcraft.lib.v2.rendering.cachedber.renderer.CachedBlockEntityRenderDispatcher;
 import dev.anvilcraft.lib.v2.rendering.event.MainTargetResizeEvent;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.client.cber.TestCachedRenderer;
@@ -50,17 +49,11 @@ public class AnvilLibTestClient {
 
     @SubscribeEvent
     public static void on(MainTargetResizeEvent event) {
-        if (!ALRComputeCapabilities.isComputeSupported()) {
-            return;
-        }
         ComputeSupport.INSTANCE.resize(event.getNewWidth(), event.getNewHeight());
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void on(RenderLevelStageEvent.AfterLevel level) {
-        if (!ALRComputeCapabilities.isComputeSupported()) {
-            return;
-        }
         ComputeSupport.INSTANCE.computeBlur();
     }
 
