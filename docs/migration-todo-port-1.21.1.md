@@ -33,6 +33,7 @@
 | #P18 | module.test：T2/T8/T9/T10 可选测试                           | 低-中 | ✅ 已完成 | `a4ab3acd` |
 | #P19 | 构建体系：roseauCheck + 模块化 CI 构建矩阵                    | 中    | ✅ 已完成 | `544c9eb0` + 本轮 |
 | #P20 | module.codec：CodecUtil 便携 create/mapCodec（计划外追加）     | 低    | ✅ 已完成 | `05235aa`（来源 `173a454`） |
+| #P21 | module.wheel：环扇模式轮盘渲染重做同步（计划外追加）           | 中-高 | ✅ 已完成 | `92661c6` |
 
 > ⚠️ 2026-08-12 状态更新：#P7（module.rendering）与 #P8（renderdoc-loader）已从 `port/1.21.1` 分支整体移除；同时清理了 `module.font` / `module.main` 的渲染依赖、CI 工作流（ci / release / pull_request）中的渲染任务与相关文档引用。
 
@@ -202,6 +203,25 @@
 - [x] API 核实：1.21.1 DFU 6.0.8 含 `Function3–16`（javap 实测），无需反向替换
 - [x] `gradlew :anvillib-codec-neoforge-1.21.1:compileJava --rerun-tasks` 通过
 - [ ] 提交（conventional commit）
+
+### #P21 module.wheel：环扇模式轮盘渲染重做同步（计划外追加 · 2026-08-13）
+
+> 来源：`dev/26.1` 提交 `aa123c9`（feat(wheel): 重做环扇模式轮盘渲染 #98）
+> 要求：效果与用法（公开 API）与 dev 一致，实现适配 1.21.1（module.rendering 已在 port 删除，不引入）
+
+- [x] API 核对：api 包两边一致（`WheelEntry.mutableCopy` 位置、`WheelSelectionEffect` 空行差异无关紧要；`WheelEntryRenderer` 保持 1.21.1 `(GuiGraphics, PoseStack)` 签名）
+- [x] shader：`annular_sector` 半径语义修正（InnerDiameter/OuterDiameter → InnerRadius/OuterRadius）；新增 `frosted_disc`/`blur`/`segment`/`disc` 四组 fsh+json（1.21.1 坐标约定：位置任意形状按 `selection.fsh` 做 Y 翻转）
+- [x] `LibShaders` 新增 4 个 ShaderInstance 注册（frostedDisc/blur/segment/disc）
+- [x] `WheelFrostedBackground` 自建模糊管线（`TextureTarget`×2 ping-pong，4 pass 高斯模糊，替代 dev 的 rendering `GaussianBlur`）
+- [x] `WheelWidget` 以 dev 版为蓝本重写：盘面/毛玻璃/分隔圆环/中心标题/hover 箭头/翻页箭头/环扇滑动 + settle 外扩动画（500ms 停驻 + 200ms 外扩 2px + 透明度 20%→100%）；渲染全部落在 Tesselator + ShaderInstance + 多边形 fallback 模式
+- [x] `WheelScreen` 半径 0.17/0.33、毛玻璃生命周期（init/removed）、翻页箭头替代「1 / N」文字
+- [x] module.test 对齐：`WheelDemoMenus` 扩至 9/8 项 + APPLE 图标 renderer（1.21.1 签名），新增 B/N 键（TAP/HOLD 扇形效果），lang 补齐 zh_cn/en_us/en_ud
+- [x] `gradlew :anvillib-wheel-neoforge-1.21.1:compileJava` + `:anvillib-test-neoforge-1.21.1:compileJava` 通过；`grep v2.rendering` 零残留
+- [x] runClient 运行验证（2026-08-13）：6 个 shader 全部注册成功，无 FATAL、无 wheel 渲染错误，正常进入世界；修掉 1.21.1 shader json `samplers` 字段格式问题（需 JsonObject 数组而非字符串数组）
+- [x] 提交（conventional commit）
+
+> ⚠️ 环境遗留：module.test `runData` 受 modDevGradle 2.0.78 注入 `--width/--height` 影响无法运行（1.21.1 datagen 不识别该参数），en_us/en_ud 已按 dev 文案手动补齐；该问题为既有构建环境问题，非本次改动引入。
+> ⚠️ 环境遗留：runClient 首启时 `anvillib_moveable_entity_block` mixin 崩溃（PistonBaseBlockMixin 找不到）为模块 classes 未编译的环境状态问题（moddev 对仅含 resources 的模块 mod file 无法加载 mixin 类），全量编译后自愈，与本次改动无关。
 
 ---
 

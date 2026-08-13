@@ -4,8 +4,9 @@ in vec4 vertexColor;
 
 uniform vec4 ColorModulator;
 uniform vec2 Center;
-uniform float InnerDiameter;
-uniform float OuterDiameter;
+// 注意：以下为半径而非直径（与 dev/26.1 语义对齐）
+uniform float InnerRadius;
+uniform float OuterRadius;
 uniform float AntiAliasingRadius;
 uniform float AngleAntiAliasingRad;
 uniform float CenterAngleRad;
@@ -47,8 +48,8 @@ void main() {
     float angle = atan(fragPos.y - Center.y, fragPos.x - Center.x);
     float radialAa = max(min(AntiAliasingRadius, fwidth(distance) * 1.5), 0.0001);
 
-    color.a *= smoothstep(InnerDiameter - radialAa, InnerDiameter + radialAa, distance)
-             * (1.0 - smoothstep(OuterDiameter - radialAa, OuterDiameter + radialAa, distance))
+    color.a *= smoothstep(InnerRadius - radialAa, InnerRadius + radialAa, distance)
+             * (1.0 - smoothstep(OuterRadius - radialAa, OuterRadius + radialAa, distance))
              * calcAngleAlpha(angle, CenterAngleRad, RangeAngleRad, AngleAntiAliasingRad);
 
     fragColor = color * ColorModulator;

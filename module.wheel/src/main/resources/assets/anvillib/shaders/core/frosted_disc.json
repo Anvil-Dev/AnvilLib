@@ -1,12 +1,24 @@
 {
-  "vertex": "position_color",
-  "fragment": "anvillib:annular_sector",
+  "vertex": "position_tex_color",
+  "fragment": "anvillib:frosted_disc",
   "samplers": [
+    {
+      "name": "Sampler0"
+    }
   ],
   "uniforms": [
     { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
     { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
     { "name": "ColorModulator", "type": "float", "count": 4, "values": [ 1.0, 1.0, 1.0, 1.0 ] },
+    {
+      "name": "FramebufferSize",
+      "type": "float",
+      "count": 2,
+      "values": [
+        0.0,
+        0.0
+      ]
+    },
     {
       "name": "Center",
       "type": "float",
@@ -17,15 +29,7 @@
       ]
     },
     {
-      "name": "InnerRadius",
-      "type": "float",
-      "count": 1,
-      "values": [
-        0.0
-      ]
-    },
-    {
-      "name": "OuterRadius",
+      "name": "Radius",
       "type": "float",
       "count": 1,
       "values": [
@@ -38,30 +42,6 @@
       "count": 1,
       "values": [
         1.25
-      ]
-    },
-    {
-      "name": "AngleAntiAliasingRad",
-      "type": "float",
-      "count": 1,
-      "values": [
-        0.06
-      ]
-    },
-    {
-      "name": "CenterAngleRad",
-      "type": "float",
-      "count": 1,
-      "values": [
-        0.0
-      ]
-    },
-    {
-      "name": "RangeAngleRad",
-      "type": "float",
-      "count": 1,
-      "values": [
-        0.0
       ]
     }
   ]
