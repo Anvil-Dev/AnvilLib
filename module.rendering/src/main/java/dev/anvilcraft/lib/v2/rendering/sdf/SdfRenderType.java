@@ -12,6 +12,7 @@ public enum SdfRenderType {
 
     TRIANGLE_EQUILATERAL,
     TRIANGLE_ISOSCELES,
+    TRIANGLE,
     ;
 
     private static final SdfRenderType[] VALUES = values();

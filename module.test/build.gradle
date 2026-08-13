@@ -15,6 +15,7 @@ dependencies {
     implementation project(":anvillib-rpc-neoforge-26.1")
     implementation project(":anvillib-space-select-neoforge-26.1")
     implementation project(":anvillib-sync-neoforge-26.1")
+    implementation project(":anvillib-ui-neoforge-26.1")
     implementation project(":anvillib-util-neoforge-26.1")
     implementation project(":anvillib-wheel-neoforge-26.1")
 

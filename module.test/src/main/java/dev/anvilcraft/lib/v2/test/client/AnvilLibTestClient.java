@@ -8,6 +8,7 @@ import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.client.cber.TestCachedRenderer;
 import dev.anvilcraft.lib.v2.test.client.compute.ComputeSupport;
 import dev.anvilcraft.lib.v2.test.client.gui.SdfGraphicsLayer;
+import dev.anvilcraft.lib.v2.test.client.screen.DeclarativeTestScreen;
 import dev.anvilcraft.lib.v2.test.client.screen.GuiTestScreen;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -29,6 +30,8 @@ import static net.minecraft.commands.Commands.literal;
 @EventBusSubscriber(modid = AnvilLibTest.MOD_ID, value = Dist.CLIENT)
 @Mod(value = AnvilLibTest.MOD_ID, dist = Dist.CLIENT)
 public class AnvilLibTestClient {
+    public static boolean renderSdfLayer = false;
+
     public AnvilLibTestClient() {
     }
 
@@ -69,6 +72,18 @@ public class AnvilLibTestClient {
                         })
                 ).
                 then(
+                    literal("declarative").
+                        executes(_ -> {
+                            Minecraft.getInstance().setScreen(new DeclarativeTestScreen());
+                            return 1;
+                        })
+                ).then(
+                    literal("sdf")
+                        .executes(_ -> {
+                            AnvilLibTestClient.renderSdfLayer = !AnvilLibTestClient.renderSdfLayer;
+                            return 1;
+                        })
+                ).then(
                     literal("compute").
                         then(
                             literal("add").
