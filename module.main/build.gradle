@@ -144,7 +144,6 @@ dependencies {
         jarJar(api("dev.anvilcraft.lib:anvillib-sync-neoforge-1.21.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:latest.release"))
-        jarJar(api("dev.anvilcraft.lib:anvillib-yukkuri-neoforge-1.21.1:latest.release"))
     } else {
         jarJar(api project(":anvillib-codec-neoforge-1.21.1"))
         jarJar(api project(":anvillib-collision-neoforge-1.21.1"))
@@ -164,7 +163,6 @@ dependencies {
         jarJar(api project(":anvillib-sync-neoforge-1.21.1"))
         jarJar(api project(":anvillib-util-neoforge-1.21.1"))
         jarJar(api project(":anvillib-wheel-neoforge-1.21.1"))
-        jarJar(api project(":anvillib-yukkuri-neoforge-1.21.1"))
     }
 }
 

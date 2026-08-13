@@ -24,7 +24,6 @@ AnvilLib adopts a modular design and includes the following functional modules:
 | **Registrum**             | Simplified registration system                    |
 | **Util**                  | Shareable utilities                               |
 | **Wheel**                 | Radial wheel menu client API                      |
-| **Yukkuri**               | Large-cauldron vaporization API and runtime       |
 | **Main**                  | Aggregated module that bundles all submodules     |
 
 ## Module Introduction
@@ -311,7 +310,6 @@ controller.onHoldKeyReleased();
 - `moveable-entity-block`
 - `registrum`
 - `wheel`
-- `yukkuri`
 
 `anvillib-test-neoforge-1.21.1` is a development/testing module and is not part of the aggregate runtime artifact.
 
@@ -339,7 +337,6 @@ dependencies {
     implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-util-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-yukkuri-neoforge-1.21.1:2.0.0"
 }
 ```
 
@@ -364,7 +361,6 @@ dependencies {
     implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-yukkuri-neoforge-1.21.1:2.0.0")
 }
 ```
 
