@@ -27,6 +27,16 @@ on:
         required: false
         type: boolean
         default: false
+      gradle_project:
+        description: 'Gradle project path or name without leading colon'
+        required: false
+        type: string
+        default: ''
+      module_dir:
+        description: 'Module directory relative to repository root'
+        required: false
+        type: string
+        default: ''
     secrets:
       maven_url:
         description: 'Maven URL'
@@ -51,6 +61,8 @@ jobs:
       NOT_DEV: ${{ secrets.maven_url != '' && secrets.maven_user != '' && secrets.maven_pass != '' }}
       CI_BUILD: ${{ inputs.ci_build }}
       PR_BUILD: ${{ inputs.pr_build }}
+      GRADLE_PROJECT: ${{ inputs.gradle_project != '' && inputs.gradle_project || format('{0}-neoforge-1.21.1', inputs.module_id) }}
+      MODULE_DIR: ${{ inputs.module_dir != '' && inputs.module_dir || format('module.{0}', inputs.module) }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -79,23 +91,32 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Build
-        run: ./gradlew :${{ inputs.module_id }}-neoforge-1.21.1:build
+        run: ./gradlew :${{ env.GRADLE_PROJECT }}:build
 
       - name: Get Version
         id: version
+        shell: bash
         run: |
-          MESSAGE=$(ls module.${{ inputs.module }}/build/libs/* | grep javadoc.jar -v | grep sources.jar -v | grep shadow.jar -v | grep slim.jar -v | awk -F '${{ inputs.mod_id }}-neoforge-|.jar' '{print $2}')
-          echo "version=$MESSAGE" >> $GITHUB_OUTPUT
+          ARTIFACT=$(find "$MODULE_DIR/build/libs" -maxdepth 1 -type f -name '*.jar' \
+            ! -name '*-javadoc.jar' \
+            ! -name '*-sources.jar' \
+            ! -name '*-shadow.jar' \
+            ! -name '*-slim.jar' | head -n 1)
+          FILENAME=$(basename "$ARTIFACT")
+          VERSION=${FILENAME#${{ inputs.mod_id }}-neoforge-}
+          VERSION=${VERSION%.jar}
+          echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: capture build artifacts
         uses: actions/upload-artifact@v4.3.3
         with:
           name: "${{ inputs.module_id }} ${{ steps.version.outputs.version }}"
-          path: module.${{ inputs.module }}/build/libs/${{ inputs.mod_id }}-neoforge-${{ steps.version.outputs.version }}.jar
+          path: ${{ steps.version.outputs.artifact }}
 
       - name: Publish to maven
         if: ${{ !inputs.pr_build && env.NOT_DEV == 'true' }}
-        run: ./gradlew :${{ inputs.module_id }}-neoforge-1.21.1:publish
+        run: ./gradlew :${{ env.GRADLE_PROJECT }}:publish
         env:
           MAVEN_URL: ${{ secrets.maven_url }}
           MAVEN_USERNAME: ${{ secrets.maven_user }}
@@ -106,24 +127,24 @@ jobs:
         uses: actions/upload-artifact@v4.3.3
         with:
           name: "${{ inputs.module_id }}-deploy"
-          path: module.${{ inputs.module }}/build/staging-deploy/
+          path: ${{ env.MODULE_DIR }}/build/staging-deploy/
 
       - name: gametest
         if: ${{ inputs.ci_build && inputs.gametest }}
         uses: Anvil-Dev/dedicated-server-launch-test@1.21.1-neoforge
         with:
-          mod: module.${{ inputs.module }}/build/libs/${{ inputs.mod_id }}-neoforge-${{ steps.version.outputs.version }}.jar
+          mod: ${{ steps.version.outputs.artifact }}
 
       - name: Upload Release Jar
         if: ${{ !inputs.ci_build && !inputs.pr_build }}
         uses: softprops/action-gh-release@v0.1.15
         with:
           files: |
-            module.${{ inputs.module }}/build/libs/${{ inputs.mod_id }}-neoforge-${{ steps.version.outputs.version }}.jar
+            ${{ steps.version.outputs.artifact }}
 
       - name: Upload MCMOD
         if: ${{ inputs.module == 'main' && !inputs.pr_build }}
-        run: ./gradlew :${{ inputs.module_id }}-neoforge-1.21.1:publishMods
+        run: ./gradlew :${{ env.GRADLE_PROJECT }}:publishMods
         env:
           CURSEFORGE_TOKEN: ${{ secrets.curseforge_token }}
           MODRINTH_TOKEN: ${{ secrets.modrinth_token }}
