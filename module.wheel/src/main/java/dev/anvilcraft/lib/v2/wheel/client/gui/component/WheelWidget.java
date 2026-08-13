@@ -314,7 +314,7 @@ public class WheelWidget extends AbstractWidget {
             float rotation = MathUtil.clampWithProportion((degreeEachRotation * i + degreeOffsetAngle) % 360, 0, 360);
             Vector2f rotated = MathUtil.rotationDegrees(ROTATION_START, rotation)
                 .mul(1, -1)
-                .mul(this.getSectionCircleDiameter())
+                .mul(this.getSectionCircleRadius())
                 .add(this.centerPos);
             float detectionStart = (float) (Math.toRadians(rotation - degreeEachRotation / 2f) + Math.PI * 2);
             float detectionEnd = (float) (Math.toRadians(rotation + degreeEachRotation / 2f) + Math.PI * 2);
@@ -328,7 +328,7 @@ public class WheelWidget extends AbstractWidget {
                 section
             ));
         }
-        this.selectionEffectPos = MathUtil.rotate(MathUtil.copy(ROTATION_START).mul(this.getSectionCircleDiameter()), this.currentAngle);
+        this.selectionEffectPos = MathUtil.rotate(MathUtil.copy(ROTATION_START).mul(this.getSectionCircleRadius()), this.currentAngle);
     }
 
     public void renderDisc(
@@ -472,7 +472,7 @@ public class WheelWidget extends AbstractWidget {
         if (!this.sections.get(index).selectable()) return this;
         this.setCurrentSectionIndex(index);
         this.currentAngle = this.sections.get(index).angle;
-        this.selectionEffectPos = MathUtil.rotate(MathUtil.copy(ROTATION_START).mul(this.getSectionCircleDiameter()), this.currentAngle);
+        this.selectionEffectPos = MathUtil.rotate(MathUtil.copy(ROTATION_START).mul(this.getSectionCircleRadius()), this.currentAngle);
         return this;
     }
 
@@ -481,7 +481,7 @@ public class WheelWidget extends AbstractWidget {
         return this;
     }
 
-    public float getSectionCircleDiameter() {
+    public float getSectionCircleRadius() {
         // 图标圆心所在圆周的半径：分隔圆环与盘面外缘之间扇区的中间位置
         return (this.ringOuterRadius + this.ringInnerRadius) * 0.5f;
     }
@@ -650,22 +650,24 @@ public class WheelWidget extends AbstractWidget {
             if (this.selectionEffect == WheelSelectionEffect.ANNULAR_SECTOR) {
                 WheelSection section = this.sections.get(this.currentSectionIndex);
                 float rangeAngle = this.normalizePositiveAngle(section.angleEnd - section.angleStart) / 2.0f;
+                float settle = this.settleProgress();
+                float expand = settle * SETTLE_EXPAND;
                 this.renderAnnularSectorSelection(
                     guiGraphics,
                     this.centerPos.x,
                     this.centerPos.y,
-                    this.selectionEffectColor,
-                    (this.ringInnerRadius + SECTION_INNER_INSET) * progress,
-                    (this.ringOuterRadius - SECTION_OUTER_INSET) * progress,
+                    this.getSelectionSectorColor(settle),
+                    (this.ringInnerRadius + SECTION_INNER_INSET + expand) * progress,
+                    (this.ringOuterRadius - SECTION_OUTER_INSET + expand) * progress,
                     section.angle,
                     rangeAngle
                 );
             } else {
                 WheelSection section = this.sections.get(this.currentSectionIndex);
                 Vector2f center = new Vector2f(
-                    (section.center.x - this.centerPos.x) / this.getSectionCircleDiameter(),
-                    (section.center.y - this.centerPos.y) / this.getSectionCircleDiameter()
-                ).mul(this.getSectionCircleDiameter() * progress).add(this.centerPos.x, this.centerPos.y);
+                    (section.center.x - this.centerPos.x) / this.getSectionCircleRadius(),
+                    (section.center.y - this.centerPos.y) / this.getSectionCircleRadius()
+                ).mul(this.getSectionCircleRadius() * progress).add(this.centerPos.x, this.centerPos.y);
                 this.renderSelectionEffect(
                     guiGraphics,
                     center.x,
@@ -677,9 +679,9 @@ public class WheelWidget extends AbstractWidget {
         }
         for (WheelSection value : this.sections) {
             Vector2f center = new Vector2f(
-                (value.center.x - this.centerPos.x) / this.getSectionCircleDiameter(),
-                (value.center.y - this.centerPos.y) / this.getSectionCircleDiameter()
-            ).mul(this.getSectionCircleDiameter() * progress).add(this.centerPos.x, this.centerPos.y);
+                (value.center.x - this.centerPos.x) / this.getSectionCircleRadius(),
+                (value.center.y - this.centerPos.y) / this.getSectionCircleRadius()
+            ).mul(this.getSectionCircleRadius() * progress).add(this.centerPos.x, this.centerPos.y);
             float x = center.x;
             float y = center.y;
             var renderer = value.renderer();
@@ -745,21 +747,28 @@ public class WheelWidget extends AbstractWidget {
 
         float rangeAngle = this.normalizePositiveAngle(currentSection.angleEnd - currentSection.angleStart) / 2.0f;
         // 鼠标停住后，扇区内外缘同步向外扩张一小段距离（外缘最终贴合盘面外边缘），
-        // 同时透明度从 50% 平滑提升到 100%
+        // 同时透明度从 20% 平滑提升到 100%
         float settle = this.settleProgress();
         float expand = settle * SETTLE_EXPAND;
-        int alpha = Math.round(((this.selectionEffectColor >>> 24) & 0xFF) * (0.2f + 0.8f * settle));
-        int sectorColor = (alpha << 24) | (this.selectionEffectColor & 0xFFFFFF);
         this.renderAnnularSectorSelection(
             guiGraphics,
             this.centerPos.x,
             this.centerPos.y,
-            sectorColor,
+            this.getSelectionSectorColor(settle),
             this.ringInnerRadius + SECTION_INNER_INSET + expand,
             this.ringOuterRadius - SECTION_OUTER_INSET + expand,
             this.selectionAngleRad,
             rangeAngle
         );
+    }
+
+    /**
+     * 根据停住动画进度计算环扇高亮色：基础透明度为 20%，停住后平滑升至配置颜色的透明度。
+     */
+    private int getSelectionSectorColor(float settle) {
+        int baseAlpha = (this.selectionEffectColor >>> 24) & 0xFF;
+        int alpha = Math.round(baseAlpha * (0.2f + 0.8f * settle));
+        return (alpha << 24) | (this.selectionEffectColor & 0xFFFFFF);
     }
 
     /**
