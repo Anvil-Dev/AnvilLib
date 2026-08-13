@@ -6,7 +6,6 @@
   { "module": "moveable-entity-block", "needs": [] },
   { "module": "network",               "needs": [] },
   { "module": "font",                  "needs": [] },
-  { "module": "yukkuri",               "needs": [] },
 
   { "module": "explosion",    "needs": ["config"] },
   { "module": "rpc",          "needs": ["network"] },
