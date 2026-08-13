@@ -8,10 +8,12 @@
  *   <li>控制器相关接口/记录用于自定义多方块控制器行为（onFormed/onUnformed）。</li>
  * </ul>
  */
+@FieldsAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 package dev.anvilcraft.lib.v2.multiblock.dynamic;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
+import com.mojang.logging.annotations.FieldsAreNonnullByDefault;
+import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 
 import javax.annotation.ParametersAreNonnullByDefault;

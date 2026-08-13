@@ -115,6 +115,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
+
     if (System.getenv("NOT_DEV") == 'true') {
         jarJar(api("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.1:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:latest.release"))

@@ -46,7 +46,9 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
             if (!waitingModListeners.contains(owner, evtClass)) {
                 waitingModListeners.put(owner, evtClass, new ArrayList<>());
             }
-            waitingModListeners.get(owner, evtClass).add(Pair.of(priority, listener));
+            List<Pair<EventPriority, Consumer<?>>> pairs = waitingModListeners.get(owner, evtClass);
+            if (pairs == null) return;
+            pairs.add(Pair.of(priority, listener));
             return;
         }
         if (!seenModBus) {
@@ -112,7 +114,9 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
 
     private static void onLoadComplete(FMLLoadCompleteEvent event) {
         event.enqueueWork(() -> {
-            toUnregister.forEach(t -> t.getLeft().unregister(t.getMiddle()));
+            toUnregister.forEach(t -> {
+                if (t.getLeft() != null) t.getLeft().unregister(t.getMiddle());
+            });
             toUnregister.clear();
         });
     }

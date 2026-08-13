@@ -9,6 +9,7 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.function.Predicate;
 
 public class NetworkUtil {
     public static void sendToAllPlayersExcluded(
@@ -18,7 +19,7 @@ public class NetworkUtil {
     ) {
         MinecraftServer server = Objects.requireNonNull(ServerLifecycleHooks.getCurrentServer(), "Cannot send clientbound payloads on the client");
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (player.equals(excluded)) continue;
+            if (Objects.equals(player, excluded)) continue;
             PacketDistributor.sendToPlayer(player, payload, payloads);
         }
     }
@@ -30,7 +31,33 @@ public class NetworkUtil {
         CustomPacketPayload... payloads
     ) {
         for (ServerPlayer player : level.players()) {
-            if (player.equals(excluded)) continue;
+            if (Objects.equals(player, excluded)) continue;
+            PacketDistributor.sendToPlayer(player, payload, payloads);
+        }
+    }
+
+    public static void sendToAllPlayersIncluded(
+        @Nullable Predicate<ServerPlayer> included,
+        CustomPacketPayload payload,
+        CustomPacketPayload... payloads
+    ) {
+        if (included == null) included = ignored -> true;
+        MinecraftServer server = Objects.requireNonNull(ServerLifecycleHooks.getCurrentServer(), "Cannot send clientbound payloads on the client");
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (!included.test(player)) continue;
+            PacketDistributor.sendToPlayer(player, payload, payloads);
+        }
+    }
+
+    public static void sendToAllPlayersInDimensionIncluded(
+        ServerLevel level,
+        @Nullable Predicate<ServerPlayer> included,
+        CustomPacketPayload payload,
+        CustomPacketPayload... payloads
+    ) {
+        if (included == null) included = ignored -> true;
+        for (ServerPlayer player : level.players()) {
+            if (!included.test(player)) continue;
             PacketDistributor.sendToPlayer(player, payload, payloads);
         }
     }

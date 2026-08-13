@@ -1,0 +1,8 @@
+{
+  "narration.anvillib_font.dropdown.collapsed": "Collapsed",
+  "narration.anvillib_font.dropdown.expanded": "Expanded",
+  "screen.anvillib_font.config": "Font Config Screen",
+  "screen.anvillib_font.config.family": "Font Family",
+  "screen.anvillib_font.config.font": "Font",
+  "screen.anvillib_font.config.test": "Font Test"
+}

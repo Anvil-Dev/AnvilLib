@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.test;
 
+import dev.anvilcraft.lib.v2.config.ConfigManager;
 import dev.anvilcraft.lib.v2.registrum.Registrum;
 import dev.anvilcraft.lib.v2.test.multiblock.init.LibBlocks;
 import dev.anvilcraft.lib.v2.test.multiblock.init.LibItemGroups;
@@ -13,6 +14,7 @@ import net.neoforged.fml.common.Mod;
 public class AnvilLibTest {
     public static final String MOD_ID = "anvillib_test";
     public static final Registrum REGISTRUM = Registrum.create(MOD_ID);
+    public static final AnvilLibTestConfig CONFIG = ConfigManager.register(MOD_ID, AnvilLibTestConfig::new);
 
     public AnvilLibTest(IEventBus bus, ModContainer container) {
         LibBlocks.init();

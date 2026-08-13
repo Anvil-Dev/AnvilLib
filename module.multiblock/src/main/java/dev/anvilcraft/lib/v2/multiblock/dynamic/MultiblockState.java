@@ -4,7 +4,8 @@ import com.mojang.serialization.Codec;
 import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.multiblock.dynamic.definition.MultiblockDefinition;
 import dev.anvilcraft.lib.v2.multiblock.init.LibRegistries;
-import dev.anvilcraft.lib.v2.util.Util;
+import io.netty.buffer.ByteBuf;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -14,44 +15,49 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
+import javax.annotation.Nullable;
+
+import java.util.Map;
 
 @Getter
 @Setter
 public class MultiblockState {
+    public static final Codec<ResourceKey<MultiblockDefinition>> DEFINITION_KEY_CODEC = ResourceKey.codec(LibRegistries.DEFINITIONS_KEY);
+    public static final StreamCodec<ByteBuf, ResourceKey<MultiblockDefinition>> DEFINITION_KEY_STREAM_CODEC = ResourceKey.streamCodec(
+        LibRegistries.DEFINITIONS_KEY
+    );
     public static final StreamCodec<RegistryFriendlyByteBuf, MultiblockState> STREAM_CODEC = StreamCodec.composite(
         StreamCodecUtil.VAR_INT_BLOCK_POS,
         MultiblockState::getControllerPos,
-        ByteBufCodecs.holder(LibRegistries.DEFINITIONS_KEY, MultiblockDefinition.STREAM_CODEC),
-        MultiblockState::getDefinition,
+        DEFINITION_KEY_STREAM_CODEC,
+        MultiblockState::getDefinitionKey,
         MultiblockState::new
     );
-    public static final Codec<ResourceKey<MultiblockDefinition>> DEFINITION_KEY_CODEC = ResourceKey.codec(LibRegistries.DEFINITIONS_KEY);
 
     private final BlockPos controllerPos;
-    private final Holder.Reference<MultiblockDefinition> definition;
+    private final ResourceKey<MultiblockDefinition> definitionKey;
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private @Nullable Holder.Reference<MultiblockDefinition> definition;
     private boolean formed;
+    private MultiblockCheckSnapshot snapshot;
 
-    public MultiblockState(BlockPos controllerPos, Holder<MultiblockDefinition> definition) {
-        this(
-            controllerPos,
-            definition instanceof Holder.Reference<MultiblockDefinition> ref
-            ? ref
-            : Util.throwE(new IllegalArgumentException("Non Reference Holder '" + definition + "' found")),
-            false
-        );
+    public MultiblockState(BlockPos controllerPos, ResourceKey<MultiblockDefinition> definitionKey) {
+        this(controllerPos, definitionKey, false);
     }
 
-    public MultiblockState(BlockPos controllerPos, Holder.Reference<MultiblockDefinition> definition, boolean formed) {
+    public MultiblockState(BlockPos controllerPos, ResourceKey<MultiblockDefinition> definitionKey, boolean formed) {
         this.controllerPos = controllerPos;
-        this.definition = definition;
+        this.definitionKey = definitionKey;
         this.formed = formed;
+        this.snapshot = new MultiblockCheckSnapshot(this.controllerPos, Map.of());
     }
 
-    public ResourceKey<MultiblockDefinition> getDefinitionKey() {
-        return this.definition.key();
+    public Holder.Reference<MultiblockDefinition> getDefinition(HolderLookup.Provider registries) {
+        if (this.definition != null) return this.definition;
+        return this.definition = registries.lookup(LibRegistries.DEFINITIONS_KEY).orElseThrow().getOrThrow(this.definitionKey);
     }
 
     public Tag toTag(HolderLookup.Provider registries) {
@@ -79,16 +85,11 @@ public class MultiblockState {
             registries.createSerializationContext(NbtOps.INSTANCE),
             tag.get("controllerPos")
         ).getOrThrow().getFirst();
-        Holder.Reference<MultiblockDefinition> definition = registries.lookup(LibRegistries.DEFINITIONS_KEY).orElseThrow().getOrThrow(
-            MultiblockState.DEFINITION_KEY_CODEC.decode(
-                registries.createSerializationContext(NbtOps.INSTANCE),
-                tag.get("definition")
-            ).getOrThrow().getFirst()
-        );
+        ResourceKey<MultiblockDefinition> definitionKey = MultiblockState.DEFINITION_KEY_CODEC.decode(
+            registries.createSerializationContext(NbtOps.INSTANCE),
+            tag.get("definition")
+        ).getOrThrow().getFirst();
         boolean formed = tag.getBoolean("formed");
-        return new MultiblockState(controllerPos, definition, formed);
+        return new MultiblockState(controllerPos, definitionKey, formed);
     }
 }
-
-
-

@@ -97,7 +97,7 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
                 CodecUtil.BLOCK_STATE_MAP_CODEC
                     .forGetter(SetBlock::state),
                 CompoundTag.CODEC
-                    .optionalFieldOf("nbt", null)
+                    .optionalFieldOf("nbt", new CompoundTag())
                     .forGetter(SetBlock::nbt),
                 Vec3.CODEC
                     .fieldOf("offset")

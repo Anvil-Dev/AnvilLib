@@ -5,6 +5,7 @@ import dev.anvilcraft.lib.v2.wheel.api.WheelEntry;
 import dev.anvilcraft.lib.v2.wheel.api.WheelMenuModel;
 import dev.anvilcraft.lib.v2.wheel.api.WheelOpenMode;
 import dev.anvilcraft.lib.v2.wheel.api.WheelPageModel;
+import dev.anvilcraft.lib.v2.wheel.client.gui.component.WheelFrostedBackground;
 import dev.anvilcraft.lib.v2.wheel.client.gui.component.WheelWidget;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -13,10 +14,11 @@ import net.minecraft.network.chat.Component;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import javax.annotation.Nullable;
 
 public class WheelScreen extends Screen {
-    private static final float WHEEL_INNER_RADIUS_SCALE = 0.12f;
-    private static final float WHEEL_OUTER_RADIUS_SCALE = 0.22f;
+    private static final float WHEEL_INNER_RADIUS_SCALE = 0.17f;
+    private static final float WHEEL_OUTER_RADIUS_SCALE = 0.33f;
 
     private final WheelMenuModel model;
     private final WheelOpenMode openMode;
@@ -24,22 +26,14 @@ public class WheelScreen extends Screen {
 
     private WheelWidget wheelWidget;
     private int currentPageIndex;
+    @Nullable
+    private WheelFrostedBackground frostedBackground;
 
     public WheelScreen(WheelMenuModel model, WheelOpenMode openMode) {
         super(Component.empty());
         this.model = model;
         this.openMode = openMode;
         this.menuStack.addLast(this.model.rootEntries());
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    @Override
-    protected void init() {
-        this.rebuildWheelWidget();
     }
 
     public static WheelScreen tap(WheelMenuModel model) {
@@ -58,13 +52,33 @@ public class WheelScreen extends Screen {
     }
 
     @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    @Override
+    protected void init() {
+        if (this.frostedBackground != null) {
+            this.frostedBackground.close();
+        }
+        this.frostedBackground = new WheelFrostedBackground();
+        this.rebuildWheelWidget();
+    }
+
+    @Override
+    public void removed() {
+        if (this.frostedBackground != null) {
+            this.frostedBackground.close();
+            this.frostedBackground = null;
+        }
+        super.removed();
+    }
+
+    @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         if (this.wheelWidget != null) {
             this.wheelWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         }
-
-        Component pageInfo = Component.literal((this.currentPageIndex + 1) + " / " + this.pageCountForCurrentMenu());
-        guiGraphics.drawCenteredString(this.font, pageInfo, this.width / 2, this.height - 22, 0xFFFFFFFF);
     }
 
     @Override
@@ -178,6 +192,13 @@ public class WheelScreen extends Screen {
             sections,
             this.model.deadZone()
         );
+        this.wheelWidget.setFrostedBackground(this.frostedBackground);
+        this.wheelWidget.setPageState(
+            this.currentPageIndex > 0,
+            this.currentPageIndex < this.pageCountForCurrentMenu() - 1
+        );
+        this.wheelWidget.setSelectionEffectColor(this.model.selectionEffectColor());
+        this.wheelWidget.setSelectionEffect(this.model.selectionEffect());
         this.wheelWidget.clearSelection();
     }
 
@@ -198,4 +219,3 @@ public class WheelScreen extends Screen {
         return this.menuStack.getLast();
     }
 }
-

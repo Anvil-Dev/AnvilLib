@@ -2,295 +2,125 @@ name: Release for Mod
 on:
   workflow_dispatch:
   release:
+    types:
+      - published
     branches:
       - dev/**
       # - releases/**
-    paths:
-      - module.*/src/**
-      - module.*/build.gradle
-      - module.*/gradle.properties
-      - build.gradle
-      - gradle.properties
-      - settings.gradle
 
 jobs:
-  config:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      level_0: ${{ steps.matrix.outputs.level_0 }}
+      level_1: ${{ steps.matrix.outputs.level_1 }}
+      level_2: ${{ steps.matrix.outputs.level_2 }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: matrix
+        run: node .github/workflows/generate-matrix.js
+
+  # ── Build (topological levels) ──────────────────────────────────
+
+  build-l0:
+    needs: [prepare]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: config
-      module_id: anvillib-config
-      mod_id: anvillib_config
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+      mod_id: ${{ matrix.mod_id }}
       ci_build: false
       pr_build: false
     secrets:
       maven_url: ${{ secrets.MAVEN_URL }}
       maven_user: ${{ secrets.MAVEN_USER }}
       maven_pass: ${{ secrets.MAVEN_PASS }}
-  config-maven-central-deploy:
-    uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - config
-    with:
-      module: config
-      module_id: anvillib-config
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-  codec:
+
+  build-l1:
+    needs: [prepare, build-l0]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: codec
-      module_id: anvillib-codec
-      mod_id: anvillib_codec
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+      mod_id: ${{ matrix.mod_id }}
       ci_build: false
       pr_build: false
     secrets:
       maven_url: ${{ secrets.MAVEN_URL }}
       maven_user: ${{ secrets.MAVEN_USER }}
       maven_pass: ${{ secrets.MAVEN_PASS }}
-  codec-maven-central-deploy:
-    uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - codec
-    with:
-      module: codec
-      module_id: anvillib-codec
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-  integration:
+
+  build-l2:
+    needs: [prepare, build-l1]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: integration
-      module_id: anvillib-integration
-      mod_id: anvillib_integration
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+      mod_id: ${{ matrix.mod_id }}
       ci_build: false
       pr_build: false
     secrets:
       maven_url: ${{ secrets.MAVEN_URL }}
       maven_user: ${{ secrets.MAVEN_USER }}
       maven_pass: ${{ secrets.MAVEN_PASS }}
-  integration-maven-central-deploy:
+
+  # ── Maven Central deploy ────────────────────────────────────────
+
+  deploy-l0:
+    needs: [prepare, build-l0]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
     uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - integration
     with:
-      module: integration
-      module_id: anvillib-integration
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
     secrets:
       maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
       maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
       signing_key: ${{ secrets.SIGNING_KEY }}
       signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
-  moveable-entity-block:
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: moveable-entity-block
-      module_id: anvillib-moveable-entity-block
-      mod_id: anvillib_moveable_entity_block
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-  moveable-entity-block-maven-central-deploy:
+
+  deploy-l1:
+    needs: [prepare, build-l1]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
     uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - moveable-entity-block
     with:
-      module: moveable-entity-block
-      module_id: anvillib-moveable-entity-block
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
     secrets:
       maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
       maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
       signing_key: ${{ secrets.SIGNING_KEY }}
       signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
-  multiblock:
-    uses: ./.github/workflows/build_and_test.yml
-    needs: 
-      - config
-      - codec
-      - network
-      - util
-    with:
-      module: multiblock
-      module_id: anvillib-multiblock
-      mod_id: anvillib_multiblock
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-  multiblock-maven-central-deploy:
+
+  deploy-l2:
+    needs: [prepare, build-l2]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
     uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - multiblock
     with:
-      module: multiblock
-      module_id: anvillib-multiblock
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
     secrets:
       maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
       maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
       signing_key: ${{ secrets.SIGNING_KEY }}
       signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
-  network:
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: network
-      module_id: anvillib-network
-      mod_id: anvillib_network
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-  network-maven-central-deploy:
-    uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - network
-    with:
-      module: network
-      module_id: anvillib-network
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-  recipe:
-    needs:
-      - config
-      - codec
-      - util
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: recipe
-      module_id: anvillib-recipe
-      mod_id: anvillib_recipe
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-  recipe-maven-central-deploy:
-    uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - recipe
-    with:
-      module: recipe
-      module_id: anvillib-recipe
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-  registrum:
-    uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - util
-    with:
-      module: registrum
-      module_id: anvillib-registrum
-      mod_id: anvillib_registrum
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-  registrum-maven-central-deploy:
-    uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - registrum
-    with:
-      module: registrum
-      module_id: anvillib-registrum
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-  util:
-    uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - codec
-    with:
-      module: util
-      module_id: anvillib-util
-      mod_id: anvillib_util
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-  util-maven-central-deploy:
-    uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - util
-    with:
-      module: util
-      module_id: anvillib-util
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-  wheel:
-    uses: ./.github/workflows/build_and_test.yml
-    needs:
-      - util
-    with:
-      module: wheel
-      module_id: anvillib-wheel
-      mod_id: anvillib_wheel
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-  wheel-maven-central-deploy:
-    uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - wheel
-    with:
-      module: wheel
-      module_id: anvillib-wheel
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
+
+  # ── Main (aggregator) ───────────────────────────────────────────
+
   main:
-    needs:
-      - config
-      - codec
-      - integration
-      - moveable-entity-block
-      - multiblock
-      - network
-      - recipe
-      - registrum
-      - util
-      - wheel
+    needs: [build-l2]
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: main
@@ -302,10 +132,10 @@ jobs:
       maven_url: ${{ secrets.MAVEN_URL }}
       maven_user: ${{ secrets.MAVEN_USER }}
       maven_pass: ${{ secrets.MAVEN_PASS }}
+
   main-maven-central-deploy:
+    needs: [main]
     uses: ./.github/workflows/publish_maven_central.yml
-    needs:
-      - main
     with:
       module: main
       module_id: anvillib

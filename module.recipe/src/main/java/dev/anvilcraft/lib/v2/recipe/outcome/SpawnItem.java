@@ -104,7 +104,9 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
     @SuppressWarnings("unchecked")
     public void accept(InWorldRecipeContext context) {
         ItemCache cache = context.computeIfAbsent(ItemCache.ITEM_CACHE);
-        ItemStack stack = this.item.copyWithCount(context.getInt(this.count, 0, 99));
+        int count = context.getInt(this.count, 0, 99);
+        if (count == 0) return;
+        ItemStack stack = this.item.copyWithCount(count);
         BlockCache blockCache = context.computeIfAbsent(BlockCache.BLOCK_CACHE);
         Vec3 offset = context.getPos().add(this.offset);
         BlockPos blockPos = BlockPos.containing(offset);

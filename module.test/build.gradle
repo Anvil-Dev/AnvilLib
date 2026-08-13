@@ -111,6 +111,8 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 dependencies {
     implementation project(":anvillib-config-neoforge-1.21.1")
     implementation project(":anvillib-codec-neoforge-1.21.1")
+    implementation project(":anvillib-explosion-neoforge-1.21.1")
+    implementation project(":anvillib-rpc-neoforge-1.21.1")
     implementation project(":anvillib-multiblock-neoforge-1.21.1")
     implementation project(":anvillib-integration-neoforge-1.21.1")
     interfaceInjectionData(implementation project(":anvillib-moveable-entity-block-neoforge-1.21.1"))

@@ -20,6 +20,16 @@ public class LibShaders {
     static @Nullable ShaderInstance ringShader;
     @Getter
     static @Nullable ShaderInstance selectionShader;
+    @Getter
+    static @Nullable ShaderInstance annularSectorShader;
+    @Getter
+    static @Nullable ShaderInstance discShader;
+    @Getter
+    static @Nullable ShaderInstance frostedDiscShader;
+    @Getter
+    static @Nullable ShaderInstance blurShader;
+    @Getter
+    static @Nullable ShaderInstance segmentShader;
 
     @SubscribeEvent
     public static void register(RegisterShadersEvent event) {
@@ -39,6 +49,46 @@ public class LibShaders {
                     DefaultVertexFormat.POSITION_COLOR
                 ),
                 it -> selectionShader = it
+            );
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    AnvilLibWheel.of("annular_sector"),
+                    DefaultVertexFormat.POSITION_COLOR
+                ),
+                it -> annularSectorShader = it
+            );
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    AnvilLibWheel.of("disc"),
+                    DefaultVertexFormat.POSITION_COLOR
+                ),
+                it -> discShader = it
+            );
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    AnvilLibWheel.of("frosted_disc"),
+                    DefaultVertexFormat.POSITION_TEX_COLOR
+                ),
+                it -> frostedDiscShader = it
+            );
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    AnvilLibWheel.of("blur"),
+                    DefaultVertexFormat.POSITION_TEX
+                ),
+                it -> blurShader = it
+            );
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    AnvilLibWheel.of("segment"),
+                    DefaultVertexFormat.POSITION_COLOR
+                ),
+                it -> segmentShader = it
             );
         } catch (IOException e) {
             log.error(e.getLocalizedMessage(), e);
