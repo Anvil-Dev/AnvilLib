@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-record DefinitionSerialization(String[][] grid, Char2ObjectMap<BlockStatePredicate> mapping) {
-    static final MapCodec<DefinitionSerialization> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
+public record DefinitionSerialization(String[][] grid, Char2ObjectMap<BlockStatePredicate> mapping) {
+    public static final MapCodec<DefinitionSerialization> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
         Codec.STRING
             .listOf()
             .listOf()
@@ -39,7 +39,7 @@ record DefinitionSerialization(String[][] grid, Char2ObjectMap<BlockStatePredica
             .fieldOf("mapping")
             .forGetter(DefinitionSerialization::mapping)
     ).apply(inst, DefinitionSerialization::new));
-    static final StreamCodec<RegistryFriendlyByteBuf, DefinitionSerialization> STREAM_CODEC = StreamCodec.composite(
+    public static final StreamCodec<RegistryFriendlyByteBuf, DefinitionSerialization> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.STRING_UTF8
             .apply(ByteBufCodecs.list())
             .apply(ByteBufCodecs.list())
@@ -67,7 +67,7 @@ record DefinitionSerialization(String[][] grid, Char2ObjectMap<BlockStatePredica
         return Vec3i.ZERO;
     }
 
-    MultiblockDefinition toDefinition() {
+    public MultiblockDefinition toDefinition() {
         Vec3i offset = this.findControllerPos();
         ImmutableMap.Builder<Vec3i, BlockStatePredicate> definition = ImmutableMap.builder();
         String[][] grid = this.grid;
@@ -88,7 +88,7 @@ record DefinitionSerialization(String[][] grid, Char2ObjectMap<BlockStatePredica
         return new MultiblockDefinition(definition.build());
     }
 
-    static DefinitionSerialization fromDefinition(MultiblockDefinition definition) {
+    public static DefinitionSerialization fromDefinition(MultiblockDefinition definition) {
         int minX = Integer.MAX_VALUE;
         int minY = Integer.MAX_VALUE;
         int minZ = Integer.MAX_VALUE;
