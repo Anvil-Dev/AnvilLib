@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-record DefinitionSerialization(String[][] grid, Char2ObjectMap<BlockStatePredicate> mapping) {
+public record DefinitionSerialization(String[][] grid, Char2ObjectMap<BlockStatePredicate> mapping) {
     static final MapCodec<DefinitionSerialization> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
         Codec.STRING
             .listOf()
