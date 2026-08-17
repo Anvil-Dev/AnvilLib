@@ -25,6 +25,7 @@
 package dev.anvilcraft.lib.v2.registrum.builders;
 
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
+import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSections;
 import net.minecraft.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -37,6 +38,7 @@ import net.minecraft.world.level.ItemLike;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Collection;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -84,6 +86,11 @@ public class CreativeTabBuilder<P> extends AbstractBuilder<CreativeModeTab, Crea
     public CreativeTabBuilder<P> displayItems(CreativeModeTab.DisplayItemsGenerator displayItemsGenerator) {
         this.builder = this.builder.displayItems(displayItemsGenerator);
         return this;
+    }
+
+    public CreativeTabBuilder<P> sectionedDisplayItems(Consumer<CreativeTabSections> displayItems) {
+        ResourceLocation tabId = ResourceLocation.fromNamespaceAndPath(this.getOwner().getModid(), this.getName());
+        return this.displayItems((parameters, output) -> CreativeTabSections.build(tabId, parameters, output, displayItems));
     }
 
     public CreativeTabBuilder<P> alignedRight() {
