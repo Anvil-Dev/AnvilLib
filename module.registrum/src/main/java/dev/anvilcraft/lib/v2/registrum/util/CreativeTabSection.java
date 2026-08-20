@@ -11,7 +11,8 @@ public record CreativeTabSection(
     ResourceLocation bannerTexture,
     Component text,
     int textBackgroundColor,
-    List<Component> tooltip
+    List<Component> tooltip,
+    TextAlignment textAlignment
 ) {
     public static final int MIN_BANNER_LENGTH = 1;
     public static final int MAX_BANNER_LENGTH = 9;
@@ -24,6 +25,17 @@ public record CreativeTabSection(
         bannerTexture = Objects.requireNonNull(bannerTexture, "bannerTexture");
         text = Objects.requireNonNull(text, "text");
         tooltip = List.copyOf(tooltip);
+        textAlignment = Objects.requireNonNull(textAlignment, "textAlignment");
+    }
+
+    public CreativeTabSection(
+        int bannerLength,
+        ResourceLocation bannerTexture,
+        Component text,
+        int textBackgroundColor,
+        List<Component> tooltip
+    ) {
+        this(bannerLength, bannerTexture, text, textBackgroundColor, tooltip, TextAlignment.CENTER);
     }
 
     public static Builder builder(ResourceLocation bannerTexture) {
@@ -36,6 +48,7 @@ public record CreativeTabSection(
         private Component text = Component.empty();
         private int textBackgroundColor = 0x00000000;
         private List<Component> tooltip = List.of();
+        private TextAlignment textAlignment = TextAlignment.CENTER;
 
         private Builder(ResourceLocation bannerTexture) {
             this.bannerTexture = Objects.requireNonNull(bannerTexture, "bannerTexture");
@@ -56,6 +69,11 @@ public record CreativeTabSection(
             return this;
         }
 
+        public Builder textAlignment(TextAlignment textAlignment) {
+            this.textAlignment = Objects.requireNonNull(textAlignment, "textAlignment");
+            return this;
+        }
+
         public Builder tooltip(Component... tooltip) {
             return this.tooltip(List.of(tooltip));
         }
@@ -71,8 +89,15 @@ public record CreativeTabSection(
                 this.bannerTexture,
                 this.text,
                 this.textBackgroundColor,
-                this.tooltip
+                this.tooltip,
+                this.textAlignment
             );
         }
+    }
+
+    public enum TextAlignment {
+        LEFT,
+        CENTER,
+        RIGHT
     }
 }

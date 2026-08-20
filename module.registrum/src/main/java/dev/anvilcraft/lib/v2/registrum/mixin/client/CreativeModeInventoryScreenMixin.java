@@ -5,6 +5,7 @@ import dev.anvilcraft.lib.v2.registrum.client.gui.CreativeVariantPickerOverlay;
 import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSection;
 import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSections;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -398,6 +399,8 @@ abstract class CreativeModeInventoryScreenMixin
         int bannerWidth = section.bannerLength() * anvillib$CELL_SIZE;
         int bannerX = this.leftPos + anvillib$GRID_LEFT - 1;
         int bannerY = this.topPos + anvillib$GRID_TOP + row * anvillib$CELL_SIZE - 1;
+        boolean hovered = mouseX >= bannerX && mouseX < bannerX + bannerWidth
+            && mouseY >= bannerY && mouseY < bannerY + anvillib$CELL_SIZE;
         graphics.pose().pushPose();
         try {
             graphics.pose().translate(0.0F, 0.0F, anvillib$BANNER_Z);
@@ -412,12 +415,11 @@ abstract class CreativeModeInventoryScreenMixin
                 bannerWidth,
                 anvillib$CELL_SIZE
             );
-            this.anvillib$renderBannerText(graphics, section, bannerX, bannerY, bannerWidth);
+            this.anvillib$renderBannerText(graphics, section, bannerX, bannerY, bannerWidth, hovered);
         } finally {
             graphics.pose().popPose();
         }
-        if (mouseX >= bannerX && mouseX < bannerX + bannerWidth
-            && mouseY >= bannerY && mouseY < bannerY + anvillib$CELL_SIZE) {
+        if (hovered) {
             this.anvillib$hoveredSection = section;
         }
     }
@@ -428,32 +430,48 @@ abstract class CreativeModeInventoryScreenMixin
         CreativeTabSection section,
         int bannerX,
         int bannerY,
-        int bannerWidth
+        int bannerWidth,
+        boolean hovered
     ) {
         int maxTextWidth = bannerWidth - anvillib$TEXT_PADDING * 2;
         int textWidth = this.font.width(section.text());
         if (textWidth == 0) return;
-        float textScale = Math.min(1.0F, (float) maxTextWidth / textWidth);
-        int scaledTextWidth = (int) Math.ceil(textWidth * textScale);
-        int scaledTextHeight = (int) Math.ceil(this.font.lineHeight * textScale);
-        int textX = bannerX + (bannerWidth - scaledTextWidth) / 2;
-        int textY = bannerY + (anvillib$CELL_SIZE - scaledTextHeight) / 2 + 1;
+        int textLeft = bannerX + anvillib$TEXT_PADDING;
+        int textRight = bannerX + bannerWidth - anvillib$TEXT_PADDING;
+        int textX = switch (section.textAlignment()) {
+            case LEFT -> textLeft;
+            case CENTER -> textLeft + (maxTextWidth - textWidth) / 2;
+            case RIGHT -> textRight - textWidth;
+        };
+        int textY = bannerY + (anvillib$CELL_SIZE - this.font.lineHeight) / 2 + 1;
+        boolean overflowing = textWidth > maxTextWidth;
         if ((section.textBackgroundColor() >>> 24) != 0) {
             graphics.fill(
-                textX - anvillib$TEXT_PADDING,
+                overflowing ? bannerX : textX - anvillib$TEXT_PADDING,
                 textY - 1,
-                textX + scaledTextWidth + anvillib$TEXT_PADDING,
-                textY + scaledTextHeight,
+                overflowing ? bannerX + bannerWidth : textX + textWidth + anvillib$TEXT_PADDING,
+                textY + this.font.lineHeight,
                 section.textBackgroundColor()
             );
         }
-        graphics.pose().pushPose();
+        if (hovered && overflowing) {
+            AbstractWidget.renderScrollingString(
+                graphics,
+                this.font,
+                section.text(),
+                textLeft,
+                bannerY,
+                textRight,
+                bannerY + anvillib$CELL_SIZE,
+                0xFFFFFFFF
+            );
+            return;
+        }
+        graphics.enableScissor(textLeft, bannerY, textRight, bannerY + anvillib$CELL_SIZE);
         try {
-            graphics.pose().translate(textX, textY, 0.0F);
-            graphics.pose().scale(textScale, textScale, 1.0F);
-            graphics.drawString(this.font, section.text(), 0, 0, 0xFFFFFFFF, true);
+            graphics.drawString(this.font, section.text(), textX, textY, 0xFFFFFFFF, true);
         } finally {
-            graphics.pose().popPose();
+            graphics.disableScissor();
         }
     }
 }
