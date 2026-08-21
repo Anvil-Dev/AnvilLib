@@ -44,6 +44,7 @@ public final class CreativeVariantPickerRegistry {
         DyeColor.PINK
     );
     private static final Map<Item, List<VariantGroup>> GROUPS = new ConcurrentHashMap<>();
+    private static volatile BooleanSupplier vanillaColorVariantPickerEnabled = () -> false;
     private static volatile boolean colorFamiliesDiscovered;
 
     private CreativeVariantPickerRegistry() {
@@ -52,6 +53,17 @@ public final class CreativeVariantPickerRegistry {
     /** 返回叠加层使用的稳定颜色顺序。 */
     public static List<DyeColor> colorOrder() {
         return COLOR_ORDER;
+    }
+
+    /**
+     * 设置原版独立十六色物品组是否折叠为创造物品栏选择器，默认不折叠
+     *
+     * <p>实现模组可传入客户端配置字段的读取器，配置重载后的值会在下次构建创造标签时读取</p>
+     *
+     * @param enabled 返回 {@code true} 时折叠完整的原版十六色物品组
+     */
+    public static void setVanillaColorVariantPickerEnabled(BooleanSupplier enabled) {
+        vanillaColorVariantPickerEnabled = Objects.requireNonNull(enabled, "enabled");
     }
 
     /** 注册由独立物品组成的变体组，例如原版式的彩色方块。 */
@@ -203,10 +215,14 @@ public final class CreativeVariantPickerRegistry {
                 List<ItemStack> variants = COLOR_ORDER.stream()
                     .map(color -> new ItemStack(family.get(color)))
                     .toList();
-                registerStacks(variants);
+                registerStacks(CreativeVariantPickerRegistry::isVanillaColorVariantPickerEnabled, variants);
             }
             colorFamiliesDiscovered = true;
         }
+    }
+
+    private static boolean isVanillaColorVariantPickerEnabled() {
+        return vanillaColorVariantPickerEnabled.getAsBoolean();
     }
 
     private record FamilyKey(String namespace, String basePath) {
