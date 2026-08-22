@@ -11,6 +11,7 @@ import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
@@ -438,13 +439,21 @@ abstract class CreativeModeInventoryScreenMixin
         if (textWidth == 0) return;
         int textLeft = bannerX + anvillib$TEXT_PADDING;
         int textRight = bannerX + bannerWidth - anvillib$TEXT_PADDING;
+        boolean overflowing = textWidth > maxTextWidth;
+        FormattedCharSequence textToRender = section.text().getVisualOrderText();
+        int visibleTextWidth = textWidth;
+        if (!hovered && overflowing) {
+            textToRender = this.font.split(section.text(), maxTextWidth).stream()
+                .findFirst()
+                .orElse(FormattedCharSequence.EMPTY);
+            visibleTextWidth = this.font.width(textToRender);
+        }
         int textX = switch (section.textAlignment()) {
             case LEFT -> textLeft;
-            case CENTER -> textLeft + (maxTextWidth - textWidth) / 2;
-            case RIGHT -> textRight - textWidth;
+            case CENTER -> textLeft + (maxTextWidth - visibleTextWidth) / 2;
+            case RIGHT -> textRight - visibleTextWidth;
         };
         int textY = bannerY + (anvillib$CELL_SIZE - this.font.lineHeight) / 2 + 1;
-        boolean overflowing = textWidth > maxTextWidth;
         if ((section.textBackgroundColor() >>> 24) != 0) {
             graphics.fill(
                 overflowing ? bannerX : textX - anvillib$TEXT_PADDING,
@@ -467,11 +476,6 @@ abstract class CreativeModeInventoryScreenMixin
             );
             return;
         }
-        graphics.enableScissor(textLeft, bannerY, textRight, bannerY + anvillib$CELL_SIZE);
-        try {
-            graphics.drawString(this.font, section.text(), textX, textY, 0xFFFFFFFF, true);
-        } finally {
-            graphics.disableScissor();
-        }
+        graphics.drawString(this.font, textToRender, textX, textY, 0xFFFFFFFF, true);
     }
 }
