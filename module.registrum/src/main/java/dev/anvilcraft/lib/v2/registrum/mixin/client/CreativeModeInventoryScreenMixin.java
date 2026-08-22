@@ -191,10 +191,15 @@ abstract class CreativeModeInventoryScreenMixin
         CreativeVariantPickerOverlay overlay = this.anvillib$validVariantOverlay();
         if (overlay != null && overlay.contains(this.leftPos, this.topPos, mouseX, mouseY)) {
             this.anvillib$consumeMouseButton(button);
-            if (button == 0 || button == 1) {
-                overlay.variantAt(this.leftPos, this.topPos, mouseX, mouseY)
-                    .ifPresent(variant -> this.anvillib$selectPickerVariant(overlay, variant, button));
-            }
+            overlay.variantAt(this.leftPos, this.topPos, mouseX, mouseY).ifPresent(variant -> {
+                if (button == 0 || button == 1) {
+                    this.anvillib$selectPickerVariant(overlay, variant, button);
+                } else if (this.anvillib$isPickerCloneMouseButton(button)) {
+                    this.anvillib$clickPickerVariant(overlay, variant, button, ClickType.CLONE);
+                } else {
+                    this.anvillib$clickPickerHotbarMouseButton(overlay, variant, button);
+                }
+            });
             cir.setReturnValue(true);
             return;
         }
@@ -268,8 +273,17 @@ abstract class CreativeModeInventoryScreenMixin
         }
         CreativeVariantPickerOverlay overlay = this.anvillib$validVariantOverlay();
         ItemStack variant = this.anvillib$hoveredPickerVariant;
-        if (overlay == null || variant == null
-            || !this.minecraft.options.keyDrop.isActiveAndMatches(key)) return;
+        if (overlay == null || variant == null) return;
+        if (this.anvillib$handlePickerHotbarKey(overlay, variant, key)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        if (this.minecraft.options.keyPickItem.isActiveAndMatches(key)) {
+            this.anvillib$clickPickerVariant(overlay, variant, 0, ClickType.CLONE);
+            cir.setReturnValue(true);
+            return;
+        }
+        if (!this.minecraft.options.keyDrop.isActiveAndMatches(key)) return;
         this.anvillib$clickPickerVariant(
             overlay,
             variant,
@@ -334,6 +348,53 @@ abstract class CreativeModeInventoryScreenMixin
     ) {
         ClickType clickType = hasShiftDown() ? ClickType.QUICK_MOVE : ClickType.PICKUP;
         this.anvillib$clickPickerVariant(overlay, variant, button, clickType);
+    }
+
+    @Unique
+    private boolean anvillib$handlePickerHotbarKey(
+        CreativeVariantPickerOverlay overlay,
+        ItemStack variant,
+        InputConstants.Key key
+    ) {
+        if (!this.menu.getCarried().isEmpty()) return false;
+        if (this.minecraft.options.keySwapOffhand.isActiveAndMatches(key)) {
+            this.anvillib$clickPickerVariant(overlay, variant, 40, ClickType.SWAP);
+            return true;
+        }
+        for (int index = 0; index < this.minecraft.options.keyHotbarSlots.length; index++) {
+            if (this.minecraft.options.keyHotbarSlots[index].isActiveAndMatches(key)) {
+                this.anvillib$clickPickerVariant(overlay, variant, index, ClickType.SWAP);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Unique
+    private boolean anvillib$isPickerCloneMouseButton(int button) {
+        InputConstants.Key mouseKey = InputConstants.Type.MOUSE.getOrCreate(button);
+        return this.menu.getCarried().isEmpty()
+            && this.minecraft.options.keyPickItem.isActiveAndMatches(mouseKey)
+            && this.minecraft.player != null
+            && this.minecraft.player.hasInfiniteMaterials();
+    }
+
+    @Unique
+    private void anvillib$clickPickerHotbarMouseButton(
+        CreativeVariantPickerOverlay overlay,
+        ItemStack variant,
+        int button
+    ) {
+        if (!this.menu.getCarried().isEmpty()) return;
+        if (this.minecraft.options.keySwapOffhand.matchesMouse(button)) {
+            this.anvillib$clickPickerVariant(overlay, variant, 40, ClickType.SWAP);
+            return;
+        }
+        for (int index = 0; index < this.minecraft.options.keyHotbarSlots.length; index++) {
+            if (this.minecraft.options.keyHotbarSlots[index].matchesMouse(button)) {
+                this.anvillib$clickPickerVariant(overlay, variant, index, ClickType.SWAP);
+            }
+        }
     }
 
     @Unique
