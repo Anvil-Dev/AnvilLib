@@ -220,9 +220,15 @@ public class InWorldRecipeManager {
      */
     private static final class PrunePlan {
         /**
-         * 共享判定节点，按注册顺序排列以保证确定性的读取次序
+         * 共享判定节点，仅用于注册时按 {@link NodeKey} 去重；解析时按 {@link #groups} 遍历
          */
         private final Map<NodeKey, JudgeNode> nodes = new LinkedHashMap<>();
+
+        /**
+         * 按位置偏移分组的判定节点，按注册顺序排列以保证确定性的读取次序；
+         * 解析时每组只读取一次世界，组内节点共享该次读取
+         */
+        private final Map<Vec3, OffsetGroup> groups = new LinkedHashMap<>();
 
         /**
          * 配方槽位映射，用于解析时识别未经 {@link InWorldRecipeManager#register} 注册的配方并保守放行
@@ -243,9 +249,13 @@ public class InWorldRecipeManager {
         void add(RecipeHolder<InWorldRecipe> holder, List<BlockConstraint> constraints) {
             Slot slot = new Slot();
             for (BlockConstraint constraint : constraints) {
-                JudgeNode node = this.nodes.computeIfAbsent(
-                    new NodeKey(constraint.offset(), BlockSetKey.of(constraint.predicate().getBlocks())),
-                    key -> new JudgeNode(key, constraint.predicate()));
+                NodeKey key = new NodeKey(constraint.offset(), BlockSetKey.of(constraint.predicate().getBlocks()));
+                JudgeNode node = this.nodes.get(key);
+                if (node == null) {
+                    node = new JudgeNode(key, constraint.predicate());
+                    this.nodes.put(key, node);
+                    this.groups.computeIfAbsent(key.offset(), OffsetGroup::new).nodes.add(node);
+                }
                 node.edges.add(slot); // 建立节点到配方的连线
             }
             this.slotMap.put(holder, slot);
@@ -254,9 +264,9 @@ public class InWorldRecipeManager {
         /**
          * 解析当前上下文下的幸存候选配方
          * <p>
-         * 流程：逐节点判定一次实际方块状态 → 失效沿连线传播（一票否决）→
-         * 全部失效时立即返回 → 按候选集既有顺序收集幸存者并对未注册配方兜底放行。
-         * 相同 offset 的多个节点共享同一次世界读取。
+         * 流程：按 offset 分组逐组判定（每组一次世界读取，组内节点共享）→
+         * 失效沿连线传播（一票否决）→ 全部失效时立即返回 →
+         * 按候选集既有顺序收集幸存者并对未注册配方兜底放行。
          * 判定经 {@link BlockStatePredicate#cannotMatch} 进行：返回 true 时对应谓词必然失败，
          * 否决健全；返回 false 时不做结论（属性与 NBT 条件留给完整匹配检查）
          * </p>
@@ -270,24 +280,20 @@ public class InWorldRecipeManager {
             InWorldRecipeContext ctx
         ) {
             try {
-                if (!this.nodes.isEmpty()) {
+                if (!this.groups.isEmpty()) {
                     int alive = this.slotMap.size();
                     // 存在未经注册直接写入候选集的配方时不做整体提前终止，保证其被保守放行
                     boolean fullyIndexed = this.slotMap.size() >= holders.size();
                     BlockCache cache = ctx.computeIfAbsent(BlockCache.BLOCK_CACHE);
-                    Map<Vec3, BlockState> states = new HashMap<>();
-                    for (JudgeNode node : this.nodes.values()) {
-                        Vec3 offset = node.key.offset();
-                        BlockState state = states.get(offset);
-                        if (state == null) {
-                            state = cache.getBlockState(BlockPos.containing(ctx.getPos().add(offset)));
-                            states.put(offset, state);
-                        }
-                        if (!node.judge.cannotMatch(state)) continue; // 节点判定通过
-                        // 节点失效：沿连线一票否决全部相连配方
-                        for (Slot edge : node.edges) {
-                            if (edge.fails++ == 0 && --alive == 0 && fullyIndexed) {
-                                return Collections.emptyList();
+                    for (OffsetGroup group : this.groups.values()) {
+                        BlockState state = cache.getBlockState(BlockPos.containing(ctx.getPos().add(group.offset)));
+                        for (JudgeNode node : group.nodes) {
+                            if (!node.judge.cannotMatch(state)) continue; // 节点判定通过
+                            // 节点失效：沿连线一票否决全部相连配方
+                            for (Slot edge : node.edges) {
+                                if (edge.fails++ == 0 && --alive == 0 && fullyIndexed) {
+                                    return Collections.emptyList();
+                                }
                             }
                         }
                     }
@@ -309,6 +315,30 @@ public class InWorldRecipeManager {
          */
         private void reset() {
             for (Slot slot : this.slotMap.values()) slot.fails = 0;
+        }
+    }
+
+    /**
+     * 位置偏移分组：同一归一化 offset 下的全部判定节点，共享一次世界读取
+     */
+    private static final class OffsetGroup {
+        /**
+         * 归一化后的位置偏移（即组内节点的 {@link NodeKey#offset}）
+         */
+        private final Vec3 offset;
+
+        /**
+         * 本偏移下的判定节点，按注册顺序排列
+         */
+        private final List<JudgeNode> nodes = new ArrayList<>();
+
+        /**
+         * 构造一个位置偏移分组
+         *
+         * @param offset 归一化后的位置偏移
+         */
+        private OffsetGroup(Vec3 offset) {
+            this.offset = offset;
         }
     }
 
