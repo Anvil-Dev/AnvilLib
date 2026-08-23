@@ -39,7 +39,7 @@ abstract class CreativeModeInventoryScreenMixin
     @Unique
     private static final int anvillib$VISIBLE_ROW_COUNT = 5;
     @Unique
-    private static final int anvillib$CELL_SIZE = 18;
+    private static final int anvillib$CELL_SIZE = CreativeTabSection.BANNER_CELL_SIZE;
     @Unique
     private static final int anvillib$GRID_LEFT = 9;
     @Unique
@@ -47,7 +47,7 @@ abstract class CreativeModeInventoryScreenMixin
     @Unique
     private static final int anvillib$BANNER_Z = 200;
     @Unique
-    private static final int anvillib$TEXT_PADDING = 2;
+    private static final int anvillib$TEXT_PADDING = CreativeTabSection.DEFAULT_TEXT_PADDING;
 
     @Shadow
     private static CreativeModeTab selectedTab;
@@ -191,10 +191,15 @@ abstract class CreativeModeInventoryScreenMixin
         CreativeVariantPickerOverlay overlay = this.anvillib$validVariantOverlay();
         if (overlay != null && overlay.contains(this.leftPos, this.topPos, mouseX, mouseY)) {
             this.anvillib$consumeMouseButton(button);
-            if (button == 0 || button == 1) {
-                overlay.variantAt(this.leftPos, this.topPos, mouseX, mouseY)
-                    .ifPresent(variant -> this.anvillib$selectPickerVariant(overlay, variant, button));
-            }
+            overlay.variantAt(this.leftPos, this.topPos, mouseX, mouseY).ifPresent(variant -> {
+                if (button == 0 || button == 1) {
+                    this.anvillib$selectPickerVariant(overlay, variant, button);
+                } else if (this.anvillib$isPickerCloneMouseButton(button)) {
+                    this.anvillib$clickPickerVariant(overlay, variant, button, ClickType.CLONE);
+                } else {
+                    this.anvillib$clickPickerHotbarMouseButton(overlay, variant, button);
+                }
+            });
             cir.setReturnValue(true);
             return;
         }
@@ -268,8 +273,17 @@ abstract class CreativeModeInventoryScreenMixin
         }
         CreativeVariantPickerOverlay overlay = this.anvillib$validVariantOverlay();
         ItemStack variant = this.anvillib$hoveredPickerVariant;
-        if (overlay == null || variant == null
-            || !this.minecraft.options.keyDrop.isActiveAndMatches(key)) return;
+        if (overlay == null || variant == null) return;
+        if (this.anvillib$handlePickerHotbarKey(overlay, variant, key)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        if (this.minecraft.options.keyPickItem.isActiveAndMatches(key)) {
+            this.anvillib$clickPickerVariant(overlay, variant, 0, ClickType.CLONE);
+            cir.setReturnValue(true);
+            return;
+        }
+        if (!this.minecraft.options.keyDrop.isActiveAndMatches(key)) return;
         this.anvillib$clickPickerVariant(
             overlay,
             variant,
@@ -334,6 +348,53 @@ abstract class CreativeModeInventoryScreenMixin
     ) {
         ClickType clickType = hasShiftDown() ? ClickType.QUICK_MOVE : ClickType.PICKUP;
         this.anvillib$clickPickerVariant(overlay, variant, button, clickType);
+    }
+
+    @Unique
+    private boolean anvillib$handlePickerHotbarKey(
+        CreativeVariantPickerOverlay overlay,
+        ItemStack variant,
+        InputConstants.Key key
+    ) {
+        if (!this.menu.getCarried().isEmpty()) return false;
+        if (this.minecraft.options.keySwapOffhand.isActiveAndMatches(key)) {
+            this.anvillib$clickPickerVariant(overlay, variant, 40, ClickType.SWAP);
+            return true;
+        }
+        for (int index = 0; index < this.minecraft.options.keyHotbarSlots.length; index++) {
+            if (this.minecraft.options.keyHotbarSlots[index].isActiveAndMatches(key)) {
+                this.anvillib$clickPickerVariant(overlay, variant, index, ClickType.SWAP);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Unique
+    private boolean anvillib$isPickerCloneMouseButton(int button) {
+        InputConstants.Key mouseKey = InputConstants.Type.MOUSE.getOrCreate(button);
+        return this.menu.getCarried().isEmpty()
+            && this.minecraft.options.keyPickItem.isActiveAndMatches(mouseKey)
+            && this.minecraft.player != null
+            && this.minecraft.player.hasInfiniteMaterials();
+    }
+
+    @Unique
+    private void anvillib$clickPickerHotbarMouseButton(
+        CreativeVariantPickerOverlay overlay,
+        ItemStack variant,
+        int button
+    ) {
+        if (!this.menu.getCarried().isEmpty()) return;
+        if (this.minecraft.options.keySwapOffhand.matchesMouse(button)) {
+            this.anvillib$clickPickerVariant(overlay, variant, 40, ClickType.SWAP);
+            return;
+        }
+        for (int index = 0; index < this.minecraft.options.keyHotbarSlots.length; index++) {
+            if (this.minecraft.options.keyHotbarSlots[index].matchesMouse(button)) {
+                this.anvillib$clickPickerVariant(overlay, variant, index, ClickType.SWAP);
+            }
+        }
     }
 
     @Unique
@@ -434,11 +495,11 @@ abstract class CreativeModeInventoryScreenMixin
         int bannerWidth,
         boolean hovered
     ) {
-        int maxTextWidth = bannerWidth - anvillib$TEXT_PADDING * 2;
+        int textLeft = bannerX + section.textStart();
+        int textRight = bannerX + section.textEnd();
+        int maxTextWidth = section.textWidth();
         int textWidth = this.font.width(section.text());
         if (textWidth == 0) return;
-        int textLeft = bannerX + anvillib$TEXT_PADDING;
-        int textRight = bannerX + bannerWidth - anvillib$TEXT_PADDING;
         boolean overflowing = textWidth > maxTextWidth;
         FormattedCharSequence textToRender = section.text().getVisualOrderText();
         int visibleTextWidth = textWidth;
@@ -455,10 +516,23 @@ abstract class CreativeModeInventoryScreenMixin
         };
         int textY = bannerY + (anvillib$CELL_SIZE - this.font.lineHeight) / 2 + 1;
         if ((section.textBackgroundColor() >>> 24) != 0) {
+            boolean defaultTextRange = section.hasDefaultTextRange();
+            int backgroundLeft;
+            int backgroundRight;
+            if (overflowing) {
+                backgroundLeft = defaultTextRange ? bannerX : textLeft;
+                backgroundRight = defaultTextRange ? bannerX + bannerWidth : textRight;
+            } else if (defaultTextRange) {
+                backgroundLeft = textX - anvillib$TEXT_PADDING;
+                backgroundRight = textX + textWidth + anvillib$TEXT_PADDING;
+            } else {
+                backgroundLeft = Math.max(textLeft, textX - anvillib$TEXT_PADDING);
+                backgroundRight = Math.min(textRight, textX + textWidth + anvillib$TEXT_PADDING);
+            }
             graphics.fill(
-                overflowing ? bannerX : textX - anvillib$TEXT_PADDING,
+                backgroundLeft,
                 textY - 1,
-                overflowing ? bannerX + bannerWidth : textX + textWidth + anvillib$TEXT_PADDING,
+                backgroundRight,
                 textY + this.font.lineHeight,
                 section.textBackgroundColor()
             );

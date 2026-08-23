@@ -12,20 +12,23 @@ public record CreativeTabSection(
     Component text,
     int textBackgroundColor,
     List<Component> tooltip,
-    TextAlignment textAlignment
+    TextAlignment textAlignment,
+    int textStart,
+    int textEnd
 ) {
     public static final int MIN_BANNER_LENGTH = 1;
     public static final int MAX_BANNER_LENGTH = 9;
     public static final int DEFAULT_BANNER_LENGTH = 3;
+    public static final int BANNER_CELL_SIZE = 18;
+    public static final int DEFAULT_TEXT_PADDING = 2;
 
     public CreativeTabSection {
-        if (bannerLength < MIN_BANNER_LENGTH || bannerLength > MAX_BANNER_LENGTH) {
-            throw new IllegalArgumentException("Banner length must be between 1 and 9");
-        }
+        validateBannerLength(bannerLength);
         bannerTexture = Objects.requireNonNull(bannerTexture, "bannerTexture");
         text = Objects.requireNonNull(text, "text");
         tooltip = List.copyOf(tooltip);
         textAlignment = Objects.requireNonNull(textAlignment, "textAlignment");
+        validateTextRange(bannerLength, textStart, textEnd);
     }
 
     public CreativeTabSection(
@@ -35,11 +38,84 @@ public record CreativeTabSection(
         int textBackgroundColor,
         List<Component> tooltip
     ) {
-        this(bannerLength, bannerTexture, text, textBackgroundColor, tooltip, TextAlignment.CENTER);
+        this(
+            bannerLength,
+            bannerTexture,
+            text,
+            textBackgroundColor,
+            tooltip,
+            TextAlignment.CENTER,
+            DEFAULT_TEXT_PADDING,
+            defaultTextEnd(bannerLength)
+        );
+    }
+
+    public CreativeTabSection(
+        int bannerLength,
+        ResourceLocation bannerTexture,
+        Component text,
+        int textBackgroundColor,
+        List<Component> tooltip,
+        TextAlignment textAlignment
+    ) {
+        this(
+            bannerLength,
+            bannerTexture,
+            text,
+            textBackgroundColor,
+            tooltip,
+            textAlignment,
+            DEFAULT_TEXT_PADDING,
+            defaultTextEnd(bannerLength)
+        );
     }
 
     public static Builder builder(ResourceLocation bannerTexture) {
         return new Builder(bannerTexture);
+    }
+
+    /** Returns whether this section uses the normal two-pixel banner inset. */
+    public boolean hasDefaultTextRange() {
+        return this.textStart == DEFAULT_TEXT_PADDING
+            && this.textEnd == this.bannerLength * BANNER_CELL_SIZE - DEFAULT_TEXT_PADDING;
+    }
+
+    public int textWidth() {
+        return this.textEnd - this.textStart;
+    }
+
+    public int textLeft() {
+        return this.textStart;
+    }
+
+    public int textRight() {
+        return this.textEnd;
+    }
+
+    private static int defaultTextEnd(int bannerLength) {
+        validateBannerLength(bannerLength);
+        return bannerLength * BANNER_CELL_SIZE - DEFAULT_TEXT_PADDING;
+    }
+
+    private static void validateBannerLength(int bannerLength) {
+        if (bannerLength < MIN_BANNER_LENGTH || bannerLength > MAX_BANNER_LENGTH) {
+            throw new IllegalArgumentException("Banner length must be between 1 and 9");
+        }
+    }
+
+    private static void validateTextRange(int bannerLength, int textStart, int textEnd) {
+        if (textStart < 0) {
+            throw new IllegalArgumentException("Text range left edge cannot be negative");
+        }
+        if (textEnd <= textStart) {
+            throw new IllegalArgumentException("Text range right edge must be greater than its left edge");
+        }
+        int bannerWidth = bannerLength * BANNER_CELL_SIZE;
+        if (textEnd > bannerWidth) {
+            throw new IllegalArgumentException(
+                "Text range must fit within the banner width of " + bannerWidth + " pixels"
+            );
+        }
     }
 
     public static final class Builder {
@@ -49,6 +125,8 @@ public record CreativeTabSection(
         private int textBackgroundColor = 0x00000000;
         private List<Component> tooltip = List.of();
         private TextAlignment textAlignment = TextAlignment.CENTER;
+        private int textStart = DEFAULT_TEXT_PADDING;
+        private Integer textEnd;
 
         private Builder(ResourceLocation bannerTexture) {
             this.bannerTexture = Objects.requireNonNull(bannerTexture, "bannerTexture");
@@ -74,6 +152,38 @@ public record CreativeTabSection(
             return this;
         }
 
+        /**
+         * Configures banner-relative, left-closed/right-open pixel coordinates. For a 54-pixel
+         * banner, {@code textRange(20, 52)} leaves the decorative left edge untouched.
+         */
+        public Builder textRange(int textStart, int textEnd) {
+            this.textStart = textStart;
+            this.textEnd = textEnd;
+            return this;
+        }
+
+        /** Sets a custom left inset while retaining the default two-pixel right inset. */
+        public Builder textIndent(int textStart) {
+            this.textStart = textStart;
+            this.textEnd = null;
+            return this;
+        }
+
+        /** Configures an explicit left and right edge for the text area. */
+        public Builder textIndent(int textStart, int textEnd) {
+            return this.textRange(textStart, textEnd);
+        }
+
+        public Builder textLeft(int textLeft) {
+            this.textStart = textLeft;
+            return this;
+        }
+
+        public Builder textRight(int textRight) {
+            this.textEnd = textRight;
+            return this;
+        }
+
         public Builder tooltip(Component... tooltip) {
             return this.tooltip(List.of(tooltip));
         }
@@ -90,7 +200,9 @@ public record CreativeTabSection(
                 this.text,
                 this.textBackgroundColor,
                 this.tooltip,
-                this.textAlignment
+                this.textAlignment,
+                this.textStart,
+                this.textEnd == null ? defaultTextEnd(this.bannerLength) : this.textEnd
             );
         }
     }
