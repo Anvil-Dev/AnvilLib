@@ -39,7 +39,7 @@ abstract class CreativeModeInventoryScreenMixin
     @Unique
     private static final int anvillib$VISIBLE_ROW_COUNT = 5;
     @Unique
-    private static final int anvillib$CELL_SIZE = 18;
+    private static final int anvillib$CELL_SIZE = CreativeTabSection.BANNER_CELL_SIZE;
     @Unique
     private static final int anvillib$GRID_LEFT = 9;
     @Unique
@@ -47,7 +47,7 @@ abstract class CreativeModeInventoryScreenMixin
     @Unique
     private static final int anvillib$BANNER_Z = 200;
     @Unique
-    private static final int anvillib$TEXT_PADDING = 2;
+    private static final int anvillib$TEXT_PADDING = CreativeTabSection.DEFAULT_TEXT_PADDING;
 
     @Shadow
     private static CreativeModeTab selectedTab;
@@ -495,11 +495,11 @@ abstract class CreativeModeInventoryScreenMixin
         int bannerWidth,
         boolean hovered
     ) {
-        int maxTextWidth = bannerWidth - anvillib$TEXT_PADDING * 2;
+        int textLeft = bannerX + section.textStart();
+        int textRight = bannerX + section.textEnd();
+        int maxTextWidth = section.textWidth();
         int textWidth = this.font.width(section.text());
         if (textWidth == 0) return;
-        int textLeft = bannerX + anvillib$TEXT_PADDING;
-        int textRight = bannerX + bannerWidth - anvillib$TEXT_PADDING;
         boolean overflowing = textWidth > maxTextWidth;
         FormattedCharSequence textToRender = section.text().getVisualOrderText();
         int visibleTextWidth = textWidth;
@@ -516,10 +516,23 @@ abstract class CreativeModeInventoryScreenMixin
         };
         int textY = bannerY + (anvillib$CELL_SIZE - this.font.lineHeight) / 2 + 1;
         if ((section.textBackgroundColor() >>> 24) != 0) {
+            boolean defaultTextRange = section.hasDefaultTextRange();
+            int backgroundLeft;
+            int backgroundRight;
+            if (overflowing) {
+                backgroundLeft = defaultTextRange ? bannerX : textLeft;
+                backgroundRight = defaultTextRange ? bannerX + bannerWidth : textRight;
+            } else if (defaultTextRange) {
+                backgroundLeft = textX - anvillib$TEXT_PADDING;
+                backgroundRight = textX + textWidth + anvillib$TEXT_PADDING;
+            } else {
+                backgroundLeft = Math.max(textLeft, textX - anvillib$TEXT_PADDING);
+                backgroundRight = Math.min(textRight, textX + textWidth + anvillib$TEXT_PADDING);
+            }
             graphics.fill(
-                overflowing ? bannerX : textX - anvillib$TEXT_PADDING,
+                backgroundLeft,
                 textY - 1,
-                overflowing ? bannerX + bannerWidth : textX + textWidth + anvillib$TEXT_PADDING,
+                backgroundRight,
                 textY + this.font.lineHeight,
                 section.textBackgroundColor()
             );
