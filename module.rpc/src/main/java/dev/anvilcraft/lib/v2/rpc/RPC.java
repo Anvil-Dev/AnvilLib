@@ -2,6 +2,8 @@ package dev.anvilcraft.lib.v2.rpc;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -45,7 +47,9 @@ import java.util.concurrent.CompletableFuture;
  * }
  * }</pre>
  */
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+@SuppressWarnings("unused")
 public final class RPC {
     /**
      * 调用无参方法。
@@ -672,10 +676,31 @@ public final class RPC {
     }
 
     /**
+     * 同步阻塞形态的有返回值远程调用——显式声明当前线程允许阻塞。
+     *
+     * <p>调用方显式声明 {@code allowNonVirtual=true} 时（如平台线程池、Netty 线程等已知可阻塞的线程），
+     * 跳过对"非虚拟线程"的警告。仍请勿在 Minecraft 主线程等必须非阻塞的线程调用。</p>
+     *
+     * @param allowNonVirtual 是否允许在非虚拟线程阻塞等待
+     */
+    @ApiStatus.Experimental
+    public static <R> R invokeSync(RpcTarget target, boolean allowNonVirtual, RpcFunctionRef.F0<R> methodRef) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef);
+    }
+
+    /**
      * 同步阻塞形态的单参调用。
      */
     public static <R, A> R invokeSync(RpcTarget target, RpcFunctionRef.F1<R, A> methodRef, A a) {
         return invokeSyncDispatch(target, methodRef, a);
+    }
+
+    /**
+     * 同步阻塞形态的单参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A> R invokeSync(RpcTarget target, boolean allowNonVirtual, RpcFunctionRef.F1<R, A> methodRef, A a) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a);
     }
 
     /**
@@ -686,10 +711,33 @@ public final class RPC {
     }
 
     /**
+     * 同步阻塞形态的双参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B> R invokeSync(RpcTarget target, boolean allowNonVirtual, RpcFunctionRef.F2<R, A, B> methodRef, A a, B b) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b);
+    }
+
+    /**
      * 同步阻塞形态的三参调用。
      */
     public static <R, A, B, C> R invokeSync(RpcTarget target, RpcFunctionRef.F3<R, A, B, C> methodRef, A a, B b, C c) {
         return invokeSyncDispatch(target, methodRef, a, b, c);
+    }
+
+    /**
+     * 同步阻塞形态的三参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F3<R, A, B, C> methodRef,
+        A a,
+        B b,
+        C c
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c);
     }
 
     /**
@@ -700,10 +748,51 @@ public final class RPC {
     }
 
     /**
+     * 同步阻塞形态的四参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F4<R, A, B, C, D> methodRef,
+        A a,
+        B b,
+        C c,
+        D d
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d);
+    }
+
+    /**
      * 同步阻塞形态的五参调用。
      */
-    public static <R, A, B, C, D, E> R invokeSync(RpcTarget target, RpcFunctionRef.F5<R, A, B, C, D, E> methodRef, A a, B b, C c, D d, E e) {
+    public static <R, A, B, C, D, E> R invokeSync(
+        RpcTarget target,
+        RpcFunctionRef.F5<R, A, B, C, D, E> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e
+    ) {
         return invokeSyncDispatch(target, methodRef, a, b, c, d, e);
+    }
+
+    /**
+     * 同步阻塞形态的五参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F5<R, A, B, C, D, E> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e);
     }
 
     /**
@@ -723,6 +812,24 @@ public final class RPC {
     }
 
     /**
+     * 同步阻塞形态的六参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F6<R, A, B, C, D, E, F> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f);
+    }
+
+    /**
      * 同步阻塞形态的七参调用。
      */
     public static <R, A, B, C, D, E, F, G> R invokeSync(
@@ -737,6 +844,25 @@ public final class RPC {
         G g
     ) {
         return invokeSyncDispatch(target, methodRef, a, b, c, d, e, f, g);
+    }
+
+    /**
+     * 同步阻塞形态的七参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F, G> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F7<R, A, B, C, D, E, F, G> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f, g);
     }
 
     /**
@@ -758,6 +884,26 @@ public final class RPC {
     }
 
     /**
+     * 同步阻塞形态的八参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F, G, H> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F8<R, A, B, C, D, E, F, G, H> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f, g, h);
+    }
+
+    /**
      * 同步阻塞形态的九参调用。
      */
     public static <R, A, B, C, D, E, F, G, H, I> R invokeSync(
@@ -774,6 +920,27 @@ public final class RPC {
         I i
     ) {
         return invokeSyncDispatch(target, methodRef, a, b, c, d, e, f, g, h, i);
+    }
+
+    /**
+     * 同步阻塞形态的九参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F, G, H, I> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F9<R, A, B, C, D, E, F, G, H, I> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f, g, h, i);
     }
 
     /**
@@ -797,6 +964,28 @@ public final class RPC {
     }
 
     /**
+     * 同步阻塞形态的十参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F, G, H, I, J> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F10<R, A, B, C, D, E, F, G, H, I, J> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f, g, h, i, j);
+    }
+
+    /**
      * 同步阻塞形态的十一参调用。
      */
     public static <R, A, B, C, D, E, F, G, H, I, J, K> R invokeSync(
@@ -815,6 +1004,29 @@ public final class RPC {
         K k
     ) {
         return invokeSyncDispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k);
+    }
+
+    /**
+     * 同步阻塞形态的十一参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F, G, H, I, J, K> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F11<R, A, B, C, D, E, F, G, H, I, J, K> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f, g, h, i, j, k);
     }
 
     /**
@@ -840,6 +1052,30 @@ public final class RPC {
     }
 
     /**
+     * 同步阻塞形态的十二参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F, G, H, I, J, K, L> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F12<R, A, B, C, D, E, F, G, H, I, J, K, L> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f, g, h, i, j, k, l);
+    }
+
+    /**
      * 同步阻塞形态的十三参调用。
      */
     public static <R, A, B, C, D, E, F, G, H, I, J, K, L, M> R invokeSync(
@@ -860,6 +1096,31 @@ public final class RPC {
         M m
     ) {
         return invokeSyncDispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m);
+    }
+
+    /**
+     * 同步阻塞形态的十三参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F, G, H, I, J, K, L, M> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F13<R, A, B, C, D, E, F, G, H, I, J, K, L, M> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m);
     }
 
     /**
@@ -887,6 +1148,32 @@ public final class RPC {
     }
 
     /**
+     * 同步阻塞形态的十四参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F, G, H, I, J, K, L, M, N> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F14<R, A, B, C, D, E, F, G, H, I, J, K, L, M, N> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m,
+        N n
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
+    }
+
+    /**
      * 同步阻塞形态的十五参调用。
      */
     public static <R, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> R invokeSync(
@@ -909,6 +1196,33 @@ public final class RPC {
         O o
     ) {
         return invokeSyncDispatch(target, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
+    }
+
+    /**
+     * 同步阻塞形态的十五参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F15<R, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m,
+        N n,
+        O o
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
     }
 
     /**
@@ -938,6 +1252,34 @@ public final class RPC {
     }
 
     /**
+     * 同步阻塞形态的十六参调用——显式声明当前线程允许阻塞。
+     */
+    @ApiStatus.Experimental
+    public static <R, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> R invokeSync(
+        RpcTarget target,
+        boolean allowNonVirtual,
+        RpcFunctionRef.F16<R, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> methodRef,
+        A a,
+        B b,
+        C c,
+        D d,
+        E e,
+        F f,
+        G g,
+        H h,
+        I i,
+        J j,
+        K k,
+        L l,
+        M m,
+        N n,
+        O o,
+        P p
+    ) {
+        return invokeSyncDispatchAllow(target, allowNonVirtual, methodRef, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p);
+    }
+
+    /**
      * 同步阻塞形态的逃生口：按类与方法名发起有返回值的远程调用，参数个数不限。
      *
      * <p>与 {@link #invokeByName} 同理，失去对实参的编译期类型检查。阻塞直到收到响应或超时。</p>
@@ -951,11 +1293,15 @@ public final class RPC {
      */
     public static <R> R invokeSyncByName(RpcTarget target, Class<?> clazz, String methodName, Object... args) {
         Method method = RpcMethods.resolveByName(clazz, methodName);
-        return invokeSyncChecked(target, method, args);
+        return invokeSyncChecked(target, method, args, false);
     }
 
     private static <R> R invokeSyncDispatch(RpcTarget target, Serializable methodRef, Object... args) {
-        return invokeSyncChecked(target, LambdaResolver.resolve(methodRef), args);
+        return invokeSyncChecked(target, LambdaResolver.resolve(methodRef), args, false);
+    }
+
+    private static <R> R invokeSyncDispatchAllow(RpcTarget target, boolean allowNonVirtual, Serializable methodRef, Object... args) {
+        return invokeSyncChecked(target, LambdaResolver.resolve(methodRef), args, allowNonVirtual);
     }
 
     private static void dispatch(RpcTarget target, Serializable methodRef, Object... args) {
@@ -990,7 +1336,13 @@ public final class RPC {
 
     // ---- 同步阻塞形态（虚拟线程友好）----
 
-    private static <R> R invokeSyncChecked(RpcTarget target, Method method, Object[] args) {
+    private static <R> R invokeSyncChecked(RpcTarget target, Method method, Object[] args, boolean allowNonVirtual) {
+        if (!allowNonVirtual && !Thread.currentThread().isVirtual()) {
+            log.warn(
+                "RPC call to {} from non-virtual thread {}; this blocks the current thread until the response arrives",
+                method, Thread.currentThread().getName()
+            );
+        }
         if (method.getReturnType() == void.class) {
             throw new IllegalArgumentException("RPC method " + method + " returns void; use RPC.call instead");
         }
