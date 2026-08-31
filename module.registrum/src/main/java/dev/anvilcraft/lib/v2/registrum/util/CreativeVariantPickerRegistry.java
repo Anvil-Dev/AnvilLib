@@ -149,7 +149,7 @@ public final class CreativeVariantPickerRegistry {
                 if (group.isEnabled() && group.presentIn(original)) eligible.add(group);
             }
         }
-        if (eligible.isEmpty()) return original;
+        if (eligible.isEmpty()) return new ArrayList<>(original);
 
         Set<VariantGroup> emitted = new HashSet<>();
         List<ItemStack> folded = new ArrayList<>(original.size());
@@ -161,7 +161,7 @@ public final class CreativeVariantPickerRegistry {
                 folded.add(group.source());
             }
         }
-        return List.copyOf(folded);
+        return folded;
     }
 
     private static Optional<List<ItemStack>> normalize(List<ItemStack> variants) {

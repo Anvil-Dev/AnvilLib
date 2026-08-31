@@ -100,7 +100,7 @@ public final class CreativeTabSections implements CreativeModeTab.Output {
 
         arranged.addAll(original.subList(originalIndex, original.size()));
         PLACEMENTS.put(tabId, List.copyOf(placedSections));
-        return List.copyOf(arranged);
+        return arranged;
     }
 
     public static List<PlacedSection> placedSections(ResourceLocation tabId) {
