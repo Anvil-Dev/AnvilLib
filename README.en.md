@@ -16,6 +16,7 @@ AnvilLib adopts a modular design and includes the following functional modules:
 |---------------------------|---------------------------------------------------|
 | **Config**                | Annotation-based configuration system             |
 | **Codec**                 | Data codecs and network serialization helpers     |
+| **Cube**                  | Model outlines and precise picking                |
 | **Integration**           | Mod compatibility integration framework           |
 | **Network**               | Networking API with automatic packet registration |
 | **Recipe**                | In-world recipe system                            |
@@ -27,6 +28,14 @@ AnvilLib adopts a modular design and includes the following functional modules:
 | **Main**                  | Aggregated module that bundles all submodules     |
 
 ## Module Introduction
+
+### Cube Module
+
+Opt a namespace into cube-based outlines and precise client picking with
+`CubeSelection.enableNamespace("your_mod")` during client initialization. The module supports
+rotated and reversed cubes, parent models, weighted variants, multipart models and resource reloads.
+Optional providers describe moving BER parts using shared geometry and per-frame transforms.
+Geometry, background outline work, caches and rendered line counts have explicit limits.
 
 ### Config Module
 
