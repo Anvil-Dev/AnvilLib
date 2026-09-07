@@ -12,6 +12,7 @@ plugins {
 
 include 'module.codec'
 include 'module.collision'
+include 'module.cube'
 include 'module.config'
 include 'module.explosion'
 include 'module.font'
@@ -31,6 +32,7 @@ include 'module.main'
 include 'module.test'
 
 project(':module.codec').name = 'anvillib-codec-neoforge-1.21.1'
+project(':module.cube').name = 'anvillib-cube-neoforge-1.21.1'
 project(':module.collision').name = 'anvillib-collision-neoforge-1.21.1'
 project(':module.config').name = 'anvillib-config-neoforge-1.21.1'
 project(':module.explosion').name = 'anvillib-explosion-neoforge-1.21.1'

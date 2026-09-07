@@ -1,6 +1,7 @@
 [
   { "module": "codec",                 "needs": [] },
   { "module": "collision",             "needs": [] },
+  { "module": "cube",                  "needs": [] },
   { "module": "config",                "needs": [] },
   { "module": "integration",           "needs": [] },
   { "module": "moveable-entity-block", "needs": [] },
