@@ -59,6 +59,7 @@ void main() {
         if (clip.w <= 0.0) continue;
         vec3 ndc = clip.xyz / clip.w;
         vec2 pixel = (ndc.xy * 0.5 + 0.5) * cbOcclusionTest.viewportSize;
+        pixel *= vec2(mipLayers[0]) / cbOcclusionTest.viewportSize;
         minPixel = min(minPixel, pixel);
         maxPixel = max(maxPixel, pixel);
         nearestDepth = min(nearestDepth, ndc.z * 0.5 + 0.5);
@@ -70,8 +71,9 @@ void main() {
         return;
     }
 
-    minPixel = clamp(minPixel, vec2(0.0), cbOcclusionTest.viewportSize);
-    maxPixel = clamp(maxPixel, vec2(0.0), cbOcclusionTest.viewportSize);
+    vec2 mip0Size = vec2(mipLayers[0]);
+    minPixel = clamp(minPixel, vec2(0.0), mip0Size);
+    maxPixel = clamp(maxPixel, vec2(0.0), mip0Size);
     int mip = 0;
     int validMips = clamp(cbOcclusionTest.mipLevels, 0, MAX_MIP_LEVELS + 1);
 

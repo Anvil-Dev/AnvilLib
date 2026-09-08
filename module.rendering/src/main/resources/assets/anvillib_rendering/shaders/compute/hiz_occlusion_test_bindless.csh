@@ -28,6 +28,14 @@ layout(std430, binding = 1) buffer ShaderOutput {
     int result[];
 };
 
+#ifdef HIZ_DEBUG
+
+layout(std430, binding = 2) buffer ShaderDebug {
+    vec4 debugs[];
+};
+
+#endif
+
 layout(bindless_image, r32f) readonly uniform image2D uInputs[MAX_MIP_LEVELS + 1];
 
 layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
@@ -38,8 +46,12 @@ void main() {
         return;
     }
 
+    #ifdef HIZ_DEBUG
+    debugs[index] = vec4(0, 0, 0, 0);
+    #endif
+
     AABB box = aabbs[index];
-    vec3 corners[8] = vec3[](
+        vec3 corners[8] = vec3[](
         box.minPos.xyz,
         vec3(box.maxPos.x, box.minPos.y, box.minPos.z),
         vec3(box.minPos.x, box.maxPos.y, box.minPos.z),
@@ -60,6 +72,7 @@ void main() {
         if (clip.w <= 0.0) continue;
         vec3 ndc = clip.xyz / clip.w;
         vec2 pixel = (ndc.xy * 0.5 + 0.5) * cbOcclusionTest.viewportSize;
+        //pixel *= vec2(mipLayers[0]) / cbOcclusionTest.viewportSize;
         minPixel = min(minPixel, pixel);
         maxPixel = max(maxPixel, pixel);
         nearestDepth = min(nearestDepth, ndc.z * 0.5 + 0.5);
@@ -70,9 +83,9 @@ void main() {
         result[index] = 1;
         return;
     }
-
-    minPixel = clamp(minPixel, vec2(0.0), cbOcclusionTest.viewportSize);
-    maxPixel = clamp(maxPixel, vec2(0.0), cbOcclusionTest.viewportSize);
+    vec2 mip0Size = vec2(mipLayers[0]);
+    minPixel = clamp(minPixel, vec2(0.0), mip0Size);
+    maxPixel = clamp(maxPixel, vec2(0.0), mip0Size);
     int mip = 0;
     int validMips = clamp(cbOcclusionTest.mipLevels, 0, MAX_MIP_LEVELS + 1);
 
@@ -98,16 +111,28 @@ void main() {
         }
     }
 
+
+    #ifdef HIZ_DEBUG
+    if (foundMip) {
+        debugs[index].z = mip;
+    } else {
+        debugs[index].z = -1.0;
+    }
+
+    debugs[index].w = nearestDepth;
+    #endif
+
     if (!foundMip) {
-        // TODO: test oversized bounds at the smallest mip conservatively.
-        result[index] = 1;
+        // TODO
+        result[index] = 2;
         return;
     }
     int visible = 0;
     for (int y = lo.y; y <= hi.y && visible == 0; ++y) {
         for (int x = lo.x; x <= hi.x; ++x) {
             if (nearestDepth <= imageLoad(uInputs[mip], ivec2(x, y)).r){
-                visible = 1; break;
+                visible = 1;
+                break;
             }
         }
     }

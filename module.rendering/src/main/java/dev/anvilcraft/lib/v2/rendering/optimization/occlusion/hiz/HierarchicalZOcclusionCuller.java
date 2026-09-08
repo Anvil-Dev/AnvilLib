@@ -21,6 +21,8 @@ import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.OcclusionCuller;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.OcclusionKey;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz.converter.DepthTexConverter;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz.spd.SinglePassDownsampler;
+import it.unimi.dsi.fastutil.ints.Int2ReferenceMap;
+import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
@@ -74,6 +76,8 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
     private int mipmapUpdateInterval = 0;
 
     private int mipmapUpdateCd = mipmapUpdateInterval;
+    private int culled = 0;
+    private int size = 0;
     private GpuBuffer inputBuffer;
     private GpuBuffer outputBuffer;
 
@@ -143,6 +147,18 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
             IntBuffer intBuffer = data.asIntBuffer();
             intBuffer.get(0, results, 0, size);
         }
+        int culled = 0;
+        for (int i = 0; i < results.length; i++) {
+            int result = results[i];
+            if (result == 0){
+                culled ++;
+            }
+        }
+        this.size = size;
+        this.culled = culled;
+//        if (flag){
+//            logger.error("222222222222222222222222");
+//        }
     }
 
     @Override
@@ -197,7 +213,10 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
 
         this.testCB.setElementCount(elementCount);
         this.testCB.setMipLevels(Math.min(1 + mipTextures.length, OcclusionTestSSBO.MIP_LAYER_COUNT));
-        this.testCB.setViewportSize(new Vector2f(downsampler.getPaddedWidth(), downsampler.getPaddedHeight()));
+        this.testCB.setViewportSize(new Vector2f(
+            downsampler.getFramebufferWidth(),
+            downsampler.getFramebufferHeight()
+        ));
         this.testCB.setCameraPos(new Vector4f((float) camera.pos.x, (float) camera.pos.y, (float) camera.pos.z, 1));
         this.testCB.getProjMat().set(camera.projectionMatrix);
         this.testCB.getCameraMat().set(camera.viewRotationMatrix);
@@ -278,7 +297,15 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
 
     @Override
     public @Nullable CullingStatistics collectStatistics() {
-        return null;
+        return new CullingStatistics(
+            this.size,
+            -1,
+            -1,
+            this.culled,
+            this.size - this.culled,
+            this.size,
+            null
+        );
     }
 
     @Override
@@ -307,11 +334,13 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
 
     record FrameState(
         Reference2ObjectMap<Object, OcclusionKey> keyAssociations,
+        Int2ReferenceMap<OcclusionKey> idToKeyMap,
         Reference2IntMap<OcclusionKey> keyToIdMap
     ) {
         public static FrameState create() {
             return new FrameState(
                 new Reference2ObjectLinkedOpenHashMap<>(),
+                new Int2ReferenceOpenHashMap<>(),
                 new Reference2IntLinkedOpenHashMap<>()
             );
         }

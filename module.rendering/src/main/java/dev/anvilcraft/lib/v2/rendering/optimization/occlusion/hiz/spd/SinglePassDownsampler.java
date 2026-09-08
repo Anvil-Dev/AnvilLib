@@ -57,7 +57,9 @@ public class SinglePassDownsampler {
     @Getter
     private final boolean useBindlessTexturing;
 
+    @Getter
     private int framebufferWidth;
+    @Getter
     private int framebufferHeight;
 
     @Getter
