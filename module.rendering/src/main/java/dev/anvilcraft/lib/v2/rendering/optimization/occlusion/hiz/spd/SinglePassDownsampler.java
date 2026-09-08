@@ -9,6 +9,7 @@ import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.ALRComputePipelines;
+import dev.anvilcraft.lib.v2.rendering.ALROptions;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities;
@@ -24,6 +25,8 @@ import net.minecraft.util.Mth;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.lwjgl.system.MemoryStack;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -40,6 +43,8 @@ import java.util.OptionalDouble;
 ///
 /// This way it is possible to reduce a 4096x4096 texture to 1x1 in a single dispatch call.
 public class SinglePassDownsampler {
+    private final Logger logger = LoggerFactory.getLogger("SinglePassDownsampler");
+
     /// uint * 6
     public static final int SPD_GLOBAL_ATOMIC_COUNTER_SIZE = 4 * 6;
 
@@ -56,6 +61,7 @@ public class SinglePassDownsampler {
 
     @Getter
     private final boolean useBindlessTexturing;
+    private final boolean ldsWaveOperations;
 
     @Getter
     private int framebufferWidth;
@@ -117,6 +123,15 @@ public class SinglePassDownsampler {
         this.onResize(mainRenderTarget.width, mainRenderTarget.height);
 
         this.clearAtomicCounter();
+
+        boolean shaderSubgroup = ALRHICapabilities.getInstance().shaderSubgroup();
+        if (shaderSubgroup) {
+            this.logger.info("Using GL_KHR_shader_subgroup_quad for reducing");
+            ldsWaveOperations = ALROptions.SPD_OPTION_WAVE_INTEROP_LDS;
+        } else {
+            ldsWaveOperations = false;
+        }
+
     }
 
     public void onResize(int width, int height) {
@@ -217,7 +232,11 @@ public class SinglePassDownsampler {
             textures.add(source);
         }
         try (ALRComputePass pass = commandEncoderExtension.alrCreateComputePass()) {
-            pass.setPipeline(ALRComputePipelines.FFX_SPD_DOWNSAMPLE_PASS);
+            if (this.ldsWaveOperations) {
+                pass.setPipeline(ALRComputePipelines.FFX_SPD_DOWNSAMPLE_PASS);
+            } else {
+                pass.setPipeline(ALRComputePipelines.FFX_SPD_DOWNSAMPLE_PASS_NO_LDS);
+            }
             pass.bindUniformBlock(0, spdParamsBuffer.slice());
             pass.bindTexture(0, new TextureBinding.SamplerAndTexture(this.inputSampler, source));
             pass.bindShaderStorage(0, spdGlobalAtomicCounterBuffer.slice());
@@ -249,7 +268,11 @@ public class SinglePassDownsampler {
             textures.add(source);
         }
         try (ALRComputePass pass = commandEncoderExtension.alrCreateComputePass()) {
-            pass.setPipeline(ALRComputePipelines.FFX_SPD_DOWNSAMPLE_PASS_BINDLESS);
+            if (this.ldsWaveOperations) {
+                pass.setPipeline(ALRComputePipelines.FFX_SPD_DOWNSAMPLE_PASS_BINDLESS);
+            } else {
+                pass.setPipeline(ALRComputePipelines.FFX_SPD_DOWNSAMPLE_PASS_BINDLESS_NO_LDS);
+            }
             pass.bindUniformBlock(0, spdParamsBuffer.slice());
             pass.bindTexture(0, new TextureBinding.SamplerAndTexture(this.inputSampler, source));
             pass.bindShaderStorage(0, spdGlobalAtomicCounterBuffer.slice());

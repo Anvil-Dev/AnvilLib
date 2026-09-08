@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.rendering.mixins;
 
 import com.mojang.blaze3d.platform.Window;
 import dev.anvilcraft.lib.v2.rendering.ALROptimizations;
+import dev.anvilcraft.lib.v2.rendering.ALROptions;
 import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
 import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
@@ -28,6 +29,7 @@ public class MinecraftMixin {
         at = @At("RETURN")
     )
     private void onCreateInstance(GameConfig gameConfig, CallbackInfo ci) {
+        ALROptions.logAllOptions();
         ALRComputeCapabilities.init();
         ALRPostEffects.createPostEffects();
         ALROptimizations.create();

@@ -6,6 +6,7 @@ public record ALRHICapabilities(
     boolean compute,
     boolean bindlessTexturing,
     boolean persistentMappedBuffer,
+    boolean shaderSubgroup,
     int maxImageUnit
 ) {
 

@@ -115,6 +115,7 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
                 capabilities.GL_ARB_compute_shader,
                 capabilities.GL_ARB_bindless_texture,
                 capabilities.GL_ARB_buffer_storage,
+                capabilities.GL_KHR_shader_subgroup,
                 GL46.glGetInteger(GL46.GL_MAX_IMAGE_UNITS)
             );
         }

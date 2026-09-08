@@ -16,7 +16,7 @@ public class ALRComputePipelines {
             ShaderDefines.builder()
 //                .define("SPD_MAX_MIP_LEVELS", 5) // minium required value in spec of GL_MAX_IMAGE_UNITS is 8, spd use one for input tex, one for mid tex
                 .define("FFX_SPD_OPTION_DOWNSAMPLE_FILTER", "2") // use max for HZB
-                .define("FFX_SPD_OPTION_WAVE_INTEROP_LDS", ALROptions.SPD_OPTION_WAVE_INTEROP_LDS ? 0 : 1) // weird inverted
+                .define("FFX_SPD_OPTION_WAVE_INTEROP_LDS", 0) // weird inverted
                 .build()
         )
         .withUniformBlock("cbFSR1")
@@ -33,7 +33,41 @@ public class ALRComputePipelines {
             ShaderDefines.builder()
 //                .define("SPD_MAX_MIP_LEVELS", 4) // minium required value in spec of GL_MAX_IMAGE_UNITS is 8, spd use one for input tex
                 .define("FFX_SPD_OPTION_DOWNSAMPLE_FILTER", "2") // use max for HZB
-                .define("FFX_SPD_OPTION_WAVE_INTEROP_LDS", ALROptions.SPD_OPTION_WAVE_INTEROP_LDS ? 0 : 1) // weird inverted
+                .define("FFX_SPD_OPTION_WAVE_INTEROP_LDS", 0) // weird inverted
+                .build()
+        )
+        .withUniformBlock("cbFSR1")
+        .withTexture("r_input_downsample_src")
+        .withShaderStorage("rw_internal_global_atomic")
+        .withReadWriteImage("rw_input_downsample_src_mid_mip")
+        .withBindlessArrayOfImage("rw_input_downsample_src_mips", true, true, 13)
+        .build();
+
+    public static final ALRComputePipeline FFX_SPD_DOWNSAMPLE_PASS_NO_LDS = ALRComputePipeline.builder()
+        .withName(AnvilLibRendering.location("ffx_spd_downsample_pass"))
+        .withShader(AnvilLibRendering.location("compute/ffx_spd_downsample_pass.csh"))
+        .withDefines(
+            ShaderDefines.builder()
+//                .define("SPD_MAX_MIP_LEVELS", 5) // minium required value in spec of GL_MAX_IMAGE_UNITS is 8, spd use one for input tex, one for mid tex
+                .define("FFX_SPD_OPTION_DOWNSAMPLE_FILTER", "2") // use max for HZB
+                .define("FFX_SPD_OPTION_WAVE_INTEROP_LDS", 1) // weird inverted
+                .build()
+        )
+        .withUniformBlock("cbFSR1")
+        .withTexture("r_input_downsample_src")
+        .withShaderStorage("rw_internal_global_atomic")
+        .withReadWriteImage("rw_input_downsample_src_mid_mip")
+        .withArrayOfImage("rw_input_downsample_src_mips", true, true, 13)
+        .build();
+
+    public static final ALRComputePipeline FFX_SPD_DOWNSAMPLE_PASS_BINDLESS_NO_LDS = ALRComputePipeline.builder()
+        .withName(AnvilLibRendering.location("ffx_spd_downsample_pass_bindless"))
+        .withShader(AnvilLibRendering.location("compute/ffx_spd_downsample_pass_bindless.csh"))
+        .withDefines(
+            ShaderDefines.builder()
+//                .define("SPD_MAX_MIP_LEVELS", 4) // minium required value in spec of GL_MAX_IMAGE_UNITS is 8, spd use one for input tex
+                .define("FFX_SPD_OPTION_DOWNSAMPLE_FILTER", "2") // use max for HZB
+                .define("FFX_SPD_OPTION_WAVE_INTEROP_LDS", 1) // weird inverted
                 .build()
         )
         .withUniformBlock("cbFSR1")
@@ -73,6 +107,9 @@ public class ALRComputePipelines {
     public static void on(RegisterComputePipelinesEvent event) {
         event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS);
         event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS_BINDLESS);
+        event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS_BINDLESS_NO_LDS);
+        event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS_NO_LDS);
+
         event.registerPipeline(DEPTH_CONVERT);
         event.registerPipeline(HIZ_OCCLUSION_TEST);
         event.registerPipeline(HIZ_OCCLUSION_TEST_BINDLESS);
