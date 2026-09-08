@@ -172,12 +172,18 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
     public void processFeatures(CameraRenderState camera) {
         RenderTarget mainRenderTarget = this.minecraft.getMainRenderTarget();
         CommandEncoder commandEncoder = this.gpuDevice.createCommandEncoder();
-        GpuTexture texture = this.depthTexConverter.runConvert(
-            commandEncoder,
-            mainRenderTarget.getDepthTexture()
-        );
-        this.downsampler.spdDispatch(commandEncoder, texture);
-        this.dispatch(commandEncoder, camera, texture);
+        if (this.mipmapUpdateCd <= 0) {
+            GpuTexture texture = this.depthTexConverter.runConvert(
+                commandEncoder,
+                mainRenderTarget.getDepthTexture()
+            );
+            this.downsampler.spdDispatch(commandEncoder, texture);
+            this.mipmapUpdateCd = mipmapUpdateInterval;
+        } else {
+            this.mipmapUpdateCd--;
+        }
+
+        this.dispatch(commandEncoder, camera, this.depthTexConverter.getOutput());
     }
 
     private void dispatch(CommandEncoder commandEncoder, CameraRenderState camera, GpuTexture mip0) {
@@ -233,7 +239,12 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
         buffer.position(0);
         // TODO check if mojang added coherent flag
         ((ALRCommandEncoderExtension) commandEncoder).alrMemoryBarrier(MemoryBarrierFlag.BUFFER_UPDATE_BARRIER);
-        this.stagingInputBuffer.copyToBuffer(commandEncoder, 0, actualRequestedSize, inputBuffer.slice(0, actualRequestedSize));
+        this.stagingInputBuffer.copyToBuffer(
+            commandEncoder,
+            0,
+            actualRequestedSize,
+            inputBuffer.slice(0, actualRequestedSize)
+        );
 
         List<GpuTexture> textures = new ArrayList<>(OcclusionTestSSBO.MIP_LAYER_COUNT);
         textures.add(mip0);
