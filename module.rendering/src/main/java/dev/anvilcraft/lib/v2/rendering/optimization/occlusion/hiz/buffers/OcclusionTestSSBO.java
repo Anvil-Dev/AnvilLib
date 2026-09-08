@@ -56,7 +56,7 @@ public class OcclusionTestSSBO extends BufferObject<OcclusionTestSSBO> {
             .forGetter(OcclusionTestSSBO::getMipLayers)
             .build(),
         BufferObjectLayoutEntry
-            .<Aabb[], OcclusionTestSSBO>builder(aabbsType)
+            .<Aabb[], OcclusionTestSSBO>builder(aabbsTypeForSizeCalc)
             .forGetter(OcclusionTestSSBO::getAabbs)
             .build()
     );
@@ -68,9 +68,8 @@ public class OcclusionTestSSBO extends BufferObject<OcclusionTestSSBO> {
         super(BufferLayout.STD430, ShaderBufferObjectUsage.SSBO);
     }
 
-    public void setAabbs(Aabb[] aabbs) {
-        this.aabbs = aabbs;
-        this.aabbsType.size(aabbs.length);
+    public void setActualSize(int elementCount) {
+        this.aabbsType.size(elementCount);
     }
 
     @Override

@@ -123,15 +123,15 @@ public final class Std140Writer implements BufferWriter {
     }
 
     @Override
-    public <E> void putStructArray(E[] objects, BufferObjectLayoutDefinition<E> definition) {
+    public <E> void putStructArray(E[] objects, int size, BufferObjectLayoutDefinition<E> definition) {
         int alignment = Mth.roundToward(definition.alignment(BufferLayout.STD140), 16);
         int stride = Mth.roundToward(definition.size(BufferLayout.STD140), alignment);
         int arrayStart = this.pointer + Mth.roundToward(this.buffer.position() - this.pointer, alignment);
-        for (int i = 0; i < objects.length; i++) {
+        for (int i = 0; i < size; i++) {
             this.buffer.position(arrayStart + stride * i);
             definition.writeInto(this, objects[i]);
         }
-        this.buffer.position(arrayStart + stride * objects.length);
+        this.buffer.position(arrayStart + stride * size);
         this.indexedArrayDefinition = null;
     }
 

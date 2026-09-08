@@ -63,7 +63,7 @@ public final class Std140LayoutRulesTest {
         std140Writer.putStructArray(new TestPair[]{
             new TestPair(1.0f, 2.0f),
             new TestPair(3.0f, 4.0f)
-        }, pairDefinition);
+        }, 2, pairDefinition);
 
         assertFloatEquals(1.0f, std140Buffer.getFloat(0), "std140 array[0].first");
         assertFloatEquals(2.0f, std140Buffer.getFloat(4), "std140 array[0].second");
@@ -75,7 +75,7 @@ public final class Std140LayoutRulesTest {
         std430Writer.putStructArray(new TestPair[]{
             new TestPair(1.0f, 2.0f),
             new TestPair(3.0f, 4.0f)
-        }, pairDefinition);
+        }, 2, pairDefinition);
 
         assertFloatEquals(1.0f, std430Buffer.getFloat(0), "std430 array[0].first");
         assertFloatEquals(2.0f, std430Buffer.getFloat(4), "std430 array[0].second");

@@ -42,9 +42,5 @@ public interface BufferWriter {
 
     <E> void putStructArray(int index, E object, BufferObjectLayoutDefinition<E> definition);
 
-    default <E> void putStructArray(E[] objects, BufferObjectLayoutDefinition<E> definition) {
-        for (int i = 0; i < objects.length; i++) {
-            putStructArray(i, objects[i], definition);
-        }
-    }
+    <E> void putStructArray(E[] objects, int size, BufferObjectLayoutDefinition<E> definition);
 }

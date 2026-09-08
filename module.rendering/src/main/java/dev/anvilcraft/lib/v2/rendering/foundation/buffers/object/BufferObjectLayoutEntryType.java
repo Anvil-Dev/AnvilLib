@@ -275,7 +275,7 @@ public interface BufferObjectLayoutEntryType<T> {
 
             @Override
             public void acceptWriter(BufferWriter writer, T[] objects) {
-                writer.putStructArray(objects, definition);
+                writer.putStructArray(objects, arraySize, definition);
             }
 
             @Override

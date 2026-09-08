@@ -45,7 +45,7 @@ public class OcclusionTestCB extends BufferObject<OcclusionTestCB> {
     private Matrix4f projMat = new Matrix4f();
     private Matrix4f cameraMat = new Matrix4f();
     public OcclusionTestCB() {
-        super(BufferLayout.STD430, ShaderBufferObjectUsage.UBO);
+        super(BufferLayout.STD140, ShaderBufferObjectUsage.UBO);
     }
 
     @Override

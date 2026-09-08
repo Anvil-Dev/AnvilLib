@@ -27,6 +27,8 @@ import it.unimi.dsi.fastutil.objects.Reference2IntLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
+import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
@@ -53,8 +55,6 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
 
     private final SinglePassDownsampler downsampler;
     private final DepthTexConverter depthTexConverter;
-
-    private final List<OcclusionKey> occlusionKeys = new ArrayList<>();
 
     private final OcclusionTestCB testCB = new OcclusionTestCB();
     private final OcclusionTestSSBO inputSSBO = new OcclusionTestSSBO();
@@ -148,10 +148,9 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
             intBuffer.get(0, results, 0, size);
         }
         int culled = 0;
-        for (int i = 0; i < results.length; i++) {
-            int result = results[i];
-            if (result == 0){
-                culled ++;
+        for (int result : results) {
+            if (result == 0) {
+                culled++;
             }
         }
         this.size = size;
@@ -163,6 +162,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
 
     @Override
     public void submitFeatureKey(OcclusionKey key, List<Object> feature) {
+        this.currentFrameState.keys.add(key);
         for (Object o : feature) {
             this.currentFrameState.keyAssociations.put(o, key);
         }
@@ -181,14 +181,14 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
     }
 
     private void dispatch(CommandEncoder commandEncoder, CameraRenderState camera, GpuTexture mip0) {
-        if (this.isEmpty()) return;
+        if (this.currentFrameState.size() <= 0) return;
 
         FrameState currentFrameState = this.currentFrameState;
-        int elementCount = currentFrameState.keyAssociations.size();
+        int elementCount = currentFrameState.keys.size();
 
         Aabb[] aabbs = this.inputSSBO.getAabbs(elementCount);
         int i = 0;
-        for (OcclusionKey key : currentFrameState.keyAssociations.values()) {
+        for (OcclusionKey key : currentFrameState.keys) {
             int id = i++;
             aabbs[id].set(key.getBoundingBox());
             currentFrameState.keyToIdMap.put(key, id);
@@ -210,6 +210,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
 
         this.inputSSBO.setMipLayers(mipLayers);
         this.inputSSBO.setAabbs(aabbs);
+        this.inputSSBO.setActualSize(elementCount);
 
         this.testCB.setElementCount(elementCount);
         this.testCB.setMipLevels(Math.min(1 + mipTextures.length, OcclusionTestSSBO.MIP_LAYER_COUNT));
@@ -232,7 +233,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
         buffer.position(0);
         // TODO check if mojang added coherent flag
         ((ALRCommandEncoderExtension) commandEncoder).alrMemoryBarrier(MemoryBarrierFlag.BUFFER_UPDATE_BARRIER);
-        this.stagingInputBuffer.copyToBuffer(commandEncoder, 0, actualRequestedSize, inputBuffer.slice());
+        this.stagingInputBuffer.copyToBuffer(commandEncoder, 0, actualRequestedSize, inputBuffer.slice(0, actualRequestedSize));
 
         List<GpuTexture> textures = new ArrayList<>(OcclusionTestSSBO.MIP_LAYER_COUNT);
         textures.add(mip0);
@@ -303,7 +304,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
             -1,
             this.culled,
             this.size - this.culled,
-            this.size,
+            this.previousFrameState.keyAssociations.size(),
             null
         );
     }
@@ -333,12 +334,14 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
     }
 
     record FrameState(
+        ReferenceSet<OcclusionKey> keys,
         Reference2ObjectMap<Object, OcclusionKey> keyAssociations,
         Int2ReferenceMap<OcclusionKey> idToKeyMap,
         Reference2IntMap<OcclusionKey> keyToIdMap
     ) {
         public static FrameState create() {
             return new FrameState(
+                new ReferenceLinkedOpenHashSet<>(),
                 new Reference2ObjectLinkedOpenHashMap<>(),
                 new Int2ReferenceOpenHashMap<>(),
                 new Reference2IntLinkedOpenHashMap<>()
@@ -346,7 +349,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
         }
 
         public int size() {
-            return keyToIdMap.size();
+            return this.keys.size();
         }
     }
 

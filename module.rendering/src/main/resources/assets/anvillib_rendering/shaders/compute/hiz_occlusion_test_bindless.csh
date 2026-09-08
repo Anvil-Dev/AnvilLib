@@ -29,11 +29,9 @@ layout(std430, binding = 1) buffer ShaderOutput {
 };
 
 #ifdef HIZ_DEBUG
-
 layout(std430, binding = 2) buffer ShaderDebug {
     vec4 debugs[];
 };
-
 #endif
 
 layout(bindless_image, r32f) readonly uniform image2D uInputs[MAX_MIP_LEVELS + 1];
@@ -69,7 +67,9 @@ void main() {
     for (int i = 0; i < 8; ++i) {
         vec3 relative = corners[i] - cbOcclusionTest.cameraPos.xyz;
         vec4 clip = cbOcclusionTest.ProjMat * (cbOcclusionTest.CameraMat * vec4(relative, 1.0));
-        if (clip.w <= 0.0) continue;
+        if (clip.w <= 0.0) {
+            continue;
+        }
         vec3 ndc = clip.xyz / clip.w;
         vec2 pixel = (ndc.xy * 0.5 + 0.5) * cbOcclusionTest.viewportSize;
         //pixel *= vec2(mipLayers[0]) / cbOcclusionTest.viewportSize;
