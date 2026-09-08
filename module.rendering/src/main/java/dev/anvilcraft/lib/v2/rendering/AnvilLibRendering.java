@@ -1,11 +1,13 @@
 package dev.anvilcraft.lib.v2.rendering;
 
 import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
+import dev.anvilcraft.lib.v2.rendering.event.MainTargetResizeEvent;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeShaderManager;
 import dev.anvilcraft.lib.v2.rendering.gui.renderer.BlockStatePipRenderer;
 import dev.anvilcraft.lib.v2.rendering.gui.renderer.StructurePipRenderer;
 import dev.anvilcraft.lib.v2.rendering.gui.state.BlockStatePipRenderingState;
 import dev.anvilcraft.lib.v2.rendering.gui.state.StructurePipRenderingState;
+import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.OcclusionCuller;
 import lombok.extern.slf4j.Slf4j;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
@@ -73,6 +75,12 @@ public class AnvilLibRendering {
                 true
             );
         }
+    }
+
+    @SubscribeEvent
+    public static void on(MainTargetResizeEvent event) {
+        OcclusionCuller occlusionCuller = ALROptimizations.getOcclusionCuller();
+        occlusionCuller.onResize(event.getNewWidth(), event.getNewHeight());
     }
 
     @SubscribeEvent

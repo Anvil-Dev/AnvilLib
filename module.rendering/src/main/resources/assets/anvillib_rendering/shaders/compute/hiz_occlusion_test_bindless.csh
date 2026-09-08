@@ -49,20 +49,19 @@ void main() {
         vec3(box.minPos.x, box.maxPos.y, box.maxPos.z),
         box.maxPos.xyz
     );
-    vec2 minNdc = vec2(1e30);
-    vec2 maxNdc = vec2(-1e30);
+    vec2 minPixel = vec2(1e30);
+    vec2 maxPixel = vec2(-1e30);
     float nearestDepth = 1.0;
     bool projected = false;
 
     for (int i = 0; i < 8; ++i) {
         vec3 relative = corners[i] - cbOcclusionTest.cameraPos.xyz;
-        vec4 clip = cbOcclusionTest.ProjMat * cbOcclusionTest.CameraMat * vec4(relative, 1.0);
-        if (clip.w <= 0.0) {
-            continue;
-        }
+        vec4 clip = cbOcclusionTest.ProjMat * (cbOcclusionTest.CameraMat * vec4(relative, 1.0));
+        if (clip.w <= 0.0) continue;
         vec3 ndc = clip.xyz / clip.w;
-        minNdc = min(minNdc, ndc);
-        maxNdc = max(maxNdc, ndc);
+        vec2 pixel = (ndc.xy * 0.5 + 0.5) * cbOcclusionTest.viewportSize;
+        minPixel = min(minPixel, pixel);
+        maxPixel = max(maxPixel, pixel);
         nearestDepth = min(nearestDepth, ndc.z * 0.5 + 0.5);
         projected = true;
     }
@@ -72,8 +71,8 @@ void main() {
         return;
     }
 
-    minNdc = clamp(minNdc, vec2(0), vec2(1));
-    maxNdc = clamp(maxNdc, vec2(0), vec2(1));
+    minPixel = clamp(minPixel, vec2(0.0), cbOcclusionTest.viewportSize);
+    maxPixel = clamp(maxPixel, vec2(0.0), cbOcclusionTest.viewportSize);
     int mip = 0;
     int validMips = clamp(cbOcclusionTest.mipLevels, 0, MAX_MIP_LEVELS + 1);
 
@@ -84,14 +83,14 @@ void main() {
 
     ivec2 lo = ivec2(0);
     ivec2 hi = ivec2(0);
-    ivec2 minPixel;
-    ivec2 maxPixel;
     bool foundMip = false;
     for (int level = 0; level < validMips; ++level) {
         vec2 mipSize = vec2(mipLayers[level]);
-        lo = ivec2(floor((minNdc * 0.5 + 0.5) * mipSize));
-        hi = ivec2(ceil((maxNdc * 0.5 + 0.5) * mipSize));
-
+        float scale = exp2(float(level));
+        lo = ivec2(floor(minPixel / scale));
+        hi = ivec2(ceil(maxPixel / scale) - vec2(1.0));
+        lo = clamp(lo, ivec2(0), ivec2(mipSize) - 1);
+        hi = clamp(hi, ivec2(0), ivec2(mipSize) - 1);
         mip = level;
         if (all(lessThanEqual(hi - lo + ivec2(1), ivec2(2)))) {
             foundMip = true;
