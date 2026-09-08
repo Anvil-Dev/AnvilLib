@@ -17,6 +17,7 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindin
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.TextureBinding;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeShaderManager;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ShaderResourceType;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.ExtendedGpuTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.bindless.BindlessTexturingSupport;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.bindless.TextureHandle;
@@ -185,7 +186,7 @@ public class GlComputePassBackend implements ALRComputePassBackend {
         GlStateManager._glUseProgram(program.id());
 
         for (Int2ObjectMap.Entry<TextureBinding.SamplerAndTexture> entry : this.textureBindings.int2ObjectEntrySet()) {
-            this.setupTexture(entry.getIntKey(), entry.getValue());
+            this.setupTexture(entry.getIntKey(), entry.getValue(), program);
         }
         for (Int2ObjectMap.Entry<ImageState> entry : this.imageBindings.int2ObjectEntrySet()) {
             this.setupImage(entry.getIntKey(), entry.getValue());
@@ -333,10 +334,18 @@ public class GlComputePassBackend implements ALRComputePassBackend {
         }
     }
 
-    private void setupTexture(int bindingPoint, TextureBinding.SamplerAndTexture resource) {
+    private void setupTexture(int bindingPoint, TextureBinding.SamplerAndTexture resource, ALRComputeProgramInstance programInstance) {
         int sampler = ((GlSampler) resource.sampler()).getId();
         int texture = ((GlTexture) resource.texture()).glId();
 
+//        List<ComputeBindingLayout<?>> binding = programInstance.getOwner().getBinding(ShaderResourceType.TEXTURE_OR_IMAGE);
+//        if (binding == null) {
+//            throw new IllegalArgumentException("texture or image resource is not required by shader " + programInstance.key());
+//        }
+//        String name = binding.get(bindingPoint).name();
+//        int uniformLocation = programInstance.getUniformLocation(name, backendExtension);
+//
+//        GlStateManager._glUniform1i(uniformLocation, bindingPoint);
         GlStateManager._activeTexture(GL13.GL_TEXTURE0 + bindingPoint);
         GlStateManager._bindTexture(texture);
         GL33.glBindSampler(bindingPoint, sampler);

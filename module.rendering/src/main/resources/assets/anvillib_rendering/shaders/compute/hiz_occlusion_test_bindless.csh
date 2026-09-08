@@ -49,7 +49,7 @@ void main() {
     #endif
 
     AABB box = aabbs[index];
-        vec3 corners[8] = vec3[](
+    vec3 corners[8] = vec3[](
         box.minPos.xyz,
         vec3(box.maxPos.x, box.minPos.y, box.minPos.z),
         vec3(box.minPos.x, box.maxPos.y, box.minPos.z),
@@ -137,5 +137,4 @@ void main() {
         }
     }
     result[index] = visible;
-
 }

@@ -7,6 +7,7 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRCom
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import lombok.Getter;
 import net.minecraft.client.renderer.ShaderDefines;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -25,6 +26,7 @@ public final class ALRComputeProgramInstance implements NamedUniformAccess {
 
     private final int id;
     private final ALRComputeProgramInstanceKey key;
+    @Getter
     private final ALRComputePipeline owner;
 
     private final Object2IntMap<String> uniformLocationCache = new Object2IntLinkedOpenHashMap<>();

@@ -112,6 +112,7 @@ public class DepthTexConverter {
             pass.dispatchWorkgroups(dispatchDimensionX, dispatchDimensionY, 1);
             pass.memoryBarrier(
                 MemoryBarrierFlag.SHADER_IMAGE_ACCESS_BARRIER,
+                MemoryBarrierFlag.TEXTURE_FETCH_BARRIER,
                 MemoryBarrierFlag.TEXTURE_UPDATE_BARRIER
             );
         }

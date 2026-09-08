@@ -5,11 +5,13 @@ import dev.anvilcraft.lib.v2.rendering.ALROptimizations;
 import dev.anvilcraft.lib.v2.rendering.ALROptions;
 import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
 import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.main.GameConfig;
 import net.minecraft.client.multiplayer.ClientLevel;
 import org.lwjgl.opengl.GL46;
+import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,6 +26,10 @@ public class MinecraftMixin {
     @Final
     private Window window;
 
+    @Shadow
+    @Final
+    private static Logger LOGGER;
+
     @Inject(
         method = "<init>",
         at = @At("RETURN")
@@ -34,6 +40,7 @@ public class MinecraftMixin {
         ALRPostEffects.createPostEffects();
         ALROptimizations.create();
         CachedBlockEntityRenderingPipeline.create();
+        LOGGER.info(ALRHICapabilities.getInstance().toString());
     }
 
     @Inject(
