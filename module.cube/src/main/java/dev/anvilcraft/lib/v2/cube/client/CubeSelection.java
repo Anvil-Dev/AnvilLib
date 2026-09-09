@@ -24,12 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /** 仅在客户端初始化时注册命名空间；注册后的模型默认同时启用精确拾取和棱线高亮。 */
 public final class CubeSelection {
     public static final int MAX_PARTS = 32;
     private static final Set<String> NAMESPACES = ConcurrentHashMap.newKeySet();
     private static final Set<Block> EXCLUDED = ConcurrentHashMap.newKeySet();
+    private static final Map<ResourceLocation, Predicate<BlockState>> TARGET_EXCLUSIONS = new ConcurrentHashMap<>();
     private static final Map<Block, Dynamic> DYNAMIC = new ConcurrentHashMap<>();
     private static final OutlineCache OUTLINES = new OutlineCache();
     private static final Long2ObjectOpenHashMap<Target> FRAME = new Long2ObjectOpenHashMap<>();
@@ -49,6 +51,39 @@ public final class CubeSelection {
     }
 
     public static void exclude(Block block) { EXCLUDED.add(block); }
+
+    /**
+     * 注册运行时目标排除规则；同一 id 再次注册会替换旧规则，不同 id 的规则互不覆盖。
+     * 任意规则返回 true 时，target 返回 null，精确拾取与默认模型高亮均回退原版。
+     *
+     * <p>规则不影响模型烘焙和 modelParts，可读取接入方当前的资源包配置。
+     * 每次目标查询都会在帧缓存之前检查规则，因此修改配置或注销规则后即可恢复已加载的模型。
+     * 回调应保持轻量、无副作用，不应捕获世界或方块实体等会跨存档保留的对象。
+     *
+     * @param id 由调用模组自己的命名空间限定的规则标识
+     * @param exclusion 返回 true 表示该状态不使用模型目标
+     */
+    public static void registerTargetExclusion(ResourceLocation id, Predicate<BlockState> exclusion) {
+        TARGET_EXCLUSIONS.put(id, exclusion);
+    }
+
+    /**
+     * 注销指定运行时规则；不会清除其他规则或 exclude(Block) 设置的永久排除。
+     *
+     * @return 是否存在并移除了该规则
+     */
+    public static boolean unregisterTargetExclusion(ResourceLocation id) {
+        return TARGET_EXCLUSIONS.remove(id) != null;
+    }
+
+    /** 检查永久排除及当前运行时规则；不表示该状态一定存在可用的模型几何。 */
+    public static boolean isTargetExcluded(BlockState state) {
+        if (EXCLUDED.contains(state.getBlock())) return true;
+        for (Predicate<BlockState> exclusion : TARGET_EXCLUSIONS.values()) {
+            if (exclusion.test(state)) return true;
+        }
+        return false;
+    }
 
     /** 部件变换须与 BER 一致；最大包围盒用于寻找越过锚点格的机械臂等部件。 */
     public static void registerDynamic(Block block, AABB maximumBounds, boolean includeStaticModel, BlockSelectionProvider provider) {
@@ -125,7 +160,7 @@ public final class CubeSelection {
     }
 
     public static @Nullable Target target(ClientLevel level, BlockPos pos, BlockState state, float fraction) {
-        if (EXCLUDED.contains(state.getBlock())) return null;
+        if (isTargetExcluded(state)) return null;
         if (frameLevel != level || fraction != partialTick) beginFrame(level, fraction);
         Target cached = FRAME.get(pos.asLong());
         if (cached != null && cached.state == state) return cached;
