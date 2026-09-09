@@ -36,6 +36,8 @@ Opt a namespace into cube-based outlines and precise client picking with
 rotated and reversed cubes, parent models, weighted variants, multipart models and resource reloads.
 Optional providers describe moving BER parts using shared geometry and per-frame transforms.
 Geometry, background outline work, caches and rendered line counts have explicit limits.
+Reloadable blacklists can use `CubeSelection.registerTargetExclusion(id, predicate)` and
+`unregisterTargetExclusion(id)` without discarding baked geometry.
 
 ### Config Module
 
