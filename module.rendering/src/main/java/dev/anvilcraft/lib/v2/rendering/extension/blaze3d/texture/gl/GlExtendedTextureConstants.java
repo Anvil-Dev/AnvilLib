@@ -1,8 +1,10 @@
 package dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.gl;
 
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ExtendedTextureFormat;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.opengl.GL46;
 
+@ApiStatus.Internal
 public class GlExtendedTextureConstants {
     public static int toGlConst(ExtendedTextureFormat textureFormat){
         return switch (textureFormat) {

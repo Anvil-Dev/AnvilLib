@@ -9,9 +9,11 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapab
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz.HierarchicalZOcclusionCuller;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.noop.NoOpOcclusionCuller;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.query.GpuQueryOcclusionCuller;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+@ApiStatus.Internal
 public enum OcclusionMethod {
     GPU_QUERY {
         @Override

@@ -14,16 +14,17 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.bindless.Textur
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.gl.GlExtendedTextureConstants;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceMap;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.opengl.ARBBindlessTexture;
 import org.lwjgl.opengl.GL46;
 
 import java.util.List;
 
+@ApiStatus.Internal
 public class GlBindlessTexturingSupport implements BindlessTexturingSupport {
 
     private final Object2ReferenceMap<TextureCacheKey, GlTextureHandle> textureHandleCache = new Object2ReferenceLinkedOpenHashMap<>();
     private final Object2ReferenceMap<ImageCacheKey, GlTextureHandle> imageHandleCache = new Object2ReferenceLinkedOpenHashMap<>();
-    // TODO: evict cached handles when the underlying GPU texture or sampler is destroyed.
     private final ALRGpuDeviceBackendExtension backendExtension;
 
     public GlBindlessTexturingSupport(ALRGpuDeviceBackendExtension backendExtension) {
@@ -134,6 +135,13 @@ public class GlBindlessTexturingSupport implements BindlessTexturingSupport {
         }
 
         ARBBindlessTexture.glUniformHandleui64vARB(uniformLocation, handles);
+    }
+
+    @SuppressWarnings("resource")
+    @Override
+    public void alrTextureDisposed(GpuTexture texture) {
+        this.textureHandleCache.keySet().removeIf(key -> key.texture() == texture);
+        this.imageHandleCache.keySet().removeIf(key -> key.texture() == texture);
     }
 
     private static long handleId(TextureHandle handle) {

@@ -26,6 +26,7 @@
     "blaze3d.gl.GlDebugLabelMixin$Ext",
     "blaze3d.gl.GlDebugLabelMixin$Self",
     "blaze3d.gl.GlDeviceMixin",
+    "blaze3d.gl.GlTextureMixin",
     "blaze3d.gl.GlProgramMixin",
     "features.BlockFeatureRendererMixin",
     "features.CustomFeatureRendererMixin",

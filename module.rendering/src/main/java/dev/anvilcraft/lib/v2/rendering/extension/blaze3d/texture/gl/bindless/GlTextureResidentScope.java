@@ -2,7 +2,9 @@ package dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.gl.bindless;
 
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.bindless.TextureHandle;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.bindless.TextureResidentScope;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class GlTextureResidentScope implements TextureResidentScope {
     private final GlBindlessTexturingSupport owner;
     private final TextureHandle handle;

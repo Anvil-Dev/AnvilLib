@@ -1,10 +1,12 @@
 package dev.anvilcraft.lib.v2.rendering.optimization.occlusion;
 
 import dev.anvilcraft.lib.v2.rendering.ALROptimizations;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@ApiStatus.Internal
 public class OcclusionFeatureRendererHelper {
     private OcclusionFeatureRendererHelper() {
     }

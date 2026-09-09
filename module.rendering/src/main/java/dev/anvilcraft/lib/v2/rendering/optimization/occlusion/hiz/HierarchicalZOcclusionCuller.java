@@ -6,13 +6,10 @@ import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.ALRComputePipelines;
-import dev.anvilcraft.lib.v2.rendering.ALROptions;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePipeline;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.GpuBufferConstants;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.StagingSupport;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
@@ -36,6 +33,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector4f;
@@ -49,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@ApiStatus.Internal
 public class HierarchicalZOcclusionCuller implements OcclusionCuller {
     private final Logger logger = LoggerFactory.getLogger("HierarchicalZOcclusionCuller");
 

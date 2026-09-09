@@ -18,11 +18,13 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRCom
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.TextureBinding;
 import lombok.Getter;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
 import java.util.OptionalDouble;
 
 /// Accepts a DEPTH_32F texture and convert it to R32F format texture with padding
+@ApiStatus.Internal
 public class DepthTexConverter {
 
     private final GpuDevice gpuDevice;

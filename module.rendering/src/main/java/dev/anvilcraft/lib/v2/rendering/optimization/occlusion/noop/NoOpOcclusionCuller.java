@@ -4,10 +4,12 @@ import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.CullingStatistics;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.OcclusionCuller;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.OcclusionKey;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
+@ApiStatus.Internal
 public class NoOpOcclusionCuller implements OcclusionCuller {
     @Override
     public void onResize(int newWidth, int newHeight) {

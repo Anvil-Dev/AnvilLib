@@ -18,7 +18,7 @@ public class TestOcclusionBlock extends BaseEntityBlock {
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
-        return simpleCodec(TestBloomBlock::new);
+        return simpleCodec(TestOcclusionBlock::new);
     }
 
     @Override

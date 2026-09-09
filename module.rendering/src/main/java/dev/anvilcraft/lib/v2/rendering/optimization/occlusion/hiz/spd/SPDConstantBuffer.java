@@ -7,10 +7,12 @@ import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLay
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.ShaderBufferObjectUsage;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Vector2f;
 
 @Getter
 @Setter
+@ApiStatus.Internal
 public class SPDConstantBuffer extends BufferObject<SPDConstantBuffer> {
 
     public static final BufferObjectLayoutDefinition<SPDConstantBuffer> DEFINITION = BufferObjectLayoutDefinition.create(

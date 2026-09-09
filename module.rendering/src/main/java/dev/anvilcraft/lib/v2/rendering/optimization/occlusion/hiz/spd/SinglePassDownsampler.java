@@ -22,6 +22,7 @@ import dev.anvilcraft.lib.v2.rendering.util.MemoryAccess;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.lwjgl.system.MemoryStack;
@@ -42,6 +43,7 @@ import java.util.OptionalDouble;
 /// The last tile consists of the 1x1 output from all thread groups.
 ///
 /// This way it is possible to reduce a 4096x4096 texture to 1x1 in a single dispatch call.
+@ApiStatus.Internal
 public class SinglePassDownsampler {
     private final Logger logger = LoggerFactory.getLogger("SinglePassDownsampler");
 

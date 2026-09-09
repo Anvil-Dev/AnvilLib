@@ -25,4 +25,6 @@ public interface BindlessTexturingSupport {
     void alrBindTextureHandle(NamedUniformAccess namedUniformAccess, String name, TextureHandle handle);
 
     void alrBindTextureHandleMultiple(NamedUniformAccess namedUniformAccess, String name, List<TextureHandle> handle);
+
+    void alrTextureDisposed(GpuTexture texture);
 }

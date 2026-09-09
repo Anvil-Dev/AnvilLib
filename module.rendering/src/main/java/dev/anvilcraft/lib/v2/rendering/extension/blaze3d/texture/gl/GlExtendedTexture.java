@@ -5,8 +5,10 @@ import com.mojang.blaze3d.textures.TextureFormat;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ExtendedTextureFormat;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.ExtendedGpuTexture;
 import lombok.Getter;
+import org.jetbrains.annotations.ApiStatus;
 
 /// A simple texture implementation with extended formats
+@ApiStatus.Internal
 public class GlExtendedTexture extends GlTexture implements ExtendedGpuTexture {
 
     @Getter
