@@ -25,11 +25,13 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.extensions.SubmitNodeStorageExtension;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Quaternionf;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
+@ApiStatus.Internal
 public class CompoundSubmitNodeCollection extends SubmitNodeCollection {
     private final SubmitNodeCollection collection1;
     private final SubmitNodeCollection collection2;

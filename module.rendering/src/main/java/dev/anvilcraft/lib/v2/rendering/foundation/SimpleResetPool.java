@@ -5,11 +5,13 @@
 package dev.anvilcraft.lib.v2.rendering.foundation;
 
 import lombok.Getter;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 
 /// @author Argon4W
+@ApiStatus.Internal
 public abstract class SimpleResetPool<T, C> {
 
 	@Getter protected	final	C			context;

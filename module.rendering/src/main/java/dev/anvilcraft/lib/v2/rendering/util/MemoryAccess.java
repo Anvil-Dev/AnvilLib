@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.rendering.util;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.system.Pointer;
 import sun.misc.Unsafe;
 
@@ -14,6 +15,7 @@ import static org.lwjgl.system.jni.JNINativeInterface.NewDirectByteBuffer;
 
 /// @author IMS212
 @SuppressWarnings("removal")
+@ApiStatus.Internal
 public class MemoryAccess {
     private static final Unsafe UNSAFE = getUnsafe();
     private static final boolean BITS32 = Pointer.BITS32;

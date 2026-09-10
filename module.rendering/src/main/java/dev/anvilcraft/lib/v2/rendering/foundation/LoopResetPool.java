@@ -4,9 +4,11 @@
  */
 package dev.anvilcraft.lib.v2.rendering.foundation;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 /// @author Argon4W
+@ApiStatus.Internal
 public abstract class LoopResetPool<T, C> extends SimpleResetPool<T, C> {
 
 	public LoopResetPool(int size, C context) {

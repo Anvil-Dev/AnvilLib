@@ -7,10 +7,12 @@ import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObject;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.ShaderBufferObjectUsage;
 import lombok.Getter;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
 
 @Getter
+@ApiStatus.Internal
 public class SdfParameters extends BufferObject<SdfParameters> {
 
     public static final BufferObjectLayoutDefinition<SdfParameters> DEFINITION = BufferObjectLayoutDefinition.create(

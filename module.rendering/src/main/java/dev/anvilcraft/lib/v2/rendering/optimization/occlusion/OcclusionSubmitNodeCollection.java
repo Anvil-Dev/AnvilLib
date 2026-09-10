@@ -8,6 +8,7 @@ import dev.anvilcraft.lib.v2.rendering.mixins.accessors.SubmitNodeCollectionAcce
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,7 @@ public class OcclusionSubmitNodeCollection extends SubmitNodeCollection {
 
     private OcclusionKey currentKey = null;
 
+    @ApiStatus.Internal
     public OcclusionSubmitNodeCollection(
         SubmitNodeStorage submitNodeStorage,
         OcclusionCuller culler,
@@ -44,6 +46,7 @@ public class OcclusionSubmitNodeCollection extends SubmitNodeCollection {
         }
         this.currentKey = null;
     }
+
 
     private void submitFeatureToCuller() {
         List<Object> collectedFeatures = new ArrayList<>();

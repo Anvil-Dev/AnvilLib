@@ -6,10 +6,12 @@ import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 
+@ApiStatus.Internal
 public interface StagingSupport {
 
     ByteBuffer getBuffer(GpuDevice device, CommandEncoder commandEncoder, long size);

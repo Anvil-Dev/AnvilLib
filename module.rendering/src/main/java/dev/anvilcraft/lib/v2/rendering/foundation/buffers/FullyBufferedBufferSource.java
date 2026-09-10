@@ -13,6 +13,7 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import lombok.Getter;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import java.util.Map;
  */
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
+@ApiStatus.Internal
 public class FullyBufferedBufferSource extends MultiBufferSource.BufferSource implements AutoCloseable {
     private final Map<RenderType, ByteBufferBuilder> byteBuffers = new HashMap<>();
     private final Map<RenderType, BufferBuilder> bufferBuilders = new HashMap<>();

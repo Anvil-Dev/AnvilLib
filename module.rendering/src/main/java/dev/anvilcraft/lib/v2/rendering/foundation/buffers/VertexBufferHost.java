@@ -3,7 +3,9 @@ package dev.anvilcraft.lib.v2.rendering.foundation.buffers;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public interface VertexBufferHost {
     GpuBuffer getVertexBuffer(RenderType renderType, long size);
 

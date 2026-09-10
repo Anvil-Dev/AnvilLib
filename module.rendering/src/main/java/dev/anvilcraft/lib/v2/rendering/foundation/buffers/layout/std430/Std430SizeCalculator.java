@@ -4,7 +4,9 @@ import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferSizeCalculator;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutDefinition;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class Std430SizeCalculator implements BufferSizeCalculator {
     private int size;
 

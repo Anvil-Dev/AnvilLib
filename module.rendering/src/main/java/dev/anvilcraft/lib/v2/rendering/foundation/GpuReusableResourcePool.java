@@ -1,5 +1,8 @@
 package dev.anvilcraft.lib.v2.rendering.foundation;
 
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
 public abstract class GpuReusableResourcePool<T extends GpuReusableResource, C> extends LoopResetPool<T, C> {
 
     public GpuReusableResourcePool(int size, C context) {
