@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4d;
 import org.joml.Matrix4fc;
-import org.joml.Vector3f;
 
 import java.util.Objects;
 import java.util.List;
@@ -34,7 +33,7 @@ public final class SelectionPart {
             throw new IllegalArgumentException("Expected an invertible affine transform");
         }
         this.transform = new Matrix4f(localToBlock);
-        this.inverse = this.transform.invert(new Matrix4f());
+        this.inverse = this.transform.invertAffine(new Matrix4f());
         AABB local = geometry.bounds();
         AABB result = null;
         for (int i = 0; i < 8; i++) {
@@ -75,7 +74,10 @@ public final class SelectionPart {
     }
 
     private static Vec3 position(Matrix4fc matrix, Vec3 point) {
-        Vector3f result = matrix.transformPosition((float) point.x, (float) point.y, (float) point.z, new Vector3f());
-        return new Vec3(result.x, result.y, result.z);
+        return new Vec3(
+            matrix.m00() * point.x + matrix.m10() * point.y + matrix.m20() * point.z + matrix.m30(),
+            matrix.m01() * point.x + matrix.m11() * point.y + matrix.m21() * point.z + matrix.m31(),
+            matrix.m02() * point.x + matrix.m12() * point.y + matrix.m22() * point.z + matrix.m32()
+        );
     }
 }
