@@ -1,0 +1,5 @@
+{
+  "net/minecraft/client/gui/GuiGraphics": [
+    "dev/anvilcraft/lib/v2/font/extension/GuiGraphicsExtension"
+  ]
+}

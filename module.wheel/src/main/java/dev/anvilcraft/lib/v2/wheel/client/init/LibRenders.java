@@ -2,18 +2,18 @@ package dev.anvilcraft.lib.v2.wheel.client.init;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.wheel.AnvilLibWheel;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class LibRenders {
     public static final RenderPipeline.Snippet SNIPPET_COMMON = RenderPipeline.builder()
         .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
         .withUniform("Projection", UniformType.UNIFORM_BUFFER)
         .withBlend(BlendFunction.TRANSLUCENT)
-        .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
         .buildSnippet();
 
     public static final RenderPipeline RING_PIPELINE = RenderPipeline.builder(SNIPPET_COMMON)
@@ -30,5 +30,22 @@ public class LibRenders {
         .withFragmentShader(AnvilLibWheel.of("core/selection"))
         .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
         .withUniform("SelectionUniform", UniformType.UNIFORM_BUFFER)
+        .build();
+
+    public static final RenderPipeline ANNULAR_SECTOR_PIPELINE = RenderPipeline.builder(SNIPPET_COMMON)
+        .withLocation(AnvilLibWheel.of("pipeline/annular_sector"))
+        .withVertexShader("core/position_color")
+        .withFragmentShader(AnvilLibWheel.of("core/annular_sector"))
+        .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+        .withUniform("AnnularSectorUniform", UniformType.UNIFORM_BUFFER)
+        .build();
+
+    public static final RenderPipeline FROSTED_DISC_PIPELINE = RenderPipeline.builder(SNIPPET_COMMON)
+        .withLocation(AnvilLibWheel.of("pipeline/frosted_disc"))
+        .withVertexShader("core/position_tex_color")
+        .withFragmentShader(AnvilLibWheel.of("core/frosted_disc"))
+        .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
+        .withSampler("Sampler0")
+        .withUniform("FrostedDiscUniform", UniformType.UNIFORM_BUFFER)
         .build();
 }

@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/util/DataIngredient.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/util/DataIngredient.java
  *
  */
 
@@ -15,7 +15,7 @@ package dev.anvilcraft.lib.v2.registrum.util;
 
 import com.google.common.collect.ObjectArrays;
 import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumRecipeProvider;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import lombok.Getter;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.criterion.InventoryChangeTrigger;
@@ -39,6 +39,7 @@ import java.util.function.Supplier;
  * <p>
  * <strong>This class should not be used for any purpose other than data generation</strong>, it will throw an exception if it is serialized to a packet buffer.
  */
+@SuppressWarnings("unused")
 public final class DataIngredient {
 
     //TODO <1.21.5> removed delegate. Is there a need to add it back?
@@ -62,7 +63,7 @@ public final class DataIngredient {
     private DataIngredient(Ingredient parent, Identifier id, ItemPredicate... predicates) {
         this.parent = parent;
         this.id = id;
-        this.criteriaFactory = prov -> RegistrumRecipeProvider.inventoryTrigger(predicates);
+        this.criteriaFactory = ignored -> RegistrumRecipeProvider.inventoryTrigger(predicates);
     }
 
     public Criterion<InventoryChangeTrigger.TriggerInstance> getCriterion(RegistrumRecipeProvider prov) {
@@ -78,6 +79,11 @@ public final class DataIngredient {
     @SafeVarargs
     public static <T extends ItemLike> DataIngredient items(T first, T... others) {
         return ingredient(Ingredient.of(ObjectArrays.concat(first, others)), first);
+    }
+
+    /** 从物品栈构造数据生成原料；与原版 Ingredient 一样只按物品匹配。 */
+    public static DataIngredient stacks(net.minecraft.world.item.ItemStack first, net.minecraft.world.item.ItemStack... others) {
+        return ingredient(Ingredient.of(Arrays.stream(ObjectArrays.concat(first, others)).map(net.minecraft.world.item.ItemStack::getItem)), first.getItem());
     }
 
     public static DataIngredient tag(TagKey<Item> tag) {

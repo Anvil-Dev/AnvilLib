@@ -1,14 +1,15 @@
 package dev.anvilcraft.lib.v2.recipe.predicate.item;
 
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.anvilcraft.lib.v2.recipe.component.ItemPredicate;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipePredicateTypes;
+import dev.anvilcraft.lib.v2.util.predicate.ItemPredicate;
+import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipePredicateTypes;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.IPredicateFunction;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.SaveComponentToTag;
 import lombok.Getter;
 import net.minecraft.advancements.criterion.DataComponentMatchers;
 import net.minecraft.advancements.criterion.MinMaxBounds;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.Identifier;
@@ -201,8 +202,8 @@ public class HasItem extends HasItemBase<HasItem, ItemPredicate> {
          * @param tag 物品标签
          * @return 构建器实例
          */
-        public Builder of(TagKey<Item> tag) {
-            this.item.of(tag);
+        public Builder of(HolderGetter<Item> items, TagKey<Item> tag) {
+            this.item.of(items, tag);
             return this;
         }
 
@@ -251,12 +252,14 @@ public class HasItem extends HasItemBase<HasItem, ItemPredicate> {
             return this;
         }
 
-        /**
-         * 设置数据组件谓词
-         *
-         * @param components 数据组件谓词
-         * @return 构建器实例
-         */
+        /** 添加新版数据组件子谓词。 */
+        public <T extends net.minecraft.core.component.predicates.DataComponentPredicate> Builder with(
+            net.minecraft.core.component.predicates.DataComponentPredicate.Type<T> type, T predicate
+        ) {
+            this.item.withSubPredicate(type, predicate);
+            return this;
+        }
+
         public Builder has(DataComponentMatchers components) {
             this.item.hasComponents(components);
             return this;

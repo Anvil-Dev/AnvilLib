@@ -12,9 +12,11 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @EventBusSubscriber(modid = AnvilLibRecipe.MOD_ID)
+@ApiStatus.Internal
 public class ResourceEventListener {
 //    @SubscribeEvent
 //    public static void onRecipeLoad(@NotNull RecipesUpdatedEvent event) {

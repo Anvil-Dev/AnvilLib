@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.neoforged.fml.loading.FMLLoader;
-import net.neoforged.fml.loading.LoadingModList;
 import net.neoforged.fml.loading.modscan.ModAnnotation;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforgespi.language.IModFileInfo;
@@ -30,13 +29,18 @@ public class NetworkRegistrar {
      * 注册对应 {@code modId} 的模组中所有使用 {@link Network} 注解的软件包下的网络包
      *
      * @param registrar 网络包注册器。应通过
-     * {@link
-     * net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent#registrar(String)
-     * RegisterPayloadHandlersEvent.registrar()
-     * } 获取
-     * @param modId 模组 ID
+     *                  {@link
+     *                  net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent#registrar(String)
+     *                  RegisterPayloadHandlersEvent.registrar()
+     *                  } 获取
+     * @param modId     模组 ID
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings(
+        {
+            "unchecked",
+            "UnstableApiUsage"
+        }
+    )
     public static void register(PayloadRegistrar registrar, String modId) {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         IModFileInfo fileInfo = FMLLoader.getCurrent().getLoadingModList().getModFileById(modId);
@@ -93,7 +97,8 @@ public class NetworkRegistrar {
                 switch (data.direction()) {
                     case CLIENTBOUND -> registrar.configurationToClient(data.type(), data.streamCodec(), data.handler());
                     case SERVERBOUND -> registrar.configurationToServer(data.type(), data.streamCodec(), data.handler());
-                    case BIDIRECTIONAL -> registrar.configurationBidirectional(data.type(), data.streamCodec(), data.handler(), data.handler());
+                    case BIDIRECTIONAL ->
+                        registrar.configurationBidirectional(data.type(), data.streamCodec(), data.handler(), data.handler());
                 }
             }
             case PLAY -> {

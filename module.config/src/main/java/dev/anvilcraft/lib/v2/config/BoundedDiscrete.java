@@ -1,5 +1,7 @@
 package dev.anvilcraft.lib.v2.config;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -12,6 +14,7 @@ public @interface BoundedDiscrete {
 
     double max() default Double.POSITIVE_INFINITY;
 
+    @ApiStatus.Internal
     class Util {
         public static int minInt(BoundedDiscrete annotation) {
             if (annotation.min() == Double.NEGATIVE_INFINITY) return Integer.MIN_VALUE;

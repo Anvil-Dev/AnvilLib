@@ -55,8 +55,9 @@ abstract class PistonMovingBlockEntityMixin extends BlockEntity implements IPist
         return this.anvillib$blockEntity;
     }
 
-    @Inject(method = "loadAdditional", at = @At("TAIL"))
-    @SuppressWarnings("NameDoesntMatchTargetClass")
+    @Inject(
+        method = "loadAdditional", at = @At("TAIL")
+    )
     private void loadAdditional(ValueInput input, CallbackInfo ci) {
         Optional<ValueInput> child = input.child(anvillib$MOVEABLE_BLOCK_ENTITY);
         if (child.isEmpty()) return;
@@ -71,8 +72,9 @@ abstract class PistonMovingBlockEntityMixin extends BlockEntity implements IPist
         this.anvillib$blockEntity.loadWithComponents(valueInput);
     }
 
-    @Inject(method = "saveAdditional", at = @At("TAIL"))
-    @SuppressWarnings("NameDoesntMatchTargetClass")
+    @Inject(
+        method = "saveAdditional", at = @At("TAIL")
+    )
     private void saveAdditional(ValueOutput output, CallbackInfo ci) {
         if (this.anvillib$blockEntity == null) return;
         ValueOutput child = output.child(anvillib$MOVEABLE_BLOCK_ENTITY);
@@ -92,19 +94,19 @@ abstract class PistonMovingBlockEntityMixin extends BlockEntity implements IPist
         Level level,
         BlockPos pos,
         BlockState state,
-        PistonMovingBlockEntity blockEntity,
+        PistonMovingBlockEntity entity,
         CallbackInfo ci,
-        @Local(name = "blockstate") BlockState blockstate
+        @Local(ordinal = 1) BlockState newState
     ) {
         if (level.isClientSide()) return;
-        if (!(blockstate.getBlock() instanceof IMoveableEntityBlock block)) return;
-        BlockEntity be = blockEntity.anvillib$clearBlockEntity();
-        if (be == null) return;
-        be.worldPosition = pos;
-        be.clearRemoved();
+        if (!(newState.getBlock() instanceof IMoveableEntityBlock block)) return;
+        BlockEntity blockEntity = entity.anvillib$clearBlockEntity();
+        if (blockEntity == null) return;
+        blockEntity.worldPosition = pos;
+        blockEntity.clearRemoved();
         level.removeBlockEntity(pos);
-        level.setBlockEntity(be);
-        block.notifyMoved(level, pos, blockstate, be);
+        level.setBlockEntity(blockEntity);
+        block.notifyMoved(level, pos, newState, blockEntity);
     }
 
     @Inject(
@@ -115,11 +117,11 @@ abstract class PistonMovingBlockEntityMixin extends BlockEntity implements IPist
             shift = At.Shift.AFTER
         )
     )
-    private void finalTick(CallbackInfo ci, @Local(name = "blockstate") BlockState blockstate) {
+    private void finalTick(CallbackInfo ci, @Local(ordinal = 0) BlockState newState) {
         if (this.level == null || this.level.isClientSide()) return;
         // noinspection ConstantValue
         if (!(this instanceof IPistonMovingBlockEntityExtension blockEntity1)) return;
-        if (!(blockstate.getBlock() instanceof IMoveableEntityBlock block)) return;
+        if (!(newState.getBlock() instanceof IMoveableEntityBlock block)) return;
         BlockEntity blockEntity = blockEntity1.anvillib$clearBlockEntity();
         if (blockEntity == null) return;
         blockEntity.worldPosition = this.worldPosition;

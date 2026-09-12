@@ -3,30 +3,30 @@
 //import java.util.Arrays;
 //import java.util.EnumSet;
 //
-//import javax.annotation.Nonnull;
+//import org.jspecify.annotations.Nonnull;
 //
 //import com.google.common.collect.HashMultimap;
 //import com.google.common.collect.Multimap;
 //import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
 //import dev.anvilcraft.lib.v2.registrum.providers.RegistrumLangProvider;
-//import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullConsumer;
-//import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-//import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
-//import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullUnaryOperator;
-//import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+//import dev.anvilcraft.lib.v2.util.nullness.NonNullConsumer;
+//import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+//import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
+//import dev.anvilcraft.lib.v2.util.nullness.NonNullUnaryOperator;
+//import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
 //
 //import net.minecraft.entity.EntityClassification;
-//import net.minecraft.entity.EntityType;
-//import net.minecraft.world.biome.Biome;
-//import net.minecraft.world.biome.Biome.SpawnListEntry;
+//import net.minecraft.world.entity.EntityType;
+//import net.minecraft.world.level.biome.Biome;
+//import net.minecraft.world.level.biome.Biome.SpawnListEntry;
 //import net.minecraft.world.gen.GenerationStage.Carving;
 //import net.minecraft.world.gen.GenerationStage.Decoration;
 //import net.minecraft.world.gen.carver.ConfiguredCarver;
 //import net.minecraft.world.gen.carver.EmptyCarverConfig;
 //import net.minecraft.world.gen.carver.ICarverConfig;
-//import net.minecraft.world.gen.carver.WorldCarver;
-//import net.minecraft.world.gen.feature.ConfiguredFeature;
-//import net.minecraft.world.gen.feature.Feature;
+//import net.minecraft.world.level.levelgen.carver.WorldCarver;
+//import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+//import net.minecraft.world.level.levelgen.feature.Feature;
 //import net.minecraft.world.gen.feature.IFeatureConfig;
 //import net.minecraft.world.gen.feature.NoFeatureConfig;
 //import net.minecraft.world.gen.placement.IPlacementConfig;
@@ -37,7 +37,7 @@
 //
 /// **
 // * A builder for biomes, allows for customization of the {@link Biome.Builder biome properties}, and configuration of data associated with biomes (lang).
-// * 
+// *
 // * @param <T>
 // *            The type of biome being built
 // * @param <P>
@@ -52,7 +52,7 @@
 //     * <ul>
 //     * <li>The default translation (via {@link #defaultLang()})</li>
 //     * </ul>
-//     * 
+//     *
 //     * @param <T>
 //     *            The type of the builder
 //     * @param <P>
@@ -75,10 +75,10 @@
 //    }
 //
 //    private final NonNullFunction<Biome.Builder, T> factory;
-//    
+//
 //    private NonNullSupplier<Biome.Builder> initialProperties = Biome.Builder::new;
 //    private NonNullFunction<Biome.Builder, Biome.Builder> propertiesCallback = NonNullUnaryOperator.identity();
-//    
+//
 //    private final Multimap<Decoration, NonNullSupplier<ConfiguredFeature<?, ?>>> features = HashMultimap.create();
 //    private final Multimap<Carving, NonNullSupplier<ConfiguredCarver<?>>> carvers = HashMultimap.create();
 //    private final Multimap<EntityClassification, NonNullSupplier<SpawnListEntry>> spawns = HashMultimap.create();
@@ -96,7 +96,7 @@
 //     * different operations.
 //     * <p>
 //     * If a different properties instance is returned, it will replace the existing one entirely.
-//     * 
+//     *
 //     * @param func
 //     *            The action to perform on the properties
 //     * @return this {@link BiomeBuilder}
@@ -108,7 +108,7 @@
 //
 //    /**
 //     * Replace the initial state of the biome properties, without replacing or removing any modifications done via {@link #properties(NonNullUnaryOperator)}.
-//     * 
+//     *
 //     * @param properties
 //     *            A supplier to to create the initial properties
 //     * @return this {@link BiomeBuilder}
@@ -120,7 +120,7 @@
 //
 //    /**
 //     * Set the weight for this biome to generate in the overworld in regions matching the given type. This can only be called once per type.
-//     * 
+//     *
 //     * @param type
 //     *            The type that controls which climates the biome will spawn in
 //     * @param weight
@@ -140,7 +140,7 @@
 //
 //    /**
 //     * Add types to the {@link BiomeDictionary} for this biome. Can be called multiple times to add more types.
-//     * 
+//     *
 //     * @param types
 //     *            The types to add
 //     * @return this {@link BiomeBuilder}
@@ -153,7 +153,7 @@
 //    /**
 //     * Manually add what would have been the "best guess" types from the {@link BiomeDictionary} for this biome. This has no effect if no types are added via
 //     * {@link #addDictionaryTypes(net.minecraftforge.common.BiomeDictionary.Type...)}.
-//     * 
+//     *
 //     * @return this {@link BiomeBuilder}
 //     * @see BiomeDictionary#makeBestGuess(Biome)
 //     */
@@ -164,7 +164,7 @@
 //
 //    /**
 //     * Copy all {@link Feature features} from another biome. Does not check for duplicates.
-//     * 
+//     *
 //     * @param biome
 //     *            The biome to copy features from
 //     * @return this {@link BiomeBuilder}
@@ -175,10 +175,10 @@
 //                        .forEach(f -> b.addFeature(d, f))));
 //        return this;
 //    }
-//    
+//
 //    /**
 //     * Add a feature to this biome, where neither the feature nor the placement have a config.
-//     * 
+//     *
 //     * @param stage
 //     *            The stage which the feature will generate in
 //     * @param feature
@@ -190,10 +190,10 @@
 //    public BiomeBuilder<T, P> addFeature(Decoration stage, NonNullSupplier<Feature<NoFeatureConfig>> feature, NonNullSupplier<Placement<NoPlacementConfig>> placement) {
 //        return addFeature(stage, feature, IFeatureConfig.NO_FEATURE_CONFIG, placement);
 //    }
-//    
+//
 //    /**
 //     * Add a feature to this biome, where the placement does not have a config.
-//     * 
+//     *
 //     * @param <FC>
 //     *            The type of config the feature requires
 //     * @param stage
@@ -209,7 +209,7 @@
 //    public <FC extends IFeatureConfig> BiomeBuilder<T, P> addFeature(Decoration stage, NonNullSupplier<Feature<FC>> feature, FC featureConfig, NonNullSupplier<Placement<NoPlacementConfig>> placement) {
 //        return addFeature(stage, feature, featureConfig, placement, IPlacementConfig.NO_PLACEMENT_CONFIG);
 //    }
-//    
+//
 //    /**
 //     * Add a feature to this biome, where the feature does not have a config.
 //     * @param <PC>
@@ -227,10 +227,10 @@
 //    public <PC extends IPlacementConfig> BiomeBuilder<T, P> addFeature(Decoration stage, NonNullSupplier<Feature<NoFeatureConfig>> feature, NonNullSupplier<Placement<PC>> placement, PC placementConfig) {
 //        return addFeature(stage, feature, IFeatureConfig.NO_FEATURE_CONFIG, placement, placementConfig);
 //    }
-//    
+//
 //    /**
 //     * Add a feature to this biome.
-//     * 
+//     *
 //     * @param <FC>
 //     *            The type of config the feature requires
 //     * @param <PC>
@@ -253,7 +253,7 @@
 //
 //    /**
 //     * Add a pre-configured feature to this biome.
-//     * 
+//     *
 //     * @param stage
 //     *            The stage which the feature will generate in
 //     * @param feature
@@ -272,7 +272,7 @@
 //     * Add a callback that will be invoked after all {@link Feature Features} are registered, for the purpose of adding them to this biome.
 //     * <p>
 //     * Any {@link Feature} object can be safely referenced here and added to the biome via {@link Biome#addFeature(Decoration, ConfiguredFeature)}
-//     * 
+//     *
 //     * @param action
 //     *            A {@link NonNullConsumer} which will be called to add features to this biome.
 //     * @return this {@link BiomeBuilder}
@@ -281,10 +281,10 @@
 //        this.<Feature<?>>onRegisterAfter(Feature.class, action);
 //        return this;
 //    }
-//    
+//
 //    /**
 //     * Copy all {@link WorldCarver carvers} from another biome. Does not check for duplicates.
-//     * 
+//     *
 //     * @param biome
 //     *            The biome to copy carvers from
 //     * @return this {@link BiomeBuilder}
@@ -298,7 +298,7 @@
 //
 //    /**
 //     * Add a carver to this biome, where the carver does not have a config.
-//     * 
+//     *
 //     * @param type
 //     *            The type of carving to be done
 //     * @param carver
@@ -311,7 +311,7 @@
 //
 //    /**
 //     * Add a carver to this biome.
-//     * 
+//     *
 //     * @param <CC> The type of config the carver requires
 //     * @param type
 //     *            The type of carving to be done
@@ -327,7 +327,7 @@
 //
 //    /**
 //     * Add a pre-configured carver to this biome.
-//     * 
+//     *
 //     * @param type
 //     *            The type of carving to be done
 //     * @param carver
@@ -346,7 +346,7 @@
 //     * Add a callback that will be invoked after all {@link WorldCarver WorldCarvers} are registered, for the purpose of adding them to this biome.
 //     * <p>
 //     * Any {@link WorldCarver} object can be safely referenced here and added to the biome via {@link Biome#addCarver(Carving, ConfiguredCarver)}
-//     * 
+//     *
 //     * @param action
 //     *            A {@link NonNullConsumer} which will be called to add carvers to this biome.
 //     * @return this {@link BiomeBuilder}
@@ -355,10 +355,10 @@
 //        this.<WorldCarver<?>> onRegisterAfter(WorldCarver.class, action);
 //        return this;
 //    }
-//    
+//
 //    /**
 //     * Copy all {@link SpawnListEntry spawns} from another biome. Does not check for duplicates.
-//     * 
+//     *
 //     * @param biome
 //     *            The biome to copy spawns from
 //     * @return this {@link BiomeBuilder}
@@ -369,10 +369,10 @@
 //                        .forEach(s -> b.getSpawns(ec).add(s))));
 //        return this;
 //    }
-//    
+//
 //    /**
 //     * Add an entity spawn to this biome.
-//     * 
+//     *
 //     * @param type
 //     *            The classification of the spawn, which controls how and when the entity is spawned
 //     * @param entity
@@ -388,10 +388,10 @@
 //    public BiomeBuilder<T, P> addSpawn(EntityClassification type, NonNullSupplier<? extends EntityType<?>> entity, int weight, int minGroupSize, int maxGroupSize) {
 //        return addSpawn(type, () -> new SpawnListEntry(entity.get(), weight, minGroupSize, maxGroupSize));
 //    }
-//    
+//
 //    /**
 //     * Add an entity spawn to this biome.
-//     * 
+//     *
 //     * @param type
 //     *            The classification of the spawn, which controls how and when the entity is spawned
 //     * @param spawn
@@ -410,7 +410,7 @@
 //     * Add a callback that will be invoked after all {@link EntityType Entities} are registered, for the purpose of adding entity spawns to this biome.
 //     * <p>
 //     * Any {@link EntityType} object can be safely referenced here and added to the biome via {@link Biome#getSpawns(EntityClassification)}.
-//     * 
+//     *
 //     * @param action
 //     *            A {@link NonNullConsumer} which will be called to add spawns to this biome.
 //     * @return this {@link BiomeBuilder}
@@ -423,7 +423,7 @@
 //    /**
 //     * Assign the default translation, as specified by {@link RegistrumLangProvider#getAutomaticName(NonNullSupplier)}. This is the default, so it is generally not necessary to call, unless for
 //     * undoing previous changes.
-//     * 
+//     *
 //     * @return this {@link BiomeBuilder}
 //     */
 //    public BiomeBuilder<T, P> defaultLang() {
@@ -432,7 +432,7 @@
 //
 //    /**
 //     * Set the translation for this biome.
-//     * 
+//     *
 //     * @param name
 //     *            A localized English name
 //     * @return this {@link BiomeBuilder}

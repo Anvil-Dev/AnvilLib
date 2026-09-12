@@ -16,7 +16,7 @@
 @FieldsAreNonnullByDefault
 package dev.anvilcraft.lib.v2.registrum.providers.loot;
 
-import dev.anvilcraft.lib.v2.registrum.util.nullness.FieldsAreNonnullByDefault;
+import com.mojang.logging.annotations.FieldsAreNonnullByDefault;
 
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 

@@ -6,11 +6,11 @@ import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.AnvilLibRecipe;
 import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheInput;
-import dev.anvilcraft.lib.v2.recipe.component.IItemStackPredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.IPredicateFunction;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeData;
+import dev.anvilcraft.lib.v2.util.predicate.IItemStackPredicate;
 import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -76,6 +76,7 @@ public abstract class HasItemBase<T extends HasItemBase<T, P>, P extends IItemSt
         ICacheInput item1 = this.getItem(context);
         item1.apply(itemStack -> {
             for (IPredicateFunction<?> function : this.functions) {
+                // TODO: This cast is unsafe. Refactor in the future?
                 IPredicateFunction<ItemStack> function1 = (IPredicateFunction<ItemStack>) function;
                 itemStack = function1.apply(context, itemStack);
             }

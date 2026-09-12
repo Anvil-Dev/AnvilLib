@@ -1,0 +1,8 @@
+{
+  "narration.anvillib_font.dropdown.collapsed": "折叠",
+  "narration.anvillib_font.dropdown.expanded": "展开",
+  "screen.anvillib_font.config": "铁砧库 文字渲染 配置",
+  "screen.anvillib_font.config.family": "字体系列",
+  "screen.anvillib_font.config.font": "字体",
+  "screen.anvillib_font.config.test": "文字渲染测试"
+}

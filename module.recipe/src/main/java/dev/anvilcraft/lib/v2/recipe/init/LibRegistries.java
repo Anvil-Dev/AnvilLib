@@ -12,6 +12,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.registries.NewRegistryEvent;
 import net.neoforged.neoforge.registries.RegistryBuilder;
+import org.jetbrains.annotations.ApiStatus;
 
 @EventBusSubscriber(modid = AnvilLibRecipe.MOD_ID)
 public class LibRegistries {
@@ -55,6 +56,7 @@ public class LibRegistries {
         .maxId(512)
         .create();
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public static void registerRegistries(NewRegistryEvent event) {
         event.register(TRIGGER_REGISTRY);

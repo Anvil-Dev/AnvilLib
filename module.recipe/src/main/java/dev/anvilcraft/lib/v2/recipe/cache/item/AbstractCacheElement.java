@@ -77,6 +77,7 @@ public abstract class AbstractCacheElement implements ICacheElement {
     public ItemStack grow(ItemStack stack, boolean spawn) {
         ItemStack copy = stack.copy();
         if (!this.is(stack)) return copy;
+        if (!this.simulate.isEmpty() && !ItemStack.isSameItemSameComponents(stack, this.simulate)) return copy;
         int growCount = copy.getCount();
         int simulateCount = this.simulate.getCount();
         int grownSimulateCount = Math.min(this.getCapacity(stack), simulateCount + growCount);
@@ -90,7 +91,7 @@ public abstract class AbstractCacheElement implements ICacheElement {
         if (!this.simulate.isEmpty()) {
             this.simulate.grow(grownCount);
         } else {
-            this.simulate = this.type.isEmpty() ? stack.copyWithCount(growCount) : this.type.copyWithCount(growCount);
+            this.simulate = stack.copyWithCount(grownCount);
         }
         this.growSimulateStack.push(new CacheOperation(grownCount));
         return copy;

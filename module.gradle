@@ -1,0 +1,257 @@
+String buildType = 'snapshot'
+String buildNumber
+if (System.getenv("CI_BUILD") == 'false') buildNumber = null else {
+    if (System.getenv("PR_BUILD") != 'false') buildType = 'pr'
+    buildNumber = System.getenv("GITHUB_RUN_NUMBER")
+}
+version = "${mod_version}" + (buildNumber != null ? "+${buildType}.${buildNumber}" : "")
+group = mod_group_id
+
+base {
+    archivesName = "${project.mod_id}-neoforge-${libs.versions.minecraft.get()}"
+}
+
+
+
+repositories {
+    exclusiveContent {
+        forRepositories(
+                maven { // Anvil Lib
+                    name = "Cjsah Maven"
+                    url = "https://server.cjsah.net:1002/maven/"
+                }
+        )
+        filter {
+            includeGroup "dev.anvilcraft.lib"
+            includeGroup "dev.dubhe"
+        }
+    }
+    maven { url = "https://server.cjsah.net:1002/maven/" }
+    mavenLocal()
+    mavenCentral()
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(project.java_version)
+
+neoForge {
+    version = libs.versions.neoForge.get()
+    interfaceInjectionData { it1 ->
+        if (project.interface_injection == "true") {
+            it1.from 'src/main/resources/interface_injections.json'
+            it1.publish file('src/main/resources/interface_injections.json')
+        }
+    }
+    if (project.properties.get("anvillib.needRunConfig").toString() == "true") {
+        runs {
+            if (project.properties.get("anvillib.needRunConfig.client").toString() == "true") {
+                client {
+                    client()
+                    systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+                }
+                clientIrisWorkaround {
+                    client()
+                    systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
+                    systemProperty("neoforge.disableGlValidation", "true")
+                }
+            }
+
+            if (project.properties.get("anvillib.needRunConfig.server").toString() == "true") {
+                server {
+                    server()
+                    programArgument '--nogui'
+                    systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+                }
+            }
+
+
+            if (project.properties.get("anvillib.needRunConfig.gameTest").toString() == "true") {
+                gameTestServer {
+                    type = "gameTestServer"
+                    systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+                }
+            }
+
+            if (project.properties.get("anvillib.needRunConfig.data").toString() == "true") {
+                data {
+                    clientData()
+                    programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+                }
+            }
+
+            configureEach {
+                systemProperty 'forge.logging.markers', 'REGISTRIES'
+                logLevel = org.slf4j.event.Level.DEBUG
+            }
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+tasks.named("processResources") {
+    var replaceProperties = [minecraft_version      : libs.versions.minecraft.get(),
+                             minecraft_version_range: minecraft_version_range,
+                             neo_version            : libs.versions.neoForge.get(),
+                             neo_version_range      : neo_version_range,
+                             loader_version_range   : loader_version_range,
+                             mod_id                 : mod_id,
+                             mod_name               : mod_name,
+                             mod_license            : mod_license,
+                             mod_version            : version,
+                             mod_authors            : mod_authors,
+                             mod_description        : mod_description]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/neoforge.mods.toml']) {
+        expand replaceProperties
+    }
+
+    if (project.name != "anvillib-test-neoforge-1.21.11") {
+        finalizedBy 'changeModsToml'
+    }
+}
+
+tasks.register('sourcesJar', Jar) {
+    from delombok.outputs.files
+    dependsOn delombok
+    archiveClassifier = "sources"
+}
+
+tasks.register('javadocJar', Jar) {
+    from javadoc.destinationDir
+    dependsOn javadoc
+    archiveClassifier = "javadoc"
+}
+
+javadoc {
+    // options.encoding = 'UTF-8'
+    options {
+        encoding = 'UTF-8'
+        addStringOption 'Xdoclint:none', '-quiet'
+        addStringOption 'tag', 'apiNote:a:API Note:'
+        addStringOption 'tag', 'implSpec:a:Implementation Requirement:'
+        addStringOption 'tag', 'implNote:a:Implementation Note:'
+    }
+}
+
+jar {
+    from(rootProject.file("LICENSE"))
+    from(rootProject.file("ASSETS_LICENSE"))
+    from(rootProject.file("README.md"))
+    from(rootProject.file("README.en.md"))
+}
+
+artifacts {
+    archives tasks.jar
+    archives tasks.sourcesJar
+    archives tasks.javadocJar
+}
+
+def this_name = base.archivesName.get()
+def this_description = mod_description
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+
+            artifact sourcesJar
+            artifact javadocJar
+
+            versionMapping {
+                allVariants {
+                    fromResolutionResult()
+                }
+            }
+
+            pom {
+                name = this_name
+                description = this_description
+                url = 'https://github.com/Anvil-Dev/AnvilLib'
+
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/license/mit'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'Anvil-Dev'
+                        name = 'AnvilCraft Dev'
+                        email = 'admin@anvilcraft.dev'
+                    }
+                }
+                scm {
+                    url = 'https://github.com/Anvil-Dev/AnvilLib'
+                    connection = 'https://github.com/Anvil-Dev/AnvilLib.git'
+                    developerConnection = 'https://github.com/Anvil-Dev/AnvilLib.git'
+                }
+            }
+        }
+    }
+    repositories {
+        // Add repositories to publish to here.
+        def MAVEN_URL = System.getenv("MAVEN_URL")
+        if (MAVEN_URL != null) {
+            maven {
+                url MAVEN_URL
+                credentials {
+                    username System.getenv("MAVEN_USERNAME")
+                    password System.getenv("MAVEN_PASSWORD")
+                }
+            }
+        }
+        mavenLocal()
+        maven {
+            name = "staging"
+            url = layout.buildDirectory.dir("staging-deploy")
+        }
+    }
+}
+
+jreleaser {
+    signing {
+        active = 'ALWAYS'
+        armored = true
+    }
+
+    deploy {
+        maven {
+            mavenCentral {
+                sonatype {
+                    active = 'ALWAYS'
+                    url = 'https://central.sonatype.com/api/v1/publisher'
+                    stagingRepository('build/staging-deploy')
+                }
+            }
+        }
+    }
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+
+machete {
+    enabled = false
+}
+
+lombok {
+    version = "1.18.44"
+}
+
+tasks.configureEach {
+    if (name == 'runRenderDocClient') {
+        dependsOn rootProject.project('renderdoc-loader-internal').tasks.getByName('jar')
+    }
+}
