@@ -5,11 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.apache.maven.artifact.versioning.VersionRange;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
 @Slf4j
 @Getter
+@ApiStatus.Internal
 public class ModVersionRange {
     public static final ModVersionRange ANY = new ModVersionRange(null) {
         @Override

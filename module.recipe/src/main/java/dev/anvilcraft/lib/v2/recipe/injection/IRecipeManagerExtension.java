@@ -4,9 +4,11 @@ import dev.anvilcraft.lib.v2.recipe.InWorldRecipe;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeManager;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
 
+@ApiStatus.Internal
 public interface IRecipeManagerExtension {
     default void anvillib$setInWorldRecipeManager(InWorldRecipeManager manager) {
         throw new AssertionError();

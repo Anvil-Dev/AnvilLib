@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/BlockBuilder.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/BlockBuilder.java
  *
  */
 
@@ -29,13 +29,14 @@ import dev.anvilcraft.lib.v2.registrum.util.OneTimeEventReceiver;
 import dev.anvilcraft.lib.v2.registrum.util.RegistrumDistExecutor;
 import dev.anvilcraft.lib.v2.registrum.util.entry.BlockEntry;
 import dev.anvilcraft.lib.v2.registrum.util.entry.RegistryEntry;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiConsumer;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullUnaryOperator;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullUnaryOperator;
 import net.minecraft.client.color.block.BlockColor;
 import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -49,11 +50,11 @@ import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientBlockExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * A builder for blocks, allows for customization of the {@link Block.Properties}, creation of block items, and configuration of data associated with blocks (loot tables, recipes, etc.).
@@ -61,6 +62,7 @@ import javax.annotation.Nullable;
  * @param <T> The type of block being built
  * @param <P> Parent object type
  */
+@SuppressWarnings("unused")
 public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, P, BlockBuilder<T, P>> {
 
     /**
@@ -90,8 +92,9 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
         BuilderCallback callback,
         NonNullFunction<BlockBehaviour.Properties, T> factory
     ) {
-        return new BlockBuilder<>(owner, parent, name, callback, factory, () -> BlockBehaviour.Properties.of())
-            .defaultBlockstate().defaultLoot().defaultLang();
+        return new BlockBuilder<>(owner, parent, name, callback, factory, BlockBehaviour.Properties::of).defaultBlockstate()
+            .defaultLoot()
+            .defaultLang();
     }
 
     private final NonNullFunction<BlockBehaviour.Properties, T> factory;
@@ -151,7 +154,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      * @see #item()
      */
     public BlockBuilder<T, P> simpleItem() {
-        return item().build();
+        return item().defaultLang().build();
     }
 
     /**
@@ -176,7 +179,6 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      */
     public <I extends Item> ItemBuilder<I, BlockBuilder<T, P>> item(NonNullBiFunction<? super T, Item.Properties, ? extends I> factory) {
         return getOwner().<I, BlockBuilder<T, P>>item(this, getName(), p -> factory.apply(getEntry(), p))
-            .setData(ProviderType.LANG, NonNullBiConsumer.noop()) // FIXME Need a beetter API for "unsetting" providers
             .model(() -> (ctx, prov) -> {
                 var model = getOwner().getDataProvider(ProviderType.BLOCKSTATE)
                     .map(g -> g.seenBlockstates.get(getEntry()))
@@ -211,7 +213,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      * @return the {@link BlockEntityBuilder}
      */
     public <BE extends BlockEntity> BlockEntityBuilder<BE, BlockBuilder<T, P>> blockEntity(BlockEntityFactory<BE> factory) {
-        return getOwner().<BE, BlockBuilder<T, P>>blockEntity(this, getName(), factory).validBlock(asSupplier());
+        return getOwner().blockEntity(this, getName(), factory).validBlock(asSupplier());
     }
 
     /**
@@ -382,7 +384,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
 
     @Override
     protected T createEntry() {
-        @Nonnull BlockBehaviour.Properties properties = this.initialProperties.get();
+        BlockBehaviour.Properties properties = this.initialProperties.get();
         //TODO why do we need this?
         // ObfuscationReflectionHelper.setPrivateValue(BlockBehaviour.Properties.class, properties, null, "drops");
         properties = propertiesCallback.apply(properties);

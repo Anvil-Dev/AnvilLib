@@ -1,21 +1,21 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/RegistrateLangProvider.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/RegistrateLangProvider.java
  *
  */
 
 package dev.anvilcraft.lib.v2.registrum.providers;
 
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -41,8 +41,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 
+@SuppressWarnings("unused")
 public class RegistrumLangProvider extends LanguageProvider implements RegistrumProvider {
 
     private static class AccessibleLanguageProvider extends LanguageProvider {
@@ -52,7 +52,7 @@ public class RegistrumLangProvider extends LanguageProvider implements Registrum
         }
 
         @Override
-        public void add(@Nullable String key, @Nullable String value) {
+        public void add(String key, String value) {
             super.add(key, value);
         }
 
@@ -86,7 +86,7 @@ public class RegistrumLangProvider extends LanguageProvider implements Registrum
         owner.genData(ProviderType.LANG, this);
     }
 
-    public static final String toEnglishName(String internalName) {
+    public static String toEnglishName(String internalName) {
         return Arrays.stream(internalName.toLowerCase(Locale.ROOT).split("_"))
             .map(StringUtils::capitalize)
             .collect(Collectors.joining(" "));
@@ -168,19 +168,23 @@ public class RegistrumLangProvider extends LanguageProvider implements Registrum
     );
 
     static {
+        //noinspection ConstantValue
         if (NORMAL_CHARS.length() != UPSIDE_DOWN_CHARS.length()) {
             throw new AssertionError("Char maps do not match in length!");
         }
     }
 
-    private String toUpsideDown(String normal) {
+    public static String toUpsideDown(String normal) {
         if (normal.isEmpty()) return normal;
 
         Matcher matcher = PLACEHOLDER_REGEX.matcher(normal);
 
         List<int[]> placeholders = new ArrayList<>();
         while (matcher.find()) {
-            placeholders.add(new int[]{matcher.start(), matcher.end()});
+            placeholders.add(new int[]{
+                matcher.start(),
+                matcher.end()
+            });
         }
 
         List<String> segments = new ArrayList<>();

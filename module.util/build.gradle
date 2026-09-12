@@ -1,0 +1,26 @@
+dependencies {
+    if (System.getenv("NOT_DEV") == 'true') {
+        jarJar(api("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.8:latest.release"))
+    } else {
+        jarJar(api project(":anvillib-codec-neoforge-1.21.8"))
+    }
+}
+
+sourceSets {
+    test {
+        compileClasspath += sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.compileClasspath
+    }
+}
+
+tasks.register('runShapeUtilJoinTimingTest', JavaExec) {
+    group = 'verification'
+    description = 'Runs ShapeUtil join timing checks for connected AABBs.'
+    classpath = sourceSets.test.runtimeClasspath + sourceSets.main.compileClasspath
+    mainClass = 'dev.anvilcraft.lib.v2.util.ShapeUtilJoinTimingTest'
+}
+
+
+tasks.named('check') {
+    dependsOn tasks.named('runShapeUtilJoinTimingTest')
+}

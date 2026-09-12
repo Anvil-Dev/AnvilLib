@@ -1,0 +1,9 @@
+{
+  "anvillib_explosion.configuration.default_remove_blocks_per_tick": "Default Remove Blocks Per Tick",
+  "anvillib_explosion.configuration.default_remove_blocks_per_tick.tooltip": "The default number of blocks that can be deleted per tick.",
+  "anvillib_explosion.configuration.max_remove_blocks_per_tick": "Max Remove Blocks Per Tick",
+  "anvillib_explosion.configuration.max_remove_blocks_per_tick.tooltip": "The maximum number of blocks that can be deleted per tick.",
+  "anvillib_explosion.configuration.section.anvillib.explosion.common.toml": "Anvillib Explosion Common Configuration",
+  "anvillib_explosion.configuration.section.anvillib.explosion.common.toml.title": "Anvillib Explosion Common Configuration",
+  "anvillib_explosion.configuration.title": "Anvillib Explosion Configuration"
+}

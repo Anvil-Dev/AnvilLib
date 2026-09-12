@@ -22,8 +22,8 @@ public interface IInsensitiveBiPacket extends IClientboundPacket, IServerboundPa
      * 两端共用的处理逻辑
      *
      * @param player 玩家。客户端为
-     * {@link net.minecraft.client.player.LocalPlayer LocalPlayer}，服务端为
-     * {@link net.minecraft.server.level.ServerPlayer ServerPlayer}
+     *               {@link net.minecraft.client.player.LocalPlayer LocalPlayer}，服务端为
+     *               {@link net.minecraft.server.level.ServerPlayer ServerPlayer}
      */
     void handleOnBothSide(Player player);
 

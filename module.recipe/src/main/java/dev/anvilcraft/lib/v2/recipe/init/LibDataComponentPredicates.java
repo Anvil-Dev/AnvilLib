@@ -10,6 +10,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 public class LibDataComponentPredicates {
@@ -37,9 +38,13 @@ public class LibDataComponentPredicates {
         String name,
         Codec<T> codec
     ) {
-        return DF.register(name, () -> new DataComponentPredicate.Type<>(codec));
+        return DF.register(
+            name,
+            () -> new DataComponentPredicate.Type<>(codec)
+        );
     }
 
+    @ApiStatus.Internal
     public static void initialize(IEventBus modEventBus) {
         DF.register(modEventBus);
     }

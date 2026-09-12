@@ -2,16 +2,18 @@ package dev.anvilcraft.lib.v2.recipe.event.listener;
 
 import dev.anvilcraft.lib.v2.recipe.AnvilLibRecipe;
 import dev.anvilcraft.lib.v2.recipe.event.ItemEntityEvent;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeTriggers;
+import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipeTriggers;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @EventBusSubscriber(modid = AnvilLibRecipe.MOD_ID)
+@ApiStatus.Internal
 public class ItemEntityEventListener {
     @SubscribeEvent
     public static void onItemEntityInToBlock(@NotNull ItemEntityEvent.InToBlock event) {

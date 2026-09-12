@@ -1,8 +1,8 @@
 package dev.anvilcraft.lib.v2.recipe.cache.item;
 
-import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import dev.anvilcraft.lib.v2.recipe.event.ItemCacheEvent;
 import dev.anvilcraft.lib.v2.recipe.mixin.ItemEntityAccessor;
+import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import net.minecraft.world.entity.item.ItemEntity;

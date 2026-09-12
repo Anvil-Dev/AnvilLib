@@ -1,9 +1,12 @@
 [versions]
 minecraft = "1.21.8"
 neoForge = "21.8.53"
-modDevGradle = "2.0.140"
-lombok = "8.7.1"
+modDevGradle = "2.0.141"
+lombok = "9.2.0"
 machete = "2.0.1"
+
+jreleaser = "1.23.0"
+modPublish = "1.1.0"
 
 [libraries]
 neoForge = { group = "net.neoforged", name = "neoforge", version.ref = "neoForge" }
@@ -12,3 +15,6 @@ neoForge = { group = "net.neoforged", name = "neoforge", version.ref = "neoForge
 modDevGradle = { id = "net.neoforged.moddev", version.ref = "modDevGradle" }
 lombok = { id = "io.freefair.lombok", version.ref = "lombok" }
 machete = { id = "io.github.p03w.machete", version.ref = "machete" }
+
+jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
+modPublish = { id = "me.modmuss50.mod-publish-plugin", version.ref = "modPublish" }

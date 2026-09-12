@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/ItemBuilder.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/ItemBuilder.java
  *
  */
 
@@ -26,10 +26,10 @@ import dev.anvilcraft.lib.v2.registrum.util.OneTimeEventReceiver;
 import dev.anvilcraft.lib.v2.registrum.util.RegistrumDistExecutor;
 import dev.anvilcraft.lib.v2.registrum.util.entry.ItemEntry;
 import dev.anvilcraft.lib.v2.registrum.util.entry.RegistryEntry;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiConsumer;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullUnaryOperator;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullUnaryOperator;
 import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A builder for items, allows for customization of the {@link Item.Properties} and configuration of data associated with items (models, recipes, etc.).
@@ -56,6 +56,7 @@ import javax.annotation.Nullable;
  * @param <T> The type of item being built
  * @param <P> Parent object type
  */
+@SuppressWarnings("unused")
 public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, ItemBuilder<T, P>> {
 
     /**
@@ -92,7 +93,7 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
     private NonNullSupplier<Item.Properties> initialProperties = Item.Properties::new;
     private NonNullFunction<Item.Properties, Item.Properties> propertiesCallback = NonNullUnaryOperator.identity();
 
-    private Map<ResourceKey<CreativeModeTab>, NonNullBiConsumer<DataGenContext<Item, T>, CreativeModeTabModifier>> creativeModeTabs = Maps.newLinkedHashMap();
+    private final Map<ResourceKey<CreativeModeTab>, NonNullBiConsumer<DataGenContext<Item, T>, CreativeModeTabModifier>> creativeModeTabs = Maps.newLinkedHashMap();
 
     protected ItemBuilder(
         AbstractRegistrum<?> owner,

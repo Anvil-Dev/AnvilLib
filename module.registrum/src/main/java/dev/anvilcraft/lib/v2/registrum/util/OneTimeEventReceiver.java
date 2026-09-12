@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/util/OneTimeEventReceiver.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/util/OneTimeEventReceiver.java
  *
  */
 
@@ -16,7 +16,7 @@ package dev.anvilcraft.lib.v2.registrum.util;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.neoforged.bus.api.Event;
@@ -27,14 +27,18 @@ import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+@SuppressWarnings("unused")
 @RequiredArgsConstructor
 @Log4j2
+@ApiStatus.Internal
 public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullType T> {
 
 
@@ -56,7 +60,9 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
             if (!waitingModListeners.contains(owner, evtClass)) {
                 waitingModListeners.put(owner, evtClass, new ArrayList<>());
             }
-            waitingModListeners.get(owner, evtClass).add(Pair.of(priority, listener));
+            List<Pair<EventPriority, Consumer<?>>> pairs = waitingModListeners.get(owner, evtClass);
+            if (pairs == null) return;
+            pairs.add(Pair.of(priority, listener));
             return;
         }
         if (!seenModBus) {
@@ -90,7 +96,12 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
         OneTimeEventReceiver.<T>addListener(bus, EventPriority.NORMAL, evtClass, listener);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings(
+        {
+            "unchecked",
+            "DeprecatedIsStillUsed"
+        }
+    )
     @Deprecated
     public static <T extends Event> void addListener(
         IEventBus bus,
@@ -116,9 +127,9 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
         }
     }
 
-    private static final List<Triple<IEventBus, Object, Class<? extends Event>>> toUnregister = new ArrayList<>();
+    private static final List<Triple<@Nullable IEventBus, Object, Class<? extends Event>>> toUnregister = new ArrayList<>();
 
-    private static synchronized void unregister(IEventBus bus, Object listener, Event event) {
+    private static synchronized void unregister(@Nullable IEventBus bus, Object listener, Event event) {
         unregister(bus, listener, event.getClass());
     }
 
@@ -126,13 +137,15 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
         unregister(owner.getModEventBus(), listener, event);
     }
 
-    private static synchronized void unregister(IEventBus bus, Object listener, Class<? extends Event> event) {
+    private static synchronized void unregister(@Nullable IEventBus bus, Object listener, Class<? extends Event> event) {
         toUnregister.add(Triple.of(bus, listener, event));
     }
 
     private static void onLoadComplete(FMLLoadCompleteEvent event) {
         event.enqueueWork(() -> {
-            toUnregister.forEach(t -> t.getLeft().unregister(t.getMiddle()));
+            toUnregister.forEach(t -> {
+                if (t.getLeft() != null) t.getLeft().unregister(t.getMiddle());
+            });
             toUnregister.clear();
         });
     }

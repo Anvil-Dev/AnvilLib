@@ -1,0 +1,13 @@
+{
+  "anvillib_multiblock.configuration.async_thread_pool_size": "Async Thread Pool Size",
+  "anvillib_multiblock.configuration.async_thread_pool_size.tooltip": "Thread pool size for async multiblock checking",
+  "anvillib_multiblock.configuration.formed_multiblock_check_interval": "Formed Multiblock Check Interval",
+  "anvillib_multiblock.configuration.formed_multiblock_check_interval.tooltip": "The interval of checking formed multiblock (in ticks)",
+  "anvillib_multiblock.configuration.max_checks_per_tick": "Max Checks Per Tick",
+  "anvillib_multiblock.configuration.max_checks_per_tick.tooltip": "Maximum number of multiblock checks submitted per tick",
+  "anvillib_multiblock.configuration.section.anvillib_multiblock.common.toml": "Anvillib Multiblock Common Configuration",
+  "anvillib_multiblock.configuration.section.anvillib_multiblock.common.toml.title": "Anvillib Multiblock Common Configuration",
+  "anvillib_multiblock.configuration.title": "Anvillib Multiblock Configuration",
+  "anvillib_multiblock.configuration.unformed_multiblock_check_interval": "Unformed Multiblock Check Interval",
+  "anvillib_multiblock.configuration.unformed_multiblock_check_interval.tooltip": "The interval of checking unformed multiblock (in ticks)"
+}

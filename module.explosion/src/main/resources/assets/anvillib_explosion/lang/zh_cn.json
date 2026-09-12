@@ -1,0 +1,9 @@
+{
+  "anvillib_explosion.configuration.default_remove_blocks_per_tick": "默认每 tick 移除的方块数",
+  "anvillib_explosion.configuration.default_remove_blocks_per_tick.tooltip": "每 tick 内可以删除的方块的默认数量",
+  "anvillib_explosion.configuration.max_remove_blocks_per_tick": "最大每 tick 移除的方块数",
+  "anvillib_explosion.configuration.max_remove_blocks_per_tick.tooltip": "每 tick 内可以删除的方块的最大数量",
+  "anvillib_explosion.configuration.section.anvillib.explosion.common.toml": "Anvillib Explosion 通用 配置",
+  "anvillib_explosion.configuration.section.anvillib.explosion.common.toml.title": "Anvillib Explosion 通用 配置",
+  "anvillib_explosion.configuration.title": "Anvillib Explosion 配置"
+}

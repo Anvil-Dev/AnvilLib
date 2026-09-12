@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/AbstractRegistrum.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/AbstractRegistrum.java
  *
  */
 
@@ -17,23 +17,43 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import dev.anvilcraft.lib.v2.registrum.builders.BlockBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder.BlockEntityFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.Builder;
 import dev.anvilcraft.lib.v2.registrum.builders.BuilderCallback;
+import dev.anvilcraft.lib.v2.registrum.builders.ConditionBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.CreativeTabBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.EntityBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.FluidBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.GameEventBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.ItemBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ForgeMenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.MenuFactory;
 import dev.anvilcraft.lib.v2.registrum.builders.MenuBuilder.ScreenFactory;
+import dev.anvilcraft.lib.v2.registrum.builders.MobEffectBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.NoConfigBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.SelfBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.data.DataComponentPredicateBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.self.PotionBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.self.SoundEventBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.data.AttachmentBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.data.DataComponentBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.modifier.BiomeModifierBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.modifier.GlobalLootModifierBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.modifier.StructureModifierBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.recipe.RecipeSerializerBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.recipe.RecipeTypeBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.villager.PoiTypeBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.villager.VillagerProfessionBuilder;
+import dev.anvilcraft.lib.v2.registrum.builders.villager.VillagerTypeBuilder;
 import dev.anvilcraft.lib.v2.registrum.providers.DataProviderInitializer;
 import dev.anvilcraft.lib.v2.registrum.providers.GeneratorType;
 import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
@@ -43,45 +63,63 @@ import dev.anvilcraft.lib.v2.registrum.util.CreativeModeTabModifier;
 import dev.anvilcraft.lib.v2.registrum.util.DebugMarkers;
 import dev.anvilcraft.lib.v2.registrum.util.OneTimeEventReceiver;
 import dev.anvilcraft.lib.v2.registrum.util.entry.ItemEntry;
+import dev.anvilcraft.lib.v2.registrum.util.entry.RecipeEntry;
 import dev.anvilcraft.lib.v2.registrum.util.entry.RegistryEntry;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullConsumer;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullUnaryOperator;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullUnaryOperator;
+import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.Accessors;
 import lombok.extern.log4j.Log4j2;
-import net.minecraft.Util;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.predicates.DataComponentPredicate;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.Util;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType.EntityFactory;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.attachment.IAttachmentHolder;
+import net.neoforged.neoforge.common.conditions.ICondition;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.common.world.BiomeModifier;
+import net.neoforged.neoforge.common.world.StructureModifier;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.data.loading.DatagenModLoader;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -95,6 +133,7 @@ import net.neoforged.neoforge.registries.RegistryBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.message.Message;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -107,10 +146,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Manages all registrations and data generators for a mod.
@@ -136,10 +175,16 @@ import javax.annotation.Nullable;
  * For specifics as to building different registry entries, read the documentation on their respective builders.
  */
 @Log4j2
+@SuppressWarnings(
+    {
+        "unused",
+        "UnusedReturnValue",
+        "ConstantValue"
+    }
+)
 public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
-
     @Value
-    private class Registration<R, T extends R> {
+    private static class Registration<R, T extends R> {
         ResourceLocation name;
         ResourceKey<? extends Registry<R>> type;
         NonNullSupplier<? extends T> creator;
@@ -282,24 +327,23 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     protected void onRegister(RegisterEvent event) {
         ResourceKey<? extends Registry<?>> type = event.getRegistryKey();
         if (type == null) {
-            log.debug(DebugMarkers.REGISTER, "Skipping invalid registry with no supertype: " + event.getRegistryKey().location());
+            log.debug(DebugMarkers.REGISTER, "Skipping invalid registry with no supertype: {}", event.getRegistryKey().location());
             return;
         }
         if (!registerCallbacks.isEmpty()) {
-            registerCallbacks.asMap()
-                .forEach((k, v) -> log.warn(
-                    "Found {} unused register callback(s) for entry {} [{}]. Was the entry ever registered?",
-                    v.size(),
-                    k.getLeft(),
-                    k.getRight().location()
-                ));
+            registerCallbacks.asMap().forEach((k, v) -> log.warn(
+                "Found {} unused register callback(s) for entry {} [{}]. Was the entry ever registered?",
+                v.size(),
+                k.getLeft(),
+                k.getRight().location()
+            ));
             registerCallbacks.clear();
             if (isDevEnvironment()) {
                 throw new IllegalStateException("Found unused register callbacks, see logs");
             }
         }
         Map<String, Registration<?, ?>> registrationsForType = registrations.row(type);
-        if (registrationsForType.size() > 0) {
+        if (!registrationsForType.isEmpty()) {
             log.trace(
                 DebugMarkers.REGISTER,
                 "({}) Registering {} known objects of type {}",
@@ -403,7 +447,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      * @throws NullPointerException     if current name has not been set via {@link #object(String)}
      */
     public <R, T extends R> RegistryEntry<R, T> get(ResourceKey<? extends Registry<R>> type) {
-        return this.<R, T>get(currentName(), type);
+        return this.get(currentName(), type);
     }
 
     /**
@@ -443,7 +487,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      * @return A {@link RegistryEntry} which will supply the requested entry, if it exists
      */
     public <R, T extends R> Optional<RegistryEntry<R, T>> getOptional(String name, ResourceKey<? extends Registry<R>> type) {
-        Registration<R, T> reg = this.<R, T>getRegistrationUnchecked(name, type);
+        Registration<R, T> reg = this.getRegistrationUnchecked(name, type);
         return reg == null ? Optional.empty() : Optional.of(reg.getDelegate());
     }
 
@@ -454,7 +498,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     }
 
     private <R, T extends R> Registration<R, T> getRegistration(String name, ResourceKey<? extends Registry<R>> type) {
-        Registration<R, T> reg = this.<R, T>getRegistrationUnchecked(name, type);
+        Registration<R, T> reg = this.getRegistrationUnchecked(name, type);
         if (reg != null) {
             return reg;
         }
@@ -495,9 +539,9 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         ResourceKey<? extends Registry<R>> registryType,
         NonNullConsumer<? super T> callback
     ) {
-        Registration<R, T> reg = this.<R, T>getRegistrationUnchecked(name, registryType);
+        Registration<R, T> reg = this.getRegistrationUnchecked(name, registryType);
         if (reg == null) {
-            registerCallbacks.put(Pair.of(name, registryType), (NonNullConsumer<?>) callback);
+            registerCallbacks.put(Pair.of(name, registryType), callback);
         } else {
             reg.addRegisterCallback(callback);
         }
@@ -513,7 +557,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      * @return This {@link AbstractRegistrum} instance
      */
     public <R> S addRegisterCallback(ResourceKey<? extends Registry<R>> registryType, Runnable callback) {
-        afterRegisterCallbacks.put((ResourceKey<? extends Registry<?>>) registryType, callback);
+        afterRegisterCallbacks.put(registryType, callback);
         return self();
     }
 
@@ -576,9 +620,9 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         NonNullConsumer<? extends P> cons
     ) {
         if (!doDatagen.get()) return self();
-        @SuppressWarnings("null")
-        Consumer<?> existing = datagensByEntry.put(Pair.of(entry, registryType), type, cons);
+        @SuppressWarnings("null") Consumer<?> existing = datagensByEntry.put(Pair.of(entry, registryType), type, cons);
         if (existing != null) {
+            //noinspection SuspiciousMethodCalls
             datagens.remove(type, existing);
         }
         return addDataGenerator(type, cons);
@@ -687,6 +731,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
             provider.putSubProvider(type, gen);
         }
         datagens.get(type).forEach(cons -> {
+            @SuppressWarnings("OptionalAssignedToNull")
             Optional<Pair<String, ResourceKey<? extends Registry<?>>>> entry = null;
             if (log.isEnabled(Level.DEBUG, DebugMarkers.DATA)) {
                 entry = getEntryForGenerator(type, cons);
@@ -710,25 +755,24 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
             try {
                 ((Consumer<T>) cons).accept(gen);
             } catch (Exception e) {
+                //noinspection OptionalAssignedToNull
                 if (entry == null) {
                     entry = getEntryForGenerator(type, cons);
                 }
                 Message err;
                 if (entry.isPresent()) {
-                    err = log.getMessageFactory()
-                        .newMessage(
-                            "Unexpected error while running data generator of type {} for entry {} [{}]",
-                            RegistrumDataProvider.getTypeName(type),
-                            entry.get().getLeft(),
-                            entry.get().getRight().location()
-                        );
+                    err = log.getMessageFactory().newMessage(
+                        "Unexpected error while running data generator of type {} for entry {} [{}]",
+                        RegistrumDataProvider.getTypeName(type),
+                        entry.get().getLeft(),
+                        entry.get().getRight().location()
+                    );
                 } else {
-                    err = log.getMessageFactory()
-                        .newMessage(
-                            "Unexpected error while running unassociated data generator of type {} ({})",
-                            RegistrumDataProvider.getTypeName(type),
-                            type
-                        );
+                    err = log.getMessageFactory().newMessage(
+                        "Unexpected error while running unassociated data generator of type {} ({})",
+                        RegistrumDataProvider.getTypeName(type),
+                        type
+                    );
                 }
                 if (skipErrors) {
                     log.error(err);
@@ -779,6 +823,15 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     public S defaultCreativeTab(ResourceKey<CreativeModeTab> creativeModeTab) {
         defaultCreativeModeTab = creativeModeTab;
         return self();
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public S defaultCreativeTab(RegistryEntry<CreativeModeTab, CreativeModeTab> tab) {
+        return defaultCreativeTab(tab.getKey());
     }
 
     /**
@@ -873,6 +926,15 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     }
 
     /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T, P, S2 extends SelfBuilder<T, P, S2>> S2 selfEntry(String name, NonNullFunction<BuilderCallback, S2> factory) {
+        return factory.apply(this::accept);
+    }
+
+    /**
      * Factory method to accept a completed builder and add it to the registration queue.
      * <p>
      * Satisfies the functional interface {@link BuilderCallback}, which is typically given to new builder instances when they are constructed.
@@ -895,6 +957,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     ) {
         Registration<R, T> reg = new Registration<>(ResourceLocation.fromNamespaceAndPath(modid, name), type, creator, entryFactory);
         log.trace(DebugMarkers.REGISTER, "Captured registration for entry {}:{} of type {}", getModid(), name, type.location());
+        //noinspection SuspiciousMethodCalls
         registerCallbacks.removeAll(Pair.of(name, type)).forEach(callback -> {
             @SuppressWarnings(
                 {
@@ -902,7 +965,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
                     "null"
                 }
             )
-            @Nonnull NonNullConsumer<? super T> unsafeCallback = (NonNullConsumer<? super T>) callback;
+            NonNullConsumer<? super T> unsafeCallback = (NonNullConsumer<? super T>) callback;
             reg.addRegisterCallback(unsafeCallback);
         });
         registrations.put(type, name, reg);
@@ -1021,7 +1084,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         ResourceKey<Registry<R>> registryType,
         NonNullSupplier<T> factory
     ) {
-        return entry(name, callback -> new NoConfigBuilder<R, T, P>(this, parent, name, callback, registryType, factory));
+        return entry(name, callback -> new NoConfigBuilder<>(this, parent, name, callback, registryType, factory));
     }
 
     // Items
@@ -1040,7 +1103,8 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
 
     public <T extends Item, P> ItemBuilder<T, P> item(P parent, String name, NonNullFunction<Item.Properties, T> factory) {
         return entry(
-            name, callback -> ItemBuilder.create(this, parent, name, callback, factory)
+            name,
+            callback -> ItemBuilder.create(this, parent, name, callback, factory)
                 .transform(builder -> this.defaultCreativeModeTab == null ? builder : builder.tab(this.defaultCreativeModeTab))
         );
     }
@@ -1134,22 +1198,27 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     }
 
     public <T extends BaseFlowingFluid> FluidBuilder<T, S> fluid(
-        ResourceLocation stillTexture, ResourceLocation flowingTexture,
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
         FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return fluid(self(), stillTexture, flowingTexture, fluidFactory);
     }
 
     public <T extends BaseFlowingFluid> FluidBuilder<T, S> fluid(
-        ResourceLocation stillTexture, ResourceLocation flowingTexture,
-        FluidBuilder.FluidTypeFactory typeFactory, FluidBuilder.FluidFactory<T> fluidFactory
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
+        FluidBuilder.FluidTypeFactory typeFactory,
+        FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return fluid(self(), stillTexture, flowingTexture, typeFactory, fluidFactory);
     }
 
     public <T extends BaseFlowingFluid> FluidBuilder<T, S> fluid(
-        ResourceLocation stillTexture, ResourceLocation flowingTexture,
-        NonNullSupplier<FluidType> fluidType, FluidBuilder.FluidFactory<T> fluidFactory
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
+        NonNullSupplier<FluidType> fluidType,
+        FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return fluid(self(), stillTexture, flowingTexture, fluidType, fluidFactory);
     }
@@ -1189,22 +1258,30 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     }
 
     public <T extends BaseFlowingFluid> FluidBuilder<T, S> fluid(
-        String name, ResourceLocation stillTexture, ResourceLocation flowingTexture,
+        String name,
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
         FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return fluid(self(), name, stillTexture, flowingTexture, fluidFactory);
     }
 
     public <T extends BaseFlowingFluid> FluidBuilder<T, S> fluid(
-        String name, ResourceLocation stillTexture, ResourceLocation flowingTexture,
-        FluidBuilder.FluidTypeFactory typeFactory, FluidBuilder.FluidFactory<T> fluidFactory
+        String name,
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
+        FluidBuilder.FluidTypeFactory typeFactory,
+        FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return fluid(self(), name, stillTexture, flowingTexture, typeFactory, fluidFactory);
     }
 
     public <T extends BaseFlowingFluid> FluidBuilder<T, S> fluid(
-        String name, ResourceLocation stillTexture, ResourceLocation flowingTexture,
-        NonNullSupplier<FluidType> fluidType, FluidBuilder.FluidFactory<T> fluidFactory
+        String name,
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
+        NonNullSupplier<FluidType> fluidType,
+        FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return fluid(self(), name, stillTexture, flowingTexture, fluidType, fluidFactory);
     }
@@ -1244,22 +1321,30 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     }
 
     public <T extends BaseFlowingFluid, P> FluidBuilder<T, P> fluid(
-        P parent, ResourceLocation stillTexture, ResourceLocation flowingTexture,
+        P parent,
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
         FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return fluid(parent, currentName(), stillTexture, flowingTexture, fluidFactory);
     }
 
     public <T extends BaseFlowingFluid, P> FluidBuilder<T, P> fluid(
-        P parent, ResourceLocation stillTexture, ResourceLocation flowingTexture,
-        FluidBuilder.FluidTypeFactory typeFactory, FluidBuilder.FluidFactory<T> fluidFactory
+        P parent,
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
+        FluidBuilder.FluidTypeFactory typeFactory,
+        FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return fluid(parent, currentName(), stillTexture, flowingTexture, typeFactory, fluidFactory);
     }
 
     public <T extends BaseFlowingFluid, P> FluidBuilder<T, P> fluid(
-        P parent, ResourceLocation stillTexture, ResourceLocation flowingTexture,
-        NonNullSupplier<FluidType> fluidType, FluidBuilder.FluidFactory<T> fluidFactory
+        P parent,
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
+        NonNullSupplier<FluidType> fluidType,
+        FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return fluid(parent, currentName(), stillTexture, flowingTexture, fluidType, fluidFactory);
     }
@@ -1293,12 +1378,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         );
     }
 
-    public <P> FluidBuilder<BaseFlowingFluid.Flowing, P> fluid(
-        P parent,
-        String name,
-        ResourceLocation stillTexture,
-        ResourceLocation flowingTexture
-    ) {
+    public <P> FluidBuilder<BaseFlowingFluid.Flowing, P> fluid(P parent, String name, ResourceLocation stillTexture, ResourceLocation flowingTexture) {
         return entry(name, callback -> FluidBuilder.create(this, parent, name, callback, FluidType::new)).clientExtension(
             stillTexture,
             flowingTexture
@@ -1332,7 +1412,10 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     }
 
     public <T extends BaseFlowingFluid, P> FluidBuilder<T, P> fluid(
-        P parent, String name, ResourceLocation stillTexture, ResourceLocation flowingTexture,
+        P parent,
+        String name,
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
         FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return entry(name, callback -> FluidBuilder.create(this, parent, name, callback, fluidFactory)).clientExtension(
@@ -1342,18 +1425,26 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     }
 
     public <T extends BaseFlowingFluid, P> FluidBuilder<T, P> fluid(
-        P parent, String name, ResourceLocation stillTexture, ResourceLocation flowingTexture,
-        FluidBuilder.FluidTypeFactory typeFactory, FluidBuilder.FluidFactory<T> fluidFactory
+        P parent,
+        String name,
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
+        FluidBuilder.FluidTypeFactory typeFactory,
+        FluidBuilder.FluidFactory<T> fluidFactory
     ) {
-        return entry(name, callback -> FluidBuilder.create(this, parent, name, callback, typeFactory, fluidFactory)).clientExtension(
-            stillTexture,
-            flowingTexture
-        );
+        return entry(
+            name,
+            callback -> FluidBuilder.create(this, parent, name, callback, typeFactory, fluidFactory)
+        ).clientExtension(stillTexture, flowingTexture);
     }
 
     public <T extends BaseFlowingFluid, P> FluidBuilder<T, P> fluid(
-        P parent, String name, ResourceLocation stillTexture, ResourceLocation flowingTexture,
-        NonNullSupplier<FluidType> fluidType, FluidBuilder.FluidFactory<T> fluidFactory
+        P parent,
+        String name,
+        ResourceLocation stillTexture,
+        ResourceLocation flowingTexture,
+        NonNullSupplier<FluidType> fluidType,
+        FluidBuilder.FluidFactory<T> fluidFactory
     ) {
         return entry(name, callback -> FluidBuilder.create(this, parent, name, callback, fluidType, fluidFactory)).clientExtension(
             stillTexture,
@@ -1392,7 +1483,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         MenuFactory<T> factory,
         NonNullSupplier<ScreenFactory<T, SC>> screenFactory
     ) {
-        return entry(name, callback -> new MenuBuilder<T, SC, P>(this, parent, name, callback, factory, screenFactory));
+        return entry(name, callback -> new MenuBuilder<>(this, parent, name, callback, factory, screenFactory));
     }
 
     public <T extends AbstractContainerMenu, SC extends Screen & MenuAccess<T>> MenuBuilder<T, SC, S> menu(
@@ -1424,7 +1515,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         ForgeMenuFactory<T> factory,
         NonNullSupplier<ScreenFactory<T, SC>> screenFactory
     ) {
-        return entry(name, callback -> new MenuBuilder<T, SC, P>(this, parent, name, callback, factory, screenFactory));
+        return entry(name, callback -> new MenuBuilder<>(this, parent, name, callback, factory, screenFactory));
     }
 
     // Creative Tab
@@ -1465,10 +1556,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         String name,
         Consumer<CreativeModeTab.Builder> config
     ) {
-        this.defaultCreativeModeTab = ResourceKey.create(
-            Registries.CREATIVE_MODE_TAB,
-            ResourceLocation.fromNamespaceAndPath(this.modid, name)
-        );
+        this.defaultCreativeModeTab = ResourceKey.create(Registries.CREATIVE_MODE_TAB, ResourceLocation.fromNamespaceAndPath(this.modid, name));
         return this.generic(
             parent, name, Registries.CREATIVE_MODE_TAB, () -> {
                 var builder = CreativeModeTab.builder()
@@ -1483,4 +1571,474 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
             }
         );
     }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    protected <P> CreativeTabBuilder<P> creativeTab(P parent, String name, Supplier<ItemLike> icon) {
+        return entry(name, callback -> CreativeTabBuilder.create(this, parent, name, callback, icon));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public CreativeTabBuilder<S> creativeTab(String name, ItemLike icon) {
+        return creativeTab(self(), name, () -> icon);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public CreativeTabBuilder<S> creativeTab(String name, Supplier<ItemLike> icon) {
+        return creativeTab(self(), name, icon);
+    }
+
+    // Attachment Type
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <E, P> AttachmentBuilder<E, P> attachment(P parent, String name, Function<IAttachmentHolder, E> const_) {
+        return entry(name, callback -> new AttachmentBuilder<>(this, parent, name, callback, const_));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <E> AttachmentBuilder<E, S> attachment(String name, Function<IAttachmentHolder, E> const_) {
+        return attachment(self(), name, const_);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <E, P> AttachmentBuilder<E, P> attachment(P parent, String name, Supplier<E> const_) {
+        return entry(name, callback -> new AttachmentBuilder<>(this, parent, name, callback, const_));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <E> AttachmentBuilder<E, S> attachment(String name, Supplier<E> const_) {
+        return attachment(self(), name, const_);
+    }
+
+    // Data Component Type
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <E, P> DataComponentBuilder<E, P> dataComponent(P parent, String name) {
+        return entry(name, callback -> new DataComponentBuilder<>(this, parent, name, callback));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <E> DataComponentBuilder<E, S> dataComponent(String name) {
+        return dataComponent(self(), name);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public <E> DataComponentBuilder<E, S> dataComponent(String name, Class<E> clazz) {
+        return dataComponent(self(), name);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    protected <E extends DataComponentPredicate, P> DataComponentPredicateBuilder<E, P> dataComponentPredicate(P parent, String name) {
+        return entry(name, callback -> new DataComponentPredicateBuilder<>(this, parent, name, callback));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public <E extends DataComponentPredicate, P> DataComponentPredicateBuilder<E, P> dataComponentPredicate(String name) {
+        //noinspection unchecked
+        return (DataComponentPredicateBuilder<E, P>) dataComponentPredicate(self(), name);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author Gugle
+     */
+    public <E extends DataComponentPredicate, P> DataComponentPredicateBuilder<E, P> dataComponentPredicate(String name, Class<E> clazz) {
+        //noinspection unchecked
+        return (DataComponentPredicateBuilder<E, P>) dataComponentPredicate(self(), name);
+    }
+
+    // Biome Modifier
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <T extends BiomeModifier, P> BiomeModifierBuilder<T, P> biomeModifier(P parent, String name, MapCodec<T> codec) {
+        return entry(name, callback -> new BiomeModifierBuilder<>(this, parent, name, callback, codec));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends BiomeModifier> BiomeModifierBuilder<T, S> biomeModifier(String name, MapCodec<T> codec) {
+        return biomeModifier(self(), name, codec);
+    }
+
+    // Hlobal Loot Modifier
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <T extends IGlobalLootModifier, P> GlobalLootModifierBuilder<T, P> glm(P parent, String name, MapCodec<T> codec) {
+        return entry(name, callback -> new GlobalLootModifierBuilder<>(this, parent, name, callback, codec));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends IGlobalLootModifier> GlobalLootModifierBuilder<T, S> glm(String name, MapCodec<T> codec) {
+        return glm(self(), name, codec);
+    }
+
+    // Structure Modifier
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <T extends StructureModifier, P> StructureModifierBuilder<T, P> structureModifier(P parent, String name, MapCodec<T> codec) {
+        return entry(name, callback -> new StructureModifierBuilder<>(this, parent, name, callback, codec));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends StructureModifier> StructureModifierBuilder<T, S> structureModifier(String name, MapCodec<T> codec) {
+        return structureModifier(self(), name, codec);
+    }
+
+    // Condition
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <T extends ICondition, P> ConditionBuilder<T, P> condition(P parent, String name, MapCodec<T> codec) {
+        return entry(name, callback -> new ConditionBuilder<>(this, parent, name, callback, codec));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends ICondition> ConditionBuilder<T, S> condition(String name, MapCodec<T> codec) {
+        return condition(self(), name, codec);
+    }
+
+    // Sound Event
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <P> SoundEventBuilder<P> soundEvent(P parent, String name) {
+        return selfEntry(name, callback -> new SoundEventBuilder<>(this, parent, name, callback));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    protected <P> SoundEventBuilder<P> soundEvent(P parent, String name, float fix) {
+        return selfEntry(name, callback -> new SoundEventBuilder<>(this, parent, name, callback, fix));
+    }
+
+
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public SoundEventBuilder<S> soundEvent(String name) {
+        return soundEvent(self(), name);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public SoundEventBuilder<S> soundEvent(String name, float fix) {
+        return soundEvent(self(), name, fix);
+    }
+
+
+
+    // Recipe
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends Recipe<?>, P> RecipeEntry<T> recipe(
+        P parent,
+        String name,
+        MapCodec<T> codec,
+        StreamCodec<RegistryFriendlyByteBuf, T> streamCodec
+    ) {
+        return new RecipeEntry<>(
+            entry(name, callback -> new RecipeTypeBuilder<T, P>(this, parent, name, callback)).register(),
+            entry(name, callback -> new RecipeSerializerBuilder<>(this, parent, name, callback, codec, streamCodec)).register()
+        );
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends Recipe<?>> RecipeEntry<T> recipe(
+        String name,
+        MapCodec<T> codec,
+        StreamCodec<RegistryFriendlyByteBuf, T> streamCodec
+    ) {
+        return recipe(self(), name, codec, streamCodec);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> GameEventBuilder<P> gameEvent(P parent, String name, int radius) {
+        return entry(name, callback -> new GameEventBuilder<>(this, parent, name, callback, radius));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public GameEventBuilder<S> gameEvent(String name, int radius) {
+        return gameEvent(self(), name, radius);
+    }
+
+    // Potion
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> PotionBuilder<P> potion(P parent, String name,MobEffectInstance... effects) {
+        return selfEntry(name, callback -> new PotionBuilder<>(this, parent, name, callback, effects));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public PotionBuilder<S> potion(String name,MobEffectInstance... effects) {
+        return potion(self(), name, effects);
+    }
+
+    // Mob Effect
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends MobEffect, P> MobEffectBuilder<T, P> mobEffect(P parent, String name, NonNullSupplier<T> supplier) {
+        return entry(name, callback -> new MobEffectBuilder<>(this, parent, name, callback, supplier));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <T extends MobEffect> MobEffectBuilder<T, S> mobEffect(String name, NonNullSupplier<T> supplier) {
+        return mobEffect(self(), name, supplier);
+    }
+
+    // Villager Settings
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> VillagerTypeBuilder<P> villager(P parent, String name) {
+        return selfEntry(name, callback -> new VillagerTypeBuilder<>(this, parent, name, callback));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public VillagerTypeBuilder<S> villager(String name) {
+        return villager(self(), name);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> PoiTypeBuilder<P> poi(P parent,
+                                     String name,
+                                     Supplier<Set<BlockState>> matchingStates,
+                                     int maxTickets,
+                                     int validRange) {
+        return selfEntry(name, callback -> new PoiTypeBuilder<>(this, parent, name, callback, matchingStates, maxTickets, validRange));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public PoiTypeBuilder<S> poi(String name,
+                                 Supplier<Set<BlockState>> matchingStates,
+                                 int maxTickets,
+                                 int validRange) {
+        return poi(self(), name, matchingStates, maxTickets, validRange);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> VillagerProfessionBuilder<P> profession(P parent, String name, Predicate<Holder<PoiType>> heldJobSite,
+                                                       Predicate<Holder<PoiType>> acquirableJobSite,
+                                                       ImmutableSet<Item> requestedItems,
+                                                       ImmutableSet<Block> secondaryPoi,
+                                                       @Nullable SoundEvent workSound) {
+        return selfEntry(name, callback -> new VillagerProfessionBuilder<>(
+                this, parent, name, callback,
+                heldJobSite, acquirableJobSite,
+                requestedItems, secondaryPoi,
+                workSound
+        ));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public VillagerProfessionBuilder<S> profession(String name, Predicate<Holder<PoiType>> heldJobSite,
+                                                       Predicate<Holder<PoiType>> acquirableJobSite,
+                                                       ImmutableSet<Item> requestedItems,
+                                                       ImmutableSet<Block> secondaryPoi,
+                                                       @Nullable SoundEvent workSound) {
+        return profession(self(), name, heldJobSite, acquirableJobSite, requestedItems, secondaryPoi, workSound);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> VillagerProfessionBuilder<P> profession(P parent,
+                                                       String name,
+                                                       Predicate<Holder<PoiType>> heldJobSite,
+                                                       Predicate<Holder<PoiType>> acquirableJobSite,
+                                                       @Nullable SoundEvent workSound) {
+        return selfEntry(name, callback -> new VillagerProfessionBuilder<>(
+                this, parent, name, callback,
+                heldJobSite, acquirableJobSite,
+                workSound
+        ));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public VillagerProfessionBuilder<S> profession(String name,
+                                                   Predicate<Holder<PoiType>> heldJobSite,
+                                                   Predicate<Holder<PoiType>> acquirableJobSite,
+                                                   @Nullable SoundEvent workSound) {
+        return profession(self(), name, heldJobSite, acquirableJobSite, workSound);
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public <P> VillagerProfessionBuilder<P> profession(P parent,
+                                                       String name,
+                                                       ResourceKey<PoiType> jobSite,
+                                                       @Nullable SoundEvent workSound) {
+        return selfEntry(name, callback -> new VillagerProfessionBuilder<>(this, parent, name, callback, jobSite, workSound));
+    }
+
+    /**
+     * Release under the MIT License. The full license text is available at <a href="https://opensource.org/license/mit">this</a>
+     *
+     * @author baka4n
+     */
+    public VillagerProfessionBuilder<S> profession(String name,
+                                                   ResourceKey<PoiType> jobSite,
+                                                   @Nullable SoundEvent workSound) {
+        return profession(self(), name, jobSite, workSound);
+    }
+
+
+
+
+
+
+
 }

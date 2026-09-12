@@ -1,11 +1,13 @@
 package dev.anvilcraft.lib.v2.config;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Field;
 
+@ApiStatus.Internal
 public record ConfigField(
     Object object,
     Field field,
