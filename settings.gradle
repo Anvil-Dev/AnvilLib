@@ -13,6 +13,7 @@ plugins {
 include 'renderdoc-loader'
 include 'module.codec'
 include 'module.collision'
+include 'module.cube'
 include 'module.config'
 include 'module.explosion'
 include 'module.font'
@@ -53,3 +54,5 @@ project(':module.util').name = 'anvillib-util-neoforge-26.1'
 project(':module.wheel').name = 'anvillib-wheel-neoforge-26.1'
 project(':module.main').name = 'anvillib-neoforge-26.1'
 project(':module.test').name = 'anvillib-test-neoforge-26.1'
+
+project(':module.cube').name = 'anvillib-cube-neoforge-26.1'

@@ -96,16 +96,37 @@ public class ItemResourceHandlerCacheElement extends AbstractCacheElement implem
         this.shrinkSimulateStack.clear();
         try (Transaction transaction = Transaction.openRoot()) {
             ItemResource resource = this.iItemHandler.getResource(this.slot);
+            ItemResource result = ItemResource.of(this.simulate);
+            int amount = this.iItemHandler.getAmountAsInt(this.slot);
+            int resultAmount = this.simulate.getCount();
+            // 未变化的槽位无需取出再放回；相同物品只同步差量，兼容拒绝插入的输出槽。
+            if (resource.equals(result)) {
+                int difference = resultAmount - amount;
+                if (difference == 0) return;
+                int changed = difference > 0
+                    ? this.iItemHandler.insert(this.slot, result, difference, transaction)
+                    : this.iItemHandler.extract(this.slot, resource, -difference, transaction);
+                if (changed != Math.abs(difference)) {
+                    throw new IllegalStateException("Recipe item cache could not synchronize slot " + this.slot);
+                }
+                transaction.commit();
+                return;
+            }
             if (!resource.isEmpty()) {
-                this.iItemHandler.extract(this.slot, resource, Integer.MAX_VALUE, transaction);
+                if (this.iItemHandler.extract(this.slot, resource, amount, transaction) != amount) {
+                    throw new IllegalStateException("Recipe item cache could not extract slot " + this.slot);
+                }
             }
             if (!this.simulate.isEmpty()) {
-                this.iItemHandler.insert(
+                int inserted = this.iItemHandler.insert(
                     this.slot,
-                    ItemResource.of(this.simulate),
-                    this.simulate.getCount(),
+                    result,
+                    resultAmount,
                     transaction
                 );
+                if (inserted != resultAmount) {
+                    throw new IllegalStateException("Recipe item cache could not insert slot " + this.slot);
+                }
             }
             transaction.commit();
         }

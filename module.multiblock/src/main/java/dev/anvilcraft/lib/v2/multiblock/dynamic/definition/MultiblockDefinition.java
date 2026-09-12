@@ -70,12 +70,28 @@ public record MultiblockDefinition(@Unmodifiable Map<Vec3i, BlockStatePredicate>
             return this.add(localPos, BlockStatePredicate.builder().of(block));
         }
 
+        public Builder add(Vec3i localPos, BlockState state) {
+            return this.add(localPos, BlockStatePredicate.builder().with(state));
+        }
+
+        public Builder add(Vec3i localPos, Block block, BlockState state) {
+            return this.add(localPos, BlockStatePredicate.builder().of(block).with(state));
+        }
+
         public Builder add(Vec3i localPos, CompoundTag tag) {
             return this.add(localPos, BlockStatePredicate.builder().nbt(tag));
         }
 
         public Builder add(Vec3i localPos, Block block, CompoundTag tag) {
             return this.add(localPos, BlockStatePredicate.builder().of(block).nbt(tag));
+        }
+
+        public Builder add(Vec3i localPos, BlockState state, CompoundTag tag) {
+            return this.add(localPos, BlockStatePredicate.builder().with(state).nbt(tag));
+        }
+
+        public Builder add(Vec3i localPos, Block block, BlockState state, CompoundTag tag) {
+            return this.add(localPos, BlockStatePredicate.builder().of(block).with(state).nbt(tag));
         }
 
         public Builder addController(BlockStatePredicate.Builder predicate) {
@@ -87,12 +103,28 @@ public record MultiblockDefinition(@Unmodifiable Map<Vec3i, BlockStatePredicate>
             return this.addController(BlockStatePredicate.builder().of(block));
         }
 
+        public Builder addController(BlockState state) {
+            return this.addController(BlockStatePredicate.builder().with(state));
+        }
+
+        public Builder addController(Block block, BlockState state) {
+            return this.addController(BlockStatePredicate.builder().of(block).with(state));
+        }
+
         public Builder addController(CompoundTag tag) {
             return this.addController(BlockStatePredicate.builder().nbt(tag));
         }
 
         public Builder addController(Block block, CompoundTag tag) {
             return this.addController(BlockStatePredicate.builder().of(block).nbt(tag));
+        }
+
+        public Builder addController(BlockState state, CompoundTag tag) {
+            return this.addController(BlockStatePredicate.builder().with(state).nbt(tag));
+        }
+
+        public Builder addController(Block block, BlockState state, CompoundTag tag) {
+            return this.addController(BlockStatePredicate.builder().of(block).with(state).nbt(tag));
         }
 
         public MultiblockDefinition build() {
@@ -121,12 +153,28 @@ public record MultiblockDefinition(@Unmodifiable Map<Vec3i, BlockStatePredicate>
             return this.map(key, BlockStatePredicate.builder().of(block));
         }
 
+        public SeriaBuilder map(char key, BlockState state) {
+            return this.map(key, BlockStatePredicate.builder().with(state));
+        }
+
+        public SeriaBuilder map(char key, Block block, BlockState state) {
+            return this.map(key, BlockStatePredicate.builder().of(block).with(state));
+        }
+
         public SeriaBuilder map(char key, CompoundTag tag) {
             return this.map(key, BlockStatePredicate.builder().nbt(tag));
         }
 
         public SeriaBuilder map(char key, Block block, CompoundTag tag) {
             return this.map(key, BlockStatePredicate.builder().of(block).nbt(tag));
+        }
+
+        public SeriaBuilder map(char key, BlockState state, CompoundTag tag) {
+            return this.map(key, BlockStatePredicate.builder().with(state).nbt(tag));
+        }
+
+        public SeriaBuilder map(char key, Block block, BlockState state, CompoundTag tag) {
+            return this.map(key, BlockStatePredicate.builder().of(block).with(state).nbt(tag));
         }
 
         public SeriaBuilder mapController(BlockStatePredicate.Builder predicate) {
@@ -137,12 +185,28 @@ public record MultiblockDefinition(@Unmodifiable Map<Vec3i, BlockStatePredicate>
             return this.mapController(BlockStatePredicate.builder().of(block));
         }
 
+        public SeriaBuilder mapController(BlockState state) {
+            return this.mapController(BlockStatePredicate.builder().with(state));
+        }
+
+        public SeriaBuilder mapController(Block block, BlockState state) {
+            return this.mapController(BlockStatePredicate.builder().of(block).with(state));
+        }
+
         public SeriaBuilder mapController(CompoundTag tag) {
             return this.mapController(BlockStatePredicate.builder().nbt(tag));
         }
 
         public SeriaBuilder mapController(Block block, CompoundTag tag) {
             return this.mapController(BlockStatePredicate.builder().of(block).nbt(tag));
+        }
+
+        public SeriaBuilder mapController(BlockState state, CompoundTag tag) {
+            return this.mapController(BlockStatePredicate.builder().with(state).nbt(tag));
+        }
+
+        public SeriaBuilder mapController(Block block, BlockState state, CompoundTag tag) {
+            return this.mapController(BlockStatePredicate.builder().of(block).with(state).nbt(tag));
         }
 
         public MultiblockDefinition build() {

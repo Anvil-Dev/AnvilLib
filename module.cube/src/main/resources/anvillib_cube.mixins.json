@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.anvilcraft.lib.v2.cube.mixin.client",
+  "compatibilityLevel": "JAVA_25",
+  "client": ["SimpleModelWrapperMixin", "WeightedModelAccessor", "MultipartModelAccessor", "SingleVariantAccessor", "LocalPlayerMixin", "BlockGetterMixin"],
+  "injectors": {"defaultRequire": 1}
+}

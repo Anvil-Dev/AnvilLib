@@ -16,6 +16,14 @@ AnvilLib adopts a modular design and includes the following functional modules:
 |---------------------------|---------------------------------------------------|
 | **Config**                | Annotation-based configuration system             |
 | **Codec**                 | Data codecs and network serialization helpers     |
+| **Collision**             | AABB/triangle collision tests |
+| **Cube**                  | Slanted model outlines and precise picking |
+| **Explosion**             | Layered spherical explosions and melting |
+| **Font**                  | Custom fonts and SDF text |
+| **Rendering**             | Rendering, bloom, compute and SDF utilities |
+| **RPC**                   | Bidirectional remote calls and synchronous waiting |
+| **Space Select**          | Spatial selection management |
+| **Sync**                  | Field, lazy delta and configuration synchronization |
 | **Integration**           | Mod compatibility integration framework           |
 | **Network**               | Networking API with automatic packet registration |
 | **Recipe**                | In-world recipe system                            |
@@ -83,6 +91,17 @@ public record ExamplePayload(Item item, int count) {
 }
 ```
 
+### Cube Module
+
+Provides slanted model outlines and precise crosshair picking, including parent models, reversed outline shells, weighted variants, multipart models, resource reloads and dynamic block entity parts.
+Enable a namespace with `CubeSelection.enableNamespace("your_mod")`; `registerTargetExclusion` registers, replaces or removes runtime exclusions by ID without discarding the model cache.
+Shared geometry, BVH raycasts and background outline work have bounded memory and work budgets. The 26.1 port uses `CuboidModelElement`, `BlockStateModel` and extracted outline render states.
+
+### RPC Module
+
+Provides `@RemoteCallable` registration, bidirectional calls, asynchronous results and synchronous waiting through `RPC.invokeSync` / `invokeSyncByName`.
+Synchronous calls support 0–16 arguments, results, exceptions, timeouts and disconnect propagation. Run them on virtual threads while keeping the game thread available to process network responses.
+
 ### Integration Module
 
 Provides a framework for mod integrations, supporting automatic loading of integration code based on the presence of other mods.
@@ -128,6 +147,10 @@ public static void onRegisterPayload(RegisterPayloadHandlersEvent event) {
 
 ### Recipe Module
 
+Shares block-constraint checks per trigger to prune impossible recipes; full matching still checks properties, NBT and all predicates.
+Failed matches roll back only their own predicate snapshots, and resource slots synchronize only the required changes.
+
+
 Provides an in-world recipe system, allowing recipes to be executed in the world (rather than in crafting tables).
 
 **Key Features:**
@@ -171,6 +194,10 @@ public class MyBlock extends Block implements IMoveableEntityBlock {
 ```
 
 ### Registrum Module
+
+`CreativeTabBuilder.sectionedDisplayItems` supports section banners, text alignment and hover tooltips. Right-click a grouped item to open the 4×4 variant picker.
+`CreativeVariantPickerRegistry` folds complete variant groups and can enable vanilla 16-color families through a configuration supplier. Incomplete groups remain visible and the search tab retains all items.
+
 
 A registration system based on [Registrate](https://github.com/IThundxr/Registrate), simplifying the registration process for items, blocks,
 entities, etc.

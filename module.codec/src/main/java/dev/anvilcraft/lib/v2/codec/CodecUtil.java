@@ -19,6 +19,7 @@ import com.mojang.datafixers.util.Function9;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.Decoder;
 import com.mojang.serialization.Encoder;
 import com.mojang.serialization.MapCodec;
@@ -358,6 +359,20 @@ public abstract class CodecUtil {
                 }, () -> property.value(holderSupplier.get())
             )
         ).xmap(pair -> pair.getFirst().setValue(property, pair.getSecond().value()), state -> Pair.of(state, property.value(state)));
+    }
+
+    /**
+     * 基本等同于 {@link Codec#encodeStart(DynamicOps, Object)}。
+     *
+     * @param codec 编解码器
+     * @param ops 操作集
+     * @param input 需要编码的输入值
+     * @param <T> 输入值的类型
+     * @param <R> 编码后的类型
+     * @return 编码结果
+     */
+    public static <T, R> DataResult<R> encodeStart(MapCodec<T> codec, DynamicOps<R> ops, T input) {
+        return codec.encode(input, ops, codec.compressedBuilder(ops)).build(ops.emptyMap());
     }
 
     /// 构建一个 `ZOM列表`（零/一/多元素列表）MapCodec

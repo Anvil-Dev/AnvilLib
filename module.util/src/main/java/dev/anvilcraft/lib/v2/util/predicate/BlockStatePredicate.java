@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.util.AnvilLibUtil;
+import dev.anvilcraft.lib.v2.util.Util;
 import io.netty.buffer.ByteBuf;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -134,7 +135,7 @@ public class BlockStatePredicate {
     }
 
     public boolean testWithoutEntity(BlockState state) {
-        if (this.blocks.size() > 0 && !state.is(this.blocks)) return false;
+        if (this.cannotMatch(state)) return false;
         if (this.properties.isEmpty()) return true;
         boolean orSuccess = false;
         for (List<PropertyMatcher> matchers : this.properties) {
@@ -150,6 +151,20 @@ public class BlockStatePredicate {
             }
         }
         return orSuccess;
+    }
+
+    /**
+     * 判断仅凭方块状态（不检查属性与 NBT）是否即可确定不匹配
+     * <p>
+     * 用于保守剪枝：返回 {@code true} 时 {@link #test} 与 {@link #testWithoutEntity}
+     * 对该状态必然失败；返回 {@code false} 不代表匹配成功（属性与 NBT 条件未检查）
+     * </p>
+     *
+     * @param state 方块状态
+     * @return 是否可确定不匹配
+     */
+    public boolean cannotMatch(BlockState state) {
+        return this.blocks.size() > 0 && !state.is(this.blocks);
     }
 
     public boolean testEntity(LevelAccessor level, BlockState state, @Nullable BlockEntity entity) {
@@ -272,6 +287,19 @@ public class BlockStatePredicate {
         }
     )
     public static class Builder {
+        /**
+         * 通过状态设置方块属性
+         *
+         * @param state 状态
+         * @return 构建器实例
+         */
+        public Builder with(BlockState state) {
+            for (Property<? extends Comparable<?>> property : state.getProperties()) {
+                this.with(property, property.getName(Util.cast(state.getValue(property))));
+            }
+            return this;
+        }
+
         private final List<List<PropertyMatcher>> properties = new ArrayList<>();
         private final List<NbtPredicate> nbts = new ArrayList<>();
         private HolderSet<Block> blocks = HolderSet.empty();
