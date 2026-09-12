@@ -30,9 +30,12 @@ public final class CubePicking {
             HitResult vanilla = entity.pick(range, partialTick, fluids);
             if (!(vanilla instanceof BlockHitResult block) || CubeSelection.searchRadius() == 0) return vanilla;
             Vec3 start = entity.getEyePosition(partialTick);
+            double distanceToHit = start.distanceToSqr(block.getLocation());
+            // Sable 等模组可能返回子空间存储坐标，不能从玩家位置跨坐标空间逐格补扫。
+            if (!(distanceToHit <= range * range + 1.0E-7)) return vanilla;
             Vec3 end = start.add(entity.getViewVector(partialTick).scale(range));
             context.nearest = block;
-            context.distance = start.distanceToSqr(block.getLocation());
+            context.distance = distanceToHit;
             context.visited.clear();
             // 只扫描射线邻近格，且同一锚点每帧最多检查一次，不遍历世界实体或全部方块。
             BlockGetter.traverseBlocks(start, block.getLocation(), context, (query, cell) -> {
