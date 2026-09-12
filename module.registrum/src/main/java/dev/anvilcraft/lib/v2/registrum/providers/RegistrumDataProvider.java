@@ -18,7 +18,7 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Lists;
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
 import dev.anvilcraft.lib.v2.registrum.util.DebugMarkers;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
 import lombok.extern.log4j.Log4j2;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
@@ -56,17 +56,17 @@ public class RegistrumDataProvider implements DataProvider {
     private final Map<GeneratorType<?>, Object> subGenerators = new LinkedHashMap<>();
     private final CompletableFuture<HolderLookup.Provider> registriesLookup;
 
-    public RegistrumDataProvider(AbstractRegistrum<?> parent, String modid, GatherDataEvent event) {
+    public RegistrumDataProvider(AbstractRegistrum<?> parent, String modid, GatherDataEvent.Client event) {
         this.mod = modid;
         this.registriesLookup = event.getLookupProvider();
 
         // For now, generate everything together
         /*
         EnumSet<LogicalSide> sides = EnumSet.noneOf(LogicalSide.class);
-        if (event.includeServer()) {
+        if (true) {
             sides.add(LogicalSide.SERVER);
         }
-        if (event.includeClient()) {
+        if (true) {
             sides.add(LogicalSide.CLIENT);
         }
         */

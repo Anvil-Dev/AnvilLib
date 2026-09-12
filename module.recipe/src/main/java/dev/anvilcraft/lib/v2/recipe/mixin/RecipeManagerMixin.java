@@ -40,6 +40,6 @@ abstract class RecipeManagerMixin implements IRecipeManagerExtension {
 
     @Override
     public void anvillib$addRecipes(List<RecipeHolder<InWorldRecipe>> recipes) {
-        this.recipes.anvillib$addRecipes(recipes);
+        ((dev.anvilcraft.lib.v2.recipe.injection.IRecipeMapExtension) this.recipes).anvillib$addRecipes(recipes);
     }
 }

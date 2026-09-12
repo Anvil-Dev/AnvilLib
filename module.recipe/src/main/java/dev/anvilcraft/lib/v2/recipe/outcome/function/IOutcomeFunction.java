@@ -2,7 +2,7 @@ package dev.anvilcraft.lib.v2.recipe.outcome.function;
 
 import com.mojang.serialization.Codec;
 import dev.anvilcraft.lib.v2.recipe.init.LibRegistries;
-import dev.anvilcraft.lib.v2.recipe.util.ISerializer;
+import dev.anvilcraft.lib.v2.util.ISerializer;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import net.minecraft.resources.ResourceLocation;
 

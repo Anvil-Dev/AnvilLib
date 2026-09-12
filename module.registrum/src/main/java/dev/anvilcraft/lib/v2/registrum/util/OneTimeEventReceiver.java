@@ -16,7 +16,7 @@ package dev.anvilcraft.lib.v2.registrum.util;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.neoforged.bus.api.Event;
@@ -56,7 +56,9 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
             if (!waitingModListeners.contains(owner, evtClass)) {
                 waitingModListeners.put(owner, evtClass, new ArrayList<>());
             }
-            waitingModListeners.get(owner, evtClass).add(Pair.of(priority, listener));
+            List<Pair<EventPriority, Consumer<?>>> pairs = waitingModListeners.get(owner, evtClass);
+            if (pairs == null) return;
+            pairs.add(Pair.of(priority, listener));
             return;
         }
         if (!seenModBus) {
@@ -132,7 +134,9 @@ public class OneTimeEventReceiver<T extends Event> implements Consumer<@NonnullT
 
     private static void onLoadComplete(FMLLoadCompleteEvent event) {
         event.enqueueWork(() -> {
-            toUnregister.forEach(t -> t.getLeft().unregister(t.getMiddle()));
+            toUnregister.forEach(t -> {
+                if (t.getLeft() != null) t.getLeft().unregister(t.getMiddle());
+            });
             toUnregister.clear();
         });
     }

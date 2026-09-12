@@ -1,0 +1,18 @@
+{
+  "grid": [
+    [
+      "0"
+    ],
+    [
+      "A"
+    ]
+  ],
+  "mapping": {
+    "0": {
+      "blocks": "minecraft:furnace"
+    },
+    "A": {
+      "blocks": "minecraft:iron_block"
+    }
+  }
+}

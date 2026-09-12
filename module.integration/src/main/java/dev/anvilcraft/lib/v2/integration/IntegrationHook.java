@@ -9,7 +9,7 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 public class IntegrationHook {
     @Getter
     @Setter
-    private static GatherDataEvent event = null;
+    private static GatherDataEvent.Client event = null;
     @Getter
     @Setter
     private static IEventBus modEventBus = null;

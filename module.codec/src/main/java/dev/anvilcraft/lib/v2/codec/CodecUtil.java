@@ -1,17 +1,34 @@
 package dev.anvilcraft.lib.v2.codec;
 
+import com.mojang.datafixers.kinds.App;
 import com.mojang.datafixers.util.Either;
+import com.mojang.datafixers.util.Function10;
+import com.mojang.datafixers.util.Function11;
+import com.mojang.datafixers.util.Function12;
+import com.mojang.datafixers.util.Function13;
+import com.mojang.datafixers.util.Function14;
+import com.mojang.datafixers.util.Function15;
+import com.mojang.datafixers.util.Function16;
+import com.mojang.datafixers.util.Function3;
+import com.mojang.datafixers.util.Function4;
+import com.mojang.datafixers.util.Function5;
+import com.mojang.datafixers.util.Function6;
+import com.mojang.datafixers.util.Function7;
+import com.mojang.datafixers.util.Function8;
+import com.mojang.datafixers.util.Function9;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Decoder;
 import com.mojang.serialization.Encoder;
+import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
@@ -26,6 +43,7 @@ import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
 
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -336,5 +354,1338 @@ public abstract class CodecUtil {
                 }, () -> property.value(holderSupplier.get())
             )
         ).xmap(pair -> pair.getFirst().setValue(property, pair.getSecond().value()), state -> Pair.of(state, property.value(state)));
+    }
+
+    /**
+     * 构建一个 `ZOM列表`（零/一/多元素列表）MapCodec
+     *
+     * @param codec 元素编解码器
+     * @param name 名称
+     * @return `ZOM列表`（零/一/多元素列表）MapCodec
+     */
+    public static <T> MapCodec<List<T>> zomListMap(Codec<T> codec, String name) {
+        return Codec.mapEither(codec.optionalFieldOf(name), codec.listOf().fieldOf(name)).xmap(
+            either -> either.map(
+                op -> op
+                    .map(Collections::singletonList)
+                    .orElse(List.of()),
+                Function.identity()
+            ),
+            list -> list.size() <= 1
+                    ? list.isEmpty()
+                      ? Either.left(Optional.empty())
+                      : Either.left(Optional.of(list.getFirst()))
+                    : Either.right(list)
+        );
+    }
+
+    /**
+     * 基本等同于 {@link Codec#encodeStart(DynamicOps, Object)}。
+     *
+     * @param codec 编解码器
+     * @param ops 操作集
+     * @param input 需要编码的输入值
+     * @param <T> 输入值的类型
+     * @param <R> 编码后的类型
+     * @return 编码结果
+     */
+    public static <T, R> DataResult<R> encodeStart(MapCodec<T> codec, DynamicOps<R> ops, T input) {
+        return codec.encode(input, ops, codec.compressedBuilder(ops)).build(ops.emptyMap());
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R> 结果的类型
+    /// @param <T1> 第一个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        Function<T1, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R> 结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        BiFunction<T1, T2, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        Function3<T1, T2, T3, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        Function4<T1, T2, T3, T4, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    /// @param <T5> 第五个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        Function5<T1, T2, T3, T4, T5, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    /// @param <T5> 第五个参数的类型
+    /// @param <T6> 第六个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        Function6<T1, T2, T3, T4, T5, T6, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    /// @param <T5> 第五个参数的类型
+    /// @param <T6> 第六个参数的类型
+    /// @param <T7> 第七个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        Function7<T1, T2, T3, T4, T5, T6, T7, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    /// @param <T5> 第五个参数的类型
+    /// @param <T6> 第六个参数的类型
+    /// @param <T7> 第七个参数的类型
+    /// @param <T8> 第八个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        Function8<T1, T2, T3, T4, T5, T6, T7, T8, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    /// @param <T5> 第五个参数的类型
+    /// @param <T6> 第六个参数的类型
+    /// @param <T7> 第七个参数的类型
+    /// @param <T8> 第八个参数的类型
+    /// @param <T9> 第九个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        Function9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        Function10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        Function11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param t12 第十二个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    /// @param <T12> 第十二个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        App<RecordCodecBuilder.Mu<R>, T12> t12,
+        Function12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param t12 第十二个参数
+    /// @param t13 第十三个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    /// @param <T12> 第十二个参数的类型
+    /// @param <T13> 第十三个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        App<RecordCodecBuilder.Mu<R>, T12> t12,
+        App<RecordCodecBuilder.Mu<R>, T13> t13,
+        Function13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param t12 第十二个参数
+    /// @param t13 第十三个参数
+    /// @param t14 第十四个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    /// @param <T12> 第十二个参数的类型
+    /// @param <T13> 第十三个参数的类型
+    /// @param <T14> 第十四个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        App<RecordCodecBuilder.Mu<R>, T12> t12,
+        App<RecordCodecBuilder.Mu<R>, T13> t13,
+        App<RecordCodecBuilder.Mu<R>, T14> t14,
+        Function14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param t12 第十二个参数
+    /// @param t13 第十三个参数
+    /// @param t14 第十四个参数
+    /// @param t15 第十五个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    /// @param <T12> 第十二个参数的类型
+    /// @param <T13> 第十三个参数的类型
+    /// @param <T14> 第十四个参数的类型
+    /// @param <T15> 第十五个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        App<RecordCodecBuilder.Mu<R>, T12> t12,
+        App<RecordCodecBuilder.Mu<R>, T13> t13,
+        App<RecordCodecBuilder.Mu<R>, T14> t14,
+        App<RecordCodecBuilder.Mu<R>, T15> t15,
+        Function15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15).apply(inst, factory));
+    }
+
+    /// 创建 {@link Codec} 的便携方法，对 {@link RecordCodecBuilder#create(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param t12 第十二个参数
+    /// @param t13 第十三个参数
+    /// @param t14 第十四个参数
+    /// @param t15 第十五个参数
+    /// @param t16 第十六个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    /// @param <T12> 第十二个参数的类型
+    /// @param <T13> 第十三个参数的类型
+    /// @param <T14> 第十四个参数的类型
+    /// @param <T15> 第十五个参数的类型
+    /// @param <T16> 第十六个参数的类型
+    ///
+    /// @return 结果的 {@link Codec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> Codec<R> create(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        App<RecordCodecBuilder.Mu<R>, T12> t12,
+        App<RecordCodecBuilder.Mu<R>, T13> t13,
+        App<RecordCodecBuilder.Mu<R>, T14> t14,
+        App<RecordCodecBuilder.Mu<R>, T15> t15,
+        App<RecordCodecBuilder.Mu<R>, T16> t16,
+        Function16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R> factory
+    ) {
+        return RecordCodecBuilder.create(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R> 结果的类型
+    /// @param <T1> 第一个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        Function<T1, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R> 结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        BiFunction<T1, T2, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        Function3<T1, T2, T3, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        Function4<T1, T2, T3, T4, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    /// @param <T5> 第五个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        Function5<T1, T2, T3, T4, T5, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    /// @param <T5> 第五个参数的类型
+    /// @param <T6> 第六个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        Function6<T1, T2, T3, T4, T5, T6, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    /// @param <T5> 第五个参数的类型
+    /// @param <T6> 第六个参数的类型
+    /// @param <T7> 第七个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        Function7<T1, T2, T3, T4, T5, T6, T7, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    /// @param <T5> 第五个参数的类型
+    /// @param <T6> 第六个参数的类型
+    /// @param <T7> 第七个参数的类型
+    /// @param <T8> 第八个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        Function8<T1, T2, T3, T4, T5, T6, T7, T8, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>  结果的类型
+    /// @param <T1> 第一个参数的类型
+    /// @param <T2> 第二个参数的类型
+    /// @param <T3> 第三个参数的类型
+    /// @param <T4> 第四个参数的类型
+    /// @param <T5> 第五个参数的类型
+    /// @param <T6> 第六个参数的类型
+    /// @param <T7> 第七个参数的类型
+    /// @param <T8> 第八个参数的类型
+    /// @param <T9> 第九个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        Function9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        Function10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        Function11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param t12 第十二个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    /// @param <T12> 第十二个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        App<RecordCodecBuilder.Mu<R>, T12> t12,
+        Function12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param t12 第十二个参数
+    /// @param t13 第十三个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    /// @param <T12> 第十二个参数的类型
+    /// @param <T13> 第十三个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        App<RecordCodecBuilder.Mu<R>, T12> t12,
+        App<RecordCodecBuilder.Mu<R>, T13> t13,
+        Function13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param t12 第十二个参数
+    /// @param t13 第十三个参数
+    /// @param t14 第十四个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    /// @param <T12> 第十二个参数的类型
+    /// @param <T13> 第十三个参数的类型
+    /// @param <T14> 第十四个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        App<RecordCodecBuilder.Mu<R>, T12> t12,
+        App<RecordCodecBuilder.Mu<R>, T13> t13,
+        App<RecordCodecBuilder.Mu<R>, T14> t14,
+        Function14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param t12 第十二个参数
+    /// @param t13 第十三个参数
+    /// @param t14 第十四个参数
+    /// @param t15 第十五个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    /// @param <T12> 第十二个参数的类型
+    /// @param <T13> 第十三个参数的类型
+    /// @param <T14> 第十四个参数的类型
+    /// @param <T15> 第十五个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        App<RecordCodecBuilder.Mu<R>, T12> t12,
+        App<RecordCodecBuilder.Mu<R>, T13> t13,
+        App<RecordCodecBuilder.Mu<R>, T14> t14,
+        App<RecordCodecBuilder.Mu<R>, T15> t15,
+        Function15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15).apply(inst, factory));
+    }
+
+    /// 创建 {@link MapCodec} 的便携方法，对 {@link RecordCodecBuilder#mapCodec(Function)} 的代理
+    ///
+    /// <p>参考了 {@link net.minecraft.network.codec.StreamCodec#composite(StreamCodec, Function, Function)} 的设计</p>
+    ///
+    /// @param t1 第一个参数
+    /// @param t2 第二个参数
+    /// @param t3 第三个参数
+    /// @param t4 第四个参数
+    /// @param t5 第五个参数
+    /// @param t6 第六个参数
+    /// @param t7 第七个参数
+    /// @param t8 第八个参数
+    /// @param t9 第九个参数
+    /// @param t10 第十个参数
+    /// @param t11 第十一个参数
+    /// @param t12 第十二个参数
+    /// @param t13 第十三个参数
+    /// @param t14 第十四个参数
+    /// @param t15 第十五个参数
+    /// @param t16 第十六个参数
+    /// @param factory 使用所有参数创建结果的工厂
+    ///
+    /// @param <R>   结果的类型
+    /// @param <T1>  第一个参数的类型
+    /// @param <T2>  第二个参数的类型
+    /// @param <T3>  第三个参数的类型
+    /// @param <T4>  第四个参数的类型
+    /// @param <T5>  第五个参数的类型
+    /// @param <T6>  第六个参数的类型
+    /// @param <T7>  第七个参数的类型
+    /// @param <T8>  第八个参数的类型
+    /// @param <T9>  第九个参数的类型
+    /// @param <T10> 第十个参数的类型
+    /// @param <T11> 第十一个参数的类型
+    /// @param <T12> 第十二个参数的类型
+    /// @param <T13> 第十三个参数的类型
+    /// @param <T14> 第十四个参数的类型
+    /// @param <T15> 第十五个参数的类型
+    /// @param <T16> 第十六个参数的类型
+    ///
+    /// @return 结果的 {@link MapCodec}
+    public static <R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> MapCodec<R> mapCodec(
+        App<RecordCodecBuilder.Mu<R>, T1> t1,
+        App<RecordCodecBuilder.Mu<R>, T2> t2,
+        App<RecordCodecBuilder.Mu<R>, T3> t3,
+        App<RecordCodecBuilder.Mu<R>, T4> t4,
+        App<RecordCodecBuilder.Mu<R>, T5> t5,
+        App<RecordCodecBuilder.Mu<R>, T6> t6,
+        App<RecordCodecBuilder.Mu<R>, T7> t7,
+        App<RecordCodecBuilder.Mu<R>, T8> t8,
+        App<RecordCodecBuilder.Mu<R>, T9> t9,
+        App<RecordCodecBuilder.Mu<R>, T10> t10,
+        App<RecordCodecBuilder.Mu<R>, T11> t11,
+        App<RecordCodecBuilder.Mu<R>, T12> t12,
+        App<RecordCodecBuilder.Mu<R>, T13> t13,
+        App<RecordCodecBuilder.Mu<R>, T14> t14,
+        App<RecordCodecBuilder.Mu<R>, T15> t15,
+        App<RecordCodecBuilder.Mu<R>, T16> t16,
+        Function16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R> factory
+    ) {
+        return RecordCodecBuilder.mapCodec(inst -> inst.group(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16).apply(inst, factory));
     }
 }

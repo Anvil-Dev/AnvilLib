@@ -1,0 +1,18 @@
+{
+  "grid": [
+    [
+      "A"
+    ],
+    [
+      "0"
+    ]
+  ],
+  "mapping": {
+    "0": {
+      "blocks": "minecraft:white_bed"
+    },
+    "A": {
+      "blocks": "minecraft:iron_block"
+    }
+  }
+}

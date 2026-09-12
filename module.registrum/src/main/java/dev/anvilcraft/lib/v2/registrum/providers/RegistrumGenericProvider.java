@@ -38,7 +38,7 @@ public final class RegistrumGenericProvider implements RegistrumProvider {
     @ApiStatus.Internal
     RegistrumGenericProvider(
         AbstractRegistrum<?> registrum,
-        GatherDataEvent event,
+        GatherDataEvent.Client event,
         LogicalSide side,
         ProviderType<RegistrumGenericProvider> providerType
     ) {

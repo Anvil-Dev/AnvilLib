@@ -1,0 +1,9 @@
+common:
+  excludes:
+    annotations:
+      - name: java.lang.Deprecated
+      - name: com.google.common.annotations.Beta
+      - name: org.jetbrains.annotations.ApiStatus$Experimental
+      - name: org.jetbrains.annotations.ApiStatus$Internal
+      - name: org.jetbrains.annotations.ApiStatus$Obsolete
+      - name: org.jetbrains.annotations.ApiStatus$ScheduledForRemoval

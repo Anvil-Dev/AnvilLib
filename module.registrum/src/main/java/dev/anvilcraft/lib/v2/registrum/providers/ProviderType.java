@@ -21,7 +21,7 @@ import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumRecipeProvi
 import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumRecipeRunner;
 import dev.anvilcraft.lib.v2.registrum.providers.loot.RegistrumLootTableProvider;
 import dev.anvilcraft.lib.v2.registrum.util.nullness.FieldsAreNonnullByDefault;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -112,7 +112,7 @@ public interface ProviderType<T extends RegistrumProvider> extends GeneratorType
 
     record Context<T extends RegistrumProvider>(
         ProviderType<T> type, AbstractRegistrum<?> parent,
-        @Deprecated GatherDataEvent event,
+        @Deprecated GatherDataEvent.Client event,
         Map<ProviderType<?>, RegistrumProvider> existing,
         PackOutput output,
         CompletableFuture<HolderLookup.Provider> provider
@@ -212,7 +212,7 @@ public interface ProviderType<T extends RegistrumProvider> extends GeneratorType
     static <T extends RegistrumProvider> T create(
         ProviderType<T> type,
         AbstractRegistrum<?> parent,
-        GatherDataEvent event,
+        GatherDataEvent.Client event,
         Map<ProviderType<?>, RegistrumProvider> existing,
         CompletableFuture<HolderLookup.Provider> provider
     ) {

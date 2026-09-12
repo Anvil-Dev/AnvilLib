@@ -120,8 +120,12 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
     public ItemStack grow(ItemStack stack, boolean spawn) {
         Set<ICacheElement> elements = new HashSet<>();
         for (ICacheElement element : this.elements) {
-            stack = element.grow(stack, false);
-            elements.add(element);
+            int previousCount = stack.getCount();
+            ItemStack remaining = element.grow(stack, false);
+            if (remaining.getCount() < previousCount) {
+                elements.add(element);
+            }
+            stack = remaining;
             if (stack.isEmpty()) break;
         }
         this.growSimulateStack.push(new InputOutputOperation(elements));

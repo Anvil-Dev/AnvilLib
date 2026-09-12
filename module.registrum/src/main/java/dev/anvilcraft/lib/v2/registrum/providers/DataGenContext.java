@@ -14,8 +14,8 @@
 package dev.anvilcraft.lib.v2.registrum.providers;
 
 import dev.anvilcraft.lib.v2.registrum.builders.Builder;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Value;

@@ -9,11 +9,11 @@
 //import com.google.common.collect.Multimap;
 //import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
 //import dev.anvilcraft.lib.v2.registrum.providers.RegistrumLangProvider;
-//import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullConsumer;
-//import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-//import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
-//import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullUnaryOperator;
-//import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+//import dev.anvilcraft.lib.v2.util.nullness.NonNullConsumer;
+//import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+//import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
+//import dev.anvilcraft.lib.v2.util.nullness.NonNullUnaryOperator;
+//import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
 //
 //import net.minecraft.entity.EntityClassification;
 //import net.minecraft.entity.EntityType;

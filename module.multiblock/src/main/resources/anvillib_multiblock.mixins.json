@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.anvilcraft.lib.v2.multiblock.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "anvillib.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixinextras": {
+    "minVersion": "0.5.0"
+  }
+}

@@ -34,6 +34,11 @@ public class RegistrumDataMapProvider extends DataMapProvider implements Registr
         this.parent = parent;
     }
 
+    /**
+     * Generate data map entries.
+     *
+     * @param provider HolderLookup.Provider
+     */
     @Override
     public LogicalSide getSide() {
         return LogicalSide.SERVER;
@@ -51,6 +56,11 @@ public class RegistrumDataMapProvider extends DataMapProvider implements Registr
         this.provider = null;
     }
 
+    /**
+     * 当前 datagen 运行中可用的 {@link HolderLookup.Provider}。
+     *
+     * @throws IllegalStateException 若不在 {@link #gather(HolderLookup.Provider)} 调用期间
+     */
     public HolderLookup.Provider getProvider() {
         if (provider == null) throw new IllegalStateException("Holder Lookup Provider is not available now");
         return provider;

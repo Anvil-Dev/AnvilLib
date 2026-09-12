@@ -6,91 +6,123 @@ on:
       - dev/**
       # - releases/**
     paths:
+      - .github/modules.json
+      - .github/workflows/build_and_test.yml
+      - .github/workflows/pull_request.yml
+      - .github/workflows/roseau_check.yml
+      - .github/workflows/generate-matrix.js
+      - gradle/**
       - module.*/src/**
+      - module.sync/processor/src/**
       - module.*/build.gradle
+      - module.sync/processor/build.gradle
       - module.*/gradle.properties
+      - module.sync/processor/gradle.properties
       - build.gradle
       - gradle.properties
       - settings.gradle
 
+permissions:
+  contents: read
+  actions: read
+  packages: read
+  pull-requests: write
+
 jobs:
-  config:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      level_0: ${{ steps.matrix.outputs.level_0 }}
+      level_1: ${{ steps.matrix.outputs.level_1 }}
+      level_2: ${{ steps.matrix.outputs.level_2 }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: matrix
+        run: node .github/workflows/generate-matrix.js
+
+  # ── Build (topological levels) ──────────────────────────────────
+
+  processor-build:
+    needs: [prepare]
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: config
-      module_id: anvillib-config
-      mod_id: anvillib_config
+      module: sync
+      module_id: anvillib-sync-processor
+      mod_id: anvillib_sync_processor
       ci_build: true
       pr_build: true
-  codec:
+      gradle_project: anvillib-sync-neoforge-1.21.4:anvillib-sync-processor-neoforge-1.21.4
+      module_dir: module.sync/processor
+
+  build-l0:
+    needs: [prepare]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: codec
-      module_id: anvillib-codec
-      mod_id: anvillib_codec
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+      mod_id: ${{ matrix.mod_id }}
       ci_build: true
       pr_build: true
-  integration:
+
+  build-l1:
+    needs: [prepare, build-l0]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: integration
-      module_id: anvillib-integration
-      mod_id: anvillib_integration
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+      mod_id: ${{ matrix.mod_id }}
       ci_build: true
       pr_build: true
-  moveable-entity-block:
+
+  build-l2:
+    needs: [prepare, build-l1, processor-build]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: moveable-entity-block
-      module_id: anvillib-moveable-entity-block
-      mod_id: anvillib_moveable_entity_block
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+      mod_id: ${{ matrix.mod_id }}
       ci_build: true
       pr_build: true
-  network:
-    uses: ./.github/workflows/build_and_test.yml
+
+  # ── Roseau API checks ───────────────────────────────────────────
+
+  roseau-l0:
+    needs: [prepare, build-l0]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
+    uses: ./.github/workflows/roseau_check.yml
     with:
-      module: network
-      module_id: anvillib-network
-      mod_id: anvillib_network
-      ci_build: true
-      pr_build: true
-  recipe:
-    needs:
-      - config
-      - codec
-    uses: ./.github/workflows/build_and_test.yml
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+
+  roseau-l1:
+    needs: [prepare, build-l1]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
+    uses: ./.github/workflows/roseau_check.yml
     with:
-      module: recipe
-      module_id: anvillib-recipe
-      mod_id: anvillib_recipe
-      ci_build: true
-      pr_build: true
-  registrum:
-    uses: ./.github/workflows/build_and_test.yml
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+
+  roseau-l2:
+    needs: [prepare, build-l2]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
+    uses: ./.github/workflows/roseau_check.yml
     with:
-      module: registrum
-      module_id: anvillib-registrum
-      mod_id: anvillib_registrum
-      ci_build: true
-      pr_build: true
-  wheel:
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: wheel
-      module_id: anvillib-wheel
-      mod_id: anvillib_wheel
-      ci_build: true
-      pr_build: true
+      module: ${{ matrix.module }}
+      module_id: ${{ matrix.module_id }}
+
+  # ── Main (aggregator) ───────────────────────────────────────────
+
   main:
-    needs:
-      - config
-      - codec
-      - integration
-      - moveable-entity-block
-      - network
-      - recipe
-      - registrum
-      - wheel
+    needs: [build-l2]
     uses: ./.github/workflows/build_and_test.yml
     with:
       module: main
@@ -99,3 +131,10 @@ jobs:
       ci_build: true
       pr_build: true
       gametest: true
+
+  main-roseau:
+    needs: [main]
+    uses: ./.github/workflows/roseau_check.yml
+    with:
+      module: main
+      module_id: anvillib

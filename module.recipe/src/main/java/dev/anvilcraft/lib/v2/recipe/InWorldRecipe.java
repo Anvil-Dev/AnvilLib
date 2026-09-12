@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.recipe.init.LibRegistries;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeTypes;
+import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipeTypes;
 import dev.anvilcraft.lib.v2.recipe.outcome.IRecipeOutcome;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.trigger.IRecipeTrigger;
@@ -19,10 +19,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.PlacementInfo;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeBookCategories;
-import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
@@ -40,6 +37,7 @@ import java.util.Objects;
  */
 @EqualsAndHashCode
 @ToString
+@SuppressWarnings("ClassCanBeRecord")
 public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized {
     /**
      * 配方图标
@@ -73,7 +71,6 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
      * 最大效率
      */
     private final int maxEfficiency;
-    private PlacementInfo placementInfo;
 
     /**
      * 构造一个新的世界内配方
@@ -229,9 +226,10 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
      */
     @Override
     public boolean matches(InWorldRecipeContext context, Level level) {
+        int initialStackSize = context.getStack().size();
         boolean nonConflicting = ShapelessMatcher.compatible(this.nonConflicting, context);
         if (!nonConflicting) {
-            context.getStack().clear();
+            InWorldRecipe.rollbackPredicates(context, initialStackSize);
             return false;
         }
         boolean flag;
@@ -241,10 +239,21 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
             flag = ShapelessMatcher.incompatible(this.conflicting, context);
         }
         if (!flag) {
-            context.getStack().clear();
+            InWorldRecipe.rollbackPredicates(context, initialStackSize);
+            return false;
         }
-        context.getStack().forEach(predicate -> predicate.clearStack(context));
-        return flag;
+        List<IRecipePredicate<?>> stack = context.getStack();
+        for (int i = initialStackSize; i < stack.size(); i++) {
+            stack.get(i).clearStack(context);
+        }
+        return true;
+    }
+
+    private static void rollbackPredicates(InWorldRecipeContext context, int initialStackSize) {
+        List<IRecipePredicate<?>> stack = context.getStack();
+        while (stack.size() > initialStackSize) {
+            context.pop(stack.getLast());
+        }
     }
 
     /**
@@ -269,6 +278,27 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
     }
 
     /**
+     * 判断配方是否可以在指定尺寸的工作台中制作
+     *
+     * @param i  宽度
+     * @param i1 高度
+     * @return 是否可以制作
+     */
+    public boolean canCraftInDimensions(int i, int i1) {
+        return true;
+    }
+
+    /**
+     * 获取配方结果物品堆
+     *
+     * @param provider 数据提供器
+     * @return 配方结果物品堆
+     */
+    public ItemStack getResultItem(HolderLookup.Provider provider) {
+        return this.icon.copy();
+    }
+
+    /**
      * 获取配方序列化器
      *
      * @return 配方序列化器
@@ -289,17 +319,13 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
     }
 
     @Override
-    public PlacementInfo placementInfo() {
-        if (this.placementInfo == null) {
-            this.placementInfo = PlacementInfo.createFromOptionals(List.of());
-        }
-
-        return this.placementInfo;
+    public net.minecraft.world.item.crafting.PlacementInfo placementInfo() {
+        return net.minecraft.world.item.crafting.PlacementInfo.NOT_PLACEABLE;
     }
 
     @Override
-    public RecipeBookCategory recipeBookCategory() {
-        return RecipeBookCategories.CRAFTING_MISC;
+    public net.minecraft.world.item.crafting.RecipeBookCategory recipeBookCategory() {
+        return net.minecraft.world.item.crafting.RecipeBookCategories.CRAFTING_MISC;
     }
 
     public @Unmodifiable ItemStack icon() {

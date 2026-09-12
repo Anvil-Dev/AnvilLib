@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.anvilcraft.lib.v2.explosion.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "anvillib.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

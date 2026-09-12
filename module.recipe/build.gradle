@@ -118,9 +118,11 @@ dependencies {
     if (System.getenv("NOT_DEV") == 'true') {
         jarJar(api("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.4:latest.release"))
         jarJar(api("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.4:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.4:latest.release"))
     } else {
         jarJar(implementation project(":anvillib-config-neoforge-1.21.4"))
         jarJar(implementation project(":anvillib-codec-neoforge-1.21.4"))
+        jarJar(implementation project(":anvillib-util-neoforge-1.21.4"))
     }
 }
 

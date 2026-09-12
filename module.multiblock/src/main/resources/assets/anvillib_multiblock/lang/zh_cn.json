@@ -1,0 +1,13 @@
+{
+  "anvillib_multiblock.configuration.async_thread_pool_size": "异步线程池大小",
+  "anvillib_multiblock.configuration.async_thread_pool_size.tooltip": "用于异步检查的线程池大小",
+  "anvillib_multiblock.configuration.formed_multiblock_check_interval": "已成型多方块检查周期",
+  "anvillib_multiblock.configuration.formed_multiblock_check_interval.tooltip": "已成型的多方块的检查周期（以tick为单位）",
+  "anvillib_multiblock.configuration.max_checks_per_tick": "每 tick 最大检查数量",
+  "anvillib_multiblock.configuration.max_checks_per_tick.tooltip": "每 tick 提交多方块检查的最大数量",
+  "anvillib_multiblock.configuration.section.anvillib_multiblock.common.toml": "铁砧库-多方块 通用配置",
+  "anvillib_multiblock.configuration.section.anvillib_multiblock.common.toml.title": "铁砧库-多方块 通用配置",
+  "anvillib_multiblock.configuration.title": "铁砧库-多方块 配置",
+  "anvillib_multiblock.configuration.unformed_multiblock_check_interval": "未成型多方块检查周期",
+  "anvillib_multiblock.configuration.unformed_multiblock_check_interval.tooltip": "未成型的多方块的检查周期（以tick为单位）"
+}

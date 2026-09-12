@@ -55,8 +55,7 @@ public class RegistrumBlockModelGenerator extends BlockModelGenerators {
 //        );
         ObfuscationReflectionHelper.<BlockModelGenerators, Consumer<BlockStateGenerator>>setPrivateValue(
             BlockModelGenerators.class, this, g -> {
-                //TODO
-//                this.seenBlockstates.put(g.getBlock(), g.create());
+                this.seenBlockstates.put(g.getBlock(), BlockModelDefinition.fromJsonElement(g.get()));
                 known.accept(g);
             }, "blockStateOutput"
         );
@@ -69,13 +68,13 @@ public class RegistrumBlockModelGenerator extends BlockModelGenerators {
     }
 
 
-//    public void create(Block block, ResourceLocation model) {
-//        this.blockStateOutput.accept(createSimpleBlock(block, plainVariant(model)));
-//    }
-//
-//    public void create(Block block, TexturedModel.Provider texture) {
-//        this.blockStateOutput.accept(createSimpleBlock(block, plainVariant(texture.create(block, this.modelOutput))));
-//    }
+    public void create(Block block, ResourceLocation model) {
+        this.blockStateOutput.accept(createSimpleBlock(block, model));
+    }
+
+    public void create(Block block, TexturedModel.Provider texture) {
+        this.create(block, texture.create(block, this.modelOutput));
+    }
 
     public ResourceLocation mcLoc(String id) {
         return ResourceLocation.withDefaultNamespace(id);

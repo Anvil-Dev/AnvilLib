@@ -120,3 +120,6 @@ run/
 !gradle-wrapper.jar
 
 reference/
+ref/
+/.vscode
+/docs/

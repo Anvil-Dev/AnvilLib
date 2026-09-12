@@ -13,7 +13,7 @@
 
 package dev.anvilcraft.lib.v2.registrum.util.entry;
 
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 
 import javax.annotation.Nullable;
 
