@@ -16,11 +16,4 @@ public class AnvilLibDatagen {
         PackOutput packOutput = generator.getPackOutput();
         generator.addProvider(true, new ModLanguageProvider(packOutput));
     }
-
-    @SubscribeEvent
-    public static void gatherData(GatherDataEvent.Server event) {
-        DataGenerator generator = event.getGenerator();
-        PackOutput packOutput = generator.getPackOutput();
-        generator.addProvider(false, new ModLanguageProvider(packOutput));
-    }
 }

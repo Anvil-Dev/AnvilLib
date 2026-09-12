@@ -1,10 +1,10 @@
 package dev.anvilcraft.lib.v2.recipe.predicate.item;
 
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipePredicateTypes;
+import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipePredicateTypes;
 import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheInput;
-import dev.anvilcraft.lib.v2.recipe.component.ItemIngredientPredicate;
+import dev.anvilcraft.lib.v2.util.predicate.ItemIngredientPredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.IPredicateFunction;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.SaveComponentToTag;
@@ -41,6 +41,17 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
      */
     public HasItemIngredient(Vec3 offset, Vec3 range, ItemIngredientPredicate item, List<IPredicateFunction<?>> functions) {
         super(offset, range, item, functions);
+    }
+
+    /**
+     * 转换为HasItemIngredient谓词
+     *
+     * @param offset 偏移量
+     * @param range  范围
+     * @return HasItemIngredient谓词
+     */
+    public static HasItemIngredient fromPredicate(ItemIngredientPredicate predicate, Vec3 offset, Vec3 range) {
+        return new HasItemIngredient(offset, range, predicate, List.of());
     }
 
     @Override

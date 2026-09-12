@@ -29,11 +29,11 @@ import dev.anvilcraft.lib.v2.registrum.util.OneTimeEventReceiver;
 import dev.anvilcraft.lib.v2.registrum.util.RegistrumDistExecutor;
 import dev.anvilcraft.lib.v2.registrum.util.entry.BlockEntry;
 import dev.anvilcraft.lib.v2.registrum.util.entry.RegistryEntry;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiConsumer;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullUnaryOperator;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullUnaryOperator;
 import net.minecraft.client.color.block.BlockColor;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -177,18 +177,13 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
         return getOwner().<I, BlockBuilder<T, P>>item(this, getName(), p -> factory.apply(getEntry(), p))
             .setData(ProviderType.LANG, NonNullBiConsumer.noop()) // FIXME Need a beetter API for "unsetting" providers
             .model(() -> (ctx, prov) -> {
-                //TODO
-//                var model = getOwner().getDataProvider(ProviderType.BLOCKSTATE)
-//                    .map(g -> g.seenBlockstates.get(getEntry()))
-//                    .flatMap(b -> b.simpleModels())
-//                    .map(b -> b.models().get(""))
-//                    .flatMap(ub -> Unbaked.CODEC.encodeStart(JsonOps.INSTANCE, ub).result())
-//                    .filter(JsonElement::isJsonObject)
-//                    .map(j -> j.getAsJsonObject().get("model"))
-//                    .map(JsonElement::getAsString);
-//                if (model.isPresent()) {
-//                    prov.createWithExistingModel(ctx.get(), ResourceLocation.parse(model.get()));
-//                }
+                // 复用无状态方块引用的模型，避免为现成模型生成不存在的物品模型路径。
+                getOwner().getDataProvider(ProviderType.BLOCKSTATE)
+                    .map(generator -> generator.seenBlockstates.get(getEntry()))
+                    .map(definition -> definition.getVariant(""))
+                    .filter(variant -> variant.variants().size() == 1)
+                    .map(variant -> variant.variants().getFirst().modelLocation())
+                    .ifPresent(model -> prov.createWithExistingModel(ctx.get(), model));
             });
     }
 

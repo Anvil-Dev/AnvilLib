@@ -2,7 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "dev.anvilcraft.lib.v2.recipe.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_21",
   "refmap": "anvillib.refmap.json",
   "mixins": [
     "ItemEntityAccessor",
@@ -10,8 +10,7 @@
     "RecipeManagerMixin",
     "RecipeMapMixin"
   ],
-  "client": [
-  ],
+  "client": [],
   "injectors": {
     "defaultRequire": 1
   }

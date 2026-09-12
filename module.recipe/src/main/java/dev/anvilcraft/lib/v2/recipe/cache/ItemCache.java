@@ -18,6 +18,7 @@ import dev.anvilcraft.lib.v2.recipe.util.Range;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.Entity;
@@ -248,17 +249,20 @@ public class ItemCache {
         Set<ICacheElement> output = new HashSet<>();
         Vec3 elementPos = entity.getBlockPos().getCenter();
         Vec3 elementRange = new Vec3(1, 1, 1);
-        Predicate<BlockEntity> inTag;
-        Iterable<Holder<BlockEntityType<?>>> tagOrEmpty = BuiltInRegistries.BLOCK_ENTITY_TYPE.getTagOrEmpty(LibBlockEntityTags.ITEM_CACHE);
-        List<ResourceKey<BlockEntityType<?>>> keys = new ArrayList<>();
-        for (Holder<BlockEntityType<?>> holder : tagOrEmpty) {
-            ResourceKey<BlockEntityType<?>> key = holder.getKey();
-            keys.add(key);
+        Predicate<BlockEntity> inTag = blockEntity -> false;
+        Optional<HolderSet.Named<BlockEntityType<?>>> holders = BuiltInRegistries.BLOCK_ENTITY_TYPE.get(LibBlockEntityTags.ITEM_CACHE);
+        if (holders.isPresent()) {
+            HolderSet.Named<BlockEntityType<?>> named = holders.get();
+            List<ResourceKey<BlockEntityType<?>>> keys = new ArrayList<>();
+            for (Holder<BlockEntityType<?>> holder : named) {
+                ResourceKey<BlockEntityType<?>> key = holder.getKey();
+                keys.add(key);
+            }
+            inTag = blockEntity -> {
+                Optional<ResourceKey<BlockEntityType<?>>> key = BuiltInRegistries.BLOCK_ENTITY_TYPE.getResourceKey(blockEntity.getType());
+                return key.filter(keys::contains).isPresent();
+            };
         }
-        inTag = blockEntity -> {
-            Optional<ResourceKey<BlockEntityType<?>>> key = BuiltInRegistries.BLOCK_ENTITY_TYPE.getResourceKey(blockEntity.getType());
-            return key.filter(keys::contains).isPresent();
-        };
         if (entity instanceof IItemHandlerCache cache) {
             ItemCache.toElement(itemCache, cache, input, output, elementPos, elementRange);
         } else if (entity instanceof IItemHandler handler && inTag.test(entity)) {

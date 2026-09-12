@@ -15,7 +15,7 @@ package dev.anvilcraft.lib.v2.registrum.util;
 
 import com.google.common.collect.ObjectArrays;
 import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumRecipeProvider;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import lombok.Getter;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
@@ -78,6 +78,11 @@ public final class DataIngredient {
     @SafeVarargs
     public static <T extends ItemLike> DataIngredient items(T first, T... others) {
         return ingredient(Ingredient.of(ObjectArrays.concat(first, others)), first);
+    }
+
+    public static DataIngredient stacks(net.minecraft.world.item.ItemStack first, net.minecraft.world.item.ItemStack... others) {
+        Item[] items = Arrays.stream(ObjectArrays.concat(first, others)).map(net.minecraft.world.item.ItemStack::getItem).toArray(Item[]::new);
+        return ingredient(Ingredient.of(items), first.getItem());
     }
 
     public static DataIngredient tag(TagKey<Item> tag) {

@@ -109,13 +109,22 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
+    implementation project(":anvillib-cube-neoforge-1.21.4")
+    implementation project(":anvillib-collision-neoforge-1.21.4")
+    interfaceInjectionData(implementation project(":anvillib-font-neoforge-1.21.4"))
+    implementation project(":anvillib-space-select-neoforge-1.21.4")
+    implementation project(":anvillib-sync-neoforge-1.21.4")
     implementation project(":anvillib-config-neoforge-1.21.4")
     implementation project(":anvillib-codec-neoforge-1.21.4")
+    implementation project(":anvillib-explosion-neoforge-1.21.4")
+    implementation project(":anvillib-rpc-neoforge-1.21.4")
+    implementation project(":anvillib-multiblock-neoforge-1.21.4")
     implementation project(":anvillib-integration-neoforge-1.21.4")
     interfaceInjectionData(implementation project(":anvillib-moveable-entity-block-neoforge-1.21.4"))
     implementation project(":anvillib-network-neoforge-1.21.4")
     interfaceInjectionData(implementation project(":anvillib-recipe-neoforge-1.21.4"))
     implementation project(":anvillib-registrum-neoforge-1.21.4")
+    implementation project(":anvillib-util-neoforge-1.21.4")
     implementation project(":anvillib-wheel-neoforge-1.21.4")
 }
 
@@ -278,4 +287,20 @@ machete {
 
 lombok {
     version = "1.18.44"
+}
+
+if (providers.gradleProperty('portSmoke').isPresent()) {
+    neoForge.runs.client {
+        systemProperty 'anvillib.portSmoke', 'true'
+        gameDirectory = layout.buildDirectory.dir('port-1.21.4-smoke-run')
+    }
+    def result = layout.buildDirectory.file('port-1.21.4-smoke-run/port-smoke-result.txt')
+    tasks.named('runClient') {
+        doFirst { result.get().asFile.delete() }
+        doLast {
+            if (!result.get().asFile.isFile() || !result.get().asFile.text.startsWith('PASS ')) {
+                throw new GradleException('Port smoke verification failed; inspect the client log and port-smoke-result.txt')
+            }
+        }
+    }
 }

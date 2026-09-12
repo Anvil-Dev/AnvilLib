@@ -4,7 +4,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.cache.BlockCache;
-import dev.anvilcraft.lib.v2.recipe.component.BlockStatePredicate;
+import dev.anvilcraft.lib.v2.util.predicate.BlockStatePredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import lombok.Getter;
@@ -12,6 +12,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -51,7 +53,9 @@ public abstract class HasBlockBase<T extends HasBlockBase<T>> implements IRecipe
         BlockPos blockPos = BlockPos.containing(pos);
         BlockCache cache = context.computeIfAbsent(BlockCache.BLOCK_CACHE);
         ServerLevel level = context.getLevel();
-        return predicate.test(level, cache, blockPos);
+        BlockState state = cache.getBlockState(blockPos);
+        BlockEntity entity = cache.getBlockEntity(blockPos);
+        return this.predicate.test(level, state, entity);
     }
 
     /**

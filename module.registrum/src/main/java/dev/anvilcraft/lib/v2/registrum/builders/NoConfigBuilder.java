@@ -14,8 +14,8 @@
 package dev.anvilcraft.lib.v2.registrum.builders;
 
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 

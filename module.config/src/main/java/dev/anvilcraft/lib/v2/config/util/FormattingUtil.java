@@ -26,4 +26,13 @@ public abstract class FormattingUtil {
             .map(StringUtils::capitalize)
             .collect(Collectors.joining(" "));
     }
+
+    /**
+     * 将任意名称切分为点分隔的小写单词：&quot;anvillib_explosion&quot; -> &quot;anvillib.explosion&quot;
+     */
+    public static String toPointSplitName(String name) {
+        return Arrays.stream(name.split("[^A-Za-z0-9]"))
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.joining("."));
+    }
 }

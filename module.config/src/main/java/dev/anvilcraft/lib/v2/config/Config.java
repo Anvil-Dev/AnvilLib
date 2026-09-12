@@ -12,6 +12,8 @@ import java.lang.annotation.Target;
 public @interface Config {
     String name();
 
+    String group() default "";
+
     ModConfig.Type type() default ModConfig.Type.COMMON;
 }
 
