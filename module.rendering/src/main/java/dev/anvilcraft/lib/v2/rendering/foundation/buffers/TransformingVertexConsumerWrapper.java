@@ -2,8 +2,10 @@ package dev.anvilcraft.lib.v2.rendering.foundation.buffers;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Vector3f;
 
+@ApiStatus.Internal
 public class TransformingVertexConsumerWrapper implements VertexConsumer {
     private final PoseStack.Pose pose;
     private final VertexConsumer delegate;

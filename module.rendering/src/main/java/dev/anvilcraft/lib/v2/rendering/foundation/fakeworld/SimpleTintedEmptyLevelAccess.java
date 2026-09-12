@@ -15,10 +15,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 
+@ApiStatus.Internal
 public class SimpleTintedEmptyLevelAccess implements BlockAndTintGetter {
 
     public SimpleTintedEmptyLevelAccess() {

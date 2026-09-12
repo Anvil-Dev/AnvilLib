@@ -11,6 +11,8 @@ public interface BufferSizeCalculator {
 
     void putVec4();
 
+    void putVec2Array(int size);
+
     void putInt();
 
     void putIVec2();
@@ -20,6 +22,8 @@ public interface BufferSizeCalculator {
     void putIVec4();
 
     void putMat4f();
+
+    void putIVec2Array(int size);
 
     void putStructArray(BufferObjectLayoutDefinition<?> definition, int size);
 

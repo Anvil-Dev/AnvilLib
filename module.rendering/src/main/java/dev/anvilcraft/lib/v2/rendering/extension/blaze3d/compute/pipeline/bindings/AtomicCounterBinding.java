@@ -13,7 +13,8 @@ public record AtomicCounterBinding(
     }
 
     @Override
-    public void apply(int bindingPoint, GpuBufferSlice resource, ALRComputePass computePass) {
-        computePass.bindAtomicCounter(bindingPoint, resource);
+    public int applyOrdered(int bindingPointStart, GpuBufferSlice resource, ALRComputePass computePass) {
+        computePass.bindAtomicCounter(bindingPointStart, resource);
+        return 1;
     }
 }

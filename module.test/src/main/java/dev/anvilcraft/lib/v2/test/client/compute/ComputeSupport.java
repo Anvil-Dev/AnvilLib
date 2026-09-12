@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.OptionalDouble;
 
 public class ComputeSupport {
-    public static final ComputeSupport INSTANCE = new ComputeSupport();
+    public static final ComputeSupport INSTANCE = ALRComputeCapabilities.isComputeSupported() ? new ComputeSupport() : null;
     public static final float[] UNSUPPORTED = {};
     @Getter
     private final GpuDevice device = RenderSystem.getDevice();
@@ -115,14 +115,10 @@ public class ComputeSupport {
         addParam.upload(commandEncoder, addParamUBO.slice());
         try (ALRComputePass pass = commandEncoderExtension.alrCreateComputePass()) {
             pass.setPipeline(TestPipelines.ADD);
-            pass.bindAll(
-                List.of(
-                    addInputSSBO.slice(),
-                    addOutputSSBO.slice(),
-                    addParamUBO.slice(),
-                    addOutputCounter.slice()
-                )
-            );
+            pass.bindShaderStorage(0, addInputSSBO.slice());
+            pass.bindShaderStorage(1, addOutputSSBO.slice());
+            pass.bindUniformBlock(2, addParamUBO.slice());
+            pass.bindAtomicCounter(3, addOutputCounter.slice());
             pass.dispatchWorkgroups(Math.ceilDiv(input.length, 16), 1, 1);
             pass.memoryBarrier(
                 MemoryBarrierFlag.SHADER_STORAGE_BARRIER,
@@ -144,7 +140,7 @@ public class ComputeSupport {
         ByteBuffer counterData = mappedCounterBuffer.data();
 
         int anInt = counterData.getInt();
-        if (anInt != input.length){
+        if (anInt != input.length) {
             System.out.printf("Compute counter does not match with input size: %d/%d%n", anInt, input.length);
         }
         return result;
@@ -177,13 +173,9 @@ public class ComputeSupport {
 
         try (ALRComputePass pass = commandEncoderExtension.alrCreateComputePass()) {
             pass.setPipeline(TestPipelines.BLUR);
-            pass.bindAll(
-                List.of(
-                    blurParamUBO.slice(),
-                    new TextureBinding.SamplerAndTexture(theSampler, colorTexture),
-                    outputTexture
-                )
-            );
+            pass.bindShaderStorage(0, addInputSSBO.slice());
+            pass.bindTexture(1, new TextureBinding.SamplerAndTexture(theSampler, colorTexture));
+            pass.bindImage(2, outputTexture, false, true);
 
             pass.dispatchWorkgroups(Math.ceilDiv(width, 16), Math.ceilDiv(height, 16), 1);
             pass.memoryBarrier(

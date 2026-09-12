@@ -11,6 +11,8 @@ import org.joml.Vector3i;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public record BufferObjectLayoutEntry<T, I>(BufferObjectLayoutEntryType<T> type, Function<I, T> getter) {
@@ -70,6 +72,7 @@ public record BufferObjectLayoutEntry<T, I>(BufferObjectLayoutEntryType<T> type,
     public static class Builder<T, I> {
         private final BufferObjectLayoutEntryType<T> type;
         private Function<I, T> getter;
+        private BiConsumer<I, T> setter;
 
         public Builder(BufferObjectLayoutEntryType<T> type) {
             this.type = type;
@@ -77,6 +80,11 @@ public record BufferObjectLayoutEntry<T, I>(BufferObjectLayoutEntryType<T> type,
 
         public Builder<T, I> forGetter(Function<I, T> getter) {
             this.getter = getter;
+            return this;
+        }
+
+        public Builder<T, I> forSetter(BiConsumer<I, T> setter) {
+            this.setter = setter;
             return this;
         }
 

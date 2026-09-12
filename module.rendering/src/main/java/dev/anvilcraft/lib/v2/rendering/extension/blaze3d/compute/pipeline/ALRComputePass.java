@@ -4,9 +4,11 @@ import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.ComputeBindingLayout;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.BindlessImageArrayBinding;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.TextureBinding;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class ALRComputePass implements AutoCloseable {
     private ALRComputePipeline pipeline;
@@ -16,11 +18,11 @@ public class ALRComputePass implements AutoCloseable {
         this.backend = backend;
     }
 
-    public void pushDebugGroup(String name) {
+    public void pushDebugGroup(Supplier<String> name) {
         this.backend.pushDebugGroup(name);
     }
 
-    public void popDebugGroup(String name) {
+    public void popDebugGroup() {
         this.backend.popDebugGroup();
     }
 
@@ -33,15 +35,23 @@ public class ALRComputePass implements AutoCloseable {
         int groupCountY,
         int groupCountZ
     ) {
-        this.backend.pushDebugGroup("Compute " + pipeline.identifier());
-        this.backend.dispatchWorkgroups(groupCountX, groupCountY, groupCountZ);
-        this.backend.popDebugGroup();
+        this.backend.pushDebugGroup(() -> "ALRComputePass " + pipeline.identifier());
+        try {
+            this.backend.dispatchWorkgroups(groupCountX, groupCountY, groupCountZ);
+        } finally {
+            this.backend.popDebugGroup();
+        }
     }
 
     public void dispatchWorkgroupsIndirect(
         GpuBufferSlice buffer
     ) {
-        this.backend.dispatchWorkgroupsIndirect(buffer);
+        this.backend.pushDebugGroup(() -> "ALRComputePass " + pipeline.identifier());
+        try {
+            this.backend.dispatchWorkgroupsIndirect(buffer);
+        } finally {
+            this.backend.popDebugGroup();
+        }
     }
 
     @Override
@@ -54,16 +64,12 @@ public class ALRComputePass implements AutoCloseable {
         this.backend.setPipeline(pipeline);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public void bindAll(List<?> elements) {
-        int bindingPoint = 0;
-        for (ComputeBindingLayout binding : pipeline.bindings()) {
-            this.bind(bindingPoint++, binding, elements.get(bindingPoint - 1));
-        }
+    public <T> int bind(int bindingPointStart, ComputeBindingLayout<T> layout, T resource) {
+        return layout.applyOrdered(bindingPointStart, resource, this);
     }
 
-    public <T> void bind(int bindingPoint, ComputeBindingLayout<T> layout, T resource) {
-        layout.apply(bindingPoint, resource, this);
+    public void bindArrayOfTexture(int bindingPoint, List<GpuTexture> resource, boolean read, boolean write) {
+        this.backend.bindArrayOfTexture(bindingPoint, resource, read, write);
     }
 
     public void bindTexture(int bindingPoint, TextureBinding.SamplerAndTexture resource) {
@@ -84,5 +90,16 @@ public class ALRComputePass implements AutoCloseable {
 
     public void bindAtomicCounter(int bindingPoint, GpuBufferSlice resource) {
         this.backend.bindAtomicCounter(bindingPoint, resource);
+    }
+
+    public void bindBindlessImageArray(
+        BindlessImageArrayBinding binding,
+        List<GpuTexture> textures
+    ) {
+        this.backend.bindBindlessImageArray(binding, textures);
+    }
+
+    public void bindBindlessImageArray(String name, List<GpuTexture> textures) {
+        this.backend.bindBindlessImageArray(name, textures);
     }
 }

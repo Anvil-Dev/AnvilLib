@@ -6,6 +6,7 @@ import dev.anvilcraft.lib.v2.registrum.util.entry.BlockEntry;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import dev.anvilcraft.lib.v2.test.block.TestBloomBlock;
 import dev.anvilcraft.lib.v2.test.block.TestCachedRenderingBlock;
+import dev.anvilcraft.lib.v2.test.block.TestOcclusionBlock;
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
 import net.minecraft.client.data.models.model.ModelTemplates;
@@ -27,6 +28,17 @@ public class TestBlocks {
             BlockModelGenerators.createSimpleBlock(
                 ctx.get(),
                 BlockModelGenerators.plainVariant(TexturedModel.CUBE.create(Blocks.COMMAND_BLOCK, provider.modelOutput))
+            )
+        ))
+        .simpleItem()
+        .register();
+
+    public static final BlockEntry<TestOcclusionBlock> TEST_OCCLUSION = AnvilLibTest.REGISTRUM.block("test_occlusion", TestOcclusionBlock::new)
+        .properties(p -> p.noOcclusion().noCollision())
+        .blockstate(() -> (ctx, provider) -> provider.blockStateOutput.accept(
+            BlockModelGenerators.createSimpleBlock(
+                ctx.get(),
+                BlockModelGenerators.plainVariant(TexturedModel.CUBE.create(Blocks.DIAMOND_BLOCK, provider.modelOutput))
             )
         ))
         .simpleItem()

@@ -16,57 +16,59 @@ repositories {
 
 dependencies {}
 
-tasks.register("createModule") {
-    if (!project.hasProperty('id')) {
-        throw new GradleException("Id property is required. Use -Pid=<id> to specify the version.")
-    }
-    String id = project.property("id")
-    if (id.matches("[A-Z]+")) {
-        throw new GradleException("Id cannot be all uppercase.")
-    }
-    String underlinedId = id.replace('-', '_')
-    String mod_id = "anvillib_$underlinedId"
-    String bigHumpName = id.split('-').collect { it.substring(0, 1).toUpperCase() + it.substring(1) }.join()
-    String mod_name = "AnvilLib-$bigHumpName"
-    String class_name = "AnvilLib$bigHumpName"
-    File buildGradle = file("module.$id/build.gradle")
-    File gradleProperties = file("module.$id/gradle.properties")
-    File mainClass = file("module.$id/src/main/java/dev/anvilcraft/lib/v2/$underlinedId/${class_name}.java")
-    File packageInfo = file("module.$id/src/main/java/dev/anvilcraft/lib/v2/$underlinedId/package-info.java")
-    File modInfoPath = file("module.$id/src/main/resources/META-INF/")
-    File mixinConfig = file("module.$id/src/main/resources/${mod_id}.mixins.json")
-    buildGradle.parentFile.mkdirs()
-    mainClass.parentFile.mkdirs()
-    modInfoPath.mkdirs()
-    buildGradle.createNewFile()
-    gradleProperties.createNewFile()
-    mainClass.createNewFile()
-    mixinConfig.createNewFile()
-    copy {
-        from file("module.main/src/main/resources/META-INF/neoforge.mods.toml")
-        into modInfoPath
-    }
-    copy {
-        from file("module.main/src/main/resources/icon.png")
-        into file("module.$id/src/main/resources/")
-    }
+class CreateModuleTask extends DefaultTask {
+    @TaskAction
+    void onCreateModule() {
+        if (!project.hasProperty('id')) {
+            throw new GradleException("Id property is required. Use -Pid=<id> to specify the version.")
+        }
+        String id = project.property("id")
+        if (id.matches("[A-Z]+")) {
+            throw new GradleException("Id cannot be all uppercase.")
+        }
+        String underlinedId = id.replace('-', '_')
+        String mod_id = "anvillib_$underlinedId"
+        String bigHumpName = id.split('-').collect { it.substring(0, 1).toUpperCase() + it.substring(1) }.join()
+        String mod_name = "AnvilLib-$bigHumpName"
+        String class_name = "AnvilLib$bigHumpName"
+        File buildGradle = file("module.$id/build.gradle")
+        File gradleProperties = file("module.$id/gradle.properties")
+        File mainClass = file("module.$id/src/main/java/dev/anvilcraft/lib/v2/$underlinedId/${class_name}.java")
+        File packageInfo = file("module.$id/src/main/java/dev/anvilcraft/lib/v2/$underlinedId/package-info.java")
+        File modInfoPath = file("module.$id/src/main/resources/META-INF/")
+        File mixinConfig = file("module.$id/src/main/resources/${mod_id}.mixins.json")
+        buildGradle.parentFile.mkdirs()
+        mainClass.parentFile.mkdirs()
+        modInfoPath.mkdirs()
+        buildGradle.createNewFile()
+        gradleProperties.createNewFile()
+        mainClass.createNewFile()
+        mixinConfig.createNewFile()
+        copy {
+            from file("module.main/src/main/resources/META-INF/neoforge.mods.toml")
+            into modInfoPath
+        }
+        copy {
+            from file("module.main/src/main/resources/icon.png")
+            into file("module.$id/src/main/resources/")
+        }
 
-    buildGradle.write(
-            """
+        buildGradle.write(
+                """
             dependencies {
             }
             """.stripIndent().trim()
-    )
-    gradleProperties.write(
-            """
+        )
+        gradleProperties.write(
+                """
             ## Mod Properties
             mod_id=$mod_id
             mod_name=$mod_name
             mod_description=
             """.stripIndent().trim()
-    )
-    mainClass.write(
-            """
+        )
+        mainClass.write(
+                """
             package dev.anvilcraft.lib.v2.$underlinedId;
             
             import net.minecraft.resources.Identifier;
@@ -82,17 +84,17 @@ tasks.register("createModule") {
                 }
             }
             """.stripIndent().trim()
-    )
-    packageInfo.write(
-            """
+        )
+        packageInfo.write(
+                """
             @NullMarked
             package dev.anvilcraft.lib.v2.$underlinedId;
             
             import org.jspecify.annotations.NullMarked;
             """.stripIndent().trim()
-    )
-    mixinConfig.write(
-            """
+        )
+        mixinConfig.write(
+                """
             {
               "required": true,
               "minVersion": "0.8",
@@ -108,8 +110,11 @@ tasks.register("createModule") {
               }
             }
             """.stripIndent().trim()
-    )
+        )
+    }
 }
+
+tasks.register("createModule", CreateModuleTask)
 
 subprojects {
     if (it.name == "renderdoc-loader-internal") return

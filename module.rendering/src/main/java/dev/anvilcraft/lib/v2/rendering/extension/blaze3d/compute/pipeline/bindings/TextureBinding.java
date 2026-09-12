@@ -10,12 +10,13 @@ public record TextureBinding(
 ) implements ComputeBindingLayout<TextureBinding.SamplerAndTexture> {
     @Override
     public ShaderResourceType type() {
-        return ShaderResourceType.TEXTURE;
+        return ShaderResourceType.TEXTURE_OR_IMAGE;
     }
 
     @Override
-    public void apply(int bindingPoint, SamplerAndTexture resource, ALRComputePass pass) {
-        pass.bindTexture(bindingPoint, resource);
+    public int applyOrdered(int bindingPointStart, SamplerAndTexture resource, ALRComputePass pass) {
+        pass.bindTexture(bindingPointStart, resource);
+        return 1;
     }
 
     public record SamplerAndTexture(

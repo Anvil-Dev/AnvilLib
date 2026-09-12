@@ -4,7 +4,6 @@ import com.mojang.blaze3d.opengl.GlDebugLabel;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRDebugLabelExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
 import net.minecraft.util.StringUtil;
-import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.opengl.EXTDebugLabel;
 import org.lwjgl.opengl.GL46;
 import org.lwjgl.opengl.KHRDebug;
@@ -12,7 +11,6 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@ApiStatus.Internal
 public class GlDebugLabelMixin {
     @Mixin(GlDebugLabel.class)
     public static class Self implements ALRDebugLabelExtension {

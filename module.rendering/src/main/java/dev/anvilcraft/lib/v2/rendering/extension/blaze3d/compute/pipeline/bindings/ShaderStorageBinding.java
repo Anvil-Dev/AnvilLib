@@ -14,7 +14,8 @@ public record ShaderStorageBinding(
     }
 
     @Override
-    public void apply(int bindingPoint, GpuBufferSlice resource, ALRComputePass computePass) {
-        computePass.bindShaderStorage(bindingPoint, resource);
+    public int applyOrdered(int bindingPointStart, GpuBufferSlice resource, ALRComputePass computePass) {
+        computePass.bindShaderStorage(bindingPointStart, resource);
+        return 1;
     }
 }

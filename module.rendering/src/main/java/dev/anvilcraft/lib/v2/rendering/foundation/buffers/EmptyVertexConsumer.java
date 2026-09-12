@@ -1,7 +1,9 @@
 package dev.anvilcraft.lib.v2.rendering.foundation.buffers;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class EmptyVertexConsumer implements VertexConsumer {
 
     public static final EmptyVertexConsumer INSTANCE = new EmptyVertexConsumer();

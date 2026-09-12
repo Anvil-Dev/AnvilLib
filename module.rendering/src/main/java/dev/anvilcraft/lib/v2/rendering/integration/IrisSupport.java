@@ -1,7 +1,9 @@
 package dev.anvilcraft.lib.v2.rendering.integration;
 
+import dev.anvilcraft.lib.v2.rendering.integration.mixins.OuterWrappedRenderTypeAccess;
 import net.irisshaders.iris.api.v0.IrisApi;
 import net.irisshaders.iris.vertices.ImmediateState;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.neoforged.fml.ModList;
 
 import java.util.Stack;
@@ -57,6 +59,13 @@ public class IrisSupport {
 
     private static boolean isShaderEnabledInternal() {
         return IrisApi.getInstance().isShaderPackInUse();
+    }
+
+    public static RenderType unwrapRenderType(RenderType rt) {
+        if (rt instanceof OuterWrappedRenderTypeAccess access) {
+            return access.alr$unwrap();
+        }
+        return rt;
     }
 
     private record IrisState(

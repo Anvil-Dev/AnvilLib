@@ -4,6 +4,7 @@ import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferWriter;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObjectLayoutDefinition;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -14,6 +15,7 @@ import org.joml.Vector4i;
 
 import java.nio.ByteBuffer;
 
+@ApiStatus.Internal
 public class Std430Writer implements BufferWriter {
 
     private final ByteBuffer buffer;
@@ -49,10 +51,28 @@ public class Std430Writer implements BufferWriter {
         this.buffer.position(this.buffer.position() + 8);
     }
 
+    @Override
+    public void putVec2Array(int size, Vector2f[] vector2fs) {
+        this.align(8);
+        for (int i = 0; i < size; i++) {
+            vector2fs[i].get(this.buffer);
+            this.buffer.position(this.buffer.position() + 8);
+        }
+    }
+
     public void putIVec2(Vector2i vec) {
         this.align(8);
         vec.get(this.buffer);
         this.buffer.position(this.buffer.position() + 8);
+    }
+
+    @Override
+    public void putIVec2Array(int size, Vector2i[] vector2is) {
+        this.align(8);
+        for (int i = 0; i < size; i++) {
+            vector2is[i].get(this.buffer);
+            this.buffer.position(this.buffer.position() + 8);
+        }
     }
 
     public void putVec3(Vector3f vec) {
@@ -85,8 +105,11 @@ public class Std430Writer implements BufferWriter {
         this.buffer.position(this.buffer.position() + 64);
     }
 
-    public ByteBuffer intoBuffer() {
-        return this.buffer.flip();
+    public ByteBuffer intoBuffer(boolean flip) {
+        if (flip) {
+            return this.buffer.flip();
+        }
+        return this.buffer;
     }
 
     @Override
@@ -102,15 +125,16 @@ public class Std430Writer implements BufferWriter {
     }
 
     @Override
-    public <E> void putStructArray(E[] objects, BufferObjectLayoutDefinition<E> definition) {
+    public <E> void putStructArray(E[] objects, int size, BufferObjectLayoutDefinition<E> definition) {
         int alignment = definition.alignment(BufferLayout.STD430);
         int stride = Mth.roundToward(definition.size(BufferLayout.STD430), alignment);
         int arrayStart = this.pointer + Mth.roundToward(this.buffer.position() - this.pointer, alignment);
-        for (int i = 0; i < objects.length; i++) {
+
+        for (int i = 0; i < size; i++) {
             this.buffer.position(arrayStart + stride * i);
             definition.writeInto(this, objects[i]);
         }
-        this.buffer.position(arrayStart + stride * objects.length);
+        this.buffer.position(arrayStart + stride * size);
         this.indexedArrayDefinition = null;
     }
 

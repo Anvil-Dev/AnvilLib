@@ -28,15 +28,19 @@ public interface BufferWriter {
 
     void putVec2(Vector2f object);
 
+    void putVec2Array(int size, Vector2f[] vector2fs);
+
+    void putIVec2Array(int size, Vector2i[] vector2is);
+
     void putFloat(float object);
 
-    ByteBuffer intoBuffer();
+    default ByteBuffer intoBuffer() {
+        return this.intoBuffer(true);
+    }
+
+    ByteBuffer intoBuffer(boolean flip);
 
     <E> void putStructArray(int index, E object, BufferObjectLayoutDefinition<E> definition);
 
-    default  <E> void putStructArray(E[] objects, BufferObjectLayoutDefinition<E> definition) {
-        for (int i = 0; i < objects.length; i++) {
-            putStructArray(i, objects[i], definition);
-        }
-    }
+    <E> void putStructArray(E[] objects, int size, BufferObjectLayoutDefinition<E> definition);
 }

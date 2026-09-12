@@ -7,10 +7,12 @@ import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObject;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.ShaderBufferObjectUsage;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix4f;
 
 @Setter
 @Getter
+@ApiStatus.Internal
 public class TransformsUbo extends BufferObject<TransformsUbo> {
 
     public static final BufferObjectLayoutDefinition<TransformsUbo> DEFINITION = BufferObjectLayoutDefinition.create(

@@ -5,9 +5,11 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "anvillib.refmap.json",
   "mixins": [
+    "CachedChunkMixin"
   ],
   "client": [
     "CachedBlockEntityRenderingPipelineMixin",
+    "OuterWrappedRenderTypeAccess",
     "RebuildTaskMixin"
   ],
   "plugin": "dev.anvilcraft.lib.v2.rendering.integration.mixins.ALRIntegrationCompatMixinPlugin",

@@ -7,10 +7,12 @@ import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.BufferObject;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.ShaderBufferObjectUsage;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.ApiStatus;
 import org.joml.Vector2f;
 
 @Getter
 @Setter
+@ApiStatus.Internal
 public class BloomPipelineParametersUbo extends BufferObject<BloomPipelineParametersUbo> {
 
     public static final BufferObjectLayoutDefinition<BloomPipelineParametersUbo> DEFINITION = BufferObjectLayoutDefinition.create(

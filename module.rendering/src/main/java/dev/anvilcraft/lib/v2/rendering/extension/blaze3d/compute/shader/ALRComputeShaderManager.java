@@ -16,6 +16,7 @@ import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.neoforged.fml.ModLoader;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnknownNullability;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -23,9 +24,11 @@ import org.jspecify.annotations.Nullable;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
+@ApiStatus.Internal
 public class ALRComputeShaderManager extends SimplePreparableReloadListener<ALRComputeShaderManager.ComputeShaderSource> {
     public static final ALRComputeShaderManager INSTANCE = new ALRComputeShaderManager();
 
@@ -49,7 +52,8 @@ public class ALRComputeShaderManager extends SimplePreparableReloadListener<ALRC
 
             try (Reader reader = it.getValue().openAsReader()) {
                 String source = IOUtils.toString(reader);
-                sources.put(it.getKey(), String.join("", preprocessor.process(source)));
+                List<String> processed = preprocessor.process(source);
+                sources.put(it.getKey(), String.join("", processed));
             } catch (IOException ex) {
                 log.error("Failed to load compute shader source at {}", it.getKey(), ex);
             }
@@ -60,7 +64,6 @@ public class ALRComputeShaderManager extends SimplePreparableReloadListener<ALRC
 
     @Override
     protected void apply(ComputeShaderSource preparations, ResourceManager manager, ProfilerFiller profiler) {
-        ALRComputeCapabilities.init();
         if (!ALRComputeCapabilities.isComputeSupported()) {
             return;
         }
@@ -81,7 +84,7 @@ public class ALRComputeShaderManager extends SimplePreparableReloadListener<ALRC
                 pipeline.defines()
             );
             log.debug("Compiled COMPUTE shader {}", pipeline.shaderLocation());
-            ALRComputeProgramInstance instance = deviceExtension.alrCompileComputeShader(key);
+            ALRComputeProgramInstance instance = deviceExtension.alrCompileComputePipeline(pipeline, key);
             this.shaderInstanceMap.put(key, instance);
             this.pipelineToProgramMap.put(pipeline, instance);
         }

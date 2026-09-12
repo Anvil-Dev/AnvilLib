@@ -3,7 +3,9 @@ package dev.anvilcraft.lib.v2.rendering.foundation.fakeworld;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class SimpleOffsetBlockAccess extends SimpleDelegatingTintAccess {
     private final BlockPos offset;
 

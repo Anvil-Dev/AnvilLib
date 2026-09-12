@@ -1,5 +1,7 @@
 package dev.anvilcraft.lib.v2.sync.transform;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.ApiStatus;
 import org.objectweb.asm.Opcodes;

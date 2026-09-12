@@ -1,15 +1,20 @@
 package dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.BindlessImageArrayBinding;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.TextureBinding;
+import org.jetbrains.annotations.ApiStatus;
 
+import java.util.List;
+import java.util.function.Supplier;
+
+@ApiStatus.Internal
 public interface ALRComputePassBackend {
     void setPipeline(ALRComputePipeline pipeline);
 
-    void pushDebugGroup(String name);
+    void pushDebugGroup(Supplier<String> name);
 
     void popDebugGroup();
 
@@ -28,6 +33,12 @@ public interface ALRComputePassBackend {
     void bindShaderStorage(int bindingPoint, GpuBufferSlice resource);
 
     void bindAtomicCounter(int bindingPoint, GpuBufferSlice resource);
+
+    void bindArrayOfTexture(int bindingPoint, List<GpuTexture> resource, boolean read, boolean write);
+
+    void bindBindlessImageArray(BindlessImageArrayBinding binding, List<GpuTexture> textures);
+
+    void bindBindlessImageArray(String name, List<GpuTexture> textures);
 
     void close();
 }

@@ -2,16 +2,21 @@ package dev.anvilcraft.lib.v2.rendering;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
+import dev.anvilcraft.lib.v2.rendering.bloom.TransformsUbo;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import org.jetbrains.annotations.ApiStatus;
+
+import java.util.Optional;
 
 @EventBusSubscriber(Dist.CLIENT)
 public class ALRPipelines {
@@ -76,6 +81,17 @@ public class ALRPipelines {
         .withCull(false)
         .build();
 
+    public static final RenderPipeline OCCLUSION_QUERY = RenderPipeline.builder()
+        .withLocation(AnvilLibRendering.location("occlusion_query"))
+        .withVertexFormat(DefaultVertexFormat.POSITION, VertexFormat.Mode.QUADS)
+        .withUniform("Transforms", UniformType.UNIFORM_BUFFER)
+        .withVertexShader(AnvilLibRendering.location("core/occlusion_query"))
+        .withFragmentShader(AnvilLibRendering.location("core/occlusion_query"))
+        .withColorTargetState(new ColorTargetState(Optional.empty(), ColorTargetState.WRITE_NONE))
+        .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
+        .withCull(false)
+        .build();
+
 
     @ApiStatus.Internal
     @SubscribeEvent
@@ -86,5 +102,7 @@ public class ALRPipelines {
         event.registerPipeline(UPSAMPLE);
 
         event.registerPipeline(SDF_GRAPHICS);
+
+        event.registerPipeline(OCCLUSION_QUERY);
     }
 }

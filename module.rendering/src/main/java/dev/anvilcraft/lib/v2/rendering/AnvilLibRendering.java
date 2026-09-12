@@ -1,14 +1,17 @@
 package dev.anvilcraft.lib.v2.rendering;
 
 import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
+import dev.anvilcraft.lib.v2.rendering.event.MainTargetResizeEvent;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeShaderManager;
 import dev.anvilcraft.lib.v2.rendering.gui.renderer.BlockStatePipRenderer;
 import dev.anvilcraft.lib.v2.rendering.gui.renderer.StructurePipRenderer;
 import dev.anvilcraft.lib.v2.rendering.gui.state.BlockStatePipRenderingState;
 import dev.anvilcraft.lib.v2.rendering.gui.state.StructurePipRenderingState;
+import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.OcclusionCuller;
 import lombok.extern.slf4j.Slf4j;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -17,6 +20,7 @@ import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 import org.jetbrains.annotations.ApiStatus;
 
 @Slf4j
@@ -40,6 +44,12 @@ public class AnvilLibRendering {
             CachedBlockEntityRenderingPipeline.getInstance().runTasks();
         }
         ALRPostEffects.getBloomPostEffect().beginFrame();
+        ALROptimizations.getOcclusionCuller().beginRenderingFrame();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void on(SubmitCustomGeometryEvent event) {
+        ALROptimizations.getOcclusionCuller().processFeatures(event.getLevelRenderState().cameraRenderState);
     }
 
     @SubscribeEvent
@@ -65,6 +75,12 @@ public class AnvilLibRendering {
                 true
             );
         }
+    }
+
+    @SubscribeEvent
+    public static void on(MainTargetResizeEvent event) {
+        OcclusionCuller occlusionCuller = ALROptimizations.getOcclusionCuller();
+        occlusionCuller.onResize(event.getNewWidth(), event.getNewHeight());
     }
 
     @SubscribeEvent

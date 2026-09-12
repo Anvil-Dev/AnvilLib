@@ -13,7 +13,8 @@ public record UniformBlockBinding(
     }
 
     @Override
-    public void apply(int bindingPoint, GpuBufferSlice resource, ALRComputePass computePass) {
-        computePass.bindUniformBlock(bindingPoint, resource);
+    public int applyOrdered(int bindingPointStart, GpuBufferSlice resource, ALRComputePass computePass) {
+        computePass.bindUniformBlock(bindingPointStart, resource);
+        return 1;
     }
 }
