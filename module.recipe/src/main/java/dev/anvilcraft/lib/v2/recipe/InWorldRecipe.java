@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.recipe.init.LibRegistries;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeTypes;
+import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipeTypes;
 import dev.anvilcraft.lib.v2.recipe.outcome.IRecipeOutcome;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.trigger.IRecipeTrigger;
@@ -13,7 +13,6 @@ import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import dev.anvilcraft.lib.v2.recipe.util.ShapelessMatcher;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
@@ -229,9 +228,10 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
      */
     @Override
     public boolean matches(InWorldRecipeContext context, Level level) {
+        int initialStackSize = context.getStack().size();
         boolean nonConflicting = ShapelessMatcher.compatible(this.nonConflicting, context);
         if (!nonConflicting) {
-            context.getStack().clear();
+            InWorldRecipe.rollbackPredicates(context, initialStackSize);
             return false;
         }
         boolean flag;
@@ -241,21 +241,35 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
             flag = ShapelessMatcher.incompatible(this.conflicting, context);
         }
         if (!flag) {
-            context.getStack().clear();
+            InWorldRecipe.rollbackPredicates(context, initialStackSize);
+            return false;
         }
-        context.getStack().forEach(predicate -> predicate.clearStack(context));
-        return flag;
+        List<IRecipePredicate<?>> stack = context.getStack();
+        for (int i = initialStackSize; i < stack.size(); i++) {
+            stack.get(i).clearStack(context);
+        }
+        return true;
+    }
+
+    private static void rollbackPredicates(InWorldRecipeContext context, int initialStackSize) {
+        List<IRecipePredicate<?>> stack = context.getStack();
+        while (stack.size() > initialStackSize) {
+            context.pop(stack.getLast());
+        }
     }
 
     /**
      * 组装配方结果
      *
-     * @param context  配方上下文
-     * @param provider 数据提供器
+     * @param context 配方上下文
      * @return 配方结果物品堆
      */
     @Override
-    public ItemStack assemble(InWorldRecipeContext context, HolderLookup.Provider provider) {
+    public ItemStack assemble(InWorldRecipeContext context, net.minecraft.core.HolderLookup.Provider registries) {
+        return this.assemble(context);
+    }
+
+    public ItemStack assemble(InWorldRecipeContext context) {
         List<IRecipePredicate<?>> stack = context.getStack();
         IRecipePredicate<?> predicate;
         while (!stack.isEmpty()) {
@@ -266,6 +280,16 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
             outcome.acceptWithChance(context);
         }
         return this.icon.copy();
+    }
+
+    @Override
+    public boolean showNotification() {
+        return true;
+    }
+
+    @Override
+    public String group() {
+        return "in_world";
     }
 
     /**
@@ -339,12 +363,13 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
      * 世界内配方序列化器
      */
     public static class Serializer implements RecipeSerializer<InWorldRecipe> {
+
         private static final Codec<IRecipePredicate<?>> PREDICATE_CODEC = LibRegistries.PREDICATE_TYPE_REGISTRY.byNameCodec()
             .dispatch(IRecipePredicate::getType, IRecipePredicate.Type::codec);
         private static final Codec<IRecipeOutcome<?>> OUTCOME_CODEC = LibRegistries.OUTCOME_TYPE_REGISTRY.byNameCodec()
             .dispatch(IRecipeOutcome::getType, IRecipeOutcome.Type::codec);
-        private static final MapCodec<InWorldRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ItemStack.CODEC.fieldOf("icon").orElse(Items.ANVIL.getDefaultInstance()).forGetter(InWorldRecipe::icon),
+        public static final MapCodec<InWorldRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            ItemStack.CODEC.fieldOf("icon").orElseGet(() -> new ItemStack(Items.ANVIL)).forGetter(InWorldRecipe::icon),
             LibRegistries.TRIGGER_REGISTRY.byNameCodec().fieldOf("trigger").forGetter(InWorldRecipe::trigger),
             PREDICATE_CODEC.listOf().fieldOf("conflicting").forGetter(InWorldRecipe::conflicting),
             PREDICATE_CODEC.listOf().fieldOf("non_conflicting").forGetter(InWorldRecipe::nonConflicting),
@@ -359,7 +384,6 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
          *
          * @return MapCodec编解码器
          */
-        @Override
         public MapCodec<InWorldRecipe> codec() {
             return Serializer.CODEC;
         }
@@ -377,7 +401,6 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
          *
          * @return 流编解码器
          */
-        @Override
         public StreamCodec<RegistryFriendlyByteBuf, InWorldRecipe> streamCodec() {
             return Serializer.STREAM_CODEC;
         }

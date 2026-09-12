@@ -2,12 +2,15 @@ package dev.anvilcraft.lib.v2.config;
 
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@ApiStatus.Internal
 public record ConfigRecord(
+    String group,
     String modId,
     ModConfig.Type type,
     ModConfigSpec spec,
@@ -16,13 +19,14 @@ public record ConfigRecord(
     AtomicBoolean registered
 ) {
     public ConfigRecord(
+        String group,
         String modId,
         ModConfig.Type type,
         ModConfigSpec spec,
         Object object,
         @Unmodifiable List<ConfigField> values
     ) {
-        this(modId, type, spec, object, values, new AtomicBoolean(false));
+        this(group, modId, type, spec, object, values, new AtomicBoolean(false));
     }
 
     public void load() {
@@ -31,6 +35,8 @@ public record ConfigRecord(
     }
 
     public String getFileName() {
-        return "%s-%s.toml".formatted(this.modId, this.type.extension());
+        String folder = this.group.isEmpty() ? "" : "%s/".formatted(this.group);
+        String file = "%s-%s.toml".formatted(this.modId, this.type.extension());
+        return "%s%s".formatted(folder, file);
     }
 }

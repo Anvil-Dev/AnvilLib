@@ -7,11 +7,12 @@ import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.cache.BlockCache;
 import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheOutput;
-import dev.anvilcraft.lib.v2.recipe.init.reicpe.LibRecipeOutcomeTypes;
+import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipeOutcomeTypes;
 import dev.anvilcraft.lib.v2.recipe.outcome.function.ApplyTagToComponent;
 import dev.anvilcraft.lib.v2.recipe.outcome.function.IOutcomeFunction;
 import dev.anvilcraft.lib.v2.recipe.util.IRecipeResultOffsetBlock;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
+import dev.anvilcraft.lib.v2.util.predicate.ChanceItemStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPatch;
@@ -31,6 +32,8 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import javax.annotation.Nullable;
 
 /**
  * 生成物品配方结果类，用于定义在配方执行时生成物品的结果
@@ -75,6 +78,16 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
     }
 
     /**
+     * 将此ChanceItemStack转换为SpawnItem结果
+     *
+     * @param offset 偏移量
+     * @return SpawnItem结果
+     */
+    public static SpawnItem fromChance(ChanceItemStack stack, Vec3 offset) {
+        return SpawnItem.builder().item(stack.stack()).count(stack.count()).offset(offset).build();
+    }
+
+    /**
      * 获取配方结果类型
      *
      * @return 配方结果类型
@@ -93,7 +106,9 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
     @SuppressWarnings("unchecked")
     public void accept(InWorldRecipeContext context) {
         ItemCache cache = context.computeIfAbsent(ItemCache.ITEM_CACHE);
-        ItemStack stack = this.item.copyWithCount(context.getInt(this.count, 0, 99));
+        int count = context.getInt(this.count, 0, 99);
+        if (count == 0) return;
+        ItemStack stack = this.item.copyWithCount(count);
         BlockCache blockCache = context.computeIfAbsent(BlockCache.BLOCK_CACHE);
         Vec3 offset = context.getPos().add(this.offset);
         BlockPos blockPos = BlockPos.containing(offset);
@@ -191,7 +206,7 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
         /**
          * 物品堆
          */
-        private ItemStack item = ItemStack.EMPTY;
+        private @Nullable ItemStack item = null;
 
         /**
          * 函数列表
@@ -299,7 +314,7 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
          * @return 构建器实例
          */
         public Builder item(Item item) {
-            return this.item(item.getDefaultInstance());
+            return this.item(new ItemStack(item));
         }
 
         /**
@@ -328,7 +343,7 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
          * @return 生成物品配方结果
          */
         public SpawnItem build() {
-            return new SpawnItem(this.item, this.offset, this.count, this.functions);
+            return new SpawnItem(Objects.requireNonNull(this.item), this.offset, this.count, this.functions);
         }
     }
 }

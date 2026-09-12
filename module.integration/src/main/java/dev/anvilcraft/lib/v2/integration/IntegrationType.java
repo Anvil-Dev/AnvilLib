@@ -3,5 +3,6 @@ package dev.anvilcraft.lib.v2.integration;
 public enum IntegrationType {
     CLIENT,
     DEDICATED_SERVER,
-    DATA
+    CLIENT_DATA,
+    SERVER_DATA
 }

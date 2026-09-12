@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/BlockEntityBuilder.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/BlockEntityBuilder.java
  *
  */
 
@@ -18,8 +18,8 @@ import dev.anvilcraft.lib.v2.registrum.util.OneTimeEventReceiver;
 import dev.anvilcraft.lib.v2.registrum.util.RegistrumDistExecutor;
 import dev.anvilcraft.lib.v2.registrum.util.entry.BlockEntityEntry;
 import dev.anvilcraft.lib.v2.registrum.util.entry.RegistryEntry;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
@@ -37,7 +37,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A builder for block entities, allows for customization of the valid blocks.
@@ -45,12 +45,13 @@ import javax.annotation.Nullable;
  * @param <T> The type of block entity being built
  * @param <P> Parent object type
  */
+@SuppressWarnings("unused")
 public class BlockEntityBuilder<T extends BlockEntity, P>
     extends AbstractBuilder<BlockEntityType<?>, BlockEntityType<T>, P, BlockEntityBuilder<T, P>> {
 
     public interface BlockEntityFactory<T extends BlockEntity> {
 
-        public T create(BlockEntityType<T> type, BlockPos pos, BlockState state);
+        T create(BlockEntityType<T> type, BlockPos pos, BlockState state);
 
     }
 
@@ -121,9 +122,10 @@ public class BlockEntityBuilder<T extends BlockEntity, P>
      * Register an {@link BlockEntityRenderer} for this block entity.
      * <p>
      *
+     * <p><b>API Note: </b>This requires the {@link Class} of the block entity object, which can only be gotten by inspecting an instance of it. Thus, the entity will be constructed to register the renderer.</p>
+     *
      * @param renderer A (server safe) supplier to an {@link Function} that will provide this block entity's renderer given the renderer dispatcher
      * @return this {@link BlockEntityBuilder}
-     * @apiNote This requires the {@link Class} of the block entity object, which can only be gotten by inspecting an instance of it. Thus, the entity will be constructed to register the renderer.
      */
     public BlockEntityBuilder<T, P> renderer(NonNullSupplier<NonNullFunction<BlockEntityRendererProvider.Context, BlockEntityRenderer<? super T>>> renderer) {
         if (this.renderer == null) { // First call only
@@ -142,6 +144,14 @@ public class BlockEntityBuilder<T extends BlockEntity, P>
                 }
             }
         );
+    }
+
+    /** 注册该方块实体的能力注册回调。 */
+    public BlockEntityBuilder<T, P> registerCapability(
+        java.util.function.Consumer<net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent> listener
+    ) {
+        OneTimeEventReceiver.addModListener(getOwner(), net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent.class, listener);
+        return this;
     }
 
     @Override

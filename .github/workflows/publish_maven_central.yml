@@ -10,6 +10,16 @@ on:
         description: 'Module ID to build'
         required: true
         type: string
+      gradle_project:
+        description: 'Gradle project path or name without leading colon'
+        required: false
+        type: string
+        default: ''
+      module_dir:
+        description: 'Module directory relative to repository root'
+        required: false
+        type: string
+        default: ''
     secrets:
       maven_central_username:
         description: 'Maven Central Username'
@@ -30,9 +40,12 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      GRADLE_PROJECT: ${{ inputs.gradle_project != '' && inputs.gradle_project || format('{0}-neoforge-1.21.8', inputs.module_id) }}
+      MODULE_DIR: ${{ inputs.module_dir != '' && inputs.module_dir || format('module.{0}', inputs.module) }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Read Properties
         id: 'properties'
@@ -42,7 +55,7 @@ jobs:
           properties: 'java_version'
 
       - name: Setup Java ${{ steps.properties.outputs.java_version }}
-        uses: actions/setup-java@v3.6.0
+        uses: actions/setup-java@v5.2.0
         with:
           distribution: zulu
           java-version: ${{ steps.properties.outputs.java_version }}
@@ -51,13 +64,13 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Download built artifacts (fixed name)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.module_id }}-deploy
-          path: module.${{ inputs.module }}/build/staging-deploy/
+          path: ${{ env.MODULE_DIR }}/build/staging-deploy/
 
       - name: Publish to Maven Central
-        run: ./gradlew :${{ inputs.module_id }}-neoforge-1.21.8:jreleaserDeploy --no-configuration-cache
+        run: ./gradlew :${{ env.GRADLE_PROJECT }}:jreleaserDeploy --no-configuration-cache
         env:
           JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.maven_central_username }}
           JRELEASER_MAVENCENTRAL_PASSWORD: ${{ secrets.maven_central_password }}

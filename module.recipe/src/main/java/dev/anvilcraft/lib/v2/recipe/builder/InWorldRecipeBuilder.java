@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.recipe.builder;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import dev.anvilcraft.lib.v2.recipe.AnvilLibRecipe;
 import dev.anvilcraft.lib.v2.recipe.InWorldRecipe;
 import dev.anvilcraft.lib.v2.recipe.outcome.ChooseOneOutcome;
 import dev.anvilcraft.lib.v2.recipe.outcome.IRecipeOutcome;
@@ -19,12 +20,14 @@ import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.data.recipes.RecipeOutput;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -35,8 +38,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,7 +61,7 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 配方图标
      */
-    protected final NonNullList<ItemStack> icon = NonNullList.withSize(1, Items.ANVIL.getDefaultInstance());
+    protected final NonNullList<ItemStack> icon = NonNullList.withSize(1, new ItemStack(Items.ANVIL));
     /**
      * 偏移量
      */
@@ -67,7 +69,7 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 配方触发器
      */
-    protected final @NotNull IRecipeTrigger trigger;
+    protected final IRecipeTrigger trigger;
     /**
      * 冲突的配方谓词列表
      */
@@ -87,7 +89,7 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 优先级
      */
-    protected Integer priority = null;
+    protected @Nullable Integer priority = null;
     /**
      * 最大效率
      */
@@ -95,7 +97,7 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 配方组
      */
-    protected String group;
+    protected @Nullable String group;
     /**
      * 准则映射
      */
@@ -297,8 +299,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param items 物品标签
      * @return 当前构建器实例
      */
-    public T hasItem(TagKey<Item> items) {
-        return this.with(HasItem.builder().of(items).offset(this.offset).build());
+    public T hasItem(HolderGetter<Item> items, TagKey<Item> tag) {
+        return this.with(HasItem.builder().of(items, tag).offset(this.offset).build());
     }
 
     /**
@@ -308,8 +310,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param items  物品标签
      * @return 当前构建器实例
      */
-    public T hasItem(Vec3 offset, TagKey<Item> items) {
-        return this.with(HasItem.builder().offset(offset).build());
+    public T hasItem(Vec3 offset, HolderGetter<Item> items, TagKey<Item> tag) {
+        return this.with(HasItem.builder().of(items, tag).offset(offset).build());
     }
 
     /**
@@ -321,8 +323,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param items 物品标签
      * @return 当前构建器实例
      */
-    public T hasItem(double x, double y, double z, TagKey<Item> items) {
-        return this.with(HasItem.builder().offset(x, y, z).build());
+    public T hasItem(double x, double y, double z, HolderGetter<Item> items, TagKey<Item> tag) {
+        return this.with(HasItem.builder().of(items, tag).offset(x, y, z).build());
     }
 
     /**
@@ -378,8 +380,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param items 物品标签
      * @return 当前构建器实例
      */
-    public T hasItemIngredient(TagKey<Item> items) {
-        return this.with(HasItemIngredient.builder().of(items).offset(this.offset).build());
+    public T hasItemIngredient(HolderGetter<Item> items, TagKey<Item> tag) {
+        return this.with(HasItemIngredient.builder().of(items, tag).offset(this.offset).build());
     }
 
     /**
@@ -389,8 +391,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param items  物品标签
      * @return 当前构建器实例
      */
-    public T hasItemIngredient(Vec3 offset, TagKey<Item> items) {
-        return this.with(HasItemIngredient.builder().of(items).offset(offset).build());
+    public T hasItemIngredient(Vec3 offset, HolderGetter<Item> items, TagKey<Item> tag) {
+        return this.with(HasItemIngredient.builder().of(items, tag).offset(offset).build());
     }
 
     /**
@@ -402,8 +404,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param items 物品标签
      * @return 当前构建器实例
      */
-    public T hasItemIngredient(double x, double y, double z, TagKey<Item> items) {
-        return this.with(HasItemIngredient.builder().of(items).offset(x, y, z).build());
+    public T hasItemIngredient(double x, double y, double z, HolderGetter<Item> items, TagKey<Item> tag) {
+        return this.with(HasItemIngredient.builder().of(items, tag).offset(x, y, z).build());
     }
 
     /**
@@ -493,8 +495,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param tag 方块标签
      * @return 当前构建器实例
      */
-    public T hasBlock(TagKey<Block> tag) {
-        return this.with(HasBlock.builder().of(tag).offset(this.offset).build());
+    public T hasBlock(HolderGetter<Block> blocks, TagKey<Block> tag) {
+        return this.with(HasBlock.builder().of(blocks, tag).offset(this.offset).build());
     }
 
     /**
@@ -504,8 +506,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param tag    方块标签
      * @return 当前构建器实例
      */
-    public T hasBlock(Vec3 offset, TagKey<Block> tag) {
-        return this.with(HasBlock.builder().of(tag).offset(offset).build());
+    public T hasBlock(Vec3 offset, HolderGetter<Block> blocks, TagKey<Block> tag) {
+        return this.with(HasBlock.builder().of(blocks, tag).offset(offset).build());
     }
 
     /**
@@ -517,8 +519,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param tag 方块标签
      * @return 当前构建器实例
      */
-    public T hasBlock(double x, double y, double z, TagKey<Block> tag) {
-        return this.with(HasBlock.builder().of(tag).offset(x, y, z).build());
+    public T hasBlock(double x, double y, double z, HolderGetter<Block> blocks, TagKey<Block> tag) {
+        return this.with(HasBlock.builder().of(blocks, tag).offset(x, y, z).build());
     }
 
     /**
@@ -655,8 +657,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param tag 方块标签
      * @return 当前构建器实例
      */
-    public T hasBlockIngredient(TagKey<Block> tag) {
-        return this.with(HasBlockIngredient.builder().of(tag).offset(this.offset).build());
+    public T hasBlockIngredient(HolderGetter<Block> blocks, TagKey<Block> tag) {
+        return this.with(HasBlockIngredient.builder().of(blocks, tag).offset(this.offset).build());
     }
 
     /**
@@ -666,8 +668,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param tag    方块标签
      * @return 当前构建器实例
      */
-    public T hasBlockIngredient(Vec3 offset, TagKey<Block> tag) {
-        return this.with(HasBlockIngredient.builder().of(tag).offset(offset).build());
+    public T hasBlockIngredient(Vec3 offset, HolderGetter<Block> blocks, TagKey<Block> tag) {
+        return this.with(HasBlockIngredient.builder().of(blocks, tag).offset(offset).build());
     }
 
     /**
@@ -679,8 +681,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @param tag 方块标签
      * @return 当前构建器实例
      */
-    public T hasBlockIngredient(double x, double y, double z, TagKey<Block> tag) {
-        return this.with(HasBlockIngredient.builder().of(tag).offset(new Vec3(x, y, z)).build());
+    public T hasBlockIngredient(double x, double y, double z, HolderGetter<Block> blocks, TagKey<Block> tag) {
+        return this.with(HasBlockIngredient.builder().of(blocks, tag).offset(new Vec3(x, y, z)).build());
     }
 
     /**
@@ -947,7 +949,13 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
         return this.self();
     }
 
-    @Override
+    public ResourceKey<Recipe<?>> defaultId() {
+        return ResourceKey.create(
+            Registries.RECIPE,
+            AnvilLibRecipe.of(this.group + "/" + BuiltInRegistries.ITEM.getKey(this.getResult()).getPath())
+        );
+    }
+
     public Item getResult() {
         return this.icon.getFirst().getItem();
     }

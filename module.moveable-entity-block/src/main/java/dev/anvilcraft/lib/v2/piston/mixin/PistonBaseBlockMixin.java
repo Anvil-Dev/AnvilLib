@@ -17,10 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.List;
 
 @Debug(export = true)
 @Mixin(value = PistonBaseBlock.class, priority = 943)
@@ -33,7 +30,7 @@ abstract class PistonBaseBlockMixin {
         return original.call(instance) && !(instance.getBlock() instanceof IMoveableEntityBlock);
     }
 
-    @Inject(
+    @WrapOperation(
         method = "moveBlocks",
         at = @At(
             value = "INVOKE",
@@ -45,23 +42,21 @@ abstract class PistonBaseBlockMixin {
             ordinal = 1
         )
     )
-    @SuppressWarnings("NameDoesntMatchTargetClass")
-    private void setBlock(
-        Level level, BlockPos pistonPos, Direction facing, boolean extending, CallbackInfoReturnable<Boolean> cir,
-        @Local(name = "blockpos3") BlockPos pos,
-        @Local(name = "direction") Direction pushDirection,
-        @Local(name = "list1") List<BlockState> toPushShapes,
-        @Local(name = "k") int i,
+    private boolean setBlock(
+        Level level, BlockPos pos, BlockState state, int flags, Operation<Boolean> original,
+        @Local(ordinal = 1) Direction pushDirection,
         @Share(value = "sharedBlockEntity", namespace = AnvilLibMoveableEntityBlock.MAIN_ID) LocalRef<BlockEntity> sharedBlockEntity
     ) {
+        sharedBlockEntity.set(null);
         BlockPos relative = pos.relative(pushDirection.getOpposite());
         if (
-            toPushShapes.get(i).getBlock() instanceof IMoveableEntityBlock
+            level.getBlockState(relative).getBlock() instanceof IMoveableEntityBlock
             && level.getBlockEntity(relative) instanceof BlockEntity blockEntity
         ) {
             sharedBlockEntity.set(blockEntity);
             level.removeBlockEntity(relative);
         }
+        return original.call(level, pos, state, flags);
     }
 
     @WrapOperation(
@@ -77,7 +72,7 @@ abstract class PistonBaseBlockMixin {
         )
     )
     private BlockEntity newMovingBlockEntity(
-        BlockPos pos,
+        BlockPos position,
         BlockState blockState,
         BlockState movedState,
         Direction direction,
@@ -86,7 +81,7 @@ abstract class PistonBaseBlockMixin {
         Operation<BlockEntity> original,
         @Share(value = "sharedBlockEntity", namespace = AnvilLibMoveableEntityBlock.MAIN_ID) LocalRef<BlockEntity> sharedBlockEntity
     ) {
-        BlockEntity blockEntity = original.call(pos, blockState, movedState, direction, extending, isSourcePiston);
+        BlockEntity blockEntity = original.call(position, blockState, movedState, direction, extending, isSourcePiston);
         if (blockEntity instanceof IPistonMovingBlockEntityExtension entity) {
             entity.anvillib$setBlockEntity(sharedBlockEntity.get());
         }

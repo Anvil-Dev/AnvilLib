@@ -2,12 +2,11 @@
   "required": true,
   "minVersion": "0.8",
   "package": "dev.anvilcraft.lib.v2.wheel.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_21",
   "refmap": "anvillib.refmap.json",
   "mixins": [
   ],
   "client": [
-    "GuiRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

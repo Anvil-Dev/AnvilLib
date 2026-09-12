@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.anvilcraft.lib.v2.font.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "anvillib.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+    "GuiGraphicsMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

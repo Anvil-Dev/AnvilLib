@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/generators/RegistrateModelProvider.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/generators/RegistrateModelProvider.java
  *
  */
 
@@ -18,8 +18,13 @@ import dev.anvilcraft.lib.v2.registrum.providers.RegistrumProvider;
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelGenerators;
 import net.minecraft.client.data.models.ModelProvider;
+import net.minecraft.core.Holder;
 import net.minecraft.data.PackOutput;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 import net.neoforged.fml.LogicalSide;
+
+import java.util.stream.Stream;
 
 public class RegistrumModelProvider extends ModelProvider implements RegistrumProvider {
 
@@ -31,9 +36,19 @@ public class RegistrumModelProvider extends ModelProvider implements RegistrumPr
     }
 
     @Override
-    protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
+    public void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
         new RegistrumBlockModelGenerator(parent, blockModels.blockStateOutput, blockModels.itemModelOutput, blockModels.modelOutput).run();
         new RegistrumItemModelGenerator(parent, itemModels.itemModelOutput, itemModels.modelOutput).run();
+    }
+
+    @Override
+    public Stream<? extends Holder<Block>> getKnownBlocks() {
+        return Stream.empty(); // make mojang happy
+    }
+
+    @Override
+    public Stream<? extends Holder<Item>> getKnownItems() {
+        return super.getKnownItems();
     }
 
     @Override

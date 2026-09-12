@@ -4,8 +4,8 @@ package dev.anvilcraft.lib.v2.recipe.cache.item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
+import java.util.function.Predicate;
 
 /**
  * 缓存元素接口，继承自缓存输入和输出接口

@@ -1,0 +1,7 @@
+dependencies {
+    if (System.getenv("NOT_DEV") == 'true') {
+        jarJar(api("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.8:latest.release"))
+    } else {
+        jarJar(api project(":anvillib-config-neoforge-1.21.8"))
+    }
+}

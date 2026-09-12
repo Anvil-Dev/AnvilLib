@@ -2,8 +2,7 @@ package dev.anvilcraft.lib.v2.piston.injection;
 
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public interface IPistonMovingBlockEntityExtension {
     @ApiStatus.Internal
