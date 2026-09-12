@@ -1,0 +1,79 @@
+configurations {
+    roseau
+}
+
+dependencies {
+    roseau 'io.github.alien-tools:roseau-cli:0.6.0'
+}
+
+def jarFileProvider = tasks.named('jar').flatMap { it.archiveFile }
+def reportsDirProvider = layout.buildDirectory.dir('reports/roseau')
+def compileClasspathProvider = provider { sourceSets.main.compileClasspath.asPath }
+def roseauGroup = project.group.toString()
+def roseauArtifact = project.name
+def roseauBaselineVersion = project.findProperty('roseauBaselineVersion') ?: {
+    def groupPath = project.group.toString().replace('.', '/')
+    def artifact = project.name
+    def repos = [
+            'https://repo1.maven.org/maven2',
+            'https://server.cjsah.net:1002/maven',
+    ]
+    for (repoUrl in repos) {
+        try {
+            def metadataUrl = new URL("${repoUrl}/${groupPath}/${artifact}/maven-metadata.xml")
+            def conn = metadataUrl.openConnection()
+            conn.connectTimeout = 5000
+            conn.readTimeout = 5000
+            def xmlText = conn.inputStream.getText('UTF-8')
+            def matcher = xmlText =~ /<latest>([^<]+)<\/latest>/
+            if (matcher.find()) {
+                def latest = matcher.group(1)
+                logger.lifecycle("Roseau: resolved latest version ${latest} from ${repoUrl}")
+                return latest
+            }
+        } catch (Exception ignored) {
+            // try next repo
+        }
+    }
+    logger.warn("Roseau: could not resolve latest version from Maven, falling back to ${version}")
+    return version.toString()
+}()
+def roseauMvnCoord = "${roseauGroup}:${roseauArtifact}:${roseauBaselineVersion}"
+def roseauBaselineDep = dependencies.create(group: roseauGroup, name: roseauArtifact, version: roseauBaselineVersion)
+def roseauBaselineConfig = configurations.detachedConfiguration(roseauBaselineDep)
+roseauBaselineConfig.transitive = false
+def roseauBaselineJarProvider = provider { roseauBaselineConfig.singleFile }
+def roseauConfig = rootProject.file("roseau.yaml").absolutePath
+
+tasks.register('roseauCheck', JavaExec) {
+    group = 'verification'
+    description = 'Detects API breaking changes against a baseline version using Roseau'
+
+    dependsOn tasks.named('jar')
+
+    classpath = configurations.roseau
+    mainClass = 'io.github.alien.roseau.cli.RoseauCLI'
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(Integer.parseInt(project.java_version))
+    }
+
+    doFirst {
+        def currentJar = jarFileProvider.get().asFile
+        def baselineJar = roseauBaselineJarProvider.get()
+        def reportsDir = reportsDirProvider.get().asFile
+        reportsDir.mkdirs()
+
+        logger.lifecycle("Roseau: comparing baseline ${roseauMvnCoord} against ${currentJar.name}")
+
+        args(
+                '--diff',
+                '--v1', baselineJar.absolutePath,
+                '--v2', currentJar.absolutePath,
+                '--classpath', compileClasspathProvider.get(),
+                '--fail-on-bc',
+                '--report', "HTML=${new File(reportsDir, 'report.html').absolutePath}",
+                '--report', "CSV=${new File(reportsDir, 'report.csv').absolutePath}",
+                '--config', roseauConfig
+        )
+    }
+}

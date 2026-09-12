@@ -3,8 +3,6 @@ package dev.anvilcraft.lib.v2.config;
 import com.google.common.collect.ImmutableList;
 import dev.anvilcraft.lib.v2.config.util.FormattingUtil;
 import lombok.extern.slf4j.Slf4j;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -17,6 +15,7 @@ import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -39,7 +38,7 @@ public class ConfigManager {
     }
 
     public static <T> T register(String modId, Supplier<T> configFactory) {
-        Optional<? extends ModContainer> byId = ModList.get().getModContainerById(modId);
+        Optional<? extends ModContainer> byId = Optional.of(ModList.get()).flatMap(list -> list.getModContainerById(modId));
         ModContainer container;
         if (byId.isPresent()) {
             container = byId.get();
@@ -60,12 +59,14 @@ public class ConfigManager {
         return config;
     }
 
+    @ApiStatus.Internal
     public <T> T register(T configObj) {
         Class<?> configClass = configObj.getClass();
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         if (configClass.isAnnotationPresent(Config.class)) {
             Config config = configClass.getAnnotation(Config.class);
             String name = config.name();
+            String group = config.group();
             ModConfig.Type type = config.type();
             ImmutableList.Builder<ConfigField> valuesBuilder = ImmutableList.builder();
             try {
@@ -74,15 +75,17 @@ public class ConfigManager {
                 log.error(e.getMessage(), e);
             }
             ModConfigSpec spec = builder.build();
-            this.configSpecMap.put(configObj, new ConfigRecord(name, type, spec, configObj, valuesBuilder.build()));
+            this.configSpecMap.put(configObj, new ConfigRecord(group, name, type, spec, configObj, valuesBuilder.build()));
         }
         return configObj;
     }
 
+    @ApiStatus.Internal
     public void register(IEventBus bus) {
         bus.register(this);
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public void onModConstruct(FMLConstructModEvent event) {
         ModContainer container = ModLoadingContext.get().getActiveContainer();
@@ -96,11 +99,13 @@ public class ConfigManager {
         }
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     public void loading(ModConfigEvent event) {
         this.configSpecMap.values().forEach(ConfigRecord::load);
     }
 
+    @ApiStatus.Internal
     public void registerScreen(ModContainer container) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
     }
@@ -136,6 +141,7 @@ public class ConfigManager {
         }
     }
 
+    @ApiStatus.Internal
     public static ModConfigSpec.ConfigValue<?> define(ModConfigSpec.Builder builder, String name, Field field, Object object) {
         return switch (object) {
             case Number num -> ConfigManager.defineInRange(builder, name, field, num);
@@ -146,10 +152,12 @@ public class ConfigManager {
     }
 
     @SuppressWarnings("unchecked")
+    @ApiStatus.Internal
     public static <E extends Enum<E>> ModConfigSpec.EnumValue<E> defineEnum(ModConfigSpec.Builder builder, String name, Enum<?> enumValue) {
         return builder.defineEnum(name, (E) enumValue);
     }
 
+    @ApiStatus.Internal
     public static ModConfigSpec.ConfigValue<?> defineInRange(ModConfigSpec.Builder builder, String name, Field field, Number number) {
         if (field.isAnnotationPresent(BoundedDiscrete.class)) {
             BoundedDiscrete discrete = field.getAnnotation(BoundedDiscrete.class);

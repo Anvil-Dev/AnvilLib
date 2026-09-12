@@ -1,0 +1,11 @@
+{
+  "block.anvillib_test.test_controller": "Test Controller",
+  "item.anvillib_test.test_controller": "Test Controller",
+  "itemGroup.anvillib_test.tab": "Test Tab",
+  "itemGroup.anvillib_test.test_tab": "Test Tab",
+  "key.anvillib_test.wheel_hold": "Wheel Hold",
+  "key.anvillib_test.wheel_hold_annular": "Wheel Hold (Annular Sector)",
+  "key.anvillib_test.wheel_tap": "Wheel Tap",
+  "key.anvillib_test.wheel_tap_annular": "Wheel Tap (Annular Sector)",
+  "key.category.anvillib_test.wheel": "AnvilLib Test-Wheel"
+}

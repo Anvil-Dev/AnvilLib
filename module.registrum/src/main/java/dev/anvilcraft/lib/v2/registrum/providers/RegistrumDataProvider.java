@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/RegistrateDataProvider.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/RegistrateDataProvider.java
  *
  */
 
@@ -18,7 +18,7 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Lists;
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
 import dev.anvilcraft.lib.v2.registrum.util.DebugMarkers;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
+import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
 import lombok.extern.log4j.Log4j2;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
@@ -26,6 +26,7 @@ import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -34,9 +35,10 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @Log4j2
+@ApiStatus.Internal
 public class RegistrumDataProvider implements DataProvider {
 
     @SuppressWarnings("null")
@@ -92,14 +94,13 @@ public class RegistrumDataProvider implements DataProvider {
 
     @Override
     public CompletableFuture<?> run(CachedOutput cache) {
-        return registriesLookup.thenCompose(provider -> {
+        return registriesLookup.thenCompose(ignored -> {
             var list = Lists.<CompletableFuture<?>>newArrayList();
 
             for (Map.Entry<@NonnullType ProviderType<?>, RegistrumProvider> e : subProviders.entrySet()) {
                 log.debug(DebugMarkers.DATA, "Generating data for type: {}", getTypeName(e.getKey()));
                 list.add(e.getValue().run(cache));
             }
-            ;
 
             return CompletableFuture.allOf(list.toArray(CompletableFuture[]::new));
         });

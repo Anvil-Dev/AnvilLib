@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/generators/RegistrateLegacyBlockModelBuilder.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/generators/RegistrateLegacyBlockModelBuilder.java
  *
  */
 
@@ -17,10 +17,10 @@ import net.minecraft.client.data.models.model.ModelInstance;
 import net.minecraft.client.data.models.model.TextureMapping;
 import net.minecraft.client.data.models.model.TextureSlot;
 import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.resources.model.Material;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.client.event.RegisterNamedRenderTypesEvent;
 import net.neoforged.neoforge.client.model.generators.template.CustomLoaderBuilder;
 import net.neoforged.neoforge.client.model.generators.template.ExtendedModelTemplateBuilder;
 import net.neoforged.neoforge.client.model.generators.template.RootTransformsBuilder;
@@ -30,6 +30,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+@SuppressWarnings("unused")
 public class RegistrumLegacyBlockModelBuilder {
 
     private final ExtendedModelTemplateBuilder template;
@@ -47,6 +48,10 @@ public class RegistrumLegacyBlockModelBuilder {
     }
 
     public RegistrumLegacyBlockModelBuilder texture(TextureSlot slot, Identifier texture) {
+        return texture(slot, texture, false);
+    }
+
+    public RegistrumLegacyBlockModelBuilder texture(TextureSlot slot, Identifier texture, boolean translucent) {
         this.template.requiredTextureSlot(slot);
         this.texture.put(slot, texture);
         return this;
@@ -85,32 +90,6 @@ public class RegistrumLegacyBlockModelBuilder {
      */
     public RegistrumLegacyBlockModelBuilder suffix(String suffix) {
         template.suffix(suffix);
-        return this;
-    }
-
-    /**
-     * Set the render type for this model.
-     *
-     * @param renderType the render type. Must be registered via
-     *                   {@link RegisterNamedRenderTypesEvent}
-     * @return this builder
-     * @throws NullPointerException if {@code renderType} is {@code null}
-     */
-    public RegistrumLegacyBlockModelBuilder renderType(String renderType) {
-        template.renderType(renderType);
-        return this;
-    }
-
-    /**
-     * Set the render type for this model.
-     *
-     * @param renderType the render type. Must be registered via
-     *                   {@link RegisterNamedRenderTypesEvent}
-     * @return this builder
-     * @throws NullPointerException if {@code renderType} is {@code null}
-     */
-    public RegistrumLegacyBlockModelBuilder renderType(Identifier renderType) {
-        template.renderType(renderType);
         return this;
     }
 

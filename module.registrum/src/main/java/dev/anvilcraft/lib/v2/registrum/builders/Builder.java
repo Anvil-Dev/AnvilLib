@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/Builder.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/Builder.java
  *
  */
 
@@ -18,11 +18,11 @@ import dev.anvilcraft.lib.v2.registrum.providers.DataGenContext;
 import dev.anvilcraft.lib.v2.registrum.providers.GeneratorType;
 import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
 import dev.anvilcraft.lib.v2.registrum.util.entry.RegistryEntry;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiConsumer;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullConsumer;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
@@ -41,6 +41,7 @@ import java.util.function.Function;
  * @param <P> Type of the parent object, this is returned from {@link #build()} and {@link #getParent()}.
  * @param <S> Self type
  */
+@SuppressWarnings("unused")
 public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> extends NonNullSupplier<RegistryEntry<R, T>> {
 
     /**
@@ -82,7 +83,7 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
      */
     @Override
     default RegistryEntry<R, T> get() {
-        return getOwner().<R, T>get(getName(), getRegistryKey());
+        return getOwner().get(getName(), getRegistryKey());
     }
 
     /**
@@ -205,10 +206,10 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
      */
     default <OR> S onRegisterAfter(ResourceKey<? extends Registry<OR>> dependencyType, NonNullConsumer<? super T> callback) {
         return onRegister(e -> {
-            if (getOwner().<OR>isRegistered(dependencyType)) {
+            if (getOwner().isRegistered(dependencyType)) {
                 callback.accept(e);
             } else {
-                getOwner().<OR>addRegisterCallback(dependencyType, () -> callback.accept(e));
+                getOwner().addRegisterCallback(dependencyType, () -> callback.accept(e));
             }
         });
     }

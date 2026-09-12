@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/ProviderType.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/providers/ProviderType.java
  *
  */
 
@@ -20,13 +20,13 @@ import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumModelProvid
 import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumRecipeProvider;
 import dev.anvilcraft.lib.v2.registrum.providers.generators.RegistrumRecipeRunner;
 import dev.anvilcraft.lib.v2.registrum.providers.loot.RegistrumLootTableProvider;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.FieldsAreNonnullByDefault;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.Block;
@@ -38,8 +38,6 @@ import net.neoforged.neoforge.data.loading.DatagenModLoader;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
 
 /**
  * Represents a type of data that can be generated, and specifies a factory for the provider.
@@ -51,9 +49,12 @@ import javax.annotation.ParametersAreNonnullByDefault;
  * @param <T> The type of the provider
  */
 @FunctionalInterface
-@SuppressWarnings("deprecation")
-@FieldsAreNonnullByDefault
-@ParametersAreNonnullByDefault
+@SuppressWarnings(
+    {
+        "deprecation",
+        "unused"
+    }
+)
 public interface ProviderType<T extends RegistrumProvider> extends GeneratorType<T> {
 
     // SERVER DATA
@@ -72,6 +73,11 @@ public interface ProviderType<T extends RegistrumProvider> extends GeneratorType
         "tags/enchantment",
         "enchantments",
         Registries.ENCHANTMENT
+    );
+    ProviderType<RegistrumTagsProvider.Impl<DamageType>> DAMAGE_TYPE_TAGS = registerDynamicTag(
+        "tags/damage_type",
+        "damage_types",
+        Registries.DAMAGE_TYPE
     );
     ProviderType<RegistrumItemTagsProvider> ITEM_TAGS = registerTag(
         "tags/item",
@@ -149,18 +155,15 @@ public interface ProviderType<T extends RegistrumProvider> extends GeneratorType
 
     }
 
-    @Nonnull
     static <T extends RegistrumProvider> ProviderType<T> registerServerData(String name, SimpleServerDataFactory<T> factory) {
         return registerProvider(name, factory.asProvider());
     }
 
-    @Nonnull
     static <T extends RegistrumProvider> ProviderType<T> registerProvider(String name, ProviderType<T> type) {
         RegistrumDataProvider.TYPES.put(name, type);
         return type;
     }
 
-    @Nonnull
     static <T extends RegistrumProvider> ProviderType<T> registerClientProvider(String name, NonNullSupplier<ProviderType<T>> supplier) {
         if (!DatagenModLoader.isRunningDataGen()) return context -> null;
         var type = supplier.get();
@@ -168,7 +171,6 @@ public interface ProviderType<T extends RegistrumProvider> extends GeneratorType
         return type;
     }
 
-    @Nonnull
     static <T, R extends RegistrumTagsProvider<T>> ProviderType<R> registerTag(
         String name,
         ResourceKey<? extends Registry<T>> key,
@@ -182,7 +184,6 @@ public interface ProviderType<T extends RegistrumProvider> extends GeneratorType
         return type;
     }
 
-    @Nonnull
     static <T> ProviderType<RegistrumTagsProvider.IntrinsicImpl<T>> registerIntrinsicTag(
         String providerName,
         String typeName,
@@ -196,7 +197,6 @@ public interface ProviderType<T extends RegistrumProvider> extends GeneratorType
         );
     }
 
-    @Nonnull
     static <T> ProviderType<RegistrumTagsProvider.Impl<T>> registerDynamicTag(
         String providerName,
         String typeName,

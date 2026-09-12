@@ -1,13 +1,13 @@
 /*
  *
- *  * Original work copyright (c) 2019 tterrag1098 (Registrate)
- *  * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
- *  *
- *  * This Source Code Form is subject to the terms of the Mozilla Public
- *  * License, v. 2.0. If a copy of the MPL was not distributed with this
- *  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *  *
- *  * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/EntityBuilder.java
+ * Original work copyright (c) 2019 tterrag1098 (Registrate)
+ * Additional modifications copyright (c) 2026 Anvil-Dev (AnvilLib-Registrum)
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Original File: https://github.com/tterrag1098/Registrate/blob/1.21.5/dev/src/main/java/com/tterrag/registrate/builders/EntityBuilder.java
  *
  */
 
@@ -23,10 +23,10 @@ import dev.anvilcraft.lib.v2.registrum.util.OneTimeEventReceiver;
 import dev.anvilcraft.lib.v2.registrum.util.RegistrumDistExecutor;
 import dev.anvilcraft.lib.v2.registrum.util.entry.EntityEntry;
 import dev.anvilcraft.lib.v2.registrum.util.entry.RegistryEntry;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullBiConsumer;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullConsumer;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullFunction;
-import dev.anvilcraft.lib.v2.registrum.util.nullness.NonNullSupplier;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullBiConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullConsumer;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
+import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.core.registries.Registries;
@@ -47,9 +47,9 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
 
 /**
  * A builder for entities, allows for customization of the {@link EntityType.Builder}, easy creation of spawn egg items, and configuration of data associated with entities (loot tables, etc.).
@@ -57,10 +57,11 @@ import javax.annotation.Nullable;
  * @param <T> The type of entity being built
  * @param <P> Parent object type
  */
+@SuppressWarnings("unused")
 public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityType<?>, EntityType<T>, P, EntityBuilder<T, P>> {
 
     /**
-     * Create a new {@link EntityBuilder} and configure data. Used in lieu of adding side-effects to constructor, so that alternate initialization strategies can be done in subclasses.
+     * Create a new {@link EntityBuilder} and configure data. Used in lieu of adding side effects to constructor, so that alternate initialization strategies can be done in subclasses.
      * <p>
      * The entity will be assigned the following data:
      * <ul>
@@ -87,7 +88,7 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
 
     private final NonNullSupplier<EntityType.Builder<T>> builder;
 
-    private NonNullConsumer<EntityType.Builder<T>> builderCallback = $ -> {
+    private NonNullConsumer<EntityType.Builder<T>> builderCallback = ignored -> {
     };
 
     @Nullable
@@ -151,7 +152,7 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
     }
 
     /**
-     * Register a attributes for this entity. The entity must extend {@link LivingEntity}.
+     * Register an attributes for this entity. The entity must extend {@link LivingEntity}.
      * <p>
      * Cannot be called more than once per builder.
      *
@@ -184,7 +185,6 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
      * @return this {@link EntityBuilder}
      * @throws IllegalStateException When called more than once
      */
-    @SuppressWarnings("unchecked")
     public EntityBuilder<T, P> spawnPlacement(
         SpawnPlacementType type,
         Heightmap.Types heightmap,
@@ -206,57 +206,11 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
             }
             */
             OneTimeEventReceiver.addModListener(
-                getOwner(), RegisterSpawnPlacementsEvent.class, e -> {
-                    e.register(t, type, heightmap, predicate, operation);
-                }
+                getOwner(), RegisterSpawnPlacementsEvent.class, e -> e.register(t, type, heightmap, predicate, operation)
             );
         });
         return this;
     }
-
-    /**
-     * Create a spawn egg item for this entity using the given colors, not allowing for any extra configuration.
-     *
-     * @deprecated This does not work properly, see <a href="https://github.com/MinecraftForge/MinecraftForge/pull/6299">this issue</a>.
-     *             <p>
-     *             As a temporary measure, uses a custom egg class that imperfectly emulates the functionality
-     *
-     * @param primaryColor
-     *            The primary color of the egg
-     * @param secondaryColor
-     *            The secondary color of the egg
-     * @return this {@link EntityBuilder}
-     */
-    /* TODO <1.21.5> spawn egg
-    @Deprecated
-    public EntityBuilder<T, P> defaultSpawnEgg(int primaryColor, int secondaryColor) {
-        return spawnEgg(primaryColor, secondaryColor).build();
-    }
-
-     */
-
-    /**
-     * Create a spawn egg item for this entity using the given colors, and return the builder for further configuration.
-     *
-     * @deprecated This does not work properly, see <a href="https://github.com/MinecraftForge/MinecraftForge/pull/6299">this issue</a>.
-     *             <p>
-     *             As a temporary measure, uses a custom egg class that imperfectly emulates the functionality
-     *
-     * @param primaryColor
-     *            The primary color of the egg
-     * @param secondaryColor
-     *            The secondary color of the egg
-     * @return the {@link ItemBuilder} for the egg item
-     */
-    /* TODO <1.21.5> spawn egg
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    @Deprecated
-    public ItemBuilder<? extends SpawnEggItem, EntityBuilder<T, P>> spawnEgg(int primaryColor, int secondaryColor) {
-        var sup = asSupplier();
-        return getOwner().item(this, getName() + "_spawn_egg", p -> new DeferredSpawnEggItem((Supplier<EntityType<? extends Mob>>) (Supplier) sup, primaryColor, secondaryColor, p)).tab(CreativeModeTabs.SPAWN_EGGS)
-                .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), Identifier.withDefaultNamespace("item/template_spawn_egg")));
-    }
-     */
 
     /**
      * Assign the default translation, as specified by {@link RegistrumLangProvider#getAutomaticName(NonNullSupplier, net.minecraft.resources.ResourceKey)}. This is the default, so it is generally
@@ -279,7 +233,7 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
     }
 
     /**
-     * Configure the loot table for this entity. This is different than most data gen callbacks as the callback does not accept a {@link DataGenContext}, but instead a
+     * Configure the loot table for this entity. This is different from most data gen callbacks as the callback does not accept a {@link DataGenContext}, but instead a
      * {@link RegistrumEntityLootTables}, for creating specifically entity loot tables.
      *
      * @param cons The callback which will be invoked during entity loot table creation.

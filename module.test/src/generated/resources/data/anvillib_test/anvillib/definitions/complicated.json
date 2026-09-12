@@ -1,0 +1,18 @@
+{
+  "grid": [
+    [
+      "A"
+    ],
+    [
+      "0"
+    ]
+  ],
+  "mapping": {
+    "0": {
+      "blocks": "anvillib_test:test_controller"
+    },
+    "A": {
+      "blocks": "minecraft:iron_block"
+    }
+  }
+}

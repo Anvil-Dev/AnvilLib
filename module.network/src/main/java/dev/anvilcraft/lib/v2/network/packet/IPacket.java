@@ -10,9 +10,9 @@ public sealed interface IPacket extends CustomPacketPayload permits IClientbound
     /**
      * 构建网络包类型
      *
-     * @param id 网络包 ID
-     * @return 网络包类型
+     * @param id  网络包 ID
      * @param <T> 网络包 Java 类型
+     * @return 网络包类型
      */
     static <T extends IPacket> Type<T> type(Identifier id) {
         return new Type<>(id);

@@ -14,10 +14,17 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
@@ -57,6 +64,8 @@ public class BlockCache {
      * 缓存的方块实体映射表
      */
     private final HashMap<BlockPos, BlockEntity> cacheEntity = new HashMap<>();
+
+    private final Set<BlockPos> deferredNeighborUpdates = new HashSet<>();
 
     /**
      * 世界访问器
@@ -117,6 +126,36 @@ public class BlockCache {
      */
     public void setBlock(BlockPos pos, @Nullable BlockState state) {
         if (state == null) state = Blocks.AIR.defaultBlockState();
+        BlockState oldState = this.getBlockState(pos);
+        if (oldState.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) {
+            DoubleBlockHalf oldHalf = oldState.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF);
+            BlockPos otherPos = oldHalf == DoubleBlockHalf.LOWER ? pos.above() : pos.below();
+            BlockState oldOtherState = this.getBlockState(otherPos);
+            DoubleBlockHalf otherHalf = oldHalf == DoubleBlockHalf.LOWER
+                                        ? DoubleBlockHalf.UPPER
+                                        : DoubleBlockHalf.LOWER;
+            boolean isMatchingOtherHalf = oldOtherState.is(oldState.getBlock())
+                                          && oldOtherState.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
+                                          && oldOtherState.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == otherHalf;
+            if (isMatchingOtherHalf) {
+                this.deferredNeighborUpdates.add(pos);
+                this.deferredNeighborUpdates.add(otherPos);
+                if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) {
+                    BlockState firstState = state.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, oldHalf);
+                    BlockState secondState = state.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, otherHalf);
+                    this.setSingleBlock(pos, firstState);
+                    this.setSingleBlock(otherPos, secondState);
+                } else {
+                    this.setSingleBlock(pos, state);
+                    this.setSingleBlock(otherPos, Blocks.AIR.defaultBlockState());
+                }
+                return;
+            }
+        }
+        this.setSingleBlock(pos, state);
+    }
+
+    private void setSingleBlock(BlockPos pos, BlockState state) {
         this.getBlockState(pos);
         this.simulated.put(pos, state);
         if (state.getBlock() instanceof EntityBlock entityBlock) {
@@ -162,13 +201,18 @@ public class BlockCache {
      * 提交所有模拟的方块更改到实际世界中
      */
     public void accept() {
+        List<Map.Entry<BlockPos, BlockState>> changedBlocks = new ArrayList<>();
         this.simulated.forEach((pos, state) -> {
             BlockState old = this.cache.get(pos);
             if (old == null) throw new IllegalStateException("Block at " + pos + " was not found in the cache!");
             if (state.equals(old)) return;
-            this.level.setBlock(pos, state, 3);
+            boolean deferNeighborUpdate = this.deferredNeighborUpdates.contains(pos);
+            this.level.setBlock(pos, state, deferNeighborUpdate ? Block.UPDATE_CLIENTS : 3);
             this.cache.put(pos, state);
             this.simulated.put(pos, state);
+            if (deferNeighborUpdate) {
+                changedBlocks.add(Map.entry(pos, old));
+            }
         });
         this.simulatedEntity.forEach((pos, entity) -> {
             if (entity == null) return;
@@ -186,5 +230,7 @@ public class BlockCache {
                 oldEntity.loadWithComponents(input);
             }
         });
+        changedBlocks.forEach(entry -> this.level.updateNeighborsAt(entry.getKey(), entry.getValue().getBlock()));
+        this.deferredNeighborUpdates.clear();
     }
 }
