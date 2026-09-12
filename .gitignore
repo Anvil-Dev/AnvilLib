@@ -123,3 +123,6 @@ reference/
 ref/
 /.vscode
 /docs/
+
+*.log.gz
+**/logs/
