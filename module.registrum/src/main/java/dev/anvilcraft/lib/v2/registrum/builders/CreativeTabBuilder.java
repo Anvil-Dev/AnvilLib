@@ -25,6 +25,8 @@
 package dev.anvilcraft.lib.v2.registrum.builders;
 
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
+import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSections;
+import java.util.function.Consumer;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -83,6 +85,11 @@ public class CreativeTabBuilder<P> extends AbstractBuilder<CreativeModeTab, Crea
     public CreativeTabBuilder<P> displayItems(CreativeModeTab.DisplayItemsGenerator displayItemsGenerator) {
         this.builder = this.builder.displayItems(displayItemsGenerator);
         return this;
+    }
+
+    public CreativeTabBuilder<P> sectionedDisplayItems(Consumer<CreativeTabSections> displayItems) {
+        Identifier tabId = Identifier.fromNamespaceAndPath(this.getOwner().getModid(), this.getName());
+        return this.displayItems((parameters, output) -> CreativeTabSections.build(tabId, parameters, output, displayItems));
     }
 
     public CreativeTabBuilder<P> alignedRight() {

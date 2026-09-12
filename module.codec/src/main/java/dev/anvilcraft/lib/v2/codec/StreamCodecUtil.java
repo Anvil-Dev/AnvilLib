@@ -80,6 +80,11 @@ import java.util.function.Function;
 )
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public abstract class StreamCodecUtil {
+    /** 为指定注册表创建标签键流编解码器。 */
+    public static <T> StreamCodec<ByteBuf, TagKey<T>> tagKey(ResourceKey<? extends net.minecraft.core.Registry<T>> registryKey) {
+        return TagKey.streamCodec(registryKey);
+    }
+
     /**
      * {@link Item} 的编解码器，按注册表 key 字符串编码。
      */

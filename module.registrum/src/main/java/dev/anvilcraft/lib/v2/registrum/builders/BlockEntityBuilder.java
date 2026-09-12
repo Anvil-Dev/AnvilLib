@@ -147,6 +147,14 @@ public class BlockEntityBuilder<T extends BlockEntity, P>
         );
     }
 
+    /** 注册该方块实体的能力注册回调。 */
+    public BlockEntityBuilder<T, P> registerCapability(
+        java.util.function.Consumer<net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent> listener
+    ) {
+        OneTimeEventReceiver.addModListener(getOwner(), net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent.class, listener);
+        return this;
+    }
+
     @Override
     protected BlockEntityType<T> createEntry() {
         BlockEntityFactory<T> factory = this.factory;

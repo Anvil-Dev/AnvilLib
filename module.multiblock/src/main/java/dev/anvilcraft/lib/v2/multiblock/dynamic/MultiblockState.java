@@ -33,7 +33,8 @@ public class MultiblockState {
             .forGetter(MultiblockState::getControllerPos),
         DEFINITION_KEY_CODEC
             .fieldOf("definition")
-            .forGetter(MultiblockState::getDefinitionKey)
+            .forGetter(MultiblockState::getDefinitionKey),
+        Codec.BOOL.optionalFieldOf("formed", false).forGetter(MultiblockState::isFormed)
     ).apply(inst, MultiblockState::new));
     public static final StreamCodec<RegistryFriendlyByteBuf, MultiblockState> STREAM_CODEC = StreamCodec.composite(
         StreamCodecUtil.VAR_INT_BLOCK_POS,

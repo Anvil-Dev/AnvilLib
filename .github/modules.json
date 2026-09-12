@@ -1,12 +1,13 @@
 [
   { "module": "codec",                 "needs": [] },
   { "module": "collision",             "needs": [] },
+  { "module": "cube",                  "needs": [] },
   { "module": "config",                "needs": [] },
   { "module": "integration",           "needs": [] },
   { "module": "moveable-entity-block", "needs": [] },
   { "module": "network",               "needs": [] },
   { "module": "rendering",             "needs": [] },
-  { "module": "space-select",          "needs": [] },
+  { "module": "space-select",          "needs": ["network"] },
 
   { "module": "font",  "needs": ["rendering"] },
   { "module": "util",  "needs": ["codec"] },

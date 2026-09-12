@@ -15,6 +15,14 @@ AnvilLib 采用模块化设计，包含以下功能模块：
 |---------------------------|----------------|
 | **Config**                | 基于注解的配置系统      |
 | **Codec**                 | 数据编解码与网络序列化工具  |
+| **Collision**             | AABB 与三角形碰撞检测 |
+| **Cube**                  | 模型斜棱线高亮与精确拾取 |
+| **Explosion**             | 分层球形爆炸与熔化替换 |
+| **Font**                  | 自定义字体与 SDF 文本 |
+| **Rendering**             | 渲染、Bloom、Compute 与 SDF 工具 |
+| **RPC**                   | 双向远程调用与虚拟线程同步等待 |
+| **Space Select**          | 空间选区管理 |
+| **Sync**                  | 字段、惰性差分与配置同步 |
 | **Integration**           | 模组兼容性集成框架      |
 | **Network**               | 网络通信与数据包自动注册框架 |
 | **Recipe**                | 世界内配方系统        |
@@ -82,6 +90,17 @@ public record ExamplePayload(Item item, int count) {
         );
 }
 ```
+
+### Cube 模块
+
+提供旋转模型的斜棱线高亮和精确准星拾取，支持父模型、反向描边壳、随机变体、multipart、资源重载和 BER 动态部件。
+通过 `CubeSelection.enableNamespace("your_mod")` 启用；`registerTargetExclusion` 可按 ID 注册、替换和注销运行时排除规则，而无需丢弃模型缓存。
+几何共享、BVH 射线检测和后台轮廓任务均有数量及内存预算。26.1 使用 `CuboidModelElement`、`BlockStateModel` 和高亮状态提取接口。
+
+### RPC 模块
+
+提供 `@RemoteCallable` 方法注册、双向调用、异步返回值以及 `RPC.invokeSync` / `invokeSyncByName` 同步等待。
+同步调用适合在虚拟线程执行，支持 0–16 个参数、返回值、异常、超时和断连传播；等待期间仍需由游戏主线程处理网络响应。
 
 ### Integration 模块
 
@@ -205,6 +224,10 @@ public static void onRegisterPayload(RegisterPayloadHandlersEvent event) {
 
 ### Recipe 模块
 
+按触发器共享方块约束判定，对不可能匹配的配方提前剪枝；属性、NBT 和完整谓词仍由正式匹配检查。
+匹配失败会回滚本轮谓词快照，资源槽位同步仅应用必要差量。
+
+
 提供世界内配方系统，允许定义在世界中（而非工作台）执行的配方。
 
 **主要特性：**
@@ -222,6 +245,10 @@ public static void onRegisterPayload(RegisterPayloadHandlersEvent event) {
 - **Outcome**: 配方执行结果（如生成物品、设置方块等）
 
 ### Registrum 模块
+
+支持 `CreativeTabBuilder.sectionedDisplayItems` 分区横幅、文字对齐与悬停提示，以及右键打开的 4×4 变体选择叠加层。
+`CreativeVariantPickerRegistry` 可折叠完整变体组并按配置启用原版 16 色物品族；不完整组保持可见，搜索栏仍保留完整内容。
+
 
 基于 [Registrate](https://github.com/IThundxr/Registrate) 的注册系统，简化物品、方块、实体等的注册流程。
 

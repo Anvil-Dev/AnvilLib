@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
  * <ul>
  *     <li>/rpctest basic - 基础调用测试</li>
  *     <li>/rpctest invoke - 有返回值调用测试</li>
+ *     <li>/rpctest invoke-sync - 同步阻塞（虚拟线程）调用测试</li>
  *     <li>/rpctest validator - 校验器测试</li>
  *     <li>/rpctest stress - 压力测试</li>
  *     <li>/rpctest all - 运行所有测试</li>
@@ -45,6 +46,12 @@ public class RpcTestCommands {
                 .then(Commands.literal("invoke")
                     .executes(context -> {
                         runInvokeTest(context.getSource());
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("invoke-sync")
+                    .executes(context -> {
+                        runInvokeSyncTest(context.getSource());
                         return 1;
                     })
                 )
@@ -140,6 +147,44 @@ public class RpcTestCommands {
         } catch (Exception e) {
             source.sendFailure(Component.literal("Invoke test failed: " + e.getMessage()));
             LOGGER.error("Invoke test failed", e);
+        }
+    }
+
+    private static void runInvokeSyncTest(CommandSourceStack source) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This command must be run by a player"));
+            return;
+        }
+
+        source.sendSuccess(() -> Component.literal("Running invoke-sync RPC test (virtual threads)..."), true);
+        TestRpcMethods.clearLog();
+        RpcTarget target = RpcTarget.player(player);
+
+        // 同步阻塞形态设计用于虚拟线程：阻塞等待期间不占用平台线程，RPC 响应仍在主线程兑现。
+        try {
+            Thread.ofVirtual().name("AnvilLib-RpcInvokeSyncTest").factory().newThread(() -> {
+                try {
+                    int intResult = RPC.invokeSync(target, TestRpcMethods::returnInt);
+                    source.sendSuccess(() -> Component.literal("invokeSync int: " + intResult), false);
+
+                    String stringResult = RPC.invokeSync(target, TestRpcMethods::returnString);
+                    source.sendSuccess(() -> Component.literal("invokeSync string: " + stringResult), false);
+
+                    int sum = RPC.invokeSync(target, TestRpcMethods::computeSum, 10, 32);
+                    source.sendSuccess(() -> Component.literal("invokeSync sum: " + sum), false);
+
+                    BlockPos pos = RPC.invokeSync(target, TestRpcMethods::returnCustomType, 5, 10, 15);
+                    source.sendSuccess(() -> Component.literal("invokeSync BlockPos: " + pos), false);
+
+                    source.sendSuccess(() -> Component.literal("invoke-sync test completed."), true);
+                } catch (Throwable e) {
+                    source.sendFailure(Component.literal("invoke-sync test failed: " + e));
+                    LOGGER.error("invoke-sync test failed", e);
+                }
+            }).start();
+        } catch (Exception e) {
+            source.sendFailure(Component.literal("invoke-sync test failed to start: " + e.getMessage()));
+            LOGGER.error("invoke-sync test failed to start", e);
         }
     }
 
@@ -244,9 +289,10 @@ public class RpcTestCommands {
 
         scheduleTest(0, () -> runBasicTest(source));
         scheduleTest(20, () -> runInvokeTest(source));
-        scheduleTest(40, () -> runValidatorTest(source));
-        scheduleTest(60, () -> runStressTest(source));
-        scheduleTest(80, () ->
+        scheduleTest(40, () -> runInvokeSyncTest(source));
+        scheduleTest(60, () -> runValidatorTest(source));
+        scheduleTest(80, () -> runStressTest(source));
+        scheduleTest(100, () ->
             source.sendSuccess(() -> Component.literal("All tests completed!"), true)
         );
     }

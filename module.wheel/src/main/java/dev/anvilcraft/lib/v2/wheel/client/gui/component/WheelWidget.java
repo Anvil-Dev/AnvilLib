@@ -536,9 +536,11 @@ public class WheelWidget extends AbstractWidget {
         double rotation = cursorPos.x < 0 ? Math.PI - rot : Math.PI + rot;
         this.mouseAngleRad = (float) (rotation % (Math.PI * 2));
         for (WheelSection section : this.sections) {
-            if ((
-                section.angleStart > section.angleEnd && rotation >= section.angleStart || rotation >= section.angleStart && rotation <= section.angleEnd
-            ) && section.selectable) {
+            // 跨越 0° 的扇区由圆周末尾与开头两段组成。
+            boolean containsRotation = section.angleStart > section.angleEnd
+                ? rotation >= section.angleStart || rotation <= section.angleEnd
+                : rotation >= section.angleStart && rotation <= section.angleEnd;
+            if (containsRotation && section.selectable) {
                 this.currentAngle = section.angle;
                 this.setCurrentSectionIndex(this.sections.indexOf(section));
                 break;
