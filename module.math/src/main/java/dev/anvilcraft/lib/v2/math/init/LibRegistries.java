@@ -1,0 +1,51 @@
+package dev.anvilcraft.lib.v2.math.init;
+
+import dev.anvilcraft.lib.v2.math.AnvilLibMath;
+import dev.anvilcraft.lib.v2.math.expression.function.CustomFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.registries.DataPackRegistryEvent;
+import net.neoforged.neoforge.registries.NewRegistryEvent;
+import net.neoforged.neoforge.registries.RegistryBuilder;
+
+/**
+ * math 库的注册表：函数类型注册表与函数数据包注册表。
+ *
+ * <p>函数类型注册表的条目决定 {@link IFunction} 的编解码方式；函数数据包注册表的条目则是可以被
+ * 表达式按名引用的具体函数。下游模组既可以在数据包里按 {@link CustomFunction} 的格式提供 JSON，
+ * 也可以用 DeferredRegister.create(LibRegistries.FUNCTION_KEY, modId) 注册代码定义的函数。</p>
+ */
+@EventBusSubscriber(modid = AnvilLibMath.MOD_ID)
+public class LibRegistries {
+    /**
+     * 函数类型注册表，条目为 {@link IFunction.Type}。
+     */
+    public static final ResourceKey<Registry<IFunction.Type<?>>> FUNCTION_TYPE_KEY = ResourceKey
+        .createRegistryKey(AnvilLibMath.of("function_type"));
+    public static final Registry<IFunction.Type<?>> FUNCTION_TYPE = new RegistryBuilder<>(FUNCTION_TYPE_KEY)
+        .sync(true)
+        .maxId(512)
+        .create();
+    /**
+     * 函数数据包注册表，条目为可被引用的 {@link IFunction}。
+     */
+    public static final ResourceKey<Registry<IFunction>> FUNCTION_KEY = ResourceKey
+        .createRegistryKey(AnvilLibMath.of("function"));
+
+    @SubscribeEvent
+    public static void registerRegistries(NewRegistryEvent event) {
+        event.register(LibRegistries.FUNCTION_TYPE);
+    }
+
+    @SubscribeEvent
+    public static void registerDataRegistries(DataPackRegistryEvent.NewRegistry event) {
+        event.dataPackRegistry(
+            LibRegistries.FUNCTION_KEY,
+            IFunction.DIRECT_CODEC,
+            IFunction.DIRECT_CODEC
+        );
+    }
+}
