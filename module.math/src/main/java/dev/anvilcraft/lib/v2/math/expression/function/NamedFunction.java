@@ -3,20 +3,21 @@ package dev.anvilcraft.lib.v2.math.expression.function;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.v2.math.expression.Arguments;
+import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
+import dev.anvilcraft.lib.v2.math.expression.IExpression;
+import dev.anvilcraft.lib.v2.math.init.LibFunctionTypes;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
-import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
-import dev.anvilcraft.lib.v2.math.expression.NumberArguments;
-import dev.anvilcraft.lib.v2.math.init.LibFunctionTypes;
-
 import java.util.List;
 
 /**
- * 具名传入值函数，按名字引用 {@link NumberArguments} 中的传入值。
+ * 具名传入值函数，按名字引用 {@link Arguments} 中的传入值。
  *
- * <p>flat 表达式里写 {@code $(name)}，函数体内用参数名引用调用点提供的值时通常走这条路径。</p>
+ * <p>flat 表达式里写 {@code $(name)}，函数体内用参数名引用调用点与形参绑定提供的值时走这条路径。
+ * 取整个变参列表的 {@code $(name...)} 是 {@link IExpression.Reference.Spread}，不是这个函数。</p>
  *
  * @param name 传入值名字
  */
@@ -46,8 +47,11 @@ public record NamedFunction(String name) implements IFunction {
         return FunctionExpression.of(NamedFunction.of(name));
     }
 
+    /**
+     * 零参函数，实参在调用点上下文里求值。
+     */
     @Override
-    public double apply(List<Double> arguments, NumberArguments inputs) {
+    public double apply(List<IExpression> arguments, Arguments inputs) {
         return inputs.value(this.name);
     }
 

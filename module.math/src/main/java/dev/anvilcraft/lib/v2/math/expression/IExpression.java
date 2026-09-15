@@ -1,15 +1,19 @@
 package dev.anvilcraft.lib.v2.math.expression;
 
+import com.mojang.datafixers.util.Either;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
+import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.Parameter;
 import dev.anvilcraft.lib.v2.math.init.LibRegistries;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-
-import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
-import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -31,12 +35,19 @@ public interface IExpression {
     /**
      * 完整编解码：数字、flat 文本与函数调用对象。
      *
-     * <p>解析与回写 flat 文本要够到函数注册表，因此只接受
+     * <p>读的时候三支都试；写的时候优先写最简的一支：常量写数字，能用 flat 文本表达的写文本，
+     * 剩下的一律写对象形式。文本这一支要够到函数注册表，因此它只接受
      * {@link net.minecraft.resources.RegistryOps}。</p>
      */
-    Codec<IExpression> CODEC = Codec.lazyInitialized(() -> FunctionExpression.CODEC.xmap(
-        call -> call,
-        expression -> (FunctionExpression) expression
+    Codec<IExpression> CODEC = Codec.lazyInitialized(() -> Codec.either(
+        ConstantFunction.CODEC,
+        IExpression.FLAT_OR_OBJECT_CODEC
+    ).xmap(
+        either -> either.map(value -> ConstantFunction.of(value).call(), expression -> expression),
+        expression -> expression instanceof FunctionExpression call
+            ? ConstantFunction.value(call).<Either<Double, IExpression>>map(Either::left)
+                .orElseGet(() -> Either.right(expression))
+            : Either.right(expression)
     ));
     StreamCodec<RegistryFriendlyByteBuf, IExpression> STREAM_CODEC = IExpression.defer(
         () -> ByteBufCodecs.fromCodecWithRegistries(IExpression.CODEC).cast()
@@ -44,23 +55,47 @@ public interface IExpression {
     Codec<List<IExpression>> LIST_CODEC = IExpression.CODEC.listOf();
 
     /**
+     * flat 文本与对象形式的二选一：先试文本，写不出来再退回对象。
+     *
+     * <p>不能直接用 {@link Codec#xor}：xor 的编码器只认定一支，文本写不出来时会直接失败，
+     * 退回不了对象。</p>
+     */
+    Codec<IExpression> FLAT_OR_OBJECT_CODEC = new Codec<>() {
+        @Override
+        public <T> DataResult<Pair<IExpression, T>> decode(DynamicOps<T> ops, T input) {
+            DataResult<Pair<IExpression, T>> flat = FlatExpressionParser.codec().decode(ops, input);
+            return flat.result().isPresent()
+                ? flat
+                : FunctionExpression.CODEC.decode(ops, input).map(pair -> pair.mapFirst(call -> call));
+        }
+
+        @Override
+        public <T> DataResult<T> encode(IExpression input, DynamicOps<T> ops, T prefix) {
+            DataResult<T> flat = FlatExpressionParser.codec().encodeStart(ops, input);
+            return flat.result().isPresent()
+                ? flat
+                : FunctionExpression.MAP_CODEC.codec().encodeStart(ops, (FunctionExpression) input);
+        }
+    };
+
+    /**
      * 计算表达式的值。除零、负数开方、下标越界、名字未绑定等情况不会抛出异常。
      *
      * @param inputs 传入值，{@code input} 函数按下标引用，{@code named} 函数按名字引用
      */
-    double evaluate(NumberArguments inputs);
+    double evaluate(Arguments inputs);
 
     /**
      * 计算表达式的值，传入值只按下标引用。
      */
     default double evaluate(double... inputs) {
-        return this.evaluate(NumberArguments.of(inputs));
+        return this.evaluate(Arguments.of(inputs));
     }
 
     /**
      * 计算表达式的值并四舍五入为整数。
      */
-    default int evaluateInt(NumberArguments inputs) {
+    default int evaluateInt(Arguments inputs) {
         return (int) Math.round(this.evaluate(inputs));
     }
 
@@ -68,7 +103,51 @@ public interface IExpression {
      * 计算表达式的值并四舍五入为整数，传入值只按下标引用。
      */
     default int evaluateInt(double... inputs) {
-        return this.evaluateInt(NumberArguments.of(inputs));
+        return this.evaluateInt(Arguments.of(inputs));
+    }
+
+    /**
+     * 按名字直接取值的实参，取值结果由调用上下文决定。
+     *
+     * <p>它不算“一段可求值的表达式”：{@link Spread} 取到的是变参列表本身，因此只有变参形参接得住，
+     * 别处求值一律报错，而不是悄悄取一个数字。</p>
+     */
+    sealed interface Reference extends IExpression permits Reference.Named, Reference.Spread {
+        /**
+         * 取值的名字。
+         */
+        String name();
+
+        /**
+         * {@code $(name)}：取一个数字，绑到变参名上时取列表里的最大值。
+         */
+        record Named(String name) implements Reference {
+            @Override
+            public double evaluate(Arguments inputs) {
+                return inputs.value(this.name);
+            }
+        }
+
+        /**
+         * {@code $(name...)}：取整个变参列表本身，只能交给变参形参。
+         */
+        record Spread(String name) implements Reference {
+            @Override
+            public double evaluate(Arguments inputs) {
+                throw new IllegalStateException(
+                    "$(" + this.name + "...) is a list and can only be passed to a variadic parameter"
+                );
+            }
+        }
+    }
+
+    /**
+     * 按名字直接取值的一次引用，名字带 {@code ...} 时取整个变参列表。
+     */
+    static Reference ref(String name) {
+        return name.endsWith(Parameter.VARIADIC_SUFFIX)
+            ? new Reference.Spread(name.substring(0, name.length() - Parameter.VARIADIC_SUFFIX.length()))
+            : new Reference.Named(name);
     }
 
     /**

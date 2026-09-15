@@ -2,19 +2,19 @@ package dev.anvilcraft.lib.v2.math.expression.function;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.v2.math.expression.Arguments;
+import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
+import dev.anvilcraft.lib.v2.math.expression.IExpression;
+import dev.anvilcraft.lib.v2.math.init.LibFunctionTypes;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.ExtraCodecs;
 
-import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
-import dev.anvilcraft.lib.v2.math.expression.NumberArguments;
-import dev.anvilcraft.lib.v2.math.init.LibFunctionTypes;
-
 import java.util.List;
 
 /**
- * 传入值函数，按下标引用 {@link NumberArguments} 中的传入值。
+ * 传入值函数，按下标引用 {@link Arguments} 中的传入值。
  *
  * <p>flat 表达式里的 {@code x}/{@code y}/{@code z} 与 {@code x0}… 都解析为对它的调用。</p>
  *
@@ -47,7 +47,7 @@ public record InputFunction(int index) implements IFunction {
     }
 
     @Override
-    public double apply(List<Double> arguments, NumberArguments inputs) {
+    public double apply(List<IExpression> arguments, Arguments inputs) {
         return inputs.value(this.index);
     }
 

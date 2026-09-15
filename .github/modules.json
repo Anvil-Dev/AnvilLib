@@ -14,6 +14,7 @@
   { "module": "util",         "needs": ["codec"] },
 
   { "module": "multiblock", "needs": ["codec", "config", "network", "util"] },
+  { "module": "math",       "needs": ["util"] },
   { "module": "recipe",     "needs": ["codec", "config", "util"] },
   { "module": "registrum",  "needs": ["util"] },
   { "module": "sync",       "needs": ["codec", "network", "util"] },

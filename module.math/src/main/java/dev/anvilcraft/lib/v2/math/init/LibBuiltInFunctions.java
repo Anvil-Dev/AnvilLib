@@ -3,7 +3,14 @@ package dev.anvilcraft.lib.v2.math.init;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
+import dev.anvilcraft.lib.v2.math.AnvilLibMath;
+import dev.anvilcraft.lib.v2.math.expression.Arguments;
+import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
+import dev.anvilcraft.lib.v2.math.expression.IExpression;
+import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.Parameters;
 import net.minecraft.core.Holder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -14,11 +21,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-import dev.anvilcraft.lib.v2.math.AnvilLibMath;
-import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
-import dev.anvilcraft.lib.v2.math.expression.IExpression;
-import dev.anvilcraft.lib.v2.math.expression.NumberArguments;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -39,8 +42,8 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      */
     ADD(List.of("a", "b")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return arguments.get(0) + arguments.get(1);
+        public double apply(Call call) {
+            return call.valueAt(0) + call.valueAt(1);
         }
     },
     /**
@@ -48,8 +51,8 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      */
     SUBTRACT(List.of("a", "b")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return arguments.get(0) - arguments.get(1);
+        public double apply(Call call) {
+            return call.valueAt(0) - call.valueAt(1);
         }
     },
     /**
@@ -57,8 +60,8 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      */
     MULTIPLY(List.of("a", "b")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return arguments.get(0) * arguments.get(1);
+        public double apply(Call call) {
+            return call.valueAt(0) * call.valueAt(1);
         }
     },
     /**
@@ -66,8 +69,8 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      */
     DIVIDE(List.of("a", "b")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return arguments.get(0) / arguments.get(1);
+        public double apply(Call call) {
+            return call.valueAt(0) / call.valueAt(1);
         }
     },
     /**
@@ -75,8 +78,8 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      */
     ABS(List.of("value")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return Math.abs(arguments.getFirst());
+        public double apply(Call call) {
+            return Math.abs(call.valueAt(0));
         }
     },
     /**
@@ -84,8 +87,8 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      */
     FLOOR(List.of("value")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return Math.floor(arguments.getFirst());
+        public double apply(Call call) {
+            return Math.floor(call.valueAt(0));
         }
     },
     /**
@@ -93,8 +96,8 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      */
     CEIL(List.of("value")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return Math.ceil(arguments.getFirst());
+        public double apply(Call call) {
+            return Math.ceil(call.valueAt(0));
         }
     },
     /**
@@ -102,8 +105,8 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      */
     ROUND(List.of("value")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return Math.round(arguments.getFirst());
+        public double apply(Call call) {
+            return Math.round(call.valueAt(0));
         }
     },
     /**
@@ -111,8 +114,8 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      */
     SQRT(List.of("value")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return Math.sqrt(arguments.getFirst());
+        public double apply(Call call) {
+            return Math.sqrt(call.valueAt(0));
         }
     },
     /**
@@ -120,26 +123,64 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      */
     POW(List.of("base", "exponent")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return Math.pow(arguments.get(0), arguments.get(1));
+        public double apply(Call call) {
+            return Math.pow(call.valueAt(0), call.valueAt(1));
         }
     },
     /**
-     * 最小值，至少一参。
+     * 最小值，变参，至少一参。
      */
-    MIN(List.of("values"), 1, Integer.MAX_VALUE) {
+    MIN(List.of("x...")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return arguments.stream().mapToDouble(Double::doubleValue).min().orElse(0);
+        public double apply(Call call) {
+            return call.bound().list("x").stream().mapToDouble(Double::doubleValue).min().orElse(0);
         }
     },
     /**
-     * 最大值，至少一参。
+     * 最大值，变参，至少一参。
      */
-    MAX(List.of("values"), 1, Integer.MAX_VALUE) {
+    MAX(List.of("x...")) {
         @Override
-        public double apply(List<Double> arguments, NumberArguments inputs) {
-            return arguments.stream().mapToDouble(Double::doubleValue).max().orElse(0);
+        public double apply(Call call) {
+            return call.bound().list("x").stream().mapToDouble(Double::doubleValue).max().orElse(0);
+        }
+    },
+    /**
+     * 遍历，变参列表加一个 lambda，返回各次调用结果之和。
+     *
+     * <p>最后一位必须是 lambda，之前的所有实参就是被遍历的列表，所以
+     * {@code forEach($(x...), x -> x*2)} 能把自定义函数里拆不开的变参 {@code x} 逐个交给 lambda。</p>
+     */
+    FOREACH(List.of("x...", "function")) {
+        @Override
+        public double apply(List<IExpression> arguments, Arguments inputs) {
+            int last = arguments.size() - 1;
+            if (!(LibBuiltInFunctions.functionOf(arguments.get(last)) instanceof LambdaFunction lambda)) {
+                throw new IllegalArgumentException(
+                    "forEach expects a lambda as its last argument but got " + arguments.get(last)
+                );
+            }
+            lambda.parameters().checkArity(1);
+            if (lambda.parameters().parameters().getFirst().variadic()) {
+                throw new IllegalArgumentException(
+                    "forEach calls its lambda with one value at a time, so the lambda cannot start with a variadic parameter"
+                );
+            }
+            // 变参位上是 $(x...) 时拿的是整份列表，普通实参就是一个数字
+            List<Double> values = new ArrayList<>(last);
+            for (int index = 0; index < last; index++) {
+                IExpression argument = arguments.get(index);
+                if (argument instanceof IExpression.Reference.Spread(String name)) {
+                    values.addAll(inputs.list(name));
+                } else {
+                    values.add(argument.evaluate(inputs));
+                }
+            }
+            double total = 0;
+            for (double value : values) {
+                total += lambda.apply(List.of(ConstantFunction.of(value).call()), inputs);
+            }
+            return total;
         }
     };
 
@@ -165,18 +206,10 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
     public static final DeferredHolder<IFunction.Type<?>, LibBuiltInFunctions.Type> TYPE = LibBuiltInFunctions.TYPE_DF
         .register("builtin", LibBuiltInFunctions.Type::new);
 
-    private final List<String> parameters;
-    private final int minimumArity;
-    private final int maximumArity;
+    private final Parameters parameters;
 
-    LibBuiltInFunctions(List<String> parameters) {
-        this(parameters, parameters.size(), parameters.size());
-    }
-
-    LibBuiltInFunctions(List<String> parameters, int minimumArity, int maximumArity) {
-        this.parameters = List.copyOf(parameters);
-        this.minimumArity = minimumArity;
-        this.maximumArity = maximumArity;
+    LibBuiltInFunctions(List<String> declarations) {
+        this.parameters = Parameters.parse(declarations);
     }
 
     /**
@@ -196,9 +229,10 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
     }
 
     /**
-     * 参数名，与函数体里能引用的 {@code $(name)} 对应。
+     * 形参声明。名字与函数体里能引用的 {@code $(name)} 对应，变参带 {@code ...}。
      */
-    public List<String> parameters() {
+    @Override
+    public Parameters parameters() {
         return this.parameters;
     }
 
@@ -206,14 +240,14 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      * 该函数接受的最少参数个数。
      */
     public int minimumArity() {
-        return this.minimumArity;
+        return this.parameters.minimumArity();
     }
 
     /**
      * 该函数接受的最多参数个数。
      */
     public int maximumArity() {
-        return this.maximumArity;
+        return this.parameters.maximumArity();
     }
 
     /**
@@ -248,7 +282,7 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
      * 调用该函数并校验参数个数，个数不合法时返回错误。
      */
     public DataResult<FunctionExpression> callChecked(List<IExpression> arguments) {
-        if (arguments.size() < this.minimumArity || arguments.size() > this.maximumArity) {
+        if (arguments.size() < this.minimumArity() || arguments.size() > this.maximumArity()) {
             return DataResult.error(() -> "Function %s requires %s arguments but got %s".formatted(
                 this.getSerializedName(),
                 this.arityDescription(),
@@ -262,9 +296,15 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
     }
 
     private String arityDescription() {
-        if (this.minimumArity == this.maximumArity) return Integer.toString(this.minimumArity);
-        if (this.maximumArity == Integer.MAX_VALUE) return "at least " + this.minimumArity;
-        return this.minimumArity + " to " + this.maximumArity;
+        return this.parameters.range();
+    }
+
+    /**
+     * 取表达式对应的函数，不是调用时返回 {@code null}。
+     */
+    @Nullable
+    static IFunction functionOf(IExpression expression) {
+        return expression instanceof FunctionExpression call ? call.function().value() : null;
     }
 
     @Override

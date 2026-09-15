@@ -1,17 +1,14 @@
 package dev.anvilcraft.lib.v2.math.expression;
 
-import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
 import dev.anvilcraft.lib.v2.math.init.LibRegistries;
 import net.minecraft.core.Holder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-
-import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
-import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
 
 import java.util.List;
 
@@ -40,31 +37,9 @@ public record FunctionExpression(Holder<IFunction> function, List<IExpression> a
             .forGetter(FunctionExpression::arguments)
     ).apply(ins, FunctionExpression::new));
     /**
-     * 完整编解码：数字、flat 文本与对象形式都接受，写回时按同样的优先级选择。
-     *
-     * <p>flat 文本这一支要够到函数注册表，因此它只接受
-     * {@link net.minecraft.resources.RegistryOps}；数字与对象形式在别的动态操作上也能用。</p>
-     *
-     * <p>延后构造，避免与 {@link IExpression} 的静态初始化互相牵扯。</p>
+     * 对象形式 {@code {"function": …, "arguments": […]}}，写不出来的写法由 {@link IExpression#CODEC} 兜底。
      */
-    public static final Codec<FunctionExpression> CODEC = Codec.lazyInitialized(
-        () -> Codec.either(ConstantFunction.CODEC, FunctionExpression.FLAT_OR_OBJECT_CODEC).xmap(
-            either -> either.map(value -> ConstantFunction.of(value).call(), call -> call),
-            call -> ConstantFunction.value(call)
-                    .map(Either::<Double, FunctionExpression>left)
-                    .orElseGet(() -> Either.right(call))
-        )
-    );
-    /**
-     * flat 文本与对象形式的二选一：能写成文本就写文本，否则退回对象。
-     */
-    private static final Codec<FunctionExpression> FLAT_OR_OBJECT_CODEC = Codec.xor(
-        FlatExpressionParser.codec(),
-        FunctionExpression.MAP_CODEC.codec()
-    ).xmap(
-        either -> either.map(call -> call, call -> call),
-        Either::left
-    );
+    public static final Codec<FunctionExpression> CODEC = Codec.lazyInitialized(FunctionExpression.MAP_CODEC::codec);
     public static final StreamCodec<RegistryFriendlyByteBuf, FunctionExpression> STREAM_CODEC = StreamCodec.composite(
         IFunction.HOLDER_STREAM_CODEC,
         FunctionExpression::function,
@@ -92,8 +67,7 @@ public record FunctionExpression(Holder<IFunction> function, List<IExpression> a
     }
 
     @Override
-    public double evaluate(NumberArguments inputs) {
-        List<Double> evaluated = this.arguments.stream().map(argument -> argument.evaluate(inputs)).toList();
-        return this.function.value().apply(evaluated, inputs);
-    }
-}
+    public double evaluate(Arguments inputs) {
+        // 实参交给函数自己求值：普通函数在调用点上下文里求，lambda 则换成自己的形参绑定再求函数体
+        return this.function.value().apply(this.arguments, inputs);
+    }}

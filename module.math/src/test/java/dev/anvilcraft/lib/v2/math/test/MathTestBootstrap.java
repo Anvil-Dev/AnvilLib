@@ -1,0 +1,244 @@
+package dev.anvilcraft.lib.v2.math.test;
+
+import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.Lifecycle;
+import dev.anvilcraft.lib.v2.math.AnvilLibMath;
+import dev.anvilcraft.lib.v2.math.expression.Arguments;
+import dev.anvilcraft.lib.v2.math.expression.FlatExpressionParser;
+import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
+import dev.anvilcraft.lib.v2.math.expression.IExpression;
+import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.CustomFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
+import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
+import dev.anvilcraft.lib.v2.math.init.LibRegistries;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.MappedRegistry;
+import net.minecraft.core.RegistrationInfo;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.WritableRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.ResourceKey;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
+
+/**
+ * 测试用的最小运行环境：不启动游戏，只准备解析与求值表达式所需的注册表。
+ *
+ * <p>表达式只依赖函数注册表，所以这里手工建一个装着全部内建函数的注册表，再用它包一个
+ * {@link RegistryOps}。{@code LibRegistries.FUNCTION_TYPE} 平时由 mod 加载时填充，测试里也要先
+ * 补上条目，否则 {@link IFunction} 的类型分发拿不到任何类型。</p>
+ */
+public final class MathTestBootstrap {
+    private static boolean initialized;
+    private static @Nullable MappedRegistry<IFunction> functions;
+
+    private MathTestBootstrap() {
+    }
+
+    /**
+     * 准备注册表，重复调用只生效一次。
+     */
+    public static synchronized void initialize() {
+        if (MathTestBootstrap.initialized) return;
+        MathTestBootstrap.bootstrapMinecraft();
+        MathTestBootstrap.registerTypes();
+        MathTestBootstrap.initialized = true;
+    }
+
+    /**
+     * 共享的函数注册表，装着全部内建函数。
+     */
+    public static synchronized MappedRegistry<IFunction> functions() {
+        MathTestBootstrap.initialize();
+        if (MathTestBootstrap.functions == null) {
+            MappedRegistry<IFunction> registry = new MappedRegistry<>(LibRegistries.FUNCTION_KEY, Lifecycle.stable());
+            for (LibBuiltInFunctions builtin : LibBuiltInFunctions.values()) {
+                Registry.register(registry, builtin.id(), builtin);
+            }
+            MathTestBootstrap.functions = registry;
+        }
+        return MathTestBootstrap.functions;
+    }
+
+    /**
+     * 函数注册表的查询入口。
+     */
+    public static HolderGetter<IFunction> functionGetter() {
+        return MathTestBootstrap.functions().asLookup();
+    }
+
+    /**
+     * 能读到函数注册表的动态操作，flat 文本的解析与回写都需要它。
+     */
+    public static RegistryOps<JsonElement> ops() {
+        RegistryAccess.Frozen delegate = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
+        MappedRegistry<IFunction> registry = MathTestBootstrap.functions();
+        RegistryAccess.Frozen access = new RegistryAccess.Frozen() {
+            @Override
+            public <E> Optional<Registry<E>> registry(ResourceKey<? extends Registry<? extends E>> key) {
+                if (key.equals(LibRegistries.FUNCTION_KEY)) {
+                    @SuppressWarnings("unchecked")
+                    Registry<E> cast = (Registry<E>) registry;
+                    return Optional.of(cast);
+                }
+                return delegate.registry(key);
+            }
+
+            @Override
+            public <E> Optional<HolderLookup.RegistryLookup<E>> lookup(ResourceKey<? extends Registry<? extends E>> key) {
+                if (key.equals(LibRegistries.FUNCTION_KEY)) {
+                    @SuppressWarnings("unchecked")
+                    HolderLookup.RegistryLookup<E> cast = (HolderLookup.RegistryLookup<E>) registry.asLookup();
+                    return Optional.of(cast);
+                }
+                return delegate.lookup(key);
+            }
+
+            @Override
+            public Stream<RegistryEntry<?>> registries() {
+                return Stream.concat(
+                    delegate.registries(),
+                    Stream.of(new RegistryEntry<>(LibRegistries.FUNCTION_KEY, registry))
+                );
+            }
+        };
+        return RegistryOps.create(JsonOps.INSTANCE, access);
+    }
+
+    /**
+     * 把一个函数注册进测试用的函数注册表，返回它的引用。
+     */
+    public static Holder.Reference<IFunction> registerFunction(String name, IFunction function) {
+        return MathTestBootstrap.functions().register(
+            ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of(name)),
+            function,
+            RegistrationInfo.BUILT_IN
+        );
+    }
+
+    /**
+     * 替换注册表里已有的函数，用于构造自引用与互相引用。
+     */
+    public static void replaceFunction(String name, IFunction function) {
+        MathTestBootstrap.registerFunction(name, function);
+    }
+
+    /**
+     * 把表达式编码成 flat 文本，写不出来时返回 {@code null}。
+     */
+    public static @Nullable String writeFlat(IExpression expression) {
+        // 表达式树里按名字取值的实参不是函数调用，回写时单独走 flat 文本这一支
+        JsonElement element = expression instanceof FunctionExpression call
+            ? FlatExpressionParser.codec().encodeStart(MathTestBootstrap.ops(), call).result().orElse(null)
+            : IExpression.CODEC.encodeStart(MathTestBootstrap.ops(), expression).result().orElse(null);
+        if (element == null || !element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) return null;
+        return element.getAsString();
+    }
+
+    /**
+     * 解析 flat 文本并回写，用来断言规范化后的写法。
+     */
+    public static @Nullable String writeFlat(String source) {
+        return MathTestBootstrap.writeFlat(MathTestBootstrap.parse(source));
+    }
+
+    /**
+     * 解析 flat 文本并回写，整段文本也可以只是一个数字或 lambda。
+     */
+    public static @Nullable String writeFlatValue(String source) {
+        return MathTestBootstrap.writeFlat(MathTestBootstrap.parseValue(source));
+    }
+
+    /**
+     * 解析 flat 文本，整段文本也可以只是一个数字或 lambda。
+     */
+    public static IExpression parseValue(String source) {
+        return FlatExpressionParser.parseValue(source, MathTestBootstrap.functionGetter());
+    }
+
+    /**
+     * 把表达式编码成完整形式（数字、flat 文本或对象）。
+     */
+    public static @Nullable JsonElement encode(IExpression expression) {
+        return IExpression.CODEC.encodeStart(MathTestBootstrap.ops(), expression).result().orElse(null);
+    }
+
+    /**
+     * 解析 flat 文本，要求整段是一次函数调用。
+     */
+    public static FunctionExpression parse(String source) {
+        IExpression expression = MathTestBootstrap.parseValue(source);
+        if (!(expression instanceof FunctionExpression call)) {
+            throw new IllegalArgumentException("Not a function expression: " + source);
+        }
+        return call;
+    }
+
+    /**
+     * 用若干常量实参直接调用一个 lambda。
+     */
+    public static double callLambda(IExpression function, double... values) {
+        return MathTestBootstrap.callLambda(function, MathTestBootstrap.constants(values), Arguments.of());
+    }
+
+    /**
+     * 用给定的实参表达式在给定上下文里直接调用一个 lambda。
+     */
+    public static double callLambda(IExpression function, List<IExpression> arguments, Arguments inputs) {
+        if (!(function instanceof FunctionExpression expression)
+            || !(expression.function().value() instanceof LambdaFunction lambda)) {
+            throw new IllegalArgumentException("Not a lambda: " + function);
+        }
+        return lambda.apply(arguments, inputs);
+    }
+
+    /**
+     * 把若干个数字包成常量实参，用于直接调用函数的场合。
+     */
+    public static List<IExpression> constants(double... values) {
+        List<IExpression> arguments = new ArrayList<>(values.length);
+        for (double value : values) {
+            arguments.add(ConstantFunction.of(value).call());
+        }
+        return arguments;
+    }
+
+    private static void bootstrapMinecraft() {
+        try {
+            java.lang.reflect.Field field = Class.forName("net.minecraft.server.Bootstrap")
+                .getDeclaredField("isBootstrapped");
+            field.setAccessible(true);
+            field.setBoolean(null, true);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Cannot bootstrap Minecraft for tests", exception);
+        }
+    }
+
+    private static void registerTypes() {
+        MappedRegistry<IFunction.Type<?>> types = new MappedRegistry<>(LibRegistries.FUNCTION_TYPE_KEY, Lifecycle.stable());
+        Registry.register(types, AnvilLibMath.of("input"), new InputFunction.Type());
+        Registry.register(types, AnvilLibMath.of("named"), new NamedFunction.Type());
+        Registry.register(types, AnvilLibMath.of("constant"), new ConstantFunction.Type());
+        Registry.register(types, AnvilLibMath.of("custom"), new CustomFunction.Type());
+        Registry.register(types, AnvilLibMath.of("lambda"), new LambdaFunction.Type());
+        Registry.register(types, AnvilLibMath.of("builtin"), new LibBuiltInFunctions.Type());
+        WritableRegistry<IFunction.Type<?>> target = (WritableRegistry<IFunction.Type<?>>) LibRegistries.FUNCTION_TYPE;
+        for (IFunction.Type<?> type : types) {
+            Registry.register(target, Objects.requireNonNull(types.getKey(type)), type);
+        }
+    }
+}

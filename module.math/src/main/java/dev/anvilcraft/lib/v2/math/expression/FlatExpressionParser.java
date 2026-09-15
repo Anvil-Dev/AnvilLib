@@ -4,26 +4,29 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
+import dev.anvilcraft.lib.v2.math.AnvilLibMath;
+import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.Parameter;
+import dev.anvilcraft.lib.v2.math.expression.function.Parameters;
+import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
+import dev.anvilcraft.lib.v2.math.init.LibRegistries;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 
-import dev.anvilcraft.lib.v2.math.AnvilLibMath;
-import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
-import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
-import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
-import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
-import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
-import dev.anvilcraft.lib.v2.math.init.LibRegistries;
-
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.WeakHashMap;
 import javax.annotation.Nullable;
 
 /**
@@ -34,20 +37,26 @@ import javax.annotation.Nullable;
  * {@code /} 或 {@code ÷}）、括号、一元正负号、隐式乘法（{@code 2x}、{@code 2(x+1)}）、乘方 {@code ^}，
  * 以及 {@code sqrt(x)}、{@code pow(x,2)}、{@code max(x,1)} 等函数调用。</p>
  *
- * <p>解析结果直接是 {@link FunctionExpression} 组成的树：四则运算解析为对应的二元内建函数调用，
- * {@code x} 与 {@code $(name)} 解析为 {@link InputFunction} 与 {@link NamedFunction} 的零参调用，
- * 数字与整段数字文本解析为 {@link ConstantFunction} 的零参调用。反向的文本化由
- * {@link FlatExpressionWriter} 负责。</p>
+ * <p>解析结果直接是 {@link IExpression} 组成的树：四则运算解析为对应的二元内建函数调用，
+ * {@code x} 解析为 {@link InputFunction} 的零参调用，{@code $(name)} 与 {@code $(name...)} 解析为
+ * {@link IExpression.Reference}，数字与整段数字文本解析为 {@link ConstantFunction} 的零参调用。
+ * 反向的文本化由 {@link FlatExpressionWriter} 负责。</p>
  *
- * <p>函数名一律先按注册名处理：不带命名空间的按 {@link AnvilLibMath#MAIN_ID} 补齐，然后去
- * {@link LibRegistries#FUNCTION_KEY} 里找，因此 {@code sqrt(x)} 与 {@code anvillib:sqrt(x)} 等价，
- * 数据包注册的函数可以直接写进文本。解析需要拿到函数注册表，所以只接受 {@link RegistryOps}。</p>
+ * <p>函数名一律先按注册名处理：不带命名空间的按 {@link AnvilLibMath#MAIN_ID} 补齐。{@code anvillib}
+ * 命名空间下的名字按路径匹配内建函数，因此 {@code sqrt(x)} 与 {@code anvillib:sqrt(x)} 等价，参数个数
+ * 在解析期就校验；其它命名空间先认数据包注册表，注册不到时退回同名内建函数。解析需要拿到函数注册表，
+ * 所以只接受 {@link RegistryOps}。</p>
  */
 public final class FlatExpressionParser {
     /**
-     * 解析结果按函数注册表分组缓存。注册表实例在每次数据包重载时更换，因此换实例即等于换缓存。
+     * 解析结果按函数注册表分组缓存。
+     *
+     * <p>注册表实例在每次数据包重载时更换，键用弱引用，换实例后旧缓存能被回收；键上直接带锁，
+     * 避免用全局锁把互不相干的注册表也串起来。</p>
      */
-    private static final Map<HolderGetter<IFunction>, Map<String, IExpression>> CACHE = new ConcurrentHashMap<>();
+    private static final Map<HolderGetter<IFunction>, Map<String, IExpression>> CACHE = Collections.synchronizedMap(
+        new WeakHashMap<>()
+    );
 
     private final String source;
     private final HolderGetter<IFunction> functions;
@@ -59,14 +68,14 @@ public final class FlatExpressionParser {
     }
 
     /**
-     * flat 文本的编解码：写成一段文本，读回来是解析后的调用树。
+     * flat 文本的编解码：写成一段文本，读回来是解析后的表达式树。
      *
      * <p>解析与回写都要查 {@link LibRegistries#FUNCTION_KEY}，因此只接受 {@link RegistryOps}。</p>
      */
-    public static Codec<FunctionExpression> codec() {
+    public static Codec<IExpression> codec() {
         return new Codec<>() {
             @Override
-            public <T> DataResult<Pair<FunctionExpression, T>> decode(DynamicOps<T> ops, T input) {
+            public <T> DataResult<Pair<IExpression, T>> decode(DynamicOps<T> ops, T input) {
                 DataResult<String> source = Codec.STRING.parse(ops, input);
                 if (source.result().isEmpty()) return DataResult.error(() -> "Not a flat expression: " + input);
                 HolderGetter<IFunction> functions = FlatExpressionParser.functionGetter(ops);
@@ -81,7 +90,7 @@ public final class FlatExpressionParser {
             }
 
             @Override
-            public <T> DataResult<T> encode(FunctionExpression input, DynamicOps<T> ops, T prefix) {
+            public <T> DataResult<T> encode(IExpression input, DynamicOps<T> ops, T prefix) {
                 HolderGetter<IFunction> functions = FlatExpressionParser.functionGetter(ops);
                 if (functions == null) {
                     return DataResult.error(
@@ -97,27 +106,24 @@ public final class FlatExpressionParser {
     }
 
     /**
-     * 解析 flat 表达式，要求整段文本是一次函数调用。
-     *
-     * @param source    flat 表达式文本
-     * @param functions 函数注册表，用于解析按名引用的函数
-     * @throws IllegalArgumentException 表达式不合法时抛出
-     */
-    public static FunctionExpression parse(String source, HolderGetter<IFunction> functions) {
-        return (FunctionExpression) FlatExpressionParser.parseValue(source, functions);
-    }
-
-    /**
-     * 解析 flat 表达式，整段文本也可以只是一个数字。
+     * 解析 flat 表达式，整段文本也可以只是一个数字或一次按名字取值。
      *
      * @param source    flat 表达式文本
      * @param functions 函数注册表，用于解析按名引用的函数
      * @throws IllegalArgumentException 表达式不合法时抛出
      */
     public static IExpression parseValue(String source, HolderGetter<IFunction> functions) {
-        return FlatExpressionParser.CACHE
-            .computeIfAbsent(functions, key -> new ConcurrentHashMap<>())
-            .computeIfAbsent(source, key -> new FlatExpressionParser(key, functions).parseWhole());
+        Map<String, IExpression> cache = FlatExpressionParser.CACHE.computeIfAbsent(
+            functions,
+            key -> Collections.synchronizedMap(new LinkedHashMap<>())
+        );
+        synchronized (cache) {
+            IExpression cached = cache.get(source);
+            if (cached != null) return cached;
+            IExpression parsed = new FlatExpressionParser(source, functions).parseWhole();
+            cache.put(source, parsed);
+            return parsed;
+        }
     }
 
     /**
@@ -143,19 +149,96 @@ public final class FlatExpressionParser {
         return id.getNamespace().equals(AnvilLibMath.MAIN_ID) ? id.getPath() : id.toString();
     }
 
-    private static DataResult<FunctionExpression> parseResult(String source, HolderGetter<IFunction> functions) {
+    private static DataResult<IExpression> parseResult(String source, HolderGetter<IFunction> functions) {
         try {
-            return DataResult.success(FlatExpressionParser.parse(source, functions));
+            return DataResult.success(FlatExpressionParser.parseValue(source, functions));
         } catch (RuntimeException exception) {
             return DataResult.error(() -> "Invalid expression: " + exception.getMessage());
         }
     }
 
     private IExpression parseWhole() {
-        IExpression expression = this.parseAdditive();
+        IExpression expression = this.parseLambda();
         this.skipWhitespace();
         if (!this.atEnd()) throw this.error("unexpected character '" + this.peek() + "'");
         return expression;
+    }
+
+    /**
+     * lambda：{@code x -> $(x)*2}、{@code (a, b) -> $(a)+$(b)}、变参写 {@code x... -> ...}。
+     *
+     * <p>先看参数列表后面有没有 {@code ->}，没有就交回普通表达式；只有参数列表本身合法时才认为是在写
+     * lambda，这样 {@code a - b} 之类不会被误判。</p>
+     */
+    private IExpression parseLambda() {
+        this.skipWhitespace();
+        int snapshot = this.position;
+        List<String> parameters;
+        try {
+            parameters = this.parseLambdaParameters();
+        } catch (IllegalArgumentException exception) {
+            this.position = snapshot;
+            return this.parseAdditive();
+        }
+        if (parameters == null) {
+            this.position = snapshot;
+            return this.parseAdditive();
+        }
+        IExpression body = this.parseLambda();
+        return FunctionExpression.of(LambdaFunction.of(parameters, body));
+    }
+
+    /**
+     * 读 lambda 的参数列表，当前位置不是 lambda 时返回 {@code null} 并保持位置不变。
+     */
+    @Nullable
+    private List<String> parseLambdaParameters() {
+        this.skipWhitespace();
+        if (this.atEnd()) return null;
+        if (this.peek() == '(') {
+            // lambda 的参数列表不能在括号里再分组，所以右括号就是列表的结束
+            int start = this.position + 1;
+            int search = this.position;
+            while (search < this.source.length() && this.source.charAt(search) != ')') {
+                search++;
+            }
+            if (search >= this.source.length()) return null;
+            this.position = search + 1;
+            if (!this.match('-') || !this.match('>')) return null;
+            return FlatExpressionParser.splitParameters(this.source.substring(start, search), this);
+        }
+        if (!isIdentifierStart(this.peek())) return null;
+        int start = this.position;
+        while (!this.atEnd() && (isIdentifierPart(this.peek()) || this.peek() == '.')) {
+            this.position++;
+        }
+        int end = this.position;
+        if (!this.match('-') || !this.match('>')) return null;
+        return FlatExpressionParser.splitParameters(this.source.substring(start, end), this);
+    }
+
+    /**
+     * 把 lambda 的参数列表文本按逗号切开，顺带校验每个名字。
+     */
+    private static List<String> splitParameters(String source, FlatExpressionParser parser) {
+        List<String> names = new ArrayList<>();
+        for (String piece : source.split(",", -1)) {
+            String name = piece.trim();
+            if (name.isEmpty()) throw parser.error("expected a lambda parameter name");
+            String base = name.endsWith(Parameter.VARIADIC_SUFFIX)
+                ? name.substring(0, name.length() - Parameter.VARIADIC_SUFFIX.length())
+                : name;
+            for (int index = 0; index < base.length(); index++) {
+                char current = base.charAt(index);
+                if (index == 0 ? !isIdentifierStart(current) : !isIdentifierPart(current)) {
+                    throw parser.error("invalid lambda parameter name '" + name + "'");
+                }
+            }
+            names.add(name);
+        }
+        // 参数名重复或出现两个变参时直接报错，不留到调用时才发现
+        Parameters.parse(names);
+        return names;
     }
 
     private IExpression parseAdditive() {
@@ -190,6 +273,11 @@ public final class FlatExpressionParser {
     }
 
     private IExpression parseUnary() {
+        // 符号紧跟数字时算数字的一部分，这样 -2 与 -5.0E-4 都是常量字面量，回写结果能原样读回。
+        // 后面接 ^ 时不算：-2^2 仍按一元负号优先于乘方处理，写成 (-2)^2 才是负底数
+        if (this.signedNumberLiteralAhead()) {
+            return this.parseNumber();
+        }
         if (this.match('-')) {
             return this.call("subtract", ConstantFunction.of(0).call(), this.parseUnary());
         }
@@ -211,16 +299,66 @@ public final class FlatExpressionParser {
         char current = this.peek();
         if (current == '(') {
             this.position++;
-            IExpression expression = this.parseAdditive();
+            IExpression expression = this.parseLambda();
             if (!this.match(')')) throw this.error("expected ')'");
             return expression;
         }
         if (current == '$') return this.parseNamed();
         if (isDigit(current) || current == '.') return this.parseNumber();
+        // 符号后面直接跟数字时算数字的一部分（-2、+1.5），否则走 parseUnary 的一元正负号。
+        // 回写极小的负数会写出 -5.0E-4 这种字面量，必须能原样读回
+        if ((current == '-' || current == '+') && this.signedNumberAhead()) return this.parseNumber();
         if (isIdentifierStart(current)) return this.parseIdentifier();
         throw this.error("unexpected character '" + current + "'");
     }
 
+    /**
+     * 当前位置是 {@code -} 或 {@code +}，后面是否紧跟数字。
+     */
+    private boolean signedNumberAhead() {
+        if (this.position + 1 >= this.source.length()) return false;
+        char next = this.source.charAt(this.position + 1);
+        return isDigit(next) || next == '.';
+    }
+
+    /**
+     * 当前位置开始是否是一个带符号的数字字面量，并且后面不是 {@code ^}。
+     *
+     * <p>{@code -2} 读成常量 -2；{@code -2^2} 留给一元负号，按 {@code -(2^2)} 处理。</p>
+     */
+    private boolean signedNumberLiteralAhead() {
+        if (this.atEnd() || this.source.charAt(this.position) != '-') return false;
+        if (!this.signedNumberAhead()) return false;
+        int probe = this.position + 1;
+        while (probe < this.source.length() && isDigit(this.source.charAt(probe))) {
+            probe++;
+        }
+        if (probe < this.source.length() && this.source.charAt(probe) == '.') {
+            probe++;
+            while (probe < this.source.length() && isDigit(this.source.charAt(probe))) {
+                probe++;
+            }
+        }
+        if (probe < this.source.length() && (this.source.charAt(probe) == 'e' || this.source.charAt(probe) == 'E')) {
+            int exponent = probe + 1;
+            if (exponent < this.source.length() && (this.source.charAt(exponent) == '+' || this.source.charAt(exponent) == '-')) {
+                exponent++;
+            }
+            int digits = exponent;
+            while (digits < this.source.length() && isDigit(this.source.charAt(digits))) {
+                digits++;
+            }
+            if (digits > exponent) probe = digits;
+        }
+        while (probe < this.source.length() && Character.isWhitespace(this.source.charAt(probe))) {
+            probe++;
+        }
+        return probe >= this.source.length() || this.source.charAt(probe) != '^';
+    }
+
+    /**
+     * 读 {@code $(name)}，以及取整个变参列表的 {@code $(name...)}。
+     */
     private IExpression parseNamed() {
         this.position++;
         if (!this.match('(')) throw this.error("expected '(' after '$'");
@@ -232,11 +370,21 @@ public final class FlatExpressionParser {
         String name = this.source.substring(start, this.position).trim();
         this.position++;
         if (name.isEmpty()) throw this.error("expected a name between '$(' and ')'");
-        return NamedFunction.call(name);
+        // $(name...) 取整份列表，与 $(name) 是不同的节点，由 IExpression.ref 按 ... 后缀区分
+        return IExpression.ref(name);
     }
 
+    /**
+     * 读一个数字，支持符号与 {@code 1.5E-4} 这样的指数记法。
+     *
+     * <p>回写用 {@link Double#toString} 输出极值时给出的正是指数记法，负常量与负零也写成带符号的
+     * 字面量，两边必须对称，否则 {@code sqrt(0.0001)} 回写成 {@code sqrt(1.0E-4)} 之后就再也读不回来了。</p>
+     */
     private IExpression parseNumber() {
         final int start = this.position;
+        if (!this.atEnd() && (this.peek() == '-' || this.peek() == '+')) {
+            this.position++;
+        }
         while (!this.atEnd() && isDigit(this.peek())) {
             this.position++;
         }
@@ -245,11 +393,26 @@ public final class FlatExpressionParser {
                 this.position++;
             } while (!this.atEnd() && isDigit(this.peek()));
         }
+        int mantissaEnd = this.position;
+        if (!this.atEnd() && (this.peek() == 'e' || this.peek() == 'E')) {
+            this.position++;
+            if (!this.atEnd() && (this.peek() == '+' || this.peek() == '-')) {
+                this.position++;
+            }
+            int exponentStart = this.position;
+            while (!this.atEnd() && isDigit(this.peek())) {
+                this.position++;
+            }
+            // 指数过长时 Double.parseDouble 会溢出，长到没有意义时不必再收进数字里
+            boolean valid = this.position > exponentStart && this.position - exponentStart <= 8;
+            if (!valid) this.position = mantissaEnd;
+        }
         String text = this.source.substring(start, this.position);
         try {
             return ConstantFunction.of(Double.parseDouble(text)).call();
-        } catch (NumberFormatException exception) {
-            throw this.error("invalid number '" + text + "'");
+        } catch (NumberFormatException | ArithmeticException exception) {
+            this.position = start;
+            throw this.error("invalid number '" + this.source.substring(start, mantissaEnd) + "'");
         }
     }
 
@@ -266,18 +429,30 @@ public final class FlatExpressionParser {
         List<IExpression> arguments = new ArrayList<>();
         if (!this.match(')')) {
             while (true) {
-                arguments.add(this.parseAdditive());
+                arguments.add(this.parseLambda());
                 if (this.match(',')) continue;
                 if (this.match(')')) break;
                 throw this.error("expected ',' or ')'");
             }
         }
-        LibBuiltInFunctions builtin = LibBuiltInFunctions.byName(FlatExpressionParser.withDefaultNamespace(lower).getPath());
-        if (builtin != null) {
-            // 内建函数在解析期就校验参数个数，报错比求值时才发现更靠前
-            return builtin.callChecked(arguments).getOrThrow(this::error);
+        // anvillib 命名空间（含省略命名空间的写法）里的名字按路径匹配内建函数，这样 sqrt(x) 与
+        // anvillib:sqrt(x) 等价，参数个数也在解析期就校验。
+        ResourceLocation id = FlatExpressionParser.withDefaultNamespace(lower);
+        if (id.getNamespace().equals(AnvilLibMath.MAIN_ID)) {
+            LibBuiltInFunctions builtin = LibBuiltInFunctions.byName(id.getPath());
+            if (builtin != null) return builtin.callChecked(arguments).getOrThrow(this::error);
+            return FunctionExpression.of(this.function(lower, name), arguments.toArray(IExpression[]::new));
         }
-        return FunctionExpression.of(this.function(lower, name), arguments.toArray(IExpression[]::new));
+        // 其它命名空间先认注册表，注册不到时再退回同名内建函数，
+        // 这样 mymod:max 既可以是数据包函数，也可以只是内建 max 的另一种写法
+        if (this.functions.get(ResourceKey.create(LibRegistries.FUNCTION_KEY, id)).isPresent()) {
+            return FunctionExpression.of(this.function(lower, name), arguments.toArray(IExpression[]::new));
+        }
+        LibBuiltInFunctions builtin = LibBuiltInFunctions.byName(id.getPath());
+        if (builtin == null) {
+            throw this.error("unknown function '" + name + "'");
+        }
+        return builtin.callChecked(arguments).getOrThrow(this::error);
     }
 
     /**

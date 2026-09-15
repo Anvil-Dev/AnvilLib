@@ -3,13 +3,13 @@ package dev.anvilcraft.lib.v2.math.expression.function;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.v2.math.expression.Arguments;
+import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
+import dev.anvilcraft.lib.v2.math.expression.IExpression;
+import dev.anvilcraft.lib.v2.math.init.LibFunctionTypes;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-
-import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
-import dev.anvilcraft.lib.v2.math.expression.NumberArguments;
-import dev.anvilcraft.lib.v2.math.init.LibFunctionTypes;
 
 import java.util.List;
 import java.util.Optional;
@@ -62,7 +62,7 @@ public record ConstantFunction(double value) implements IFunction {
     }
 
     @Override
-    public double apply(List<Double> arguments, NumberArguments inputs) {
+    public double apply(List<IExpression> arguments, Arguments inputs) {
         return this.value;
     }
 
