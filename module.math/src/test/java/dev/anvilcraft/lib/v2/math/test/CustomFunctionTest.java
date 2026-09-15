@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -343,5 +344,117 @@ class CustomFunctionTest {
             IllegalArgumentException.class,
             () -> MathTestBootstrap.parseValue("onefixed()")
         );
+    }
+
+    @Test
+    @DisplayName("$(x...) 按区间参与解析期校验，不再被记成 1 个实参")
+    void spreadCountsAsARangeNotOne() {
+        MathTestBootstrap.registerFunction("twofixed", CustomFunction.named(
+            List.of("a", "b"),
+            NamedFunction.call("a")
+        ));
+        // $(x...) 是整份列表，bind 只肯把它交给变参形参，固定形参位一个都接不住。
+        // 所以没有变参的函数无论给几个实参都不合法，解析期就该报出来
+        for (String source : new String[]{"twofixed($(x...))", "twofixed($(x...),1)", "twofixed($(x...),0)"}) {
+            IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> MathTestBootstrap.parseValue(source),
+                () -> "固定形参位接不住列表，解析期就该拒绝: " + source
+            );
+            assertTrue(
+                error.getMessage().contains("Expected 2 arguments"),
+                () -> "应当是实参个数不符的报错: " + error.getMessage()
+            );
+        }
+
+        // 内建函数与数据包函数报错口径一致：都按「非铺开实参个数 + 铺开算 0 个」表述
+        IllegalArgumentException builtin = assertThrows(
+            IllegalArgumentException.class,
+            () -> MathTestBootstrap.parseValue("sqrt($(x...))")
+        );
+        assertTrue(
+            builtin.getMessage().startsWith("function 'anvillib:sqrt' Expected 1 arguments but got 0"),
+            () -> "内建函数也应当按同一条规则报错: " + builtin.getMessage()
+        );
+        // 有变参形参时列表长度未知，解析期放行，长度不合适由求值期按真实长度判定
+        MathTestBootstrap.registerFunction("twofixedsum", CustomFunction.of(
+            List.of("a", "b", "rest..."),
+            NamedFunction.call("a")
+        ));
+        assertNotNull(MathTestBootstrap.parseValue("twofixedsum($(x...),1,2)"));
+    }
+
+    @Test
+    @DisplayName("名字没绑定成列表时点名报错，而不是看不懂的个数不符")
+    void unboundSpreadNameIsReportedClearly() {
+        IllegalArgumentException error = assertThrows(
+            IllegalArgumentException.class,
+            () -> MathTestBootstrap.parseValue("min($(unbound...))").evaluate(Arguments.of())
+        );
+        assertTrue(
+            error.getMessage().contains("is not bound to a list"),
+            () -> "应当点明名字没绑定: " + error.getMessage()
+        );
+
+        // 名字绑没绑成列表与「绑成空列表」不是一回事：前者是写错名字，后者是实参个数不够，
+        // 报错要能分辨出来
+        IllegalArgumentException empty = assertThrows(
+            IllegalArgumentException.class,
+            () -> MathTestBootstrap.parseValue("min($(empty...))").evaluate(
+                Arguments.of(List.of(), List.of("empty"), List.of(new Arguments.Value.Many(List.of())))
+            )
+        );
+        assertTrue(
+            empty.getMessage().contains("Expected at least 1"),
+            () -> "空列表应当是实参个数不够的报错: " + empty.getMessage()
+        );
+    }
+
+    @Test
+    @DisplayName("$(name) 载荷写不出文本时退回对象形式")
+    void unwritableReferenceNamesFallBackToObject() {
+        // $(x...) 的载荷是「取一个数字」，而解析器看到 "..." 后缀会读成 Spread（整份列表），
+        // 语义变了、求值时还会抛异常；带空格或 ')' 的名字则直接读不回来。两种都必须退回对象形式。
+        // 名字是 x... 的具名引用只能从对象形式构造：flat 文本里的 $(x...) 本来就是 Spread
+        List<IExpression> unwritable = new ArrayList<>();
+        unwritable.add(FunctionExpression.of(NamedFunction.of("x...")));
+        for (String name : new String[]{"a)b", "a b", "x."}) {
+            unwritable.add(FunctionExpression.of(NamedFunction.of(name)));
+        }
+        for (IExpression bare : unwritable) {
+            assertNull(
+                MathTestBootstrap.writeFlat(bare),
+                () -> bare + " 不应当写得出 flat 文本"
+            );
+            // 包一层 sqrt：对象形式里也带上这个引用，才测得出它有没有被内联成 flat 文本
+            FunctionExpression call = LibBuiltInFunctions.SQRT.call(bare);
+            assertNull(
+                MathTestBootstrap.writeFlat(call),
+                () -> "含 " + bare + " 的调用不应当写得出 flat 文本"
+            );
+            MathFlatAssertions.assertObjectRoundTrip(call);
+        }
+
+        // $(x...) 本身是 Spread，写得出也读得回，不能跟上面那种混为一谈
+        IExpression spread = MathTestBootstrap.parseNamed("x...");
+        assertEquals("$(x...)", MathTestBootstrap.writeFlat(spread));
+
+        // 正常名字照旧写得出来，并且必须读回同一棵树
+        for (String name : new String[]{"cost", "x0", "a.b", "mymod:value"}) {
+            IExpression bare = MathTestBootstrap.parseNamed(name);
+            assertEquals("$(" + name + ")", MathTestBootstrap.writeFlat(bare));
+            MathFlatAssertions.assertWrittenTextReadsBack(LibBuiltInFunctions.SQRT.call(bare));
+        }
+    }
+
+    @Test
+    @DisplayName("零参 lambda 退回对象形式")
+    void zeroParameterLambdaFallsBackToObject() {
+        // 文本里空参数串会被读成「缺参数名」，而对象形式的 parameters: [] 是合法的
+        FunctionExpression lambda = FunctionExpression.of(
+            LambdaFunction.of(List.of(), ConstantFunction.of(1).call())
+        );
+        assertNull(MathTestBootstrap.writeFlat(lambda));
+        MathFlatAssertions.assertObjectRoundTrip(lambda);
     }
 }

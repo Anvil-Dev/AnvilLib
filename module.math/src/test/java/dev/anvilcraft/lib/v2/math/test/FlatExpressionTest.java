@@ -1,10 +1,16 @@
 package dev.anvilcraft.lib.v2.math.test;
 
+import dev.anvilcraft.lib.v2.math.AnvilLibMath;
 import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
 import dev.anvilcraft.lib.v2.math.expression.IExpression;
 import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
+import dev.anvilcraft.lib.v2.math.init.LibRegistries;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -117,9 +123,47 @@ class FlatExpressionTest {
     }
 
     @Test
+    @DisplayName("并置不会被指数记法吃掉")
+    void juxtapositionAvoidsExponentNotation() {
+        // 数字后面的 e/E 会被 parseNumber 当成指数：2*e1(x) 写成 2e1(x) 会读成 multiply(20, x)，
+        // 值静默改变且不报错。这类名字是合法注册名，所以并置必须实测能读回同一棵树
+        MathFlatAssertions.registerExponentNames();
+        for (String name : new String[]{"e1", "e2", "e1abc", "e12x"}) {
+            Holder<IFunction> holder = MathTestBootstrap
+                .functions()
+                .getHolderOrThrow(ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of(name)));
+            FunctionExpression tree = LibBuiltInFunctions.MULTIPLY.call(
+                constant(2.0),
+                FunctionExpression.of(holder, NamedFunction.call("x"))
+            );
+            assertEquals("2*" + name + "($(x))", MathTestBootstrap.writeFlat(tree));
+            // 关键是必须读回同一棵树，而不是只看文本
+            MathFlatAssertions.assertWrittenTextReadsBack(tree);
+        }
+
+        // 不受影响的并置照旧省掉乘号：右边的名字引用写成 $(x) 时只能显式乘
+        // （$(...) 不是标识符开头，并置会读成别的意思），括号操作数则可以并置
+        assertEquals("2*$(x)", MathTestBootstrap.writeFlat(LibBuiltInFunctions.MULTIPLY.call(
+            constant(2.0),
+            NamedFunction.call("x")
+        )));
+        assertEquals("2x", MathTestBootstrap.writeFlat(LibBuiltInFunctions.MULTIPLY.call(
+            constant(2.0),
+            InputFunction.call(0)
+        )));
+        assertEquals("2($(x)+1)", MathTestBootstrap.writeFlat(LibBuiltInFunctions.MULTIPLY.call(
+            constant(2.0),
+            LibBuiltInFunctions.ADD.call(NamedFunction.call("x"), constant(1.0))
+        )));
+        assertEquals("2(x+1)", MathTestBootstrap.writeFlat(LibBuiltInFunctions.MULTIPLY.call(
+            constant(2.0),
+            LibBuiltInFunctions.ADD.call(InputFunction.call(0), constant(1.0))
+        )));
+    }
+
+    @Test
     @DisplayName("溢出成无穷的字面量在解析期就被拒绝")
-    void nonFiniteLiteralRejected() {
-        // 回写侧写不出非有限值，解析侧再收下它就成了「读得进来写不回去」
+    void nonFiniteLiteralRejected() {        // 回写侧写不出非有限值，解析侧再收下它就成了「读得进来写不回去」
         assertThrows(IllegalArgumentException.class, () -> MathTestBootstrap.parseValue("1e99999"));
         assertThrows(IllegalArgumentException.class, () -> MathTestBootstrap.parseValue("1e309"));
         // 报错要指出整个字面量与它在文本里的结束位置，不能只截出尾数、也不能指回开头
@@ -260,6 +304,26 @@ class FlatExpressionTest {
                 ? MathFlatAssertions.randomVariadicLambda(random)
                 : MathFlatAssertions.randomTree(random, 2);
             MathFlatAssertions.assertStructuralRoundTrip(operator.call(left, right));
+        }
+    }
+
+    @Test
+    @DisplayName("并置乘法的随机操作数也往返不变")
+    void randomJuxtapositionTreesRoundTrip() {
+        // 并置是回写里唯一「拼出来还得再读一遍才知道对不对」的分支：数字与右侧文本直接拼接，
+        // 首字符检查挡不住 2e1(x) 被读成 multiply(20, x)。这里专门随机化乘法两侧，
+        // 左侧固定成字面量以走进并置分支
+        MathFlatAssertions.registerExponentNames();
+        Random random = new Random(20240609L);
+        int rounds = Integer.getInteger("math.fuzz.rounds", 20000);
+        for (int round = 0; round < rounds; round++) {
+            IExpression right = random.nextBoolean()
+                ? MathFlatAssertions.randomExponentCall(random)
+                : MathFlatAssertions.randomTree(random, 2);
+            MathFlatAssertions.assertFullRoundTrip(LibBuiltInFunctions.MULTIPLY.call(
+                ConstantFunction.of(2).call(),
+                right
+            ));
         }
     }
 

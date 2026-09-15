@@ -52,10 +52,16 @@ class LambdaTest {
         // lambda 不能出现在顶层：它没有实参可绑，只能被别的函数调用
         IExpression topLevel = MathTestBootstrap.parseValue("x -> $(x)");
         assertThrows(IllegalArgumentException.class, () -> topLevel.evaluate(Arguments.of(1.0, 2.0)));
-        // lambda 自己拆不开变参：它被调用时实参已经摊平，$(x...) 在体里只能喂给下一个变参函数
+        // lambda 自己拆不开变参：它被调用时实参已经摊平，$(x...) 在体里只能喂给下一个变参函数。
+        // add 没有变参形参，列表一个都喂不进去，所以这句在解析期就被拦下
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> MathTestBootstrap.parseValue("x... -> add($(x...),1)")
+        );
+        // 换成有变参的函数（min）就能解析，求值期是否成功取决于实参摊平后落在哪个形参位
         FunctionExpression nested = LibBuiltInFunctions.FOREACH.call(
             MathTestBootstrap.parseValue("min($(x...))"),
-            MathTestBootstrap.parseValue("x... -> add($(x...),1)")
+            MathTestBootstrap.parseValue("x... -> min($(x...),1)")
         );
         assertThrows(IllegalArgumentException.class, () -> nested.evaluate(Arguments.of()));
         // $(x...) 是列表，落在固定形参位上会被拦下；变参位接得住，于是摊成 min(3, 7)

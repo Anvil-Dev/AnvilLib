@@ -80,6 +80,16 @@ public record Arguments(List<Double> values, Map<String, Value> named) {
         return this.named.get(name) instanceof Value.Many(List<Double> values1) ? values1 : List.of();
     }
 
+    /**
+     * 该名字是不是绑定成了一份列表。
+     *
+     * <p>{@link #list(String)} 对「没绑定的名字」和「绑定成空列表的变参」都给空列表，二者的区别只在
+     * 这里看得出来：前者说明 {@code $(name...)} 写错了名字，后者是一次正常的空变参调用。</p>
+     */
+    public boolean isList(String name) {
+        return this.named.get(name) instanceof Value.Many;
+    }
+
     public double value(int index) {
         return index >= 0 && index < this.values.size() ? this.values.get(index) : 0;
     }

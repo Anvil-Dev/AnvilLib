@@ -15,6 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
@@ -30,18 +31,134 @@ import javax.annotation.Nullable;
  * 重新解析都会得到同一棵表达式树。</p>
  */
 final class FlatExpressionWriter {
+    /**
+     * 是否正在做「写出的文本读回来再写一遍」的自校验，用来避免自校验无限递归。
+     */
+    private static final ThreadLocal<Boolean> VERIFYING = ThreadLocal.withInitial(() -> false);
+
+    /**
+     * 是否正在做并置前的「读回来试试」预检。预检内部还要再写一次，再进去就无限递归了。
+     */
+    private static final ThreadLocal<Boolean> JUXTAPOSING = ThreadLocal.withInitial(() -> false);
     private FlatExpressionWriter() {
     }
 
     /**
      * 尝试把表达式回写成 flat 文本，最外层不补括号。
      *
+     * <p>写出结果要满足「再解析一次、再写一次得到的文本完全相同」（回写是规范形式），这里在返回前实测
+     * 一遍：同一棵树写两遍文本不同、或文本读不回来，都退回对象形式，而不是留下一份「读得回来但写不稳定」
+     * 的文本。</p>
+     *
      * @param expression 待回写的表达式
      * @param functions  函数注册表，用于取函数名
      * @return 文本，或表达式无法用 flat 文本表达时的空
      */
     static Optional<String> write(IExpression expression, HolderGetter<IFunction> functions) {
-        return FlatExpressionWriter.bare(expression, functions);
+        Optional<String> written = FlatExpressionWriter.bare(expression, functions);
+        if (written.isEmpty() || FlatExpressionWriter.VERIFYING.get()) return written;
+        FlatExpressionWriter.VERIFYING.set(true);
+        try {
+            IExpression reparsed = FlatExpressionParser.parseValue(written.get(), functions);
+            return written.get().equals(FlatExpressionWriter.bare(reparsed, functions).orElse(null))
+                   && FlatExpressionWriter.sameMeaning(expression, reparsed)
+                ? written
+                : Optional.empty();
+        } catch (RuntimeException exception) {
+            // 读不回来同样是「写不出」
+            return Optional.empty();
+        } finally {
+            FlatExpressionWriter.VERIFYING.set(false);
+        }
+    }
+
+    /**
+     * 两棵树是不是同一个意思。
+     *
+     * <p>写出的文本重新解析后，叶子的表示可能变了：{@link NamedFunction} 会读回
+     * {@link IExpression.Reference.Named}，两个都是「按名字取一个值」；名字恰好是 {@code x} 时还会读成
+     * {@link InputFunction}。三者不是同一种对象，但求值结果相同，所以自校验不能按对象相等去比，
+     * 否则本来稳定的文本会被判成不稳定、白白退回对象形式。</p>
+     */
+    private static boolean sameMeaning(IExpression left, IExpression right) {
+        if (left.equals(right)) return true;
+        IExpression resolvedLeft = FlatExpressionWriter.resolveReference(left);
+        IExpression resolvedRight = FlatExpressionWriter.resolveReference(right);
+        if (resolvedLeft != null || resolvedRight != null) {
+            return resolvedLeft != null
+                   && resolvedLeft.equals(resolvedRight);
+        }
+        if (!FlatExpressionWriter.isNonCall(left) || !FlatExpressionWriter.isNonCall(right)) return false;
+        FunctionExpression leftCall = (FunctionExpression) left;
+        FunctionExpression rightCall = (FunctionExpression) right;
+        // lambda 要单独比：它的 equals 把函数体也算进函数本身，而函数体的叶子表示可能变过
+        // （$(x) 读回来是 Reference.Named），所以只比形参声明，函数体另外递归比
+        if (leftCall.function().value() instanceof LambdaFunction leftLambda
+            && rightCall.function().value() instanceof LambdaFunction rightLambda) {
+            return leftLambda.declarations().equals(rightLambda.declarations())
+                   && FlatExpressionWriter.sameMeaning(leftLambda.body(), rightLambda.body());
+        }
+        if (!FlatExpressionWriter.sameFunction(leftCall, rightCall)) return false;
+        List<IExpression> leftArguments = leftCall.arguments();
+        List<IExpression> rightArguments = rightCall.arguments();
+        if (leftArguments.size() != rightArguments.size()) return false;
+        for (int index = 0; index < leftArguments.size(); index++) {
+            if (!FlatExpressionWriter.sameMeaning(leftArguments.get(index), rightArguments.get(index))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 是不是「按名字取一个值」的叶子，是的话给出归一后的形式：{@link NamedFunction} 与
+     * {@link IExpression.Reference.Named} 都归一成 {@code $(name)} 引用，名字是 {@code x}/{@code y}/
+     * {@code z}/{@code xN} 的还额外归一成 {@link InputFunction}。
+     *
+     * @return 归一后的叶子，不是这类叶子时返回 {@code null}
+     */
+    private static @Nullable IExpression resolveReference(IExpression expression) {
+        String name = switch (expression) {
+            case IExpression.Reference.Named(String named) -> named;
+            case FunctionExpression call when call.function().value() instanceof NamedFunction(String named) -> named;
+            default -> null;
+        };
+        if (name == null) return null;
+        IExpression variable = FlatExpressionParser.variable(name.toLowerCase(Locale.ROOT));
+        return variable == null ? IExpression.ref(name) : variable;
+    }
+
+    /**
+     * 是不是一次零参调用以上的函数调用，也就是能用 {@link FunctionExpression#arguments()} 往下比的节点。
+     */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private static boolean isNonCall(IExpression expression) {
+        return expression instanceof FunctionExpression
+               && FlatExpressionWriter.resolveReference(expression) == null;
+    }
+
+    /**
+     * 两次调用是不是调同一个函数。
+     *
+     * <p>对象形式里内建函数用直接句柄（没有注册键），从 flat 文本读回来的是注册表引用，
+     * 同一个函数两种句柄，也得算同一个意思；数据包函数则一律按注册键比。</p>
+     */
+    private static boolean sameFunction(FunctionExpression left, FunctionExpression right) {
+        Holder<IFunction> leftHolder = left.function();
+        Holder<IFunction> rightHolder = right.function();
+        if (leftHolder.equals(rightHolder)) return true;
+        ResourceKey<IFunction> leftKey = leftHolder.unwrapKey().orElse(null);
+        ResourceKey<IFunction> rightKey = rightHolder.unwrapKey().orElse(null);
+        if (leftKey != null && rightKey != null) return leftKey.equals(rightKey);
+        // 一边是引用、一边是直接句柄（内建函数在对象形式里就是直接句柄）：
+        // 内建函数没有注册键，按枚举名认；否则比句柄里的值
+        IFunction leftValue = leftHolder.value();
+        IFunction rightValue = rightHolder.value();
+        if (leftValue instanceof LibBuiltInFunctions leftBuiltin) {
+            return rightValue instanceof LibBuiltInFunctions rightBuiltin
+                   && leftBuiltin.getSerializedName().equals(rightBuiltin.getSerializedName());
+        }
+        return leftValue.equals(rightValue);
     }
 
     /**
@@ -95,6 +212,14 @@ final class FlatExpressionWriter {
      */
     private static Optional<String> bare(IExpression expression, HolderGetter<IFunction> functions) {
         if (expression instanceof IExpression.Reference reference) {
+            // 名字写不出文本时必须退回对象形式：$(name...) 里的载荷没有校验的话，
+            // 带 ')'、空格或 "..." 的名字会写出读不回来的文本，或者从「取一个数字」变成「取整份列表」
+            if (!FlatExpressionParser.isWritableReferenceName(
+                reference.name(),
+                reference instanceof IExpression.Reference.Spread
+            )) {
+                return Optional.empty();
+            }
             return Optional.of(reference instanceof IExpression.Reference.Spread
                 ? "$(" + reference.name() + "...)"
                 : "$(" + reference.name() + ")");
@@ -105,7 +230,9 @@ final class FlatExpressionWriter {
             return FlatExpressionWriter.signedNumber(constant.get());
         }
         if (call.function().value() instanceof NamedFunction(String name)) {
-            return Optional.of("$(" + name + ")");
+            return FlatExpressionParser.isWritableReferenceName(name, false)
+                ? Optional.of("$(" + name + ")")
+                : Optional.empty();
         }
         if (call.function().value() instanceof InputFunction(int index)) {
             return Optional.of(FlatExpressionWriter.input(index));
@@ -195,6 +322,13 @@ final class FlatExpressionWriter {
                     // lambda 也不能并置：2(x -> $(x)) 写成 2x -> $(x) 会读成「参数 2x」的 lambda，根本读不回来
                     .filter(text -> !FlatExpressionWriter.isLambda(right)
                                     && FlatExpressionWriter.juxtaPositionable(text))
+                    // 首字符判断挡不住「吃掉后半段」的情况：数字后的 e/E 会被 parseNumber 当成指数，
+                    // 2*e1(x) 写成 2e1(x) 就读成了 multiply(20, x)。所以并置方案必须实测能读回同一棵树，
+                    // 读不回就退回显式乘号（写成 2*e1(x) 一定正确）
+                    .filter(text -> FlatExpressionWriter.juxtapositionReadsBack(
+                        multiplier + text,
+                        functions
+                    ))
                     .map(text -> new Juxtaposition(multiplier + text)));
             if (juxtaposed.isPresent()) return juxtaposed.map(Juxtaposition::text);
         }
@@ -210,9 +344,13 @@ final class FlatExpressionWriter {
      *
      * <p>lambda 绑定得最松，函数体不必补括号；函数体自己又是 lambda 时会写成 {@code x -> y -> 函数体}，
      * 按右结合读回来仍是同一个嵌套结构。</p>
+     *
+     * <p>零参 lambda 写不出来：文本里空参数串会被读成「缺参数名」而报错，而零参 lambda 用对象形式
+     * （{@code parameters: []}）是合法的，所以这里返回 {@code Optional.empty()} 让它退回对象形式。</p>
      */
     private static Optional<String> visitLambda(LambdaFunction lambda, HolderGetter<IFunction> functions) {
         List<String> declarations = lambda.declarations();
+        if (declarations.isEmpty()) return Optional.empty();
         String parameters = declarations.size() == 1
             ? declarations.getFirst()
             : "(" + String.join(", ", declarations) + ")";
@@ -232,7 +370,8 @@ final class FlatExpressionWriter {
         if (name == null) return Optional.empty();
         StringBuilder text = new StringBuilder(name).append('(');
         for (int index = 0; index < call.arguments().size(); index++) {
-            Optional<String> written = FlatExpressionWriter.write(call.arguments().get(index), functions);
+            // 递归一律走 bare：write 会为每次调用做自校验，实参里再进来一次就无限递归了
+            Optional<String> written = FlatExpressionWriter.bare(call.arguments().get(index), functions);
             if (written.isEmpty()) return Optional.empty();
             if (index > 0) text.append(',');
             text.append(written.get());
@@ -313,13 +452,39 @@ final class FlatExpressionWriter {
     }
 
     /**
-     * 并置只用于 {@code 2x}、{@code 2(x+1)} 这类写法，右侧只能是标识符、括号或 {@code $(name)}；
-     * 以数字开头时并置会被读成另一个数（{@code 2*3} 写成 {@code 23}），只能写 {@code *}。
+     * 并置只用于 {@code 2x}、{@code 2(x+1)}、{@code 2$(a)} 这类写法，右侧只能是标识符、括号或
+     * {@code $(name)}；以数字开头时并置会被读成另一个数（{@code 2*3} 写成 {@code 23}），只能写 {@code *}。
      */
     private static boolean juxtaPositionable(String text) {
         if (text.isEmpty()) return false;
         char first = text.charAt(0);
-        return Character.isLetter(first) || first == '_' || first == '(' || first == '$';
+        return Character.isLetter(first) || first == '_' || first == '(';
+    }
+
+    /**
+     * 并置出来的文本能不能读回原来的那棵树。
+     *
+     * <p>首字符判断只能挡住「并置成另一个数」，挡不住「前半段被吃掉」：数字后面的 {@code e}/{@code E}
+     * 会被 {@code parseNumber} 当成指数，于是 {@code 2*e1(x)} 写成 {@code 2e1(x)} 读回
+     * {@code multiply(20, x)}——值静默改变，不报错。这类名字（{@code e1}、{@code e2}、{@code e1abc}）
+     * 是合法注册名，所以只能实测：解析失败或解析结果与 {@code call} 不同，就不并置，退回显式乘号。</p>
+     */
+    private static boolean juxtapositionReadsBack(
+        String text,
+        HolderGetter<IFunction> functions
+    ) {
+        // 预检内部要再写一次，再进去就无限递归了
+        if (FlatExpressionWriter.JUXTAPOSING.get()) return true;
+        FlatExpressionWriter.JUXTAPOSING.set(true);
+        try {
+            return FlatExpressionWriter.bare(FlatExpressionParser.parseValue(text, functions), functions)
+                .filter(text::equals)
+                .isPresent();
+        } catch (RuntimeException exception) {
+            return false;
+        } finally {
+            FlatExpressionWriter.JUXTAPOSING.set(false);
+        }
     }
 
     private static boolean isLiteralNumber(IExpression expression) {

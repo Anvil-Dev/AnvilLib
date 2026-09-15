@@ -83,6 +83,13 @@ public final class MathTestBootstrap {
     }
 
     /**
+     * 解析一个名字引用 {@code $(name)}。
+     */
+    public static IExpression parseNamed(String name) {
+        return MathTestBootstrap.parseValue("$(" + name + ")");
+    }
+
+    /**
      * 能读到函数注册表的动态操作，flat 文本的解析与回写都需要它。
      */
     public static RegistryOps<JsonElement> ops() {

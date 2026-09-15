@@ -15,8 +15,11 @@ import net.neoforged.neoforge.registries.RegistryBuilder;
  * math 库的注册表：函数类型注册表与函数数据包注册表。
  *
  * <p>函数类型注册表的条目决定 {@link IFunction} 的编解码方式；函数数据包注册表的条目则是可以被
- * 表达式按名引用的具体函数。下游模组既可以在数据包里按 {@link CustomFunction} 的格式提供 JSON，
- * 也可以用 DeferredRegister.create(LibRegistries.FUNCTION_KEY, modId) 注册代码定义的函数。</p>
+ * 表达式按名引用的具体函数。下游模组要在数据包里按 {@link CustomFunction} 的格式提供 JSON 来注册函数——
+ * <b>这个注册表不能由代码注册</b>：它是数据包注册表，只在数据包加载时由 JSON 填充，而
+ * {@code DeferredRegister} 依赖的 {@code RegisterEvent} 不会为数据包注册表触发。代码里要用函数，直接用
+ * {@code Holder.direct(function)} 构造内联定义即可（{@code RegistryFileCodec} 会把它写成
+ * {@code {function: {...}}} 并能读回）。</p>
  *
  * <p><b>命名空间约定：</b>模块 id 是 {@code anvillib_math}，但两个注册表的键都挂在
  * {@link AnvilLibMath#MAIN_ID}（{@code anvillib}）下。flat 文本里不带命名空间的名字会补成

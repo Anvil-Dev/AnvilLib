@@ -501,11 +501,11 @@ public final class FlatExpressionParser {
         ResourceLocation id = FlatExpressionParser.withDefaultNamespace(lower);
         if (id.getNamespace().equals(AnvilLibMath.MAIN_ID)) {
             LibBuiltInFunctions builtin = LibBuiltInFunctions.byName(id.getPath());
-            if (builtin != null) return builtin.callChecked(arguments).getOrThrow(this::error);
+            if (builtin != null) return FlatExpressionParser.builtinCall(builtin, arguments, this);
             Holder<IFunction> registered = this.function(lower, name);
             return FunctionExpression.of(
                 registered,
-                FlatExpressionParser.checkedArity(registered, arguments, this)
+                FlatExpressionParser.checkedArity(registered, arguments, this, lower)
             );
         }
         // 其它命名空间先认注册表，注册不到时再退回同名内建函数，
@@ -516,37 +516,80 @@ public final class FlatExpressionParser {
         if (registered != null) {
             return FunctionExpression.of(
                 registered,
-                FlatExpressionParser.checkedArity(registered, arguments, this)
+                FlatExpressionParser.checkedArity(registered, arguments, this, lower)
             );
         }
         LibBuiltInFunctions builtin = LibBuiltInFunctions.byName(id.getPath());
         if (builtin == null) {
             throw this.error("unknown function '" + name + "'");
         }
-        return builtin.callChecked(arguments).getOrThrow(this::error);
+        return FlatExpressionParser.builtinCall(builtin, arguments, this);
     }
 
     /**
-     * 数据包函数的实参个数在解析期就校验，与内建函数的 {@code callChecked} 对齐。
+     * 内建函数也走 {@link #checkedArity}，这样内建与数据包函数对 {@code $(x...)} 的报错口径一致
+     * （{@code callChecked} 按实参个数算，会把一个 {@code $(x...)} 记成 1 个）。
+     */
+    private static FunctionExpression builtinCall(
+        LibBuiltInFunctions builtin,
+        List<IExpression> arguments,
+        FlatExpressionParser parser
+    ) {
+        return FunctionExpression.of(
+            Holder.direct(builtin),
+            FlatExpressionParser.checkedArity(Holder.direct(builtin), arguments, parser, builtin.id().toString())
+        );
+    }
+
+    /**
+     * 实参个数在解析期就校验，与求值期 {@code IFunction.bind} 用同一份形参声明。
      *
      * <p>不校验的话 {@code mymod:triple(1)}（形参两个）能正常解析并落进存档，直到求值时才在 BE tick 或数据包
      * 加载深处抛错。判断依据是函数自己声明的 {@link IFunction#parameters()}：声明了形参却又不按它绑定的类型
      * 本来就跑不通（{@code bind} 会用同一份声明校验），所以这里提前报错不会误伤。</p>
+     *
+     * <p>内建函数与数据包函数走同一条判断，报错口径才一致。{@code $(x...)} 能铺开成几个实参要等求值才知道，
+     * 所以它按区间算：函数有变参形参时列表接得住，放行，长度是否合适留给 {@code bind} 按真实长度判定；
+     * 没有变参形参时固定形参位一个都接不住列表，这次调用无论列表多长都不合法，解析期就按「非铺开实参个数」
+     * 报出来。</p>
+     *
+     * @param fallbackName 句柄没有注册键时（内建函数用的是直接句柄）报错里显示的名字
      */
     private static IExpression[] checkedArity(
         Holder<IFunction> function,
         List<IExpression> arguments,
-        FlatExpressionParser parser
+        FlatExpressionParser parser,
+        String fallbackName
     ) {
+        Parameters parameters = function.value().parameters();
+        int inline = 0;
+        boolean spread = false;
+        for (IExpression argument : arguments) {
+            if (argument instanceof IExpression.Reference.Spread) {
+                spread = true;
+            } else {
+                inline++;
+            }
+        }
         try {
-            function.value().parameters().checkArity(arguments.size());
+            // 变参形参接得住整份列表，长度是否落在区间里由 bind 按真实长度判定，解析期放行；
+            // 没有变参形参时固定形参位接不住列表（bind 只肯把 Many 交给变参位），
+            // 这次调用无论列表多长都不合法，按「非铺开实参个数」报出来
+            if (!spread || !parameters.variadicExists()) parameters.checkArity(inline);
         } catch (IllegalArgumentException exception) {
             throw parser.error(
-                "function '" + function.unwrapKey().map(key -> key.location().toString()).orElse("?") + "' "
+                "function '" + FlatExpressionParser.functionName(function, fallbackName) + "' "
                 + exception.getMessage()
             );
         }
         return arguments.toArray(IExpression[]::new);
+    }
+
+    /**
+     * 报错里用的函数名：优先注册名，内建函数没有注册键时用调用方给的名字。
+     */
+    private static String functionName(Holder<IFunction> function, String fallbackName) {
+        return function.unwrapKey().map(key -> key.location().toString()).orElse(fallbackName);
     }
 
     /**
@@ -662,5 +705,28 @@ public final class FlatExpressionParser {
             if (!isIdentifierPart(name.charAt(index))) return false;
         }
         return FlatExpressionParser.variable(name.toLowerCase(Locale.ROOT)) == null;
+    }
+
+    /**
+     * 判断一个 {@code $(name)} / {@code $(name...)} 的载荷能不能原样读回来。
+     *
+     * <p>与函数名不同，载荷不需要首字符是标识符起始字符：{@code parseReference} 是按 {@code ...} 切分之后
+     * 才交给 {@code variable} 的，所以 {@code x0}、{@code 0x} 这类名字并不会被当成传入值。</p>
+     *
+     * <p>不能写出的情况：空名；含 {@code )}、空格这类会截断或打乱文本的字符；基名末位是点号
+     * （{@code $(x.)} 读回来会当成 {@code .} 开头的数字）。</p>
+     *
+     * @param spread 该引用是否会写成 {@code $(name...)}
+     */
+    static boolean isWritableReferenceName(String name, boolean spread) {
+        if (name.isEmpty()) return false;
+        for (int index = 0; index < name.length(); index++) {
+            if (!isIdentifierPart(name.charAt(index))) return false;
+        }
+        // 回写补上的 "..." 是格式的一部分、不算名字；名字自带的 "..." 会被 IExpression.ref 当成 Spread，
+        // 于是 $(x...) 从「取一个数字」变成「取整份列表」，读不回原来的节点
+        if (!spread && name.endsWith(Parameter.VARIADIC_SUFFIX)) return false;
+        // 基名末位是点号时读回来会被当成 .5 这类数字；这也顺带挡下点号连写
+        return name.charAt(name.length() - 1) != '.';
     }
 }

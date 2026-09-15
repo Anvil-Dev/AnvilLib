@@ -33,8 +33,9 @@ import javax.annotation.Nullable;
  * 内建函数：四则运算、单参数学函数与多参聚合函数。
  *
  * <p>每个枚举常量自己就是 {@link IFunction}，自带参数名、求值行为、参数个数限制与注册名，
- * 不留中间表示。全部按 {@code anvillib:<名字>} 注册进 {@link LibRegistries#FUNCTION_KEY}，
- * 由 {@link #register(IEventBus)} 完成注册。</p>
+ * 不留中间表示。查找走 {@link #byName(String)} 的枚举硬编码，<b>不占</b>
+ * {@link LibRegistries#FUNCTION_KEY} 的条目：那是数据包注册表，只在数据包加载时由 JSON 填充，代码注册不进去。
+ * 序列化时内建函数因此总以内联定义写出，由 {@code RegistryFileCodec} 的 {@code {function: {...}}} 分支读回。</p>
  */
 public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
     /**
@@ -194,10 +195,6 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
     private static final Map<String, LibBuiltInFunctions> BY_NAME = Arrays
         .stream(LibBuiltInFunctions.values())
         .collect(Collectors.toUnmodifiableMap(LibBuiltInFunctions::getSerializedName, function -> function));
-    private static final DeferredRegister<IFunction> DF = DeferredRegister.create(
-        LibRegistries.FUNCTION_KEY,
-        AnvilLibMath.MAIN_ID
-    );
     private static final DeferredRegister<IFunction.Type<?>> TYPE_DF = DeferredRegister.create(
         LibRegistries.FUNCTION_TYPE,
         AnvilLibMath.MAIN_ID
@@ -216,11 +213,10 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
     }
 
     /**
-     * 注册类型与全部内建函数。
+     * 注册内建函数的类型。
      */
     public static void register(IEventBus modEventBus) {
         LibBuiltInFunctions.TYPE_DF.register(modEventBus);
-        LibBuiltInFunctions.DF.register(modEventBus);
     }
 
     /**

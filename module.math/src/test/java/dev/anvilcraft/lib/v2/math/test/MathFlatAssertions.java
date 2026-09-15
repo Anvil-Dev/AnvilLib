@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.math.test;
 
 import com.google.gson.JsonElement;
+import dev.anvilcraft.lib.v2.math.AnvilLibMath;
 import dev.anvilcraft.lib.v2.math.expression.Arguments;
 import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
 import dev.anvilcraft.lib.v2.math.expression.IExpression;
@@ -11,7 +12,9 @@ import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
+import dev.anvilcraft.lib.v2.math.init.LibRegistries;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -182,6 +185,37 @@ final class MathFlatAssertions {
     private static String randomName(Random random) {
         String[] names = {"cost", "value", "count", "weight"};
         return names[random.nextInt(names.length)];
+    }
+
+    /**
+     * 以 {@code e} 开头的注册名，用来覆盖并置乘法被指数记法吃掉的情况：
+     * {@code 2*e1(x)} 写成 {@code 2e1(x)} 会读成 {@code multiply(20, x)}。
+     */
+    private static final String[] EXPONENT_NAMES = {"e1", "e2", "e1abc", "e12x"};
+
+    /**
+     * 注册一批以 {@code e}/{@code E} 开头、后跟数字的函数名。
+     *
+     * <p>这些名字本身合法，但和数字并置时会被 {@code parseNumber} 的指数记法吞掉，必须单独覆盖。</p>
+     */
+    static void registerExponentNames() {
+        for (String name : MathFlatAssertions.EXPONENT_NAMES) {
+            MathTestBootstrap.registerFunction(name, CustomFunction.named(
+                List.of("a"),
+                NamedFunction.call("a")
+            ));
+        }
+    }
+
+    /**
+     * 对某个以 {@code e} 开头的已注册函数发起一次调用，用来喂并置乘法的右侧。
+     */
+    static FunctionExpression randomExponentCall(Random random) {
+        String name = MathFlatAssertions.EXPONENT_NAMES[random.nextInt(MathFlatAssertions.EXPONENT_NAMES.length)];
+        Holder<IFunction> holder = MathTestBootstrap.functions().getHolderOrThrow(
+            ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of(name))
+        );
+        return FunctionExpression.of(holder, ConstantFunction.of(1).call());
     }
 
     private static double randomNumber(Random random) {

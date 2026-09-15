@@ -200,6 +200,11 @@ public interface IFunction {
         int total = 0;
         for (IExpression argument : arguments) {
             if (argument instanceof IExpression.Reference.Spread(String name)) {
+                // 名字没绑定成列表时按空列表算会先撞上「个数不符」，那个报错看不懂；
+                // 这里先点明是名字写错了。绑定成空列表是合法的空变参调用，照常走
+                if (!inputs.isList(name)) {
+                    throw new IllegalArgumentException("$(" + name + "...) is not bound to a list");
+                }
                 List<Double> list = inputs.list(name);
                 values.add(new Arguments.Value.Many(list));
                 total += list.size();
