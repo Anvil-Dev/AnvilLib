@@ -174,6 +174,26 @@ class FlatExpressionTest {
     }
 
     @Test
+    @DisplayName("括号嵌套的可用层数钉在 169 层")
+    void parenthesisNestingBoundaryIsPinned() {
+        // 一层括号要过 parseLambda/parseUnary/parsePower 三处守卫，各计一次，
+        // 所以 512 的计数对应 169 层实嵌套。这个边界必须钉住：
+        // 挪动任何一处守卫都会静默改变可用深度，而这类表达式多是程序生成的
+        String allowed = "sqrt(".repeat(169) + "1" + ")".repeat(169);
+        assertNotNull(MathTestBootstrap.parseValue(allowed));
+
+        String tooDeep = "sqrt(".repeat(170) + "1" + ")".repeat(170);
+        IllegalArgumentException error = assertThrows(
+            IllegalArgumentException.class,
+            () -> MathTestBootstrap.parseValue(tooDeep)
+        );
+        assertTrue(
+            error.getMessage().contains("nests too deeply"),
+            () -> "应当是嵌套过深的报错: " + error.getMessage()
+        );
+    }
+
+    @Test
     @DisplayName("带符号的字面量整段都能读")
     void signedLiteralsParse() {
         assertEquals(-2.0, MathTestBootstrap.parse("-2").evaluate());

@@ -90,7 +90,7 @@ public record CustomFunction(Parameters parameters, IExpression body) implements
 
     @Override
     public IFunction.Type<? extends IFunction> type() {
-        return LibFunctionTypes.CUSTOM.get();
+        return IFunction.typeOf(LibFunctionTypes.CUSTOM.getKey());
     }
     public static class Type implements IFunction.Type<CustomFunction> {
         @Override

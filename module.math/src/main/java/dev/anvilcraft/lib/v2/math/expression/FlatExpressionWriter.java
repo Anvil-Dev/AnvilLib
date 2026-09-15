@@ -261,14 +261,18 @@ final class FlatExpressionWriter {
     /**
      * 一个注册名能否写成 flat 文本，不能则返回 {@code null}。
      *
-     * <p>名字必须既撞不上别的含义、又能被解析器原样读回来：{@code anvillib} 命名空间里要在下面排除内建名
-     * （解析器优先按内建函数处理），而传入值名（{@code x}/{@code x0}）与 {@code -}、{@code /} 这类标识符
-     * 字符集之外的路径由 {@link FlatExpressionParser#isWritableFunctionName(String)} 一并排除，
-     * 免得两边规则各写一份再漂移。</p>
+     * <p>名字必须既撞不上别的含义、又能被解析器原样读回来：传入值名（{@code x}/{@code x0}）与 {@code -}、
+     * {@code /} 这类标识符字符集之外的路径由
+     * {@link FlatExpressionParser#isWritableFunctionName(String)} 一并排除，免得两边规则各写一份再漂移；
+     * 内建名只在 {@code anvillib} 命名空间下才需要排除。</p>
      */
     private static @Nullable String writableName(ResourceLocation id, IFunction function) {
         String name = id.getNamespace().equals(AnvilLibMath.MAIN_ID) ? id.getPath() : id.toString();
         if (!FlatExpressionParser.isWritableFunctionName(name)) return null;
+        // 只有 anvillib 命名空间才有被内建函数抢名的问题：解析器对省略命名空间的名字（以及显式的
+        // anvillib:<名字>）一律先认内建函数。其它命名空间是先查注册表、查到就用，
+        // 所以 mymod:max 撞上内建 max 也能读回，不必退回对象形式
+        if (!id.getNamespace().equals(AnvilLibMath.MAIN_ID)) return name;
         LibBuiltInFunctions shadowed = LibBuiltInFunctions.byName(id.getPath());
         // 解析器对 anvillib:<内建名> 一律按内建函数处理，撞名时这个名字写出去就变了意思
         if (shadowed != null && shadowed != function) return null;

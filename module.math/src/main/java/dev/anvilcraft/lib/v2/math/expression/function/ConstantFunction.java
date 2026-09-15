@@ -68,7 +68,7 @@ public record ConstantFunction(double value) implements IFunction {
 
     @Override
     public IFunction.Type<? extends IFunction> type() {
-        return LibFunctionTypes.CONSTANT.get();
+        return IFunction.typeOf(LibFunctionTypes.CONSTANT.getKey());
     }
 
     public static class Type implements IFunction.Type<ConstantFunction> {

@@ -92,7 +92,7 @@ public record LambdaFunction(Parameters parameters, IExpression body) implements
 
     @Override
     public IFunction.Type<? extends IFunction> type() {
-        return LibFunctionTypes.LAMBDA.get();
+        return IFunction.typeOf(LibFunctionTypes.LAMBDA.getKey());
     }
 
     public static class Type implements IFunction.Type<LambdaFunction> {

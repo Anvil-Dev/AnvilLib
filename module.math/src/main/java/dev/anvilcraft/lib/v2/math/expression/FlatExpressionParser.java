@@ -68,6 +68,11 @@ public final class FlatExpressionParser {
      *
      * <p>取 512 是因为递归下降每层要占好几个栈帧，2000 层括号就足以打穿默认栈；离正常表达式又足够远
      * （手写表达式不会有几百层嵌套）。</p>
+     *
+     * <p><b>这是计数上限而不是可嵌套层数</b>：一层括号或一层实参嵌套会依次过 {@code parseLambda}、
+     * {@code parseUnary}、{@code parsePower} 三处守卫，各计一次，因此 {@code sqrt(sqrt(...))} 这种写法
+     * 实际只能嵌 <b>169</b> 层（第 170 层报错）；只有一元符号链是每层一次，能写 512 个符号。
+     * 改动任意一处守卫的位置或数量都会静默改变可用深度，{@code FlatExpressionTest} 钉住了这两个边界。</p>
      */
     private static final int MAX_NESTING_DEPTH = 512;
 
@@ -151,8 +156,9 @@ public final class FlatExpressionParser {
      * 清空解析缓存，数据包重载后调用可以让旧注册表对应的表达式树立刻被回收。
      *
      * <p>{@link #CACHE} 的弱键指望「换注册表后旧条目自动消失」，但条目里的函数引用会反向指回注册表，
-     * 弱键因此回收不掉。模块内的 {@code LibCacheReloadHandler} 已经挂在服务器启动与数据包同步事件上
-     * 调用本方法，下游不需要再管；只有在自建注册表或测试里才需要手动调。</p>
+     * 弱键因此回收不掉——<b>这个缓存的存活期实际是手动的，别指望 GC</b>。模块内已经挂好了调用点：
+     * {@code LibCacheReloadHandler} 管服务器启动与 {@code /reload}，{@code LibClientCacheHandler} 管客户端断开
+     * （客户端每次连服务器都会拿到新的注册表实例）。只有在自建注册表或测试里才需要手动调。</p>
      */
     public static void clearCache() {
         FlatExpressionParser.CACHE.clear();
@@ -496,18 +502,51 @@ public final class FlatExpressionParser {
         if (id.getNamespace().equals(AnvilLibMath.MAIN_ID)) {
             LibBuiltInFunctions builtin = LibBuiltInFunctions.byName(id.getPath());
             if (builtin != null) return builtin.callChecked(arguments).getOrThrow(this::error);
-            return FunctionExpression.of(this.function(lower, name), arguments.toArray(IExpression[]::new));
+            Holder<IFunction> registered = this.function(lower, name);
+            return FunctionExpression.of(
+                registered,
+                FlatExpressionParser.checkedArity(registered, arguments, this)
+            );
         }
         // 其它命名空间先认注册表，注册不到时再退回同名内建函数，
         // 这样 mymod:max 既可以是数据包函数，也可以只是内建 max 的另一种写法
-        if (this.functions.get(ResourceKey.create(LibRegistries.FUNCTION_KEY, id)).isPresent()) {
-            return FunctionExpression.of(this.function(lower, name), arguments.toArray(IExpression[]::new));
+        Holder<IFunction> registered = this.functions
+            .get(ResourceKey.create(LibRegistries.FUNCTION_KEY, id))
+            .orElse(null);
+        if (registered != null) {
+            return FunctionExpression.of(
+                registered,
+                FlatExpressionParser.checkedArity(registered, arguments, this)
+            );
         }
         LibBuiltInFunctions builtin = LibBuiltInFunctions.byName(id.getPath());
         if (builtin == null) {
             throw this.error("unknown function '" + name + "'");
         }
         return builtin.callChecked(arguments).getOrThrow(this::error);
+    }
+
+    /**
+     * 数据包函数的实参个数在解析期就校验，与内建函数的 {@code callChecked} 对齐。
+     *
+     * <p>不校验的话 {@code mymod:triple(1)}（形参两个）能正常解析并落进存档，直到求值时才在 BE tick 或数据包
+     * 加载深处抛错。判断依据是函数自己声明的 {@link IFunction#parameters()}：声明了形参却又不按它绑定的类型
+     * 本来就跑不通（{@code bind} 会用同一份声明校验），所以这里提前报错不会误伤。</p>
+     */
+    private static IExpression[] checkedArity(
+        Holder<IFunction> function,
+        List<IExpression> arguments,
+        FlatExpressionParser parser
+    ) {
+        try {
+            function.value().parameters().checkArity(arguments.size());
+        } catch (IllegalArgumentException exception) {
+            throw parser.error(
+                "function '" + function.unwrapKey().map(key -> key.location().toString()).orElse("?") + "' "
+                + exception.getMessage()
+            );
+        }
+        return arguments.toArray(IExpression[]::new);
     }
 
     /**

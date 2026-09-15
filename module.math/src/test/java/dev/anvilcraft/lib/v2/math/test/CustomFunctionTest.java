@@ -14,6 +14,7 @@ import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
 import dev.anvilcraft.lib.v2.math.init.LibRegistries;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,8 +22,10 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 数据包自定义函数：参数绑定、参数个数校验、变参与递归保护。
@@ -270,5 +273,75 @@ class CustomFunctionTest {
         assertEquals("collisionfree(3)", MathTestBootstrap.writeFlat(writable));
         // 关键：写出的文本必须读回同一棵树，而不是只对文本本身断言
         MathFlatAssertions.assertWrittenTextReadsBack(writable);
+    }
+
+    @Test
+    @DisplayName("非 anvillib 命名空间撞内建名时照旧写全名")
+    void otherNamespaceMayShadowBuiltInName() {
+        // 解析器对非 anvillib 命名空间是先查注册表、查到就用，所以 mymod:max 撞上内建 max 也能读回；
+        // 之前把撞名检查套在所有命名空间上，白白退化成对象形式
+        MathTestBootstrap.registerFunction(
+            ResourceLocation.parse("mymod:max"),
+            CustomFunction.named(List.of("a"), NamedFunction.call("a"))
+        );
+        Holder<IFunction> holder = MathTestBootstrap.functions().getHolderOrThrow(
+            ResourceKey.create(LibRegistries.FUNCTION_KEY, ResourceLocation.parse("mymod:max"))
+        );
+        FunctionExpression call = FunctionExpression.of(holder, ConstantFunction.of(5).call());
+        assertEquals("mymod:max(5)", MathTestBootstrap.writeFlat(call));
+        MathFlatAssertions.assertWrittenTextReadsBack(call);
+
+        // 对照：同一个函数写在 anvillib 命名空间下就必须退回对象形式
+        MathTestBootstrap.registerFunction("max", CustomFunction.named(List.of("a"), NamedFunction.call("a")));
+        Holder<IFunction> shadowed = MathTestBootstrap
+            .functions()
+            .getHolderOrThrow(ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of("max")));
+        assertNull(MathTestBootstrap.writeFlat(FunctionExpression.of(shadowed, ConstantFunction.of(5).call())));
+    }
+
+    @Test
+    @DisplayName("数据包函数的实参个数在解析期就校验")
+    void datapackArityIsCheckedWhileParsing() {
+        // 不校验的话 mymod:twoparams(1) 能正常解析并落进存档，直到求值时才在 BE tick 深处抛错
+        MathTestBootstrap.registerFunction("twoparams", CustomFunction.named(
+            List.of("a", "b"),
+            NamedFunction.call("a")
+        ));
+        IllegalArgumentException error = assertThrows(
+            IllegalArgumentException.class,
+            () -> MathTestBootstrap.parseValue("twoparams(1)")
+        );
+        assertTrue(
+            error.getMessage().contains("Expected 2 arguments but got 1"),
+            () -> "应当是实参个数不符的报错: " + error.getMessage()
+        );
+        // 个数正确时照常解析
+        assertEquals(7.0, MathTestBootstrap.parseValue("twoparams(7, 1)").evaluate(Arguments.of()));
+
+        // 变参函数落在区间内不受影响：of 的声明文本里带 "..." 才是变参，named 全是固定形参
+        MathTestBootstrap.registerFunction("varargsfn", CustomFunction.of(
+            List.of("xs..."),
+            NamedFunction.call("xs")
+        ));
+        assertNotNull(MathTestBootstrap.parseValue("varargsfn(4, 5, 6)"));
+        IllegalArgumentException tooFew = assertThrows(
+            IllegalArgumentException.class,
+            () -> MathTestBootstrap.parseValue("varargsfn()")
+        );
+        assertTrue(
+            tooFew.getMessage().contains("at least 1"),
+            () -> "应当是变参下限的报错: " + tooFew.getMessage()
+        );
+
+        // 固定形参写成 named 时下限就是形参个数
+        MathTestBootstrap.registerFunction("onefixed", CustomFunction.named(
+            List.of("only"),
+            NamedFunction.call("only")
+        ));
+        assertNotNull(MathTestBootstrap.parseValue("onefixed(1)"));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> MathTestBootstrap.parseValue("onefixed()")
+        );
     }
 }

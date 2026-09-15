@@ -5,10 +5,16 @@ import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
 import dev.anvilcraft.lib.v2.math.expression.IExpression;
 import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.CustomFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.Parameters;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
+import dev.anvilcraft.lib.v2.math.init.LibFunctionTypes;
+import dev.anvilcraft.lib.v2.math.init.LibRegistries;
 import net.minecraft.core.Holder;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -169,5 +175,35 @@ class BuiltInFunctionTest {
         // 单参的 min 就是一个值的列表，值是列表里的 max，也就是它自己
         assertEquals("min(1)", MathTestBootstrap.writeFlat("min(1)"));
         assertEquals(1.0, MathTestBootstrap.parse("min(1)").evaluate(Arguments.of()));
+    }
+
+    @Test
+    @DisplayName("所有函数类型的 type() 都能解析出注册表里的类型")
+    void everyFunctionTypeResolves() {
+        // type() 供 DIRECT_CODEC / STREAM_CODEC 的 dispatch 使用。走 DeferredHolder.get() 会经
+        // BuiltInRegistries 反查注册表，在注册表没挂上的环境里直接抛 IllegalStateException，所以六个类型
+        // 一律走 IFunction.typeOf；这条路径平时只有真正编解码内联函数时才会被触发，必须专门钉住
+        assertEquals(LibBuiltInFunctions.Type.class, LibBuiltInFunctions.SQRT.type().getClass());
+        assertEquals(InputFunction.Type.class, InputFunction.call(0).function().value().type().getClass());
+        assertEquals(NamedFunction.Type.class, NamedFunction.call("a").function().value().type().getClass());
+        assertEquals(ConstantFunction.Type.class, ConstantFunction.of(1).call().function().value().type().getClass());
+        assertEquals(CustomFunction.Type.class, CustomFunction.named(List.of("a"), NamedFunction.call("a")).type().getClass());
+        assertEquals(LambdaFunction.Type.class, LambdaFunction.of(List.of("a"), NamedFunction.call("a")).type().getClass());
+
+        // 六个 DeferredHolder 都必须落在注册表里，否则 dispatch 出来的类型会找不到
+        for (DeferredHolder<IFunction.Type<?>, ? extends IFunction.Type<?>> holder : List.of(
+            LibBuiltInFunctions.TYPE,
+            LibFunctionTypes.INPUT,
+            LibFunctionTypes.NAMED,
+            LibFunctionTypes.CONSTANT,
+            LibFunctionTypes.CUSTOM,
+            LibFunctionTypes.LAMBDA
+        )) {
+            assertEquals(
+                holder.getKey(),
+                LibRegistries.FUNCTION_TYPE.getResourceKey(IFunction.typeOf(holder.getKey())).orElseThrow(),
+                () -> "type() 与注册键对不上: " + holder.getKey()
+            );
+        }
     }
 }

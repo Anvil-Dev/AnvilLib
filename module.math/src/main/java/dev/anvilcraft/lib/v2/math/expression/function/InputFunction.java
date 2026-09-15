@@ -53,7 +53,7 @@ public record InputFunction(int index) implements IFunction {
 
     @Override
     public IFunction.Type<? extends IFunction> type() {
-        return LibFunctionTypes.INPUT.get();
+        return IFunction.typeOf(LibFunctionTypes.INPUT.getKey());
     }
 
     public static class Type implements IFunction.Type<InputFunction> {

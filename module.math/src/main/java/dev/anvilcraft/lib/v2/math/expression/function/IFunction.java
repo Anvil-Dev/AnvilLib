@@ -1,9 +1,9 @@
 package dev.anvilcraft.lib.v2.math.expression.function;
 
-import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.Encoder;
 import com.mojang.serialization.MapCodec;
 import dev.anvilcraft.lib.v2.math.expression.Arguments;
 import dev.anvilcraft.lib.v2.math.expression.IExpression;
@@ -17,6 +17,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.RegistryFileCodec;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.StringRepresentable;
 
 import java.util.ArrayList;
@@ -53,14 +54,13 @@ public interface IFunction {
         .dispatch(IFunction::type, Type::streamCodec);
     /**
      * 优先写入数据包注册表中已有的函数引用，找不到可引用的条目时退化为内联的函数定义。
+     *
+     * <p>解码固定走第二个参数 {@link #HOLDER_CODEC}（{@code RegistryFileCodec}），因此需要
+     * {@link RegistryOps} 才拿得到注册表；{@code Codec.of} 只把第一个参数当编码器用，所以这里只覆写
+     * {@code encode}，不写不可达的 {@code decode}。</p>
      */
     Codec<IFunction> CODEC = Codec.of(
-        new Codec<>() {
-            @Override
-            public <T> DataResult<Pair<IFunction, T>> decode(DynamicOps<T> ops, T input) {
-                return IFunction.DIRECT_CODEC.parse(ops, input).map(function -> Pair.of(function, input));
-            }
-
+        new Encoder<>() {
             @Override
             public <T> DataResult<T> encode(IFunction input, DynamicOps<T> ops, T prefix) {
                 HolderGetter<IFunction> getter = IFunction.getter(ops);
@@ -169,6 +169,18 @@ public interface IFunction {
         } finally {
             IFunction.CALL_DEPTH.set(depth);
         }
+    }
+
+    /**
+     * 按注册键取函数类型，用于各 {@code type()} 的实现。
+     *
+     * <p>不走 {@code DeferredHolder.get()}：它要靠 {@code BuiltInRegistries} 反查注册表，而 modded 注册表在
+     * {@code NewRegistryEvent} 之前不在那里（在单元测试这类注册表未挂上的环境里会直接抛
+     * {@code IllegalStateException: Registry not present for DeferredHolder}）。所以注册的键要么自带读取路径，
+     * 要么统一走这里。</p>
+     */
+    static IFunction.Type<? extends IFunction> typeOf(ResourceKey<IFunction.Type<?>> key) {
+        return LibRegistries.FUNCTION_TYPE.getHolderOrThrow(key).value();
     }
 
     /**

@@ -27,6 +27,7 @@ import net.minecraft.core.WritableRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -123,8 +124,15 @@ public final class MathTestBootstrap {
      * 把一个函数注册进测试用的函数注册表，返回它的引用。
      */
     public static Holder.Reference<IFunction> registerFunction(String name, IFunction function) {
+        return MathTestBootstrap.registerFunction(AnvilLibMath.of(name), function);
+    }
+
+    /**
+     * 按完整资源位置注册函数，用于 {@code mymod:xxx} 这类非 anvillib 命名空间的名字。
+     */
+    public static Holder.Reference<IFunction> registerFunction(ResourceLocation id, IFunction function) {
         return MathTestBootstrap.functions().register(
-            ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of(name)),
+            ResourceKey.create(LibRegistries.FUNCTION_KEY, id),
             function,
             RegistrationInfo.BUILT_IN
         );

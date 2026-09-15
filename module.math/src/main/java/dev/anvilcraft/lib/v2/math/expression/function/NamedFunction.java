@@ -57,7 +57,7 @@ public record NamedFunction(String name) implements IFunction {
 
     @Override
     public IFunction.Type<? extends IFunction> type() {
-        return LibFunctionTypes.NAMED.get();
+        return IFunction.typeOf(LibFunctionTypes.NAMED.getKey());
     }
 
     public static class Type implements IFunction.Type<NamedFunction> {

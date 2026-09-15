@@ -262,9 +262,7 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
 
     @Override
     public IFunction.Type<? extends IFunction> type() {
-        // 走注册表引用而不是 TYPE.get()：DeferredHolder 要靠 BuiltInRegistries 反查注册表，
-        // 而 modded 注册表在 NewRegistryEvent 之前不在那里
-        return LibRegistries.FUNCTION_TYPE.getHolderOrThrow(LibBuiltInFunctions.TYPE.getKey()).value();
+        return IFunction.typeOf(LibBuiltInFunctions.TYPE.getKey());
     }
 
     /**
