@@ -160,17 +160,6 @@ public interface IFunction {
         }
         // 个数先校验，免得后面按下标取值时越界，报出看不懂的错
         parameters.checkArity(total);
-        // 整份列表落在固定形参位上没有数字可言，再把这用法拦下来
-        int fixed = 0;
-        for (Parameter parameter : parameters.parameters()) {
-            if (parameter.variadic()) continue;
-            if (values.get(fixed) instanceof Arguments.Value.Many) {
-                throw new IllegalStateException(
-                    arguments.get(fixed) + " is a list and can only be passed to a variadic parameter"
-                );
-            }
-            fixed++;
-        }
         // 变参吃掉「总数减去固定形参个数」个实参，因此变参落在任意位置都好算
         int variadicCount = total - parameters.fixedCount();
         List<Arguments.Value> bound = new ArrayList<>(parameters.size());
@@ -182,7 +171,21 @@ public interface IFunction {
             List<Double> group = new ArrayList<>(take);
             int remaining = take;
             while (remaining > 0) {
-                List<Double> elements = IFunction.numbers(values.get(argument));
+                Arguments.Value value = values.get(argument);
+                List<Double> elements = IFunction.numbers(value);
+                // 要不要拦下这个实参，得看它实际喂给了哪个形参，不能按形参序号去猜：
+                // 变参不在末位时实参序号与形参序号本来就对不上
+                if (!parameter.variadic() && value instanceof Arguments.Value.Many) {
+                    throw new IllegalStateException(
+                        arguments.get(argument) + " is a list and can only be passed to a variadic parameter"
+                    );
+                }
+                if (elements.size() > remaining) {
+                    throw new IllegalStateException(
+                        "$(" + ((IExpression.Reference) arguments.get(argument)).name()
+                            + "...) provides " + elements.size() + " arguments but this position takes " + remaining
+                    );
+                }
                 group.addAll(elements);
                 remaining -= elements.size();
                 argument++;

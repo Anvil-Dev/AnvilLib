@@ -51,9 +51,13 @@ public final class FlatExpressionParser {
     /**
      * 解析结果按函数注册表分组缓存。
      *
-     * <p>注册表实例在每次数据包重载时更换，键用弱引用，换实例后旧缓存能被回收；键上直接带锁，
-     * 避免用全局锁把互不相干的注册表也串起来。</p>
+     * <p>键用弱引用，本意是换注册表后旧缓存能被回收，但条目里的表达式树持有注册表函数的
+     * {@code Holder.Reference}，而 {@code Holder.Reference} 又带一个指回注册表的 {@code owner}，
+     * 于是「值强引用键」，弱键实际回收不掉。数据包重载时请调用 {@link #clearCache()}；容量上限则保证
+     * 下游拿运行时拼接的文本反复调用 {@link #parseValue} 也不会无界增长。</p>
      */
+    private static final int CACHE_CAPACITY = 512;
+
     private static final Map<HolderGetter<IFunction>, Map<String, IExpression>> CACHE = Collections.synchronizedMap(
         new WeakHashMap<>()
     );
@@ -115,7 +119,14 @@ public final class FlatExpressionParser {
     public static IExpression parseValue(String source, HolderGetter<IFunction> functions) {
         Map<String, IExpression> cache = FlatExpressionParser.CACHE.computeIfAbsent(
             functions,
-            key -> Collections.synchronizedMap(new LinkedHashMap<>())
+            key -> Collections.synchronizedMap(
+                new LinkedHashMap<>(16, 0.75F, true) {
+                    @Override
+                    protected boolean removeEldestEntry(Map.Entry<String, IExpression> eldest) {
+                        return this.size() > FlatExpressionParser.CACHE_CAPACITY;
+                    }
+                }
+            )
         );
         synchronized (cache) {
             IExpression cached = cache.get(source);
@@ -124,6 +135,16 @@ public final class FlatExpressionParser {
             cache.put(source, parsed);
             return parsed;
         }
+    }
+
+    /**
+     * 清空解析缓存，数据包重载后调用可以让旧注册表对应的表达式树立刻被回收。
+     *
+     * <p>{@link #CACHE} 的弱键指望「换注册表后旧条目自动消失」，但条目里的函数引用会反向指回注册表，
+     * 弱键因此回收不掉；数据包重载时主动调一次本方法最省事。</p>
+     */
+    public static void clearCache() {
+        FlatExpressionParser.CACHE.clear();
     }
 
     /**
@@ -143,7 +164,10 @@ public final class FlatExpressionParser {
     }
 
     /**
-     * 去掉 {@link AnvilLibMath#MAIN_ID} 命名空间前缀，其余命名空间原样保留。
+     * 检查一个注册名能否省略 {@link AnvilLibMath#MAIN_ID} 前缀写成短名，用于测试与调试。
+     *
+     * <p>回写侧用的是 {@code FlatExpressionWriter.writableName}：它还要判断省略前缀后名字会不会撞上
+     * 内建函数，光看命名空间不够。</p>
      */
     static String stripDefaultNamespace(ResourceLocation id) {
         return id.getNamespace().equals(AnvilLibMath.MAIN_ID) ? id.getPath() : id.toString();
@@ -409,10 +433,15 @@ public final class FlatExpressionParser {
         }
         String text = this.source.substring(start, this.position);
         try {
-            return ConstantFunction.of(Double.parseDouble(text)).call();
+            double value = Double.parseDouble(text);
+            // 溢出成无穷的字面量读不回来（回写侧拒绝非有限值），不如在解析期就报错。
+            // 这里不回退 position：报错位置应当落在字面量末尾，回退到开头只会指错地方
+            if (!Double.isFinite(value)) {
+                throw this.error("number out of range '" + text + "'");
+            }
+            return ConstantFunction.of(value).call();
         } catch (NumberFormatException | ArithmeticException exception) {
-            this.position = start;
-            throw this.error("invalid number '" + this.source.substring(start, mantissaEnd) + "'");
+            throw this.error("invalid number '" + text + "'");
         }
     }
 

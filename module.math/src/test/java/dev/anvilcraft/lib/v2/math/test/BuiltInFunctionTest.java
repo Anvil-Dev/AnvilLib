@@ -4,9 +4,11 @@ import dev.anvilcraft.lib.v2.math.expression.Arguments;
 import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
 import dev.anvilcraft.lib.v2.math.expression.IExpression;
 import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.CustomFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.Parameters;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
+import net.minecraft.core.Holder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,13 @@ class BuiltInFunctionTest {
     @BeforeAll
     static void setUp() {
         MathTestBootstrap.initialize();
+    }
+
+    /**
+     * 在给定上下文里用任意实参表达式求值一次自定义函数调用。
+     */
+    private static double call(CustomFunction function, Arguments inputs, IExpression... arguments) {
+        return FunctionExpression.of(Holder.direct(function), arguments).evaluate(inputs);
     }
 
     @Test
@@ -108,6 +117,31 @@ class BuiltInFunctionTest {
         assertEquals(Integer.MAX_VALUE, parameters.maximumArity());
         assertThrows(IllegalArgumentException.class, () -> Parameters.parse(List.of("x...", "y...")));
         assertThrows(IllegalArgumentException.class, () -> Parameters.parse(List.of("x...", "x")));
+    }
+
+    @Test
+    @DisplayName("变参不在末位时，$(x...) 照样绑给变参位，前后固定形参各拿一个")
+    void variadicNotLastBindsByConsumptionOrder() {
+        Arguments bound = Arguments.of(List.of(), List.of("xs"), List.of(
+            new Arguments.Value.Many(List.of(5.0, 6.0))
+        ));
+
+        // 形参 [a, x..., b]：$(xs...) 摊成 5、6 落进变参位，b 拿最后一个实参
+        CustomFunction three = CustomFunction.of(
+            List.of("a", "x...", "b"),
+            LibBuiltInFunctions.POW.call(NamedFunction.call("b"), ConstantFunction.of(1).call())
+        );
+        assertEquals(1.0, BuiltInFunctionTest.call(three, bound,
+            ConstantFunction.of(7).call(), IExpression.ref("xs..."), ConstantFunction.of(1).call()));
+        // 变参在首位，$(xs...) 同样落在变参位上
+        CustomFunction two = CustomFunction.of(List.of("x...", "b"), NamedFunction.call("b"));
+        assertEquals(7.0, BuiltInFunctionTest.call(two, bound,
+            IExpression.ref("xs..."), ConstantFunction.of(7).call()));
+
+        // 列表撑出的实参比这一位要的还多时，报可读的校验错误而不是下标越界
+        CustomFunction narrow = CustomFunction.of(List.of("x...", "b"), NamedFunction.call("b"));
+        assertThrows(IllegalStateException.class, () -> BuiltInFunctionTest.call(narrow, bound,
+            ConstantFunction.of(1).call(), IExpression.ref("xs...")));
     }
 
     @Test

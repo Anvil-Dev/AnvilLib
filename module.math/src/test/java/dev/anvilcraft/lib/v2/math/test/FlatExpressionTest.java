@@ -1,8 +1,6 @@
 package dev.anvilcraft.lib.v2.math.test;
 
-import com.google.gson.JsonElement;
 import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
-import dev.anvilcraft.lib.v2.math.expression.IExpression;
 import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
@@ -14,7 +12,7 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -103,22 +101,33 @@ class FlatExpressionTest {
     }
 
     @Test
-    @DisplayName("取负一个负常量退回对象形式")
-    void negationOfNegativeConstantFallsBackToObject() {
-        // 0-(-0.71) 没有合法的 flat 写法：--0.71 读不回来，0.71 又会丢掉一层结构
+    @DisplayName("取负一个负常量写得成 -(n)，读回来还是同结构")
+    void negationOfNegativeConstantStaysWritable() {
+        // 0-(-0.71) 写成 -(-0.71)：括号保证不会变成不合法的 --0.71
         FunctionExpression tree = LibBuiltInFunctions.SUBTRACT.call(
             constant(0.0),
             ConstantFunction.of(-0.7107560582693808).call()
         );
-        assertNull(MathTestBootstrap.writeFlat(tree), "取负一个负常量应当写不出 flat 文本");
-        JsonElement encoded = MathTestBootstrap.encode(tree);
-        assertNotNull(encoded, "写不出 flat 文本时必须退回对象形式");
-        assertTrue(encoded.isJsonObject(), () -> "退回的应当是对象形式: " + encoded);
-        FunctionExpression decoded = (FunctionExpression) IExpression.CODEC
-            .parse(MathTestBootstrap.ops(), encoded)
-            .getOrThrow(message -> new AssertionError("对象形式读不回来: " + message));
-        assertEquals(tree.evaluate(), decoded.evaluate());
-        assertEquals(tree.arguments(), decoded.arguments());
+        assertEquals("-(-0.7107560582693808)", MathTestBootstrap.writeFlat(tree));
+        MathFlatAssertions.assertRoundTrip("-(-0.5)");
+        MathFlatAssertions.assertRoundTrip("0-(-1)");
+        MathFlatAssertions.assertRoundTrip("x*(-(-2))");
+        MathFlatAssertions.assertRoundTrip("sqrt(-(-0.25))");
+    }
+
+    @Test
+    @DisplayName("溢出成无穷的字面量在解析期就被拒绝")
+    void nonFiniteLiteralRejected() {
+        // 回写侧写不出非有限值，解析侧再收下它就成了「读得进来写不回去」
+        assertThrows(IllegalArgumentException.class, () -> MathTestBootstrap.parseValue("1e99999"));
+        assertThrows(IllegalArgumentException.class, () -> MathTestBootstrap.parseValue("1e309"));
+        // 报错要指出整个字面量与它在文本里的结束位置，不能只截出尾数、也不能指回开头
+        IllegalArgumentException error = assertThrows(
+            IllegalArgumentException.class,
+            () -> MathTestBootstrap.parseValue("12+1e99999")
+        );
+        assertTrue(error.getMessage().contains("'1e99999'"), () -> "应当写出整个字面量: " + error.getMessage());
+        assertTrue(error.getMessage().contains("at position 10"), () -> "应当指向字面量末尾: " + error.getMessage());
     }
 
     @Test

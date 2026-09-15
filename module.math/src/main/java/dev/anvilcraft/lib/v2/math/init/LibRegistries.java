@@ -17,6 +17,12 @@ import net.neoforged.neoforge.registries.RegistryBuilder;
  * <p>函数类型注册表的条目决定 {@link IFunction} 的编解码方式；函数数据包注册表的条目则是可以被
  * 表达式按名引用的具体函数。下游模组既可以在数据包里按 {@link CustomFunction} 的格式提供 JSON，
  * 也可以用 DeferredRegister.create(LibRegistries.FUNCTION_KEY, modId) 注册代码定义的函数。</p>
+ *
+ * <p><b>命名空间约定：</b>模块 id 是 {@code anvillib_math}，但两个注册表的键都挂在
+ * {@link AnvilLibMath#MAIN_ID}（{@code anvillib}）下。flat 文本里不带命名空间的名字会补成
+ * {@code anvillib}，所以想用短名引用的函数必须注册在 {@code anvillib} 命名空间；注册在别处就得写全名。
+ * 其它模块若也往这两个注册表注册，需要自己保证名字不冲突——{@code anvillib} 下的条目是所有模块共用的
+ * 一个命名空间。</p>
  */
 @EventBusSubscriber(modid = AnvilLibMath.MOD_ID)
 public class LibRegistries {

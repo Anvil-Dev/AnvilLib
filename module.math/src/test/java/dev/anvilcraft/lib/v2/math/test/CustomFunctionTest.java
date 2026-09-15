@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -228,5 +229,34 @@ class CustomFunctionTest {
             .value();
         assertEquals(function, registered);
         assertEquals(6.0, registered.apply(MathTestBootstrap.constants(2), Arguments.of()));
+    }
+
+    @Test
+    @DisplayName("anvillib 命名空间下与内建同名的函数写不出短名，退回对象形式而不是被静默换掉")
+    void builtInNameCollisionFallsBackToObject() {
+        // 解析器认为 anvillib:sqrt 就是内建 sqrt，所以这个数据包函数没法用 flat 文本表达
+        MathTestBootstrap.registerFunction("sqrt", CustomFunction.named(
+            List.of("a"),
+            LibBuiltInFunctions.MULTIPLY.call(NamedFunction.call("a"), ConstantFunction.of(100).call())
+        ));
+        Holder<IFunction> collided = MathTestBootstrap
+            .functions()
+            .getHolderOrThrow(ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of("sqrt")));
+        FunctionExpression call = FunctionExpression.of(collided, ConstantFunction.of(4).call());
+
+        // 写不出 sqrt(4)：那会读成内建 sqrt，求值结果从 400 变成 2
+        assertNull(MathTestBootstrap.writeFlat(call));
+
+        // 不撞名的 anvillib 函数照旧省命名空间
+        MathTestBootstrap.registerFunction("collision-free", CustomFunction.named(
+            List.of("a"),
+            NamedFunction.call("a")
+        ));
+        Holder<IFunction> free = MathTestBootstrap
+            .functions()
+            .getHolderOrThrow(ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of("collision-free")));
+        assertEquals("collision-free(3)", MathTestBootstrap.writeFlat(
+            FunctionExpression.of(free, ConstantFunction.of(3).call())
+        ));
     }
 }

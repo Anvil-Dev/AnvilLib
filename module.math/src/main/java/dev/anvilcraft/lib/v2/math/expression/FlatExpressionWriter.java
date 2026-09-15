@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.math.expression;
 
+import dev.anvilcraft.lib.v2.math.AnvilLibMath;
 import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
@@ -10,6 +11,7 @@ import dev.anvilcraft.lib.v2.math.init.LibRegistries;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -143,11 +145,6 @@ final class FlatExpressionWriter {
 
     /**
      * 给一个操作数取负。
-     *
-     * <p>一律写成括号里的操作数：读回来就是解析器的 {@code 0-x} 形式，回写收敛到同一种文本。括号还能保住
-     * 一元负号的层次（{@code -(x^y)} 不能写成 {@code -x^y}）。操作数本身以 {@code -} 开头时
-     * （只可能是负常量）写不出来，返回空让调用方改用对象形式，免得 {@code 0-(-0.5)} 被简化成 {@code 0.5}
-     * 而丢掉结构。</p>
      */
     private static Optional<String> negationOf(IExpression operand, HolderGetter<IFunction> functions) {
         return FlatExpressionWriter
@@ -162,10 +159,10 @@ final class FlatExpressionWriter {
      * 这个结构，回写因此收敛到同一种文本。不括不行——一元负号的优先级低于乘方，取负一个乘方时
      * {@code -(x^y)} 写成 {@code -x^y} 会被读成 {@code (-x)^y}。</p>
      *
-     * <p>已经带负号的文本补不了：{@code --x} 不是合法写法。调用方改成退回对象形式。</p>
+     * <p>操作数本身以 {@code -} 开头（只可能是负常量，例如 {@code -0.5}）时不必拦：括号保证了不会写出
+     * {@code --x} 这种不合法文本，{@code -(-0.5)} 读回来仍是 {@code subtract(0, const -0.5)}。</p>
      */
     private static Optional<String> negation(String operand) {
-        if (operand.startsWith("-")) return Optional.empty();
         return Optional.of("-(" + operand + ")");
     }
 
@@ -244,14 +241,30 @@ final class FlatExpressionWriter {
     /**
      * 取函数在 flat 文本里的名字：内建函数用枚举名，数据包函数用注册名，
      * {@code anvillib} 命名空间省略。
+     *
+     * <p>省略命名空间的前提是「写出来还能读回同一个函数」，而解析器认为 {@code anvillib:<内建名>} 就是
+     * 内建函数。若数据包里真注册了这种撞名函数，写回 {@code sqrt} 会读成内建 {@code sqrt}，所以这里
+     * 返回 {@code null} 让调用方退回对象形式，而不是静默换掉求值结果。</p>
      */
     private static @Nullable String functionName(FunctionExpression call, HolderGetter<IFunction> functions) {
-        if (call.function().value() instanceof LibBuiltInFunctions builtin) {
+        IFunction function = call.function().value();
+        if (function instanceof LibBuiltInFunctions builtin) {
             return builtin.getSerializedName();
         }
         ResourceKey<IFunction> key = call.function().unwrapKey().orElse(null);
         if (key == null || functions.get(key).isEmpty()) return null;
-        return FlatExpressionParser.stripDefaultNamespace(key.location());
+        return FlatExpressionWriter.writableName(key.location(), function);
+    }
+
+    /**
+     * 一个注册名能否写成 flat 文本，不能则返回 {@code null}。
+     */
+    private static @Nullable String writableName(ResourceLocation id, IFunction function) {
+        if (!id.getNamespace().equals(AnvilLibMath.MAIN_ID)) return id.toString();
+        LibBuiltInFunctions shadowed = LibBuiltInFunctions.byName(id.getPath());
+        // 解析器对 anvillib:<内建名> 一律按内建函数处理，撞名时这个名字写出去就变了意思
+        if (shadowed != null && shadowed != function) return null;
+        return id.getPath();
     }
 
     /**
@@ -372,15 +385,14 @@ final class FlatExpressionWriter {
     /**
      * 可以写成中缀的运算符，优先级与 {@link FlatExpressionParser} 的语法层次一一对应。
      *
-     * <p>{@link #UNARY} 不是一个真正的内建函数，只用来表示解析器里一元负号所处的层次，
-     * 让 {@code -} 后面的操作数按同一套规则补括号。</p>
+     * <p>这里只列得出来真正的内建函数：一元负号在解析器里就是 {@code subtract(0, x)}，跟着 {@code -}
+     * 那一层走，不需要单独一项。</p>
      */
     enum Operator {
         ADD("+", 1, Associativity.LEFT),
         SUBTRACT("-", 1, Associativity.LEFT),
         MULTIPLY("*", 2, Associativity.LEFT),
         DIVIDE("/", 2, Associativity.LEFT),
-        UNARY("-", 3, Associativity.RIGHT),
         POW("^", 4, Associativity.RIGHT);
 
         private final String symbol;

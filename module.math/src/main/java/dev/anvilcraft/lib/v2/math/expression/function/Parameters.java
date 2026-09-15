@@ -1,7 +1,5 @@
 package dev.anvilcraft.lib.v2.math.expression.function;
 
-import dev.anvilcraft.lib.v2.math.expression.Arguments;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,8 +10,8 @@ import javax.annotation.Nullable;
  * 一次函数调用的形参声明：固定形参与至多一个变参。
  *
  * <p>声明文本里参数名以 {@code ...} 结尾即为变参，例如 {@code ["a", "x..."]}。变参可以在列表的任意
- * 位置，它吃下从这一位开始的全部实参，所以变参之后的形参永远取不到值；一个签名里出现两个变参直接
- * 报错。</p>
+ * 位置：它吃掉「实参总数减去固定形参个数」个实参，因此它前后的固定形参照样拿得到值。一个签名里出现
+ * 两个变参直接报错。</p>
  *
  * @param parameters 形参，按声明顺序与实参一一对应
  */
@@ -148,29 +146,5 @@ public record Parameters(List<Parameter> parameters) {
         if (this.minimumArity() == this.maximumArity()) return Integer.toString(this.minimumArity());
         if (this.maximumArity() == Integer.MAX_VALUE) return "at least " + this.minimumArity();
         return this.minimumArity() + " to " + this.maximumArity();
-    }
-
-    /**
-     * 把一串数字按位置绑给形参：固定形参各绑一个，变参绑走剩下的全部。
-     *
-     * <p>结果按 {@link #names()} 给出每个形参绑定到的值。函数体里 {@code $(name)} 取到固定形参的数字，
-     * 变参取到列表里的最大值，{@code $(name...)} 取到列表本身。</p>
-     *
-     * @throws IllegalArgumentException 实参个数不在允许范围内时抛出
-     */
-    public List<Arguments.Value> bind(List<Double> arguments) {
-        this.checkArity(arguments.size());
-        List<Arguments.Value> bound = new ArrayList<>(this.parameters.size());
-        int position = 0;
-        for (Parameter parameter : this.parameters) {
-            if (parameter.variadic()) {
-                bound.add(new Arguments.Value.Many(arguments.subList(position, arguments.size())));
-                position = arguments.size();
-            } else {
-                bound.add(new Arguments.Value.Single(arguments.get(position)));
-                position++;
-            }
-        }
-        return bound;
     }
 }
