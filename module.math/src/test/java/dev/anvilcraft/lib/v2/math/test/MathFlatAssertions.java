@@ -55,7 +55,7 @@ final class MathFlatAssertions {
     static void assertFullRoundTrip(FunctionExpression tree) {
         assertObjectRoundTrip(tree);
         String written = MathTestBootstrap.writeFlat(tree);
-        // 个别形状（取负一个负常量）没有合法的 flat 写法，这时编码退回对象形式，只保证值不变
+        // 写不出 flat 文本时（内联定义、非有限常量、撞名的注册名等）编码退回对象形式，只保证值不变
         if (written == null) return;
         IExpression reparsed = MathTestBootstrap.parseValue(written);
         assertEquals(value(tree), value(reparsed), () -> "值改变: " + tree + " -> " + written);
@@ -66,6 +66,27 @@ final class MathFlatAssertions {
             canonical(MathTestBootstrap.parseValue(written)),
             () -> "两次解析结构不同: " + written
         );
+    }
+
+    /**
+     * 只比较结构、不求值的三支往返：数字 / flat 文本 / 对象形式。
+     *
+     * <p>用于整棵树本身不可求值的形状——lambda 落在运算符操作数位置时，它是个待绑定的值而不是数字，
+     * 拿它去求值必然报「实参个数不符」，但「写出来能读回同一棵树」这条不变量照样要成立。</p>
+     */
+    static void assertStructuralRoundTrip(IExpression tree) {
+        JsonElement encoded = MathTestBootstrap.encode(tree);
+        assertNotNull(encoded, () -> "表达式写不出对象形式: " + tree);
+        IExpression decoded = IExpression.CODEC
+            .parse(MathTestBootstrap.ops(), encoded)
+            .getOrThrow(message -> new AssertionError("对象形式读不回来: " + tree + " " + message));
+        assertEquals(canonical(tree), canonical(decoded), () -> "对象形式结构改变: " + tree + " -> " + encoded);
+
+        String written = MathTestBootstrap.writeFlat(tree);
+        if (written == null) return;
+        IExpression reparsed = MathTestBootstrap.parseValue(written);
+        assertEquals(canonical(tree), canonical(reparsed), () -> "结构改变: " + tree + " -> " + written);
+        assertEquals(written, MathTestBootstrap.writeFlat(reparsed), () -> "回写不稳定: " + tree);
     }
 
     /**
@@ -95,6 +116,36 @@ final class MathFlatAssertions {
      */
     static void assertObjectRoundTrip(LibBuiltInFunctions builtin, IExpression... arguments) {
         MathFlatAssertions.assertObjectRoundTrip(builtin.call(arguments));
+    }
+
+    /**
+     * 回写侧对整棵树的承诺：只要 {@code write} 成功，写出的文本就必须读回同一棵表达式树。
+     *
+     * <p>{@code CODEC} 的编码器只要 flat 写出成功就不再写对象形式，所以「写得出来但读不回去 / 读成别的
+     * 意思」会静默落进存档。断言这条不变量，比只断言文本长什么样更能兜住注册名、优先级、字符集这几类缺口。</p>
+     */
+    static void assertWrittenTextReadsBack(IExpression tree) {
+        String written = MathTestBootstrap.writeFlat(tree);
+        if (written == null) return;
+        assertEquals(
+            MathFlatAssertions.canonical(tree),
+            MathFlatAssertions.canonical(MathTestBootstrap.parseValue(written)),
+            () -> "写出的文本读不回同一棵树: " + tree + " -> " + written
+        );
+    }
+
+    /**
+     * 随机生成一个变参 lambda，函数体只用不会求值的叶子。
+     *
+     * <p>专门用来喂运算符的操作数位置：随机树会被求值，而一元、二元运算符给出的实参个数不一样，
+     * 变参形参对实参个数没有要求，因此哪种位置都构造得出来。单形参 lambda 只适合 {@code forEach}
+     * 实参位那种明确「一次给一个值」的场景。</p>
+     */
+    static FunctionExpression randomVariadicLambda(Random random) {
+        IExpression body = random.nextInt(2) == 0
+            ? ConstantFunction.of(MathFlatAssertions.randomNumber(random)).call()
+            : NamedFunction.call("x");
+        return FunctionExpression.of(LambdaFunction.of(List.of("x..."), body));
     }
 
     /**

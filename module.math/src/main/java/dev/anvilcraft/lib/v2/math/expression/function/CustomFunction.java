@@ -35,14 +35,6 @@ import java.util.List;
  * @param body       函数体表达式，用 {@code $(name)} 引用形参
  */
 public record CustomFunction(Parameters parameters, IExpression body) implements IFunction {
-    /**
-     * 自定义函数体的最大嵌套调用深度。
-     *
-     * <p>函数体可以引用数据包注册表里的函数，包括它自己，因此自引用与互相引用都必须在求值期拦下来，
-     * 否则会以 {@link StackOverflowError} 收场。深度上限按调用深度计，正常函数体远达不到。</p>
-     */
-    private static final int MAX_CALL_DEPTH = 64;
-    private static final ThreadLocal<Integer> CALL_DEPTH = ThreadLocal.withInitial(() -> 0);
     public static final MapCodec<CustomFunction> MAP_CODEC = RecordCodecBuilder.mapCodec(ins -> ins.group(
         Codec.STRING
             .listOf()
@@ -83,20 +75,9 @@ public record CustomFunction(Parameters parameters, IExpression body) implements
 
     @Override
     public double apply(List<IExpression> arguments, Arguments inputs) {
-        int depth = CustomFunction.CALL_DEPTH.get();
-        if (depth >= CustomFunction.MAX_CALL_DEPTH) {
-            throw new IllegalStateException(
-                "Custom function call depth exceeded " + CustomFunction.MAX_CALL_DEPTH + " at parameters " + this.declarations()
-            );
-        }
         // 实参在调用点上下文里求值，函数体再换成形参绑定：这样函数体既能读到形参，也能读到调用点的名字
         IFunction.Call call = IFunction.bind(arguments, inputs, this.parameters);
-        CustomFunction.CALL_DEPTH.set(depth + 1);
-        try {
-            return this.body.evaluate(call.bound());
-        } finally {
-            CustomFunction.CALL_DEPTH.set(depth);
-        }
+        return this.guarded("parameters " + this.declarations(), () -> this.body.evaluate(call.bound()));
     }
 
     /**

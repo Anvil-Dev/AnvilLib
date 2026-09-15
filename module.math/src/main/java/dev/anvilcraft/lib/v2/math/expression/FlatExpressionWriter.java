@@ -260,13 +260,19 @@ final class FlatExpressionWriter {
 
     /**
      * 一个注册名能否写成 flat 文本，不能则返回 {@code null}。
+     *
+     * <p>名字必须既撞不上别的含义、又能被解析器原样读回来：{@code anvillib} 命名空间里要在下面排除内建名
+     * （解析器优先按内建函数处理），而传入值名（{@code x}/{@code x0}）与 {@code -}、{@code /} 这类标识符
+     * 字符集之外的路径由 {@link FlatExpressionParser#isWritableFunctionName(String)} 一并排除，
+     * 免得两边规则各写一份再漂移。</p>
      */
     private static @Nullable String writableName(ResourceLocation id, IFunction function) {
-        if (!id.getNamespace().equals(AnvilLibMath.MAIN_ID)) return id.toString();
+        String name = id.getNamespace().equals(AnvilLibMath.MAIN_ID) ? id.getPath() : id.toString();
+        if (!FlatExpressionParser.isWritableFunctionName(name)) return null;
         LibBuiltInFunctions shadowed = LibBuiltInFunctions.byName(id.getPath());
         // 解析器对 anvillib:<内建名> 一律按内建函数处理，撞名时这个名字写出去就变了意思
         if (shadowed != null && shadowed != function) return null;
-        return id.getPath();
+        return name;
     }
 
     /**
@@ -280,8 +286,9 @@ final class FlatExpressionWriter {
     private static boolean needsParentheses(IExpression expression, int parentPrecedence, OperandPosition position) {
         Holder<IFunction> function = FlatExpressionWriter.functionOf(expression);
         if (function == null) return false;
-        // lambda 的 -> 绑得比所有运算符都松，拿它当运算符的操作数读不回来，
-        // 因此一律退回对象形式。lambda 的参数位置走的是 visitLambda，不经过这里
+        // lambda 的 -> 绑得比所有运算符都松，拿它当运算符的操作数读不回来。
+        // 返回 true 会让 operand() 试图补括号，括号补得住形状；但解析器不接受 2(x -> $(x)) 这类并置写法，
+        // 所以并置分支还单独排除了 lambda，两条路都写不出时 operand() 才放弃、退回对象形式
         if (function.value() instanceof LambdaFunction) return true;
         Operator child = Operator.of(function.value());
         if (child == null) return false;

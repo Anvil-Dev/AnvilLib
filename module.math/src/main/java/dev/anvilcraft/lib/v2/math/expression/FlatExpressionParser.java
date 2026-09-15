@@ -317,16 +317,20 @@ public final class FlatExpressionParser {
     }
 
     private IExpression parseUnary() {
-        // 符号紧跟数字时算数字的一部分，这样 -2 与 -5.0E-4 都是常量字面量，回写结果能原样读回。
-        // 后面接 ^ 时不算：-2^2 仍按一元负号优先于乘方处理，写成 (-2)^2 才是负底数
-        if (this.signedNumberLiteralAhead()) {
-            return this.parseNumber();
-        }
-        if (this.match('-')) {
-            return this.call("subtract", ConstantFunction.of(0).call(), this.parseUnary());
-        }
-        if (this.match('+')) return this.parseUnary();
-        return this.parsePower();
+        // 一元符号在这里直接递归（每个 + / - 一帧），不经过 parseLambda 与 parsePower，
+        // 因此必须自己也过一遍深度守卫，否则 "-"*20000 这种输入照样能把栈打穿
+        return this.guardDepth(() -> {
+            // 符号紧跟数字时算数字的一部分，这样 -2 与 -5.0E-4 都是常量字面量，回写结果能原样读回。
+            // 后面接 ^ 时不算：-2^2 仍按一元负号优先于乘方处理，写成 (-2)^2 才是负底数
+            if (this.signedNumberLiteralAhead()) {
+                return this.parseNumber();
+            }
+            if (this.match('-')) {
+                return this.call("subtract", ConstantFunction.of(0).call(), this.parseUnary());
+            }
+            if (this.match('+')) return this.parseUnary();
+            return this.parsePower();
+        });
     }
 
     private IExpression parsePower() {
@@ -530,7 +534,7 @@ public final class FlatExpressionParser {
      * 解析 {@code x}/{@code y}/{@code z} 与 {@code x0}/{@code x1}/{@code x2} 形式的传入值引用。
      */
     @Nullable
-    private static IExpression variable(String name) {
+    static IExpression variable(String name) {
         switch (name) {
             case "x" -> {
                 return InputFunction.call(0);
@@ -596,11 +600,28 @@ public final class FlatExpressionParser {
         return character >= '0' && character <= '9';
     }
 
-    private static boolean isIdentifierStart(char character) {
+    static boolean isIdentifierStart(char character) {
         return character == '_' || (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z');
     }
 
-    private static boolean isIdentifierPart(char character) {
+    static boolean isIdentifierPart(char character) {
         return isIdentifierStart(character) || isDigit(character) || character == ':' || character == '.';
+    }
+
+    /**
+     * 判断一个名字写成裸标识符后，能不能读回同一个函数。
+     *
+     * <p>回写侧与解析侧必须共用这一条判断，否则「写得出来、读不回去」的文本会静默落进存档。三种情况都不行：
+     * 名字不是合法标识符（{@code collision-free}、{@code utils/triple}，{@code -} 与 {@code /} 都不是标识符字符）；
+     * 首字符不是标识符起始字符（{@code $x}、{@code .x} 会被当成 {@code $(name)} 或小数点）；
+     * 名字长得像传入值引用（{@code x}、{@code y}、{@code z}、{@code x0}）——解析器先认变量、后认函数，
+     * {@code x0(5)} 会解析成 {@code <input 0> * 5}，函数本身根本不会被调用。</p>
+     */
+    static boolean isWritableFunctionName(String name) {
+        if (name.isEmpty() || !isIdentifierStart(name.charAt(0))) return false;
+        for (int index = 1; index < name.length(); index++) {
+            if (!isIdentifierPart(name.charAt(index))) return false;
+        }
+        return FlatExpressionParser.variable(name.toLowerCase(Locale.ROOT)) == null;
     }
 }

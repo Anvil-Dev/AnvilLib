@@ -74,8 +74,12 @@ public record LambdaFunction(Parameters parameters, IExpression body) implements
 
     @Override
     public double apply(List<IExpression> arguments, Arguments inputs) {
-        // 实参在调用点上下文里求值，函数体再换成形参绑定：这样函数体既能读到形参，也能读到外层的名字
-        return this.body.evaluate(IFunction.bind(arguments, inputs, this.parameters).bound());
+        // lambda 与 CustomFunction 一样能被注册进函数注册表并按名调用，两个注册 lambda 的函数体互相引用
+        // 就能在完全绕过 CustomFunction 的情况下把栈打穿，因此这里共用同一套深度守卫
+        return this.guarded("lambda " + this.declarations(), () ->
+            // 实参在调用点上下文里求值，函数体再换成形参绑定：这样函数体既能读到形参，也能读到外层的名字
+            this.body.evaluate(IFunction.bind(arguments, inputs, this.parameters).bound())
+        );
     }
 
     /**

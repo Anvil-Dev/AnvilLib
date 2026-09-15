@@ -5,9 +5,11 @@ import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
 import dev.anvilcraft.lib.v2.math.expression.IExpression;
 import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.CustomFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
+import net.minecraft.core.Holder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -162,6 +164,39 @@ class LambdaTest {
             MathTestBootstrap.parseValue(Objects.requireNonNull(MathTestBootstrap.writeFlat(source))).evaluate(Arguments.of())
         );
         assertEquals(12.0, MathTestBootstrap.parseValue(source).evaluate(Arguments.of()));
+    }
+
+    @Test
+    @DisplayName("两个注册的 lambda 互相按名调用时被深度守卫拦下")
+    void mutualLambdaReferenceIsCaught() {
+        // lambda 与自定义函数一样能被注册进注册表并按名调用，这条环完全绕过 CustomFunction，
+        // 因此深度守卫必须放在共用位置，而不是只挂在 CustomFunction 上
+        Holder<IFunction> first = MathTestBootstrap.registerFunction(
+            "lambda-first",
+            LambdaFunction.named(List.of("a"), NamedFunction.call("a"))
+        );
+        Holder<IFunction> second = MathTestBootstrap.registerFunction(
+            "lambda-second",
+            LambdaFunction.named(List.of("a"), NamedFunction.call("a"))
+        );
+        MathTestBootstrap.replaceFunction(
+            "lambda-first",
+            LambdaFunction.named(List.of("a"), FunctionExpression.of(second, NamedFunction.call("a")))
+        );
+        MathTestBootstrap.replaceFunction(
+            "lambda-second",
+            LambdaFunction.named(List.of("a"), FunctionExpression.of(first, NamedFunction.call("a")))
+        );
+
+        FunctionExpression call = FunctionExpression.of(first, ConstantFunction.of(1).call());
+        IllegalStateException error = assertThrows(
+            IllegalStateException.class,
+            () -> call.evaluate(Arguments.of())
+        );
+        assertTrue(
+            error.getMessage().contains("call depth exceeded"),
+            () -> "应当是调用深度超限的报错: " + error.getMessage()
+        );
     }
 
     @Test

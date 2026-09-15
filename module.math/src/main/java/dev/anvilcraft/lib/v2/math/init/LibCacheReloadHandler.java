@@ -26,6 +26,8 @@ public class LibCacheReloadHandler {
 
     @SubscribeEvent
     public static void onDatapackSync(OnDatapackSyncEvent event) {
-        FlatExpressionParser.clearCache();
+        // 本事件在「某个玩家进服」时也会触发，那时注册表并没有换，整表缓存没必要丢；
+        // 只有 getPlayer() 为 null（即 /reload 这类全员同步）才说明数据包换过
+        if (event.getPlayer() == null) FlatExpressionParser.clearCache();
     }
 }

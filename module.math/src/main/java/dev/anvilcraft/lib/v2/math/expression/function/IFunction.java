@@ -22,6 +22,7 @@ import net.minecraft.util.StringRepresentable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 /**
@@ -134,6 +135,43 @@ public interface IFunction {
     }
 
     /**
+     * 求值期允许的最大调用深度。
+     *
+     * <p>函数体可以按名引用注册表里的任何函数，包括自己，因此自引用与互相引用必须在求值期拦下来，否则会以
+     * {@link StackOverflowError} 收场。任何「能被注册、能被按名调用」的类型都要受这条约束：环可以穿过
+     * {@link CustomFunction}，也可以只穿过 {@link LambdaFunction}。</p>
+     */
+    int MAX_CALL_DEPTH = 64;
+
+    /**
+     * 当前线程的调用深度，配合 {@link #MAX_CALL_DEPTH} 使用。
+     */
+    ThreadLocal<Integer> CALL_DEPTH = ThreadLocal.withInitial(() -> 0);
+
+    /**
+     * 在调用深度守卫内求值一段函数体，超深时抛出可读的异常而不是让栈溢出。
+     *
+     * <p>正常函数体远达不到这个深度，代价可以忽略；异常路径也会复原计数，不会污染同线程的后续调用。</p>
+     *
+     * @param description 超深时用来指认是哪个函数，例如形参声明
+     * @param body        真正的求值逻辑
+     */
+    default double guarded(String description, Supplier<Double> body) {
+        int depth = IFunction.CALL_DEPTH.get();
+        if (depth >= IFunction.MAX_CALL_DEPTH) {
+            throw new IllegalStateException(
+                "Function call depth exceeded " + IFunction.MAX_CALL_DEPTH + " at " + description
+            );
+        }
+        IFunction.CALL_DEPTH.set(depth + 1);
+        try {
+            return body.get();
+        } finally {
+            IFunction.CALL_DEPTH.set(depth);
+        }
+    }
+
+    /**
      * 按形参声明绑定一次调用的实参。
      *
      * <p>每个实参先求成一个值：整份变参列表的引用不求值，直接把列表绑上去。{@code $(x...)} 铺开成列表里
@@ -143,7 +181,7 @@ public interface IFunction {
      * @param inputs     调用点可访问的传入值
      * @param parameters 形参声明
      * @throws IllegalArgumentException 实参个数与形参声明不符时抛出
-     * @throws IllegalStateException    整份列表被用在固定形参位上时抛出
+     * @throws IllegalStateException    整份列表被用在固定形参位上，或 {@code $(x...)} 铺开的实参多于该位所需时抛出
      */
     static Call bind(List<IExpression> arguments, Arguments inputs, Parameters parameters) {
         List<Arguments.Value> values = new ArrayList<>(arguments.size());

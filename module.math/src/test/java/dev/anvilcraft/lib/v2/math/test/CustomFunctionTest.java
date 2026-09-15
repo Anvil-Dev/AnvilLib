@@ -232,31 +232,43 @@ class CustomFunctionTest {
     }
 
     @Test
-    @DisplayName("anvillib 命名空间下与内建同名的函数写不出短名，退回对象形式而不是被静默换掉")
-    void builtInNameCollisionFallsBackToObject() {
-        // 解析器认为 anvillib:sqrt 就是内建 sqrt，所以这个数据包函数没法用 flat 文本表达
+    @DisplayName("写不回来的注册名一律退回对象形式，不会被静默换掉")
+    void unwritableNamesFallBackToObject() {
+        // 这些名字写成裸标识符后都读不回同一个函数，必须退回对象形式。
+        // 判定依据是解析器自己的规则，所以逐名对照：能写的必须能读回同一棵树，不能写的必须是 null
         MathTestBootstrap.registerFunction("sqrt", CustomFunction.named(
             List.of("a"),
             LibBuiltInFunctions.MULTIPLY.call(NamedFunction.call("a"), ConstantFunction.of(100).call())
         ));
-        Holder<IFunction> collided = MathTestBootstrap
-            .functions()
-            .getHolderOrThrow(ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of("sqrt")));
-        FunctionExpression call = FunctionExpression.of(collided, ConstantFunction.of(4).call());
+        String[] unwritable = {
+            "sqrt",          // 撞内建名：sqrt(4) 会读成内建 sqrt
+            "x", "y", "z",   // 撞传入值名：x(5) 会读成 <input 0> * 5
+            "x0", "x12",     // 撞带下标的传入值名
+            "collision-free", // '-' 不是标识符字符：读到 collision 就停了
+            "utils/triple"   // '/' 同理
+        };
+        for (String path : unwritable) {
+            MathTestBootstrap.registerFunction(path, CustomFunction.named(List.of("a"), NamedFunction.call("a")));
+            Holder<IFunction> holder = MathTestBootstrap
+                .functions()
+                .getHolderOrThrow(ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of(path)));
+            FunctionExpression call = FunctionExpression.of(holder, ConstantFunction.of(5).call());
+            assertNull(MathTestBootstrap.writeFlat(call), () -> "这个名字不应当写得出 flat 文本: " + path);
+            // 退回对象形式后仍要能完整往返
+            MathFlatAssertions.assertObjectRoundTrip(call);
+        }
 
-        // 写不出 sqrt(4)：那会读成内建 sqrt，求值结果从 400 变成 2
-        assertNull(MathTestBootstrap.writeFlat(call));
-
-        // 不撞名的 anvillib 函数照旧省命名空间
-        MathTestBootstrap.registerFunction("collision-free", CustomFunction.named(
+        // 合法的 anvillib 名字照旧省命名空间，并且读回来还是同一个函数
+        MathTestBootstrap.registerFunction("collisionfree", CustomFunction.named(
             List.of("a"),
             NamedFunction.call("a")
         ));
         Holder<IFunction> free = MathTestBootstrap
             .functions()
-            .getHolderOrThrow(ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of("collision-free")));
-        assertEquals("collision-free(3)", MathTestBootstrap.writeFlat(
-            FunctionExpression.of(free, ConstantFunction.of(3).call())
-        ));
+            .getHolderOrThrow(ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of("collisionfree")));
+        FunctionExpression writable = FunctionExpression.of(free, ConstantFunction.of(3).call());
+        assertEquals("collisionfree(3)", MathTestBootstrap.writeFlat(writable));
+        // 关键：写出的文本必须读回同一棵树，而不是只对文本本身断言
+        MathFlatAssertions.assertWrittenTextReadsBack(writable);
     }
 }

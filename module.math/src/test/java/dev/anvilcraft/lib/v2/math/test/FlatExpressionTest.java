@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.math.test;
 
 import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
+import dev.anvilcraft.lib.v2.math.expression.IExpression;
 import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
@@ -154,6 +155,25 @@ class FlatExpressionTest {
     }
 
     @Test
+    @DisplayName("一元符号链也受嵌套上限约束")
+    void unarySymbolChainIsBounded() {
+        // parseUnary 每个符号递归一帧、且不经过 parseLambda/parsePower，
+        // 所以它必须自己也过一遍深度守卫，否则 "-"*20000 照样打穿栈
+        for (String symbol : new String[]{"-", "+"}) {
+            IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> MathTestBootstrap.parseValue(symbol.repeat(20000) + "1")
+            );
+            assertTrue(
+                error.getMessage().contains("nests too deeply"),
+                () -> "应当是嵌套过深的报错: " + error.getMessage()
+            );
+            // 短符号链照旧正常
+            MathFlatAssertions.assertRoundTrip(symbol.repeat(100) + "1");
+        }
+    }
+
+    @Test
     @DisplayName("带符号的字面量整段都能读")
     void signedLiteralsParse() {
         assertEquals(-2.0, MathTestBootstrap.parse("-2").evaluate());
@@ -193,6 +213,33 @@ class FlatExpressionTest {
         int rounds = Integer.getInteger("math.fuzz.rounds", 20000);
         for (int round = 0; round < rounds; round++) {
             MathFlatAssertions.assertFullRoundTrip(MathFlatAssertions.randomTree(random, 0));
+        }
+    }
+
+    @Test
+    @DisplayName("lambda 落在运算符操作数位置的随机树也往返不变")
+    void randomLambdaOperandTreesRoundTrip() {
+        // randomTree 的叶子集合里放不进 lambda：整棵树会被求值，而 lambda 在顶层不可求值。
+        // 所以这里专门构造「二元运算 + lambda 操作数」，把上一轮漏掉的维度补进随机往返。
+        // 用只比结构不求值的断言：lambda 操作数是待绑定的值，整棵树本来就不可求值
+        Random random = new Random(20240608L);
+        int rounds = Integer.getInteger("math.fuzz.rounds", 20000);
+        LibBuiltInFunctions[] operators = {
+            LibBuiltInFunctions.ADD,
+            LibBuiltInFunctions.SUBTRACT,
+            LibBuiltInFunctions.MULTIPLY,
+            LibBuiltInFunctions.DIVIDE,
+            LibBuiltInFunctions.POW
+        };
+        for (int round = 0; round < rounds; round++) {
+            LibBuiltInFunctions operator = operators[random.nextInt(operators.length)];
+            IExpression left = random.nextBoolean()
+                ? MathFlatAssertions.randomVariadicLambda(random)
+                : MathFlatAssertions.randomTree(random, 2);
+            IExpression right = random.nextBoolean()
+                ? MathFlatAssertions.randomVariadicLambda(random)
+                : MathFlatAssertions.randomTree(random, 2);
+            MathFlatAssertions.assertStructuralRoundTrip(operator.call(left, right));
         }
     }
 
