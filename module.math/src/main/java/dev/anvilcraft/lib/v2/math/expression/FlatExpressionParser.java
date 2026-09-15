@@ -548,10 +548,8 @@ public final class FlatExpressionParser {
      * 加载深处抛错。判断依据是函数自己声明的 {@link IFunction#parameters()}：声明了形参却又不按它绑定的类型
      * 本来就跑不通（{@code bind} 会用同一份声明校验），所以这里提前报错不会误伤。</p>
      *
-     * <p>内建函数与数据包函数走同一条判断，报错口径才一致。{@code $(x...)} 能铺开成几个实参要等求值才知道，
-     * 所以它按区间算：函数有变参形参时列表接得住，放行，长度是否合适留给 {@code bind} 按真实长度判定；
-     * 没有变参形参时固定形参位一个都接不住列表，这次调用无论列表多长都不合法，解析期就按「非铺开实参个数」
-     * 报出来。</p>
+     * <p>规则本身在 {@link Parameters#checkArity(List)} 里，内建函数、数据包函数与
+     * {@link LibBuiltInFunctions#call} 共用同一份实现，报错口径不会出现两套说法。</p>
      *
      * @param fallbackName 句柄没有注册键时（内建函数用的是直接句柄）报错里显示的名字
      */
@@ -562,20 +560,8 @@ public final class FlatExpressionParser {
         String fallbackName
     ) {
         Parameters parameters = function.value().parameters();
-        int inline = 0;
-        boolean spread = false;
-        for (IExpression argument : arguments) {
-            if (argument instanceof IExpression.Reference.Spread) {
-                spread = true;
-            } else {
-                inline++;
-            }
-        }
         try {
-            // 变参形参接得住整份列表，长度是否落在区间里由 bind 按真实长度判定，解析期放行；
-            // 没有变参形参时固定形参位接不住列表（bind 只肯把 Many 交给变参位），
-            // 这次调用无论列表多长都不合法，按「非铺开实参个数」报出来
-            if (!spread || !parameters.variadicExists()) parameters.checkArity(inline);
+            parameters.checkArity(arguments);
         } catch (IllegalArgumentException exception) {
             throw parser.error(
                 "function '" + FlatExpressionParser.functionName(function, fallbackName) + "' "

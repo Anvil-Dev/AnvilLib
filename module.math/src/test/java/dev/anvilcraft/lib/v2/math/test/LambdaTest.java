@@ -135,8 +135,8 @@ class LambdaTest {
             )
         );
         assertEquals(12.0, function.apply(MathTestBootstrap.constants(1, 2, 3), Arguments.of()));
-        // 变参至少要有一个实参可吃
-        assertThrows(IllegalArgumentException.class, () -> function.apply(List.of(), Arguments.of()));
+        // 变参可以一个值都不吃，forEach 于是没得可喂，返回累加初值 0
+        assertEquals(0.0, function.apply(List.of(), Arguments.of()));
     }
 
     @Test
@@ -209,17 +209,17 @@ class LambdaTest {
     @DisplayName("直接构造的 forEach 调用也走实参个数校验")
     void forEachChecksArityOnDirectConstruction() {
         // 解析期与 call() 都会校验，只有直接调 apply 才绕过；
-        // 不校验的话 arguments.get(-1) 会以 IndexOutOfBounds 失败，只给 lambda 时还会静默返回 0
+        // 不校验的话 arguments.get(-1) 会以 IndexOutOfBounds 失败。
+        // forEach 声明的是 (x..., function)：x 是变参、可以一个值都不吃，
+        // 所以「只给 lambda、不给要遍历的值」是一次合法的空遍历，返回累加初值 0
+        assertEquals(0.0, LibBuiltInFunctions.FOREACH.apply(
+            List.of(MathTestBootstrap.parseValue("x -> $(x)")),
+            Arguments.of()
+        ));
+        // function 是固定形参，一个都不能少
         assertThrows(
             IllegalArgumentException.class,
             () -> LibBuiltInFunctions.FOREACH.apply(List.of(), Arguments.of())
-        );
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> LibBuiltInFunctions.FOREACH.apply(
-                List.of(MathTestBootstrap.parseValue("x -> $(x)")),
-                Arguments.of()
-            )
         );
     }
 

@@ -277,23 +277,21 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
 
     /**
      * 调用该函数并校验参数个数，个数不合法时返回错误。
+     *
+     * <p>校验走 {@link Parameters#checkArity(List)}，与解析同一套规则：{@code $(x...)} 只能落在变参形参位上，
+     * 没有变参形参的内建函数（例如 {@code sqrt}）在这里就把 {@code $(x...)} 拦下，而不是构造出一个到求值期
+     * 才炸的调用。</p>
      */
     public DataResult<FunctionExpression> callChecked(List<IExpression> arguments) {
-        if (arguments.size() < this.minimumArity() || arguments.size() > this.maximumArity()) {
-            return DataResult.error(() -> "Function %s requires %s arguments but got %s".formatted(
-                this.getSerializedName(),
-                this.arityDescription(),
-                arguments.size()
-            ));
+        try {
+            this.parameters.checkArity(arguments);
+        } catch (IllegalArgumentException exception) {
+            return DataResult.error(() -> "Function %s %s".formatted(this.getSerializedName(), exception.getMessage()));
         }
         return DataResult.success(FunctionExpression.of(
             Holder.direct(this),
             arguments.toArray(IExpression[]::new)
         ));
-    }
-
-    private String arityDescription() {
-        return this.parameters.range();
     }
 
     /**

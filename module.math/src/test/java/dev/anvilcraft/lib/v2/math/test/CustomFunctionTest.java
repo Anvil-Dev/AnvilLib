@@ -117,8 +117,9 @@ class CustomFunctionTest {
         );
         assertEquals(2.0, CustomFunctionTest.call(function, 9, 5, 2, 7));
         assertEquals(5.0, CustomFunctionTest.call(function, 9, 5));
-        // 变参至少要有一个实参，只剩 a 一个时个数不符
-        assertThrows(IllegalArgumentException.class, () -> CustomFunctionTest.call(function, 9));
+        // 变参可以一个实参都不吃，此时 $(x...) 绑成空列表，min 取不到值返回 0
+        assertEquals(0.0, CustomFunctionTest.call(function, 9));
+        // a 是固定形参，一个都不能少
         assertThrows(IllegalArgumentException.class, () -> CustomFunctionTest.call(function));
     }
 
@@ -135,23 +136,33 @@ class CustomFunctionTest {
         );
         assertEquals(2.0, CustomFunctionTest.call(spread, 3, 7, 2));
 
-        // $(x...) 是列表，只有变参函数接得住；喂一个值让个数正好，剩下的只能是列表用法本身出错
-        CustomFunction misused = CustomFunction.of(
-            List.of("x..."),
-            LibBuiltInFunctions.ADD.call(IExpression.ref("x..."), ConstantFunction.of(1).call())
+        // $(x...) 是列表，只有变参函数接得住；add 两个形参都是固定的，
+        // 这种函数体在构造时就按个数不符被拦下，而不是留到求值期才炸
+        IllegalArgumentException error = assertThrows(
+            IllegalArgumentException.class,
+            () -> CustomFunction.of(
+                List.of("x..."),
+                LibBuiltInFunctions.ADD.call(IExpression.ref("x..."), ConstantFunction.of(1).call())
+            )
         );
-        assertThrows(IllegalStateException.class, () -> CustomFunctionTest.call(misused, 3));
+        assertTrue(
+            error.getMessage().contains("Expected 2 arguments but got 1"),
+            () -> "应当是实参个数不符的报错: " + error.getMessage()
+        );
     }
 
     @Test
     @DisplayName("自定义函数拆不开自己的变参：$(x...) 只能交给下一个变参函数，forEach 是唯一的出口")
     void variadicCannotBeUnpackedInsideItsOwnBody() {
-        // $(x...) 落在固定形参位上是列表用法错误
-        CustomFunction intoFixed = CustomFunction.of(
-            List.of("x..."),
-            LibBuiltInFunctions.ADD.call(IExpression.ref("x..."), ConstantFunction.of(1).call())
+        // $(x...) 落在固定形参位上是列表用法错误；add 两个形参都固定，
+        // 这种函数体在构造时就按个数不符被拦下
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CustomFunction.of(
+                List.of("x..."),
+                LibBuiltInFunctions.ADD.call(IExpression.ref("x..."), ConstantFunction.of(1).call())
+            )
         );
-        assertThrows(IllegalStateException.class, () -> CustomFunctionTest.call(intoFixed, 3));
 
         // $(x) 只能折叠成一个数（列表最大值），不是逐个取值
         CustomFunction aggregate = CustomFunction.of(
@@ -325,14 +336,11 @@ class CustomFunctionTest {
             NamedFunction.call("xs")
         ));
         assertNotNull(MathTestBootstrap.parseValue("varargsfn(4, 5, 6)"));
-        IllegalArgumentException tooFew = assertThrows(
-            IllegalArgumentException.class,
-            () -> MathTestBootstrap.parseValue("varargsfn()")
-        );
-        assertTrue(
-            tooFew.getMessage().contains("at least 1"),
-            () -> "应当是变参下限的报错: " + tooFew.getMessage()
-        );
+        // 变参按 Java 的变参语义，可以一个实参都不给
+        assertEquals(0.0, MathTestBootstrap.parseValue("varargsfn()").evaluate(Arguments.of()));
+        assertEquals(0.0, MathTestBootstrap.parseValue("varargsfn()").evaluate(
+            Arguments.of(List.of(), List.of("xs"), List.of(new Arguments.Value.Many(List.of(3.0, 7.0))))
+        ));
 
         // 固定形参写成 named 时下限就是形参个数
         MathTestBootstrap.registerFunction("onefixed", CustomFunction.named(
@@ -396,18 +404,48 @@ class CustomFunctionTest {
             () -> "应当点明名字没绑定: " + error.getMessage()
         );
 
-        // 名字绑没绑成列表与「绑成空列表」不是一回事：前者是写错名字，后者是实参个数不够，
-        // 报错要能分辨出来
-        IllegalArgumentException empty = assertThrows(
+        // 名字绑成空列表是合法的空变参调用，与「名字写错」必须分得开：
+        // min 取不到任何值，按函数自己的兜底返回 0
+        assertEquals(0.0, MathTestBootstrap.parseValue("min($(empty...))").evaluate(
+            Arguments.of(List.of(), List.of("empty"), List.of(new Arguments.Value.Many(List.of())))
+        ));
+    }
+
+    @Test
+    @DisplayName("变参可以一个实参都不给：\"x...\": [] 是合法的空调用")
+    void emptyVariadicCallIsLegal() {
+        // 变参的下限是 0，所以 min() 这种「一个值都没有」的写法解析期与求值期都放行，
+        // 取不到值时由函数自己兜底
+        assertEquals(0.0, MathTestBootstrap.parseValue("min()").evaluate(Arguments.of()));
+        assertEquals(0.0, MathTestBootstrap.parseValue("max()").evaluate(Arguments.of()));
+
+        // 绑定成空列表与上面等价
+        Arguments empty = Arguments.of(
+            List.of(), List.of("x"), List.of(new Arguments.Value.Many(List.of()))
+        );
+        assertEquals(0.0, MathTestBootstrap.parseValue("min($(x...))").evaluate(empty));
+
+        // 下限为 0 只针对变参：固定形参照样一个都不能少
+        MathTestBootstrap.registerFunction("onefixed", CustomFunction.named(
+            List.of("only"),
+            NamedFunction.call("only")
+        ));
+        IllegalArgumentException missing = assertThrows(
             IllegalArgumentException.class,
-            () -> MathTestBootstrap.parseValue("min($(empty...))").evaluate(
-                Arguments.of(List.of(), List.of("empty"), List.of(new Arguments.Value.Many(List.of())))
-            )
+            () -> MathTestBootstrap.parseValue("onefixed()")
         );
         assertTrue(
-            empty.getMessage().contains("Expected at least 1"),
-            () -> "空列表应当是实参个数不够的报错: " + empty.getMessage()
+            missing.getMessage().contains("Expected 1 arguments"),
+            () -> "固定形参应当报个数不符: " + missing.getMessage()
         );
+
+        // 固定形参与变参混在一起时，下限就是固定形参个数
+        MathTestBootstrap.registerFunction("twoplus", CustomFunction.of(
+            List.of("a", "b", "rest..."),
+            NamedFunction.call("a")
+        ));
+        assertEquals(1.0, MathTestBootstrap.parseValue("twoplus(1,2)").evaluate(Arguments.of()));
+        assertThrows(IllegalArgumentException.class, () -> MathTestBootstrap.parseValue("twoplus(1)"));
     }
 
     @Test

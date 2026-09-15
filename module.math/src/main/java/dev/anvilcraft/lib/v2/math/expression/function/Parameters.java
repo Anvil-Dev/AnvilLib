@@ -1,5 +1,8 @@
 package dev.anvilcraft.lib.v2.math.expression.function;
 
+import dev.anvilcraft.lib.v2.math.expression.IExpression;
+import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -104,7 +107,7 @@ public record Parameters(List<Parameter> parameters) {
     }
 
     /**
-     * 不是变参的形参个数，也就是变参至少要吃掉的实参个数。
+     * 不是变参的形参个数。
      */
     public int fixedCount() {
         return this.parameters.size() - (this.variadicExists() ? 1 : 0);
@@ -137,6 +140,30 @@ public record Parameters(List<Parameter> parameters) {
         if (size < this.minimumArity() || size > this.maximumArity()) {
             throw new IllegalArgumentException("Expected " + this.range() + " arguments but got " + size);
         }
+    }
+
+    /**
+     * 按形参声明校验一批实参，实参里的 {@code $(name...)} 按区间处理。
+     *
+     * <p>解析器与 {@link LibBuiltInFunctions#call} 都用这一份判断，报错口径与「什么样的调用算合法」不会出现
+     * 两套说法。{@code $(x...)} 是整份列表，只能落在变参形参位上：函数有变参形参时长度要等求值才知道，
+     * 这里放行，真实长度由 {@link IFunction#bind} 再判一次；没有变参形参时固定形参位一个都接不住列表，
+     * 这次调用无论列表多长都不合法，直接按「非铺开实参个数」报出来。</p>
+     *
+     * @param arguments 实参表达式
+     * @throws IllegalArgumentException 无论列表多长都不可能合法时抛出
+     */
+    public void checkArity(List<IExpression> arguments) {
+        int inline = 0;
+        boolean spread = false;
+        for (IExpression argument : arguments) {
+            if (argument instanceof IExpression.Reference.Spread) {
+                spread = true;
+            } else {
+                inline++;
+            }
+        }
+        if (!spread || !this.variadicExists()) this.checkArity(inline);
     }
 
     /**

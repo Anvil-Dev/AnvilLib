@@ -77,12 +77,14 @@ class BuiltInFunctionTest {
         assertEquals(List.of("x..."), LibBuiltInFunctions.MIN.parameters().declarations());
         assertEquals(List.of("x..."), LibBuiltInFunctions.MAX.parameters().declarations());
         assertTrue(LibBuiltInFunctions.MIN.parameters().variadicExists());
-        assertEquals(1, LibBuiltInFunctions.MIN.minimumArity());
+        // 变参的下限是 0：不给实参也是一次合法调用，取不到值由函数自己兜底
+        assertEquals(0, LibBuiltInFunctions.MIN.minimumArity());
         assertEquals(Integer.MAX_VALUE, LibBuiltInFunctions.MIN.maximumArity());
 
         assertEquals(1.0, MathTestBootstrap.parse("min(3,1,2)").evaluate(Arguments.of()));
         assertEquals(3.0, MathTestBootstrap.parse("max(3,1,2)").evaluate(Arguments.of()));
-        assertThrows(IllegalArgumentException.class, () -> MathTestBootstrap.parse("min()"));
+        assertEquals(0.0, MathTestBootstrap.parse("min()").evaluate(Arguments.of()));
+        assertEquals(0.0, MathTestBootstrap.parse("max()").evaluate(Arguments.of()));
     }
 
     @Test
@@ -102,16 +104,20 @@ class BuiltInFunctionTest {
         FunctionExpression named = LibBuiltInFunctions.MIN.call(IExpression.ref("x"));
         assertEquals(9.0, named.evaluate(bound));
 
-        // $(x...) 是列表，落在固定形参位上会报错；这里列表只摊出一个值，个数正好，
-        // 所以拦下它的只能是「列表不能当数字用」这条规则
-        Arguments single = Arguments.of(List.of(), List.of("x"), List.of(
-            new Arguments.Value.Many(List.of(7.0))
-        ));
-        FunctionExpression misused = LibBuiltInFunctions.ADD.call(
-            IExpression.ref("x..."),
-            ConstantFunction.of(1).call()
+        // $(x...) 是列表，落在固定形参位上会报错。add 声明了 (a, b) 两个固定形参、没有变参，
+        // 整份列表一个固定位都接不住，所以这种调用在构造时就按个数不符被拦下，
+        // 「列表不能当数字用」这条规则在求值期兜底
+        IllegalArgumentException error = assertThrows(
+            IllegalArgumentException.class,
+            () -> LibBuiltInFunctions.ADD.call(
+                IExpression.ref("x..."),
+                ConstantFunction.of(1).call()
+            )
         );
-        assertThrows(IllegalStateException.class, () -> misused.evaluate(single));
+        assertTrue(
+            error.getMessage().contains("Expected 2 arguments but got 1"),
+            () -> "应当是实参个数不符的报错: " + error.getMessage()
+        );
     }
 
     @Test
@@ -119,7 +125,8 @@ class BuiltInFunctionTest {
     void variadicMayAppearAnywhere() {
         Parameters parameters = Parameters.parse(List.of("x...", "last"));
         assertEquals(List.of("x", "last"), parameters.names());
-        assertEquals(2, parameters.minimumArity());
+        // 末位固定形参一个都不能少，变参则可以一个都不给
+        assertEquals(1, parameters.minimumArity());
         assertEquals(Integer.MAX_VALUE, parameters.maximumArity());
         assertThrows(IllegalArgumentException.class, () -> Parameters.parse(List.of("x...", "y...")));
         assertThrows(IllegalArgumentException.class, () -> Parameters.parse(List.of("x...", "x")));

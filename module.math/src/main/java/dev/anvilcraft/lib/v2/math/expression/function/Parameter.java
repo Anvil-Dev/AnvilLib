@@ -49,10 +49,13 @@ public record Parameter(String name, boolean variadic) {
     }
 
     /**
-     * 该形参最少要吃几个实参：固定形参恰好一个，变参至少一个。
+     * 该形参最少要吃几个实参：固定形参恰好一个，变参可以是零个。
+     *
+     * <p>变参按 Java 的变参语义处理，{@code "x...": []} 是一次正常的空调用，例如 {@code min($(x...))} 在
+     * {@code x} 绑成空列表时取不到任何值，由函数自己决定怎么兜底（内建 {@code min}/{@code max} 返回 0）。</p>
      */
     public int minimumCount() {
-        return 1;
+        return this.variadic ? 0 : 1;
     }
 
     @Override
