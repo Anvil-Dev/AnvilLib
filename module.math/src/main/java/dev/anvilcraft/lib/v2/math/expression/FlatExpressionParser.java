@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.WeakHashMap;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 /**
@@ -62,9 +63,18 @@ public final class FlatExpressionParser {
         new WeakHashMap<>()
     );
 
+    /**
+     * 嵌套层数上限，括号、乘方、函数实参与 lambda 函数体共用这一个计数。
+     *
+     * <p>取 512 是因为递归下降每层要占好几个栈帧，2000 层括号就足以打穿默认栈；离正常表达式又足够远
+     * （手写表达式不会有几百层嵌套）。</p>
+     */
+    private static final int MAX_NESTING_DEPTH = 512;
+
     private final String source;
     private final HolderGetter<IFunction> functions;
     private int position;
+    private int depth;
 
     private FlatExpressionParser(String source, HolderGetter<IFunction> functions) {
         this.source = source;
@@ -141,7 +151,8 @@ public final class FlatExpressionParser {
      * 清空解析缓存，数据包重载后调用可以让旧注册表对应的表达式树立刻被回收。
      *
      * <p>{@link #CACHE} 的弱键指望「换注册表后旧条目自动消失」，但条目里的函数引用会反向指回注册表，
-     * 弱键因此回收不掉；数据包重载时主动调一次本方法最省事。</p>
+     * 弱键因此回收不掉。模块内的 {@code LibCacheReloadHandler} 已经挂在服务器启动与数据包同步事件上
+     * 调用本方法，下游不需要再管；只有在自建注册表或测试里才需要手动调。</p>
      */
     public static void clearCache() {
         FlatExpressionParser.CACHE.clear();
@@ -161,16 +172,6 @@ public final class FlatExpressionParser {
      */
     static ResourceLocation withDefaultNamespace(String name) {
         return name.indexOf(':') < 0 ? AnvilLibMath.of(name) : ResourceLocation.parse(name);
-    }
-
-    /**
-     * 检查一个注册名能否省略 {@link AnvilLibMath#MAIN_ID} 前缀写成短名，用于测试与调试。
-     *
-     * <p>回写侧用的是 {@code FlatExpressionWriter.writableName}：它还要判断省略前缀后名字会不会撞上
-     * 内建函数，光看命名空间不够。</p>
-     */
-    static String stripDefaultNamespace(ResourceLocation id) {
-        return id.getNamespace().equals(AnvilLibMath.MAIN_ID) ? id.getPath() : id.toString();
     }
 
     private static DataResult<IExpression> parseResult(String source, HolderGetter<IFunction> functions) {
@@ -195,21 +196,40 @@ public final class FlatExpressionParser {
      * lambda，这样 {@code a - b} 之类不会被误判。</p>
      */
     private IExpression parseLambda() {
-        this.skipWhitespace();
-        int snapshot = this.position;
-        List<String> parameters;
+        return this.guardDepth(() -> {
+            this.skipWhitespace();
+            int snapshot = this.position;
+            List<String> parameters;
+            try {
+                parameters = this.parseLambdaParameters();
+            } catch (IllegalArgumentException exception) {
+                this.position = snapshot;
+                return this.parseAdditive();
+            }
+            if (parameters == null) {
+                this.position = snapshot;
+                return this.parseAdditive();
+            }
+            IExpression body = this.parseLambda();
+            return FunctionExpression.of(LambdaFunction.of(parameters, body));
+        });
+    }
+
+    /**
+     * 进入一层嵌套：递归下降的入口都要先过这里，超过 {@link #MAX_NESTING_DEPTH} 时给出可读的报错。
+     *
+     * <p>不加这一步的话，上万层括号或 {@code 2^2^2^…} 会抛 {@link StackOverflowError}——那是 {@link Error}，
+     * {@code parseResult} 的 {@code catch (RuntimeException)} 拦不住，会直接从 codec 穿到数据包加载流程。</p>
+     */
+    private IExpression guardDepth(Supplier<IExpression> parse) {
+        if (++this.depth > FlatExpressionParser.MAX_NESTING_DEPTH) {
+            throw this.error("expression nests too deeply, the limit is " + FlatExpressionParser.MAX_NESTING_DEPTH);
+        }
         try {
-            parameters = this.parseLambdaParameters();
-        } catch (IllegalArgumentException exception) {
-            this.position = snapshot;
-            return this.parseAdditive();
+            return parse.get();
+        } finally {
+            this.depth--;
         }
-        if (parameters == null) {
-            this.position = snapshot;
-            return this.parseAdditive();
-        }
-        IExpression body = this.parseLambda();
-        return FunctionExpression.of(LambdaFunction.of(parameters, body));
     }
 
     /**
@@ -310,11 +330,13 @@ public final class FlatExpressionParser {
     }
 
     private IExpression parsePower() {
-        IExpression base = this.parseValue();
-        if (this.match('^')) {
-            return this.call("pow", base, this.parseUnary());
-        }
-        return base;
+        return this.guardDepth(() -> {
+            IExpression base = this.parseValue();
+            if (this.match('^')) {
+                return this.call("pow", base, this.parseUnary());
+            }
+            return base;
+        });
     }
 
     private IExpression parseValue() {

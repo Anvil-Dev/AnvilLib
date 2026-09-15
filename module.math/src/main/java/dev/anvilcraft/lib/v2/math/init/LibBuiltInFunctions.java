@@ -154,6 +154,9 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
     FOREACH(List.of("x...", "function")) {
         @Override
         public double apply(List<IExpression> arguments, Arguments inputs) {
+            // 解析期与 call() 都校验过个数，但直接构造调用会绕过它们，
+            // 少了这一步 arguments.get(last) 会以 IndexOutOfBounds 失败而不是给出可读的校验错误
+            this.parameters().checkArity(arguments.size());
             int last = arguments.size() - 1;
             if (!(LibBuiltInFunctions.functionOf(arguments.get(last)) instanceof LambdaFunction lambda)) {
                 throw new IllegalArgumentException(

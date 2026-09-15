@@ -8,6 +8,7 @@ import dev.anvilcraft.lib.v2.math.expression.function.CustomFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -161,5 +162,58 @@ class LambdaTest {
             MathTestBootstrap.parseValue(Objects.requireNonNull(MathTestBootstrap.writeFlat(source))).evaluate(Arguments.of())
         );
         assertEquals(12.0, MathTestBootstrap.parseValue(source).evaluate(Arguments.of()));
+    }
+
+    @Test
+    @DisplayName("直接构造的 forEach 调用也走实参个数校验")
+    void forEachChecksArityOnDirectConstruction() {
+        // 解析期与 call() 都会校验，只有直接调 apply 才绕过；
+        // 不校验的话 arguments.get(-1) 会以 IndexOutOfBounds 失败，只给 lambda 时还会静默返回 0
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> LibBuiltInFunctions.FOREACH.apply(List.of(), Arguments.of())
+        );
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> LibBuiltInFunctions.FOREACH.apply(
+                List.of(MathTestBootstrap.parseValue("x -> $(x)")),
+                Arguments.of()
+            )
+        );
+    }
+
+    @Test
+    @DisplayName("lambda 落在运算符操作数位置时括起来，读回来还是同一棵树")
+    void lambdaOperandsStayWritable() {
+        // -> 绑得比所有运算符都松，lambda 当操作数时必须带括号：
+        // 2(x -> $(x)) 写成 2x -> $(x) 连读都读不回来，
+        // (x -> $(x))*2 写成 x -> $(x)*2 更糟——读回来变成「函数体是 $(x)*2」的 lambda
+        String[] sources = {
+            "2(x -> $(x))",
+            "1+(x -> $(x))",
+            "(x -> $(x))*2",
+            "(x -> $(x))^2"
+        };
+        String[] expected = {
+            "2*(x -> $(x))",
+            "1+(x -> $(x))",
+            "(x -> $(x))*2",
+            "(x -> $(x))^2"
+        };
+        for (int index = 0; index < sources.length; index++) {
+            String source = sources[index];
+            String expect = expected[index];
+            String written = MathTestBootstrap.writeFlat(source);
+            assertEquals(expect, written, () -> "回写文本不对: " + source);
+            Assertions.assertNotNull(written);
+            IExpression reparsed = MathTestBootstrap.parseValue(written);
+            assertEquals(
+                MathTestBootstrap.parseValue(source).toString(),
+                reparsed.toString(),
+                () -> "结构被改写: " + source + " -> " + written
+            );
+            // 再写一次必须一致，说明回写收敛
+            assertEquals(written, MathTestBootstrap.writeFlat(reparsed), () -> "回写不稳定: " + written);
+        }
     }
 }

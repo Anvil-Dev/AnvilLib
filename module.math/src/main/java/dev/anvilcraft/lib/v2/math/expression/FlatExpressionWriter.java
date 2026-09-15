@@ -192,7 +192,9 @@ final class FlatExpressionWriter {
                 .flatMap(multiplier -> FlatExpressionWriter
                     .operand(right, functions, Operator.MULTIPLY.precedence, OperandPosition.RIGHT)
                     // 并置只用于 2x、2(x+1) 这类写法；右侧是数字、小数点或负号时会读成另一个数（2*3 写成 23）
-                    .filter(FlatExpressionWriter::juxtaPositionable)
+                    // lambda 也不能并置：2(x -> $(x)) 写成 2x -> $(x) 会读成「参数 2x」的 lambda，根本读不回来
+                    .filter(text -> !FlatExpressionWriter.isLambda(right)
+                                    && FlatExpressionWriter.juxtaPositionable(text))
                     .map(text -> new Juxtaposition(multiplier + text)));
             if (juxtaposed.isPresent()) return juxtaposed.map(Juxtaposition::text);
         }
@@ -278,6 +280,9 @@ final class FlatExpressionWriter {
     private static boolean needsParentheses(IExpression expression, int parentPrecedence, OperandPosition position) {
         Holder<IFunction> function = FlatExpressionWriter.functionOf(expression);
         if (function == null) return false;
+        // lambda 的 -> 绑得比所有运算符都松，拿它当运算符的操作数读不回来，
+        // 因此一律退回对象形式。lambda 的参数位置走的是 visitLambda，不经过这里
+        if (function.value() instanceof LambdaFunction) return true;
         Operator child = Operator.of(function.value());
         if (child == null) return false;
         if (child.precedence != parentPrecedence) return child.precedence < parentPrecedence;
@@ -286,6 +291,14 @@ final class FlatExpressionWriter {
 
     private static @Nullable Holder<IFunction> functionOf(IExpression expression) {
         return expression instanceof FunctionExpression call ? call.function() : null;
+    }
+
+    /**
+     * 判断一个表达式是不是 lambda：lambda 的 {@code ->} 绑得比所有运算符都松，不能被当成普通操作数。
+     */
+    private static boolean isLambda(IExpression expression) {
+        Holder<IFunction> function = FlatExpressionWriter.functionOf(expression);
+        return function != null && function.value() instanceof LambdaFunction;
     }
 
     /**

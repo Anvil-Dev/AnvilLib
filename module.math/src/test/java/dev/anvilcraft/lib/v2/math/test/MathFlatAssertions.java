@@ -176,7 +176,8 @@ final class MathFlatAssertions {
     private static String canonicalRaw(IExpression expression) {
         if (expression instanceof IExpression.Reference reference) {
             return (reference instanceof IExpression.Reference.Spread ? "spread:" : "named:")
-                + reference.name() + "()";        }
+                + reference.name() + "()";
+        }
         if (!(expression instanceof FunctionExpression call)) return expression.toString();
         IFunction function = call.function().value();
         if (function instanceof ConstantFunction(double constant)) {

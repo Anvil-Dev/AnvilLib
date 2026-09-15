@@ -131,6 +131,29 @@ class FlatExpressionTest {
     }
 
     @Test
+    @DisplayName("嵌套过深时报可读错误，不让 StackOverflowError 穿出 codec")
+    void tooDeeplyNestedIsRejected() {
+        // 递归下降遇到上万层括号或乘方会打穿栈；StackOverflowError 是 Error，
+        // parseResult 的 catch (RuntimeException) 拦不住，会直接打到数据包加载流程
+        for (String deep : new String[]{
+            "(".repeat(5000) + "1" + ")".repeat(5000),
+            "1" + "^1".repeat(5000)
+        }) {
+            IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> MathTestBootstrap.parseValue(deep)
+            );
+            assertTrue(
+                error.getMessage().contains("nests too deeply"),
+                () -> "应当是嵌套过深的报错: " + error.getMessage()
+            );
+        }
+        // 正常深度不受影响
+        MathFlatAssertions.assertRoundTrip("((((1+2))))*3");
+        MathFlatAssertions.assertRoundTrip("2^2^2");
+    }
+
+    @Test
     @DisplayName("带符号的字面量整段都能读")
     void signedLiteralsParse() {
         assertEquals(-2.0, MathTestBootstrap.parse("-2").evaluate());

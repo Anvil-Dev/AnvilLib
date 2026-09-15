@@ -74,13 +74,6 @@ public record Arguments(List<Double> values, Map<String, Value> named) {
     }
 
     /**
-     * 该名字绑定到的原始值，未绑定时为空。
-     */
-    public Value bound(String name) {
-        return this.named.getOrDefault(name, new Value.Single(0));
-    }
-
-    /**
      * 该名字绑定到的列表，不是列表绑定时为空。
      */
     public List<Double> list(String name) {

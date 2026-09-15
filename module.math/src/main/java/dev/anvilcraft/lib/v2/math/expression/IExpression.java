@@ -72,9 +72,14 @@ public interface IExpression {
         @Override
         public <T> DataResult<T> encode(IExpression input, DynamicOps<T> ops, T prefix) {
             DataResult<T> flat = FlatExpressionParser.codec().encodeStart(ops, input);
-            return flat.result().isPresent()
-                ? flat
-                : FunctionExpression.MAP_CODEC.codec().encodeStart(ops, (FunctionExpression) input);
+            if (flat.result().isPresent()) return flat;
+            // IExpression 是公开接口，下游可以有别的实现；它们没有对象形式可写，
+            // 这里要给出 DataResult.error 而不是 ClassCastException
+            if (!(input instanceof FunctionExpression call)) {
+                return DataResult.error(() -> "Cannot encode " + input.getClass().getName()
+                                               + " as flat text or as an object; only FunctionExpression has an object form");
+            }
+            return FunctionExpression.MAP_CODEC.codec().encodeStart(ops, call);
         }
     };
 
