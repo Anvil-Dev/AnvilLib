@@ -59,17 +59,21 @@ final class FlatExpressionWriter {
      * @return 文本，或表达式无法用 flat 文本表达时的空
      */
     static Optional<String> write(IExpression expression, HolderGetter<IFunction> functions) {
-        Optional<String> written = FlatExpressionWriter.bare(expression, functions);
-        if (written.isEmpty() || FlatExpressionWriter.VERIFYING.get()) return written;
+        // 自校验期间再进来一次就直接交结果，别把 write 递归下去
+        if (FlatExpressionWriter.VERIFYING.get()) return FlatExpressionWriter.bare(expression, functions);
         FlatExpressionWriter.VERIFYING.set(true);
         try {
+            Optional<String> written = FlatExpressionWriter.bare(expression, functions);
+            if (written.isEmpty()) return written;
             IExpression reparsed = FlatExpressionParser.parseValue(written.get(), functions);
             return written.get().equals(FlatExpressionWriter.bare(reparsed, functions).orElse(null))
                    && FlatExpressionWriter.sameMeaning(expression, reparsed)
                 ? written
                 : Optional.empty();
         } catch (RuntimeException exception) {
-            // 读不回来同样是「写不出」
+            // 写不出、读不回来、自校验期间出岔子，都算「写不出」：退回对象形式。
+            // 裸的 bare() 也要罩在内——异常漏出 IExpression.CODEC 会打断「写不出来就退回对象形式」
+            // 这条契约，而它是靠 encodeStart 返回失败 DataResult 实现的
             return Optional.empty();
         } finally {
             FlatExpressionWriter.VERIFYING.set(false);

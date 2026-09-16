@@ -5,6 +5,7 @@ import dev.anvilcraft.lib.v2.math.AnvilLibMath;
 import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
 import dev.anvilcraft.lib.v2.math.expression.IExpression;
 import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.CustomFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Random;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -272,6 +274,54 @@ class FlatExpressionTest {
         assertEquals("2x+1", MathTestBootstrap.writeFlat(call));
         MathFlatAssertions.assertObjectRoundTrip(call);
         MathFlatAssertions.assertFullRoundTrip(call);
+    }
+
+    @Test
+    @DisplayName("回写成函数名时出的岔子不能穿透 CODEC，必须降级成对象形式")
+    void writeSideFailuresNeverEscapeTheCodec() {
+        // 名字长得像传入值引用、但下标大到放不进 int：这种名字当函数名注册进来时，
+        // 「能不能写成裸标识符」的判断以前会在这里抛异常。异常漏出 IExpression.CODEC 就会打断
+        // 「写不出来就退回对象形式」这条契约（它是靠 encodeStart 返回失败 DataResult 实现的），
+        // 存档与网络同步路径上会把异常一路抛给调用方
+        for (String name : List.of("x2147483648", "x3000000000", "x99999999999999999999")) {
+            Holder.Reference<IFunction> holder = MathTestBootstrap.registerFunction(
+                name,
+                CustomFunction.of(List.of(), constant(1))
+            );
+            FunctionExpression call = FunctionExpression.of(holder, NamedFunction.call("a"));
+
+            // 写不出 flat 文本，但也不能抛
+            assertNull(MathTestBootstrap.writeFlat(call), () -> name + " 不该写得出来");
+            JsonElement encoded = assertDoesNotThrow(
+                () -> MathTestBootstrap.encode(call),
+                () -> name + " 编码时不该抛异常"
+            );
+            assertNotNull(encoded, () -> name + " 应当能写出对象形式");
+            assertTrue(
+                encoded.isJsonObject(),
+                () -> name + " 写不出 flat 文本时应当退回对象形式，实际是 " + encoded
+            );
+            // 对象形式读得回来
+            IExpression decoded = IExpression.CODEC
+                .parse(MathTestBootstrap.ops(), encoded)
+                .getOrThrow(message -> new AssertionError(name + " 对象形式读不回来: " + message));
+            assertEquals(
+                MathTestBootstrap.encode(call),
+                MathTestBootstrap.encode(decoded),
+                () -> name + " 对象形式往返后结构变了"
+            );
+
+            // 解析侧仍然要拦住这种名字，并且说清是下标太大（报错带位置）
+            IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> MathTestBootstrap.parseValue(name + "()"),
+                () -> name + " 在解析侧应当被拒"
+            );
+            assertTrue(
+                error.getMessage().contains("input index is too large"),
+                () -> "应当点明下标太大: " + error.getMessage()
+            );
+        }
     }
 
     @Test

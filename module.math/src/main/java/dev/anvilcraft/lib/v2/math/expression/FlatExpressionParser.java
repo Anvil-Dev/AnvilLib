@@ -486,6 +486,19 @@ public final class FlatExpressionParser {
         String lower = name.toLowerCase(Locale.ROOT);
         IExpression variable = FlatExpressionParser.variable(lower);
         if (variable != null) return variable;
+        // x 后面那串数字大到放不进 int 时不可能是传入值引用（variable 对它返回空）。
+        // 这种名字当函数名注册进来只会让回写永远退回对象形式（输入下标是 int，本来也存不下），
+        // 大概率是写错了，所以这里拦下来并点明原因
+        boolean digitsAfterX = lower.length() > 1 && lower.charAt(0) == 'x';
+        for (int index = 1; digitsAfterX && index < lower.length(); index++) {
+            if (!FlatExpressionParser.isDigit(lower.charAt(index))) {
+                digitsAfterX = false;
+                break;
+            }
+        }
+        if (digitsAfterX) {
+            throw this.error("input index is too large: '" + lower.substring(1) + "'");
+        }
         if (!this.match('(')) throw this.error("expected '(' after function '" + name + "'");
         List<IExpression> arguments = new ArrayList<>();
         if (!this.match(')')) {
@@ -599,7 +612,12 @@ public final class FlatExpressionParser {
     }
 
     /**
-     * 解析 {@code x}/{@code y}/{@code z} 与 {@code x0}/{@code x1}/{@code x2} 形式的传入值引用。
+     * 名字是不是 {@code x}、{@code y}、{@code z} 或 {@code x0}、{@code x12} 这类传入值引用。
+     *
+     * <p>不认识的名字、以及 {@code x} 后面那串数字大到放不进 {@code int} 的名字都返回 {@code null}——
+     * <b>这个方法不抛异常</b>。回写侧要用它判断「一个名字会不会被读成传入值引用」，
+     * 那里只想要一个是/否的答案；抛出异常会穿透 {@link IExpression#CODEC}，
+     * 把「写不出来就退回对象形式」这条契约打断。太大的下标由 {@link #parseIdentifier()} 负责报错。</p>
      */
     @Nullable
     static IExpression variable(String name) {
@@ -623,7 +641,8 @@ public final class FlatExpressionParser {
         try {
             return InputFunction.call(Integer.parseInt(digits));
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException("Input index is too large: '" + digits + "'");
+            // 放不进 int 的下标只可能是 x 后面跟了一长串数字，这个长度当输入下标没有意义
+            return null;
         }
     }
 

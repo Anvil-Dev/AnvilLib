@@ -99,6 +99,12 @@ public interface IExpression {
 
     /**
      * 计算表达式的值并四舍五入为整数。
+     *
+     * <p>边界按 {@link Math#round(double)} 的语义走，与模块里其它保持 {@code NaN}/{@code Infinity} 的函数
+     * （除法、开方）不同：{@code NaN} 会得到 {@code 0}，超出 {@code long} 范围的值会被夹到
+     * {@code Long.MIN_VALUE}/{@code Long.MAX_VALUE}，最后那步 {@code (int)} 强转还会按补码回绕。所以
+     * {@code evaluateInt(sqrt(-1))} 是 {@code 0}，{@code round(1e300)} 是 {@code Long.MAX_VALUE}，
+     * {@code evaluateInt(3e9)} 是负数。要区分这些情况请直接用 {@link #evaluate(Arguments)} 看原始值。</p>
      */
     default int evaluateInt(Arguments inputs) {
         return (int) Math.round(this.evaluate(inputs));

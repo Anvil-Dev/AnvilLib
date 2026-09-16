@@ -99,6 +99,40 @@ class CustomFunctionTest {
     }
 
     @Test
+    @DisplayName("参数名必须是标识符：写不出 $(name) 的名字在构造期就被拒")
+    void parameterNamesMustBeIdentifiers() {
+        // 函数体里引用形参只能写 $(name)，flat 文本的载荷只认标识符字符，
+        // 所以含空格、右括号这类名字从构造起就注定写不出文本。这里挡下来，
+        // 比留到回写阶段静默退回对象形式更早也更明确
+        for (String name : List.of("a b", "x)", "(x", "a,b", "$x", "a$b", "1x", "-x", "x\t", "a\nb")) {
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> CustomFunction.of(List.of(name), NamedFunction.call("a")),
+                () -> "应当拒绝这个参数名: '" + name + "'"
+            );
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> LambdaFunction.of(List.of(name), ConstantFunction.of(1).call()),
+                () -> "lambda 同样应当拒绝: '" + name + "'"
+            );
+        }
+
+        // 变参带 ... 后缀，检查的是去掉后缀之后的名字
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CustomFunction.of(List.of("a b..."), NamedFunction.call("a"))
+        );
+
+        // 合法名字照常可用，包括下划线、大写与数字
+        for (String name : List.of("a", "A", "_x", "x0", "value2", "a_b")) {
+            assertNotNull(
+                CustomFunction.of(List.of(name), NamedFunction.call(name)),
+                () -> "合法名字不该被拒: " + name
+            );
+        }
+    }
+
+    @Test
     @DisplayName("零参自定义函数可以直接求值")
     void nullaryFunctionEvaluates() {
         CustomFunction function = CustomFunction.named(
@@ -502,6 +536,36 @@ class CustomFunctionTest {
         // min 取不到任何值，按函数自己的兜底返回 0
         assertEquals(0.0, MathTestBootstrap.parseValue("min($(empty...))").evaluate(
             Arguments.of(List.of(), List.of("empty"), List.of(new Arguments.Value.Many(List.of())))
+        ));
+    }
+
+    @Test
+    @DisplayName("forEach 的铺开实参同样要点名报错，不能把拼错的名字当空列表静默返回 0")
+    void unboundSpreadNameInForEachIsReportedClearly() {
+        // forEach 不经过 IFunction.bind（它要按 1 参逐个回调 lambda），自己解析铺开实参。
+        // 漏掉 isList 判定的话，拼错名字会静默变成「一个值都不遍历、返回 0」
+        for (String source : List.of(
+            "foreach($(unbound...),x -> $(x))",
+            "foreach(1,$(unbound...),x -> $(x))"
+        )) {
+            IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> MathTestBootstrap.parseValue(source).evaluate(Arguments.of()),
+                () -> "拼错的名字必须报错: " + source
+            );
+            assertTrue(
+                error.getMessage().contains("is not bound to a list"),
+                () -> "应当点明名字没绑定: " + error.getMessage()
+            );
+        }
+
+        // 绑定成空列表仍然合法：一个值都不遍历，返回 0
+        assertEquals(0.0, MathTestBootstrap.parseValue("foreach($(empty...),x -> $(x))").evaluate(
+            Arguments.of(List.of(), List.of("empty"), List.of(new Arguments.Value.Many(List.of())))
+        ));
+        // 有值时照常遍历，顺带钉住这条路径没被守卫改坏
+        assertEquals(6.0, MathTestBootstrap.parseValue("foreach($(xs...),x -> $(x)*2)").evaluate(
+            Arguments.of(List.of(), List.of("xs"), List.of(new Arguments.Value.Many(List.of(1.0, 2.0))))
         ));
     }
 

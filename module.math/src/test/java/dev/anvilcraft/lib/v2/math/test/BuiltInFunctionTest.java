@@ -88,6 +88,28 @@ class BuiltInFunctionTest {
     }
 
     @Test
+    @DisplayName("round 走 Math.round 的边界语义：NaN 得 0、超范围饱和、强转回绕")
+    void roundKeepsMathRoundBoundaries() {
+        // NaN 得到 0，而不是像 sqrt/divide 那样保留 NaN
+        assertEquals(0.0, LibBuiltInFunctions.ROUND.call(
+            LibBuiltInFunctions.SQRT.call(ConstantFunction.of(-1).call())
+        ).evaluate(Arguments.of()));
+        // 超出 long 范围时饱和到 Long.MAX_VALUE
+        assertEquals((double) Long.MAX_VALUE, LibBuiltInFunctions.ROUND.call(
+            ConstantFunction.of(1e300).call()
+        ).evaluate(Arguments.of()));
+        // evaluateInt 最后那步 (int) 强转按补码回绕
+        assertEquals(-1294967296, ConstantFunction.of(3e9).call().evaluateInt(Arguments.of()));
+        assertEquals(0, LibBuiltInFunctions.SQRT.call(
+            ConstantFunction.of(-1).call()
+        ).evaluateInt(Arguments.of()));
+        // 原始值仍然能拿到 NaN，不需要区分这些情况时 round 就是「取整」
+        assertTrue(Double.isNaN(LibBuiltInFunctions.SQRT.call(
+            ConstantFunction.of(-1).call()
+        ).evaluate(Arguments.of())));
+    }
+
+    @Test
     @DisplayName("变参名在函数体里是列表：$(x...) 传给变参函数，$(x) 取最大值")
     void variadicParameterIsAList() {
         Arguments bound = Arguments.of(List.of(), List.of("x"), List.of(

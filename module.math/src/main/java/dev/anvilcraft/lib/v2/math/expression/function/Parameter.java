@@ -9,6 +9,10 @@ import javax.annotation.Nullable;
  * 全部实参，因此一个签名里最多只有一个。变参可以是零个实参（见 {@link #minimumCount()}），且在函数体里
  * 取不到单个值：要逐个取值请把它交给 {@code forEach} 之类的函数。</p>
  *
+ * <p>参数名的字符集限定为标识符：首字符是字母或下划线，其余是字母、数字或下划线。函数体里引用形参的写法是
+ * {@code $(name)}，而 flat 文本的引用载荷只能由标识符字符组成，所以 {@code "a b"}、{@code "x)"} 这类名字
+ * 从构造起就注定写不出文本——在这里挡下来，比留到回写阶段退回对象形式更早也更明确。</p>
+ *
  * @param name     参数名，也是函数体里 {@code $(name)} 引用它时用的名字；变参存不带 {@code ...} 的名字
  * @param variadic 是否为变参
  */
@@ -25,6 +29,32 @@ public record Parameter(String name, boolean variadic) {
                 "Parameter name cannot contain '" + Parameter.VARIADIC_SUFFIX + "': " + name
             );
         }
+        if (!Parameter.isIdentifierStart(name.charAt(0))) {
+            throw new IllegalArgumentException(
+                "Parameter name must start with a letter or underscore: " + name
+            );
+        }
+        for (int index = 1; index < name.length(); index++) {
+            if (!Parameter.isIdentifierPart(name.charAt(index))) {
+                throw new IllegalArgumentException(
+                    "Parameter name must be an identifier but got '" + name + "'"
+                );
+            }
+        }
+    }
+
+    /**
+     * 标识符首字符：字母或下划线。与 flat 文本的标识符规则保持一致。
+     */
+    private static boolean isIdentifierStart(char character) {
+        return character == '_' || (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z');
+    }
+
+    /**
+     * 标识符后续字符：首字符的集合加上数字。
+     */
+    private static boolean isIdentifierPart(char character) {
+        return Parameter.isIdentifierStart(character) || (character >= '0' && character <= '9');
     }
 
     /**

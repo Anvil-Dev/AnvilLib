@@ -103,6 +103,10 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
     },
     /**
      * 四舍五入，单参。
+     *
+     * <p>用的是 {@link Math#round(double)}，所以边界行为与模块里其它函数不同：{@code NaN} 得到 {@code 0}，
+     * 超出 {@code long} 范围时夹到 {@code Long.MIN_VALUE}/{@code Long.MAX_VALUE}。而 {@code divide}、
+     * {@code sqrt} 这类是保留 {@code NaN}/{@code Infinity} 的。想要原始的 {@code NaN} 就别过这一层。</p>
      */
     ROUND(List.of("value")) {
         @Override
@@ -175,6 +179,11 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
             for (int index = 0; index < last; index++) {
                 IExpression argument = arguments.get(index);
                 if (argument instanceof IExpression.Reference.Spread(String name)) {
+                    // 名字没绑定成列表时要点名报错。直接 list(name) 对「名字写错」和「绑定成空列表」
+                    // 都返回空列表，拼错一个字母就会静默变成 0——IFunction.bind 同样守着这一条
+                    if (!inputs.isList(name)) {
+                        throw new IllegalArgumentException("$(" + name + "...) is not bound to a list");
+                    }
                     values.addAll(inputs.list(name));
                 } else {
                     values.add(argument.evaluate(inputs));
