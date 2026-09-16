@@ -189,6 +189,11 @@ public interface IFunction {
      * <p>每个实参先求成一个值：整份变参列表的引用不求值，直接把列表绑上去。{@code $(x...)} 铺开成列表里
      * 的几个元素，实际占几个实参位就算几个，因此 {@code min($(x...))} 与 {@code min(a,b,c)} 完全一样。</p>
      *
+     * <p>配位按实参个数算：变参先把它后面每个固定形参的位子留出来，剩下的才归它，{@code $(x...)} 再从变参位
+     * 开始摊开占用若干位。所以空列表摊成零个、不占实参位，后面的固定形参照样拿得到自己的值。用实参序号去
+     * 对形参序号是行不通的——变参可以落在任意位置，而且它摊开几个值要等求值才知道，得看这个实参实际喂给了
+     * 哪个形参。</p>
+     *
      * @param arguments  实参表达式，顺序与形参声明一致
      * @param inputs     调用点可访问的传入值
      * @param parameters 形参声明
@@ -215,19 +220,24 @@ public interface IFunction {
         }
         // 个数先校验，免得后面按下标取值时越界，报出看不懂的错
         parameters.checkArity(total);
-        // 变参吃掉「总数减去固定形参个数」个实参，因此变参落在任意位置都好算
-        int variadicCount = total - parameters.fixedCount();
         List<Arguments.Value> bound = new ArrayList<>(parameters.size());
         List<Double> numbers = new ArrayList<>(parameters.size());
+        // 变参吃掉「总数减去固定形参个数」个实参，因此变参落在任意位置都好算
+        int variadicCount = total - parameters.fixedCount();
         int argument = 0;
         for (Parameter parameter : parameters.parameters()) {
             // 本形参要吃几个实参：固定形参一个，变参是 variadicCount 个
             int take = parameter.variadic() ? variadicCount : 1;
-            List<Double> group = new ArrayList<>(take);
+            List<Double> elements = new ArrayList<>(take);
             int remaining = take;
             while (remaining > 0) {
+                if (argument >= values.size()) {
+                    throw new IllegalStateException(
+                        arguments + " runs out of arguments for " + parameters.declarations()
+                    );
+                }
                 Arguments.Value value = values.get(argument);
-                List<Double> elements = IFunction.numbers(value);
+                List<Double> expanded = IFunction.numbers(value);
                 // 要不要拦下这个实参，得看它实际喂给了哪个形参，不能按形参序号去猜：
                 // 变参不在末位时实参序号与形参序号本来就对不上
                 if (!parameter.variadic() && value instanceof Arguments.Value.Many) {
@@ -235,20 +245,28 @@ public interface IFunction {
                         arguments.get(argument) + " is a list and can only be passed to a variadic parameter"
                     );
                 }
-                if (elements.size() > remaining) {
+                if (expanded.size() > remaining) {
                     throw new IllegalStateException(
-                        "$(" + ((IExpression.Reference) arguments.get(argument)).name()
-                            + "...) provides " + elements.size() + " arguments but this position takes " + remaining
+                        arguments.get(argument) + " provides " + expanded.size()
+                        + " arguments but this position takes " + remaining
                     );
                 }
-                group.addAll(elements);
-                remaining -= elements.size();
+                elements.addAll(expanded);
+                remaining -= expanded.size();
+                argument++;
+            }
+            // 变参一个实参都没吃（绑定成空列表）时上面那段整个跳过，但它那份 Many 仍占着一个实参位。
+            // 不推游标的话，下一个固定形参会把这个 Many 取走当成自己的实参，
+            // 然后报「列表只能传给变参位」——而它本来就待在变参位上。
+            // 只在变参自己空着时推：take 大于 0 时上面那段已经把铺开的那份实参消费掉了
+            if (parameter.variadic() && take == 0 && argument < values.size()
+                && values.get(argument) instanceof Arguments.Value.Many) {
                 argument++;
             }
             bound.add(parameter.variadic()
-                ? new Arguments.Value.Many(List.copyOf(group))
-                : new Arguments.Value.Single(group.getFirst()));
-            numbers.add(group.stream().mapToDouble(Double::doubleValue).max().orElse(0));
+                ? new Arguments.Value.Many(List.copyOf(elements))
+                : new Arguments.Value.Single(elements.getFirst()));
+            numbers.add(elements.stream().mapToDouble(Double::doubleValue).max().orElse(0));
         }
         return new Call(
             List.copyOf(arguments),

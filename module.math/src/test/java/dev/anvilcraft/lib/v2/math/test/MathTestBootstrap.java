@@ -16,6 +16,7 @@ import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
 import dev.anvilcraft.lib.v2.math.init.LibRegistries;
+import io.netty.buffer.Unpooled;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderLookup;
@@ -25,6 +26,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.WritableRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -93,9 +95,19 @@ public final class MathTestBootstrap {
      * 能读到函数注册表的动态操作，flat 文本的解析与回写都需要它。
      */
     public static RegistryOps<JsonElement> ops() {
+        return RegistryOps.create(JsonOps.INSTANCE, MathTestBootstrap.access());
+    }
+
+    /**
+     * 测试用的注册表视图，只认得函数注册表，其余交给原版注册表。
+     *
+     * <p>JSON 侧（{@link #ops()}）与网络侧（{@link #registryFriendlyBuf()}）共用同一份视图，
+     * 两条路径看到的注册表才是同一个。</p>
+     */
+    private static RegistryAccess.Frozen access() {
         RegistryAccess.Frozen delegate = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
         MappedRegistry<IFunction> registry = MathTestBootstrap.functions();
-        RegistryAccess.Frozen access = new RegistryAccess.Frozen() {
+        return new RegistryAccess.Frozen() {
             @Override
             public <E> Optional<Registry<E>> registry(ResourceKey<? extends Registry<? extends E>> key) {
                 if (key.equals(LibRegistries.FUNCTION_KEY)) {
@@ -124,7 +136,17 @@ public final class MathTestBootstrap {
                 );
             }
         };
-        return RegistryOps.create(JsonOps.INSTANCE, access);
+    }
+
+    /**
+     * 走网络路径编解码用的缓冲区，用 {@link #access()} 里的函数注册表。
+     *
+     * <p>流编解码与 JSON 编解码是两条独立实现：JSON 侧靠 {@code RegistryFileCodec} 的内联分支救回
+     * {@code Holder.direct} 的内建函数，网络侧走的是 {@code ByteBufCodecs}，必须单独实测。</p>
+     */
+    public static RegistryFriendlyByteBuf registryFriendlyBuf() {
+        // noinspection deprecation
+        return new RegistryFriendlyByteBuf(Unpooled.buffer(), MathTestBootstrap.access());
     }
 
     /**

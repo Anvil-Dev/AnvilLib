@@ -1,11 +1,13 @@
 package dev.anvilcraft.lib.v2.math.test;
 
+import com.google.gson.JsonElement;
 import dev.anvilcraft.lib.v2.math.AnvilLibMath;
 import dev.anvilcraft.lib.v2.math.expression.FunctionExpression;
 import dev.anvilcraft.lib.v2.math.expression.IExpression;
 import dev.anvilcraft.lib.v2.math.expression.function.ConstantFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
 import dev.anvilcraft.lib.v2.math.init.LibRegistries;
@@ -15,10 +17,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -268,6 +272,36 @@ class FlatExpressionTest {
         assertEquals("2x+1", MathTestBootstrap.writeFlat(call));
         MathFlatAssertions.assertObjectRoundTrip(call);
         MathFlatAssertions.assertFullRoundTrip(call);
+    }
+
+    @Test
+    @DisplayName("回写失败时确实退回对象形式，而不是写出一段读不回来的文本")
+    void writeFailureFallsBackToTheObjectBranch() {
+        // 自校验（再解析 + 再写 + sameMeaning）任一不成立就返回空，由 FLAT_OR_OBJECT_CODEC 走对象分支。
+        // 这里挑两棵按构造就一定写不出 flat 文本的树，钉住「退回对象形式」这一步真的发生了
+        List<IExpression> unwritable = List.of(
+            FunctionExpression.of(LambdaFunction.of(List.of(), constant(1))),
+            FunctionExpression.of(NamedFunction.of("x..."))
+        );
+        for (IExpression tree : unwritable) {
+            assertNull(MathTestBootstrap.writeFlat(tree), () -> tree + " 不该写得出来");
+
+            JsonElement encoded = MathTestBootstrap.encode(tree);
+            assertNotNull(encoded, () -> tree + " 应当能写出对象形式");
+            assertTrue(
+                encoded.isJsonObject(),
+                () -> tree + " 写不出 flat 文本时应当退回对象形式，实际是 " + encoded
+            );
+            IExpression decoded = IExpression.CODEC
+                .parse(MathTestBootstrap.ops(), encoded)
+                .getOrThrow(message -> new AssertionError("对象形式读不回来: " + tree + " " + message));
+            // 再编码一遍应当得到同一份 JSON，这就是对象形式的规范形
+            assertEquals(
+                MathTestBootstrap.encode(tree),
+                MathTestBootstrap.encode(decoded),
+                () -> "对象形式往返后结构变了: " + tree
+            );
+        }
     }
 
     @Test

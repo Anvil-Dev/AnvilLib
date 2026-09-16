@@ -129,7 +129,7 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
         }
     },
     /**
-     * 最小值，变参，至少一参。
+     * 最小值，变参，取不到值时返回 0。
      */
     MIN(List.of("x...")) {
         @Override
@@ -138,7 +138,7 @@ public enum LibBuiltInFunctions implements IFunction, StringRepresentable {
         }
     },
     /**
-     * 最大值，变参，至少一参。
+     * 最大值，变参，取不到值时返回 0。
      */
     MAX(List.of("x...")) {
         @Override

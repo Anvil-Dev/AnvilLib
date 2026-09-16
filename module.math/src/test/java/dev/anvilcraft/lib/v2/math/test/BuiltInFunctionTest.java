@@ -151,10 +151,17 @@ class BuiltInFunctionTest {
         assertEquals(7.0, BuiltInFunctionTest.call(two, bound,
             IExpression.ref("xs..."), ConstantFunction.of(7).call()));
 
-        // 列表撑出的实参比这一位要的还多时，报可读的校验错误而不是下标越界
+        // 铺开在先时，摊出来的实参从变参位开始吃，末位固定形参照样拿最后一个实参
         CustomFunction narrow = CustomFunction.of(List.of("x...", "b"), NamedFunction.call("b"));
-        assertThrows(IllegalStateException.class, () -> BuiltInFunctionTest.call(narrow, bound,
-            ConstantFunction.of(1).call(), IExpression.ref("xs...")));
+        assertEquals(1.0, BuiltInFunctionTest.call(narrow, bound,
+            IExpression.ref("xs..."), ConstantFunction.of(1).call()));
+
+        // 空列表不占实参位：同样写在前面，b 照样拿到那个 1，变参只是空的
+        Arguments blank = Arguments.of(List.of(), List.of("xs"), List.of(
+            new Arguments.Value.Many(List.of())
+        ));
+        assertEquals(1.0, BuiltInFunctionTest.call(narrow, blank,
+            IExpression.ref("xs..."), ConstantFunction.of(1).call()));
     }
 
     @Test

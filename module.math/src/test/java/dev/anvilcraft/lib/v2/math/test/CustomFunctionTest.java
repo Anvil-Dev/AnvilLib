@@ -10,6 +10,7 @@ import dev.anvilcraft.lib.v2.math.expression.function.IFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.InputFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.LambdaFunction;
 import dev.anvilcraft.lib.v2.math.expression.function.NamedFunction;
+import dev.anvilcraft.lib.v2.math.expression.function.Parameters;
 import dev.anvilcraft.lib.v2.math.init.LibBuiltInFunctions;
 import dev.anvilcraft.lib.v2.math.init.LibRegistries;
 import net.minecraft.core.Holder;
@@ -121,6 +122,99 @@ class CustomFunctionTest {
         assertEquals(0.0, CustomFunctionTest.call(function, 9));
         // a 是固定形参，一个都不能少
         assertThrows(IllegalArgumentException.class, () -> CustomFunctionTest.call(function));
+    }
+
+    @Test
+    @DisplayName("一次调用里可以有两个铺开实参")
+    void twoSpreadsInOneCall() {
+        // 变参函数接得住多个铺开：它们按摊开后的总个数参与校验
+        assertEquals(1.0, MathTestBootstrap.parseValue("min($(a...),$(b...))").evaluate(
+            Arguments.of(List.of(), List.of("a", "b"), List.of(
+                new Arguments.Value.Many(List.of(1.0, 2.0)),
+                new Arguments.Value.Many(List.of(3.0))
+            ))
+        ));
+
+        // 没有变参形参时两个铺开都接不住，按非铺开个数报出来（0 个）
+        IllegalArgumentException error = assertThrows(
+            IllegalArgumentException.class,
+            () -> MathTestBootstrap.parseValue("add($(a...),$(b...))")
+        );
+        assertTrue(
+            error.getMessage().contains("function 'anvillib:add' Expected 2 arguments but got 0"),
+            () -> "应当是实参个数不符的报错: " + error.getMessage()
+        );
+    }
+
+    @Test
+    @DisplayName("变参不在末位时，空 $(a...) 也要落在变参位上")
+    void emptySpreadLandsOnALeadingVariadic() {
+        // 变参一个实参都不吃时它那份 Many 仍占着一个实参位；游标不推进的话，
+        // 后面的固定形参会把这个 Many 取走，然后报「列表只能传给变参位」——而它本来就待在变参位上
+        Parameters parameters = Parameters.parse(List.of("x...", "b"));
+        Arguments empty = Arguments.of(
+            List.of(), List.of("a"), List.of(new Arguments.Value.Many(List.of()))
+        );
+        IFunction.Call call = IFunction.bind(
+            List.of(IExpression.ref("a..."), ConstantFunction.of(1).call()),
+            empty,
+            parameters
+        );
+        assertEquals(List.of(), call.bound().list("x"), "空列表应当落在变参位上");
+        assertEquals(1.0, call.valueAt(1), "后面的固定形参应当拿到自己的那个值");
+
+        // 等价写法：整个省掉那个空铺开也可以，两种写法必须表现一致
+        IFunction.Call withoutSpread = IFunction.bind(
+            List.of(ConstantFunction.of(1).call()),
+            Arguments.of(),
+            parameters
+        );
+        assertEquals(List.of(), withoutSpread.bound().list("x"), "省掉铺开时变参同样是空的");
+        assertEquals(1.0, withoutSpread.valueAt(1), "固定形参照样拿到自己的值");
+        assertEquals(call.bound().list("x"), withoutSpread.bound().list("x"));
+        assertEquals(call.valueAt(1), withoutSpread.valueAt(1));
+
+        // 有值时本来就正常，顺带钉住
+        IFunction.Call filled = IFunction.bind(
+            List.of(IExpression.ref("a..."), ConstantFunction.of(1).call()),
+            Arguments.of(List.of(), List.of("a"), List.of(new Arguments.Value.Many(List.of(7.0, 8.0)))),
+            parameters
+        );
+        assertEquals(List.of(7.0, 8.0), filled.bound().list("x"));
+        assertEquals(1.0, filled.valueAt(1));
+
+        // 两个铺开时先来的那个整个归变参（变参拿到 2 个），b 只能去够它后面那个列表；
+        // b 是固定形参位，接不住整份列表，所以这里要报错而不是把列表当单个值
+        IllegalStateException onFixed = assertThrows(
+            IllegalStateException.class,
+            () -> IFunction.bind(
+                List.of(IExpression.ref("a..."), IExpression.ref("b...")),
+                Arguments.of(List.of(), List.of("a", "b"), List.of(
+                    new Arguments.Value.Many(List.of(2.0, 3.0)),
+                    new Arguments.Value.Many(List.of(4.0))
+                )),
+                parameters
+            )
+        );
+        assertTrue(
+            onFixed.getMessage().contains("can only be passed to a variadic parameter"),
+            () -> "应当点明列表只能给变参位: " + onFixed.getMessage()
+        );
+
+        // 变参不在末位、列表又排在它后面时，$(xs...) 正好从变参位开始摊开，末位固定形参拿最后那个实参
+        Parameters three = Parameters.parse(List.of("a", "x...", "b"));
+        IFunction.Call mixed = IFunction.bind(
+            List.of(
+                ConstantFunction.of(7).call(),
+                IExpression.ref("a..."),
+                ConstantFunction.of(1).call()
+            ),
+            Arguments.of(List.of(), List.of("a"), List.of(new Arguments.Value.Many(List.of(5.0, 6.0)))),
+            three
+        );
+        assertEquals(7.0, mixed.valueAt(0), "a 拿第一个实参");
+        assertEquals(List.of(5.0, 6.0), mixed.bound().list("x"), "$(a...) 摊进变参位");
+        assertEquals(1.0, mixed.valueAt(2), "b 拿最后一个实参");
     }
 
     @Test

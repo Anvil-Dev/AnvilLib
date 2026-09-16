@@ -50,6 +50,10 @@ final class FlatExpressionWriter {
      * 一遍：同一棵树写两遍文本不同、或文本读不回来，都退回对象形式，而不是留下一份「读得回来但写不稳定」
      * 的文本。</p>
      *
+     * <p><b>代价：</b>自校验要再解析一次（并置预检还可能各多写一次），所以一次回写大约是树规模的
+     * {@code O(2×)}，不是零成本。高频路径（每 tick 编码存档/同步）应当缓存编码结果，而不是每 tick 重写；
+     * 换来的是「写得出来就一定读得回去」，不会因为某段文本读回来变意思而静默损坏数据。</p>
+     *
      * @param expression 待回写的表达式
      * @param functions  函数注册表，用于取函数名
      * @return 文本，或表达式无法用 flat 文本表达时的空
@@ -452,8 +456,11 @@ final class FlatExpressionWriter {
     }
 
     /**
-     * 并置只用于 {@code 2x}、{@code 2(x+1)}、{@code 2$(a)} 这类写法，右侧只能是标识符、括号或
-     * {@code $(name)}；以数字开头时并置会被读成另一个数（{@code 2*3} 写成 {@code 23}），只能写 {@code *}。
+     * 并置只用于 {@code 2x}、{@code 2(x+1)} 这类写法，右侧只能是标识符或括号；{@code $(name)} 一律显式写
+     * {@code *}（{@code 2*$(a)}），以数字开头时并置会被读成另一个数（{@code 2*3} 写成 {@code 23}），
+     * 也只能写 {@code *}。
+     *
+     * <p>首字符只是第一道门槛，真正的判据是 {@link #juxtapositionReadsBack(String, HolderGetter)}。</p>
      */
     private static boolean juxtaPositionable(String text) {
         if (text.isEmpty()) return false;
