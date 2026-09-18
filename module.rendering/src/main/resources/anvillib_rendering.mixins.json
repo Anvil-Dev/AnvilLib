@@ -28,6 +28,7 @@
     "blaze3d.gl.GlDeviceMixin",
     "blaze3d.gl.GlTextureMixin",
     "blaze3d.gl.GlProgramMixin",
+    "blaze3d.gl.GlBackendMixin",
     "features.BlockFeatureRendererMixin",
     "features.CustomFeatureRendererMixin",
     "features.ExtendedBlockFeatureRendererMixin",

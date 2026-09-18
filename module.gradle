@@ -52,12 +52,11 @@ neoForge {
                     client()
                     systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
                     systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
-                    systemProperty("alrTextureDebugClear", "true")
+                    systemProperty("alrEnableDebugContext", "true")
                     jvmArgument("-XX:+UseParallelGC")
                     jvmArgument("-XX:+UnlockDiagnosticVMOptions")
                     jvmArgument("-XX:+DebugNonSafepoints")
                     programArgument("--renderDebugLabels")
-
                 }
             }
 

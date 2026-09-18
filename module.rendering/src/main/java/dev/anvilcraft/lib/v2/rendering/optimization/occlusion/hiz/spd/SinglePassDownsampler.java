@@ -188,6 +188,14 @@ public class SinglePassDownsampler {
 
         CommandEncoder commandEncoder = gpuDevice.createCommandEncoder();
         this.ffxSpdSetup(commandEncoder);
+        logger.info(
+            "SPD Resize done: dispatchDimensions: {}x{}, mipLayerCount: {}, paddedDimensions: {}x{}",
+            this.dispatchDimensionX,
+            this.dispatchDimensionY,
+            this.mipLayerCount,
+            this.paddedWidth,
+            this.paddedHeight
+        );
     }
 
     /// Setup required constant values for SPD (CPU).

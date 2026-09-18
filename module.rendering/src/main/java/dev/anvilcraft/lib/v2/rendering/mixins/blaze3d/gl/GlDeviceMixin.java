@@ -28,6 +28,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL46;
 import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -35,6 +36,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.function.Supplier;
 
 @Mixin(targets = "com.mojang.blaze3d.opengl.GlDevice")
@@ -111,12 +113,21 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
     public ALRHICapabilities alrhiCreateCapabilities() {
         if (this.alr$capabilities == null) {
             GLCapabilities capabilities = GL.getCapabilities();
+            int[] maxComputeWorkgroupCount = new int[3];
+            try (MemoryStack memoryStack = MemoryStack.stackPush()){
+                for (int i = 0; i < 3; i++) {
+                    IntBuffer buf = memoryStack.mallocInt(4);
+                    GL46.glGetIntegeri_v(GL46.GL_MAX_COMPUTE_WORK_GROUP_COUNT, i, buf);
+                    maxComputeWorkgroupCount[i] = buf.get();
+                }
+            }
             this.alr$capabilities = new ALRHICapabilities(
                 capabilities.GL_ARB_compute_shader,
                 capabilities.GL_ARB_bindless_texture,
                 capabilities.GL_ARB_buffer_storage,
                 capabilities.GL_KHR_shader_subgroup,
-                GL46.glGetInteger(GL46.GL_MAX_IMAGE_UNITS)
+                GL46.glGetInteger(GL46.GL_MAX_IMAGE_UNITS),
+                maxComputeWorkgroupCount
             );
         }
         return alr$capabilities;
