@@ -18,6 +18,7 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.TextureBinding;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.GpuBufferConstants;
+import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz.HierarchicalZSupport;
 import dev.anvilcraft.lib.v2.rendering.util.MemoryAccess;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
@@ -118,16 +119,21 @@ public class SinglePassDownsampler {
             OptionalDouble.empty()
         );
 
-        ALRHICapabilities capabilities = ALRHICapabilities.getInstance();
+        ALRHICapabilities capabilities = this.gpuDeviceExtension.alrhiCreateCapabilities();
 
-        this.useBindlessTexturing = capabilities.bindlessTexturing() && capabilities.maxImageUnit() < 16;
+        this.useBindlessTexturing = HierarchicalZSupport.useBindlessTexturing(this.gpuDeviceExtension);
+
+        if (!HierarchicalZSupport.available(this.gpuDeviceExtension)) {
+            throw new IllegalStateException(
+                "SinglePassDownsampler is not supported on this platform: " + capabilities
+            );
+        }
 
         this.onResize(mainRenderTarget.width, mainRenderTarget.height);
 
         this.clearAtomicCounter();
 
-        boolean shaderSubgroup = ALRHICapabilities.getInstance().shaderSubgroup();
-        if (shaderSubgroup) {
+        if (capabilities.shaderSubgroup()) {
             this.logger.info("Using GL_KHR_shader_subgroup_quad for reducing");
             ldsWaveOperations = ALROptions.SPD_OPTION_WAVE_INTEROP_LDS;
         } else {
