@@ -108,13 +108,13 @@ public interface OcclusionCuller extends AutoCloseable{
                 return instance;
             }
         }
-        if (OcclusionMethod.HIERARCHICAL_Z.isSupported()
+        if (OcclusionMethod.HIERARCHICAL_Z.isSupported(device)
             && (instance = OcclusionMethod.HIERARCHICAL_Z.createInstance(device)) != null
         ) {
             return instance;
         }
 
-        if (OcclusionMethod.GPU_QUERY.isSupported()
+        if (OcclusionMethod.GPU_QUERY.isSupported(device)
             && (instance = OcclusionMethod.GPU_QUERY.createInstance(device)) != null
         ) {
             return instance;

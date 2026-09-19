@@ -10,6 +10,7 @@ public class ALROptions {
     public static final boolean OCCLUSION_QUERY_USE_FRUSTUM_PRE_PASS = getPropertyBoolean("alrOcclusionQueryUseFrustumPrePass", false);
     public static final String OCCLUSION_CULLING_FORCE_IMPL = getProperty("alrOcclusionCullingForceImplementation", null);
     public static final boolean TEXTURE_DEBUG_CLEAR = getPropertyBoolean("alrTextureDebugClear", false);
+    public static final boolean DEBUG_CONTEXT = getPropertyBoolean("alrEnableDebugContext", false);
 
     public static void logAllOptions() {
         log.info("ALR options: SPD_OPTION_WAVE_INTEROP_LDS={}, OCCLUSION_QUERY_USE_FRUSTUM_PRE_PASS={}, OCCLUSION_CULLING_FORCE_IMPL={}, TEXTURE_DEBUG_CLEAR={}",

@@ -3,10 +3,7 @@ package dev.anvilcraft.lib.v2.rendering.mixins.blaze3d;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
 import com.mojang.blaze3d.textures.GpuTexture;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExtension;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ExtendedTextureFormat;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.*;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePipeline;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstanceKey;
@@ -55,6 +52,11 @@ public class GpuDeviceMixin implements ALRGpuDeviceExtension {
     @Override
     public ALRHICapabilities alrhiCreateCapabilities() {
         return alrBackend().alrhiCreateCapabilities();
+    }
+
+    @Override
+    public ALRHIHeuristics alrhiCreateHeuristics() {
+        return alrBackend().alrhiCreateHeuristics();
     }
 
     @Override

@@ -20,7 +20,7 @@ dependencies {
     implementation project(":anvillib-wheel-neoforge-26.1")
 
     if (!providers.gradleProperty('portSmoke').isPresent()) {
-        runtimeOnly("dev.dubhe:anvilcraft-neoforge-26.1.2:1.6.0+snapshot.2008"){ transitive = false }
+        runtimeOnly("dev.dubhe:anvilcraft-neoforge-26.1.2:1.6.0+snapshot.2284"){ transitive = false }
     }
 }
 
