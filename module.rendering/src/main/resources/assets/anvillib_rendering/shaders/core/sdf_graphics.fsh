@@ -23,6 +23,7 @@ layout(std140) uniform SDFParameters {
 #define RT_SEGMENT      7
 #define RT_ETRIANGLE    8
 #define RT_ITRIANGLE    9
+#define RT_TRIANGLE     10
 
 #define PASS_FILL       0
 #define PASS_LIGHT      1
@@ -103,6 +104,31 @@ float sdEgg( in vec2 p, in float he, in float ra, in float rb )
 }
 
 // from https://iquilezles.org/articles/distfunctions2d/
+float sdTriangle( in vec2 p, in vec2 v0, in vec2 v1, in vec2 v2 )
+{
+    vec2 e0 = v1 - v0, e1 = v2 - v1, e2 = v0 - v2;
+    vec2 vp0 = p - v0, vp1 = p - v1, vp2 = p - v2;
+
+    float s0 = vp0.x * e0.y - vp0.y * e0.x;
+    float s1 = vp1.x * e1.y - vp1.y * e1.x;
+    float s2 = vp2.x * e2.y - vp2.y * e2.x;
+
+    float d;
+    if (s0 * s1 > 0.0 && s1 * s2 > 0.0) {
+        d = -min(min(
+            dot(vp0, e0) / length(e0),
+            dot(vp1, e1) / length(e1)),
+            dot(vp2, e2) / length(e2));
+    } else {
+        d = sqrt(min(min(
+            dot(vp0, vp0),
+            dot(vp1, vp1)),
+            dot(vp2, vp2)));
+    }
+    return d;
+}
+
+// from https://iquilezles.org/articles/distfunctions2d/
 float sdSegment( in vec2 p, in vec2 a, in vec2 b )
 {
     vec2 ba = b-a;
@@ -174,6 +200,10 @@ void main() {
             break;
         case    RT_ITRIANGLE:
             d   = sdIsoscelesTriangle(p - vec2(0.0, shape.y * 0.5 - r2), vec2(shape.x - r, r2 - shape.y)) - r;
+            break;
+        case    RT_TRIANGLE:
+            d   = sdTriangle(p, shape.xy, shape.zw,
+                    vec2(intBitsToFloat(params.Types.w), params.Shared.w));
             break;
     }
 
