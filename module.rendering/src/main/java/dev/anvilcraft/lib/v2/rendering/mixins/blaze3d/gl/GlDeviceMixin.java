@@ -10,6 +10,7 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.ALROptions;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHIHeuristics;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ExtendedTextureFormat;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRDebugLabelExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePipeline;
@@ -55,6 +56,8 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
 
     @Unique
     private ALRHICapabilities alr$capabilities = null;
+    @Unique
+    private ALRHIHeuristics alr$heuristics = null;
     @Unique
     private BindlessTexturingSupport alr$bindlessTexturingImpl;
 
@@ -114,7 +117,7 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
         if (this.alr$capabilities == null) {
             GLCapabilities capabilities = GL.getCapabilities();
             int[] maxComputeWorkgroupCount = new int[3];
-            try (MemoryStack memoryStack = MemoryStack.stackPush()){
+            try (MemoryStack memoryStack = MemoryStack.stackPush()) {
                 for (int i = 0; i < 3; i++) {
                     IntBuffer buf = memoryStack.mallocInt(4);
                     GL46.glGetIntegeri_v(GL46.GL_MAX_COMPUTE_WORK_GROUP_COUNT, i, buf);
@@ -131,6 +134,15 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
             );
         }
         return alr$capabilities;
+    }
+
+    @Override
+    public ALRHIHeuristics alrhiCreateHeuristics() {
+        if (this.alr$heuristics == null) {
+            // TODO implement this
+            this.alr$heuristics = new ALRHIHeuristics(false);
+        }
+        return this.alr$heuristics;
     }
 
     @Override

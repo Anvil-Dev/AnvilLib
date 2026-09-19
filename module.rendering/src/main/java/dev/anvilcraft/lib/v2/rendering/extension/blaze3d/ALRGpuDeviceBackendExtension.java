@@ -26,6 +26,8 @@ public interface ALRGpuDeviceBackendExtension {
 
     ALRHICapabilities alrhiCreateCapabilities();
 
+    ALRHIHeuristics alrhiCreateHeuristics();
+
     GpuTexture alrCreateExtendedTexture(
         @Nullable String label,
         @GpuTexture.Usage int usage,

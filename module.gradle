@@ -18,7 +18,7 @@ repositories {
         forRepositories(
                 maven { // Anvil Lib
                     name = "Cjsah Maven"
-                    url = "https://server.cjsah.net:1002/maven/"
+                    url = "https://server.cjsah.net:1002/maven/releases"
                 }
         )
         filter {
@@ -26,7 +26,7 @@ repositories {
             includeGroup "dev.dubhe"
         }
     }
-    maven { url = "https://server.cjsah.net:1002/maven/" }
+    // maven { url = "https://server.cjsah.net:1002/maven/" }
     mavenLocal()
     mavenCentral()
 }
