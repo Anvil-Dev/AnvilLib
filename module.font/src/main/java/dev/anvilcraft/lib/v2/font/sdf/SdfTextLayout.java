@@ -98,11 +98,11 @@ public final class SdfTextLayout {
             SdfGlyphAtlas.GlyphEntry glyph = atlas.glyph(cp, glyphPages::add);
             if (glyph == null) {
                 allAvailable = false;
-                penX += Math.round(Math.max(6, atlas.font().getSize() / 2) * scale);
+                penX += atlas.scaledAdvance(cp, scale);
                 continue;
             }
             if (glyph.width() <= 0) {
-                penX += Math.max(1, Math.round(glyph.advance() * scale));
+                penX += atlas.scaledAdvance(cp, scale);
                 continue;
             }
 
@@ -118,7 +118,7 @@ public final class SdfTextLayout {
             GlyphQuad quad = new GlyphQuad(penX, 0, penX + w, h, u0, v0, u1, v1, (char) cp);
 
             buckets.computeIfAbsent(glyph.pageIndex(), ignored -> new ArrayList<>()).add(quad);
-            penX += Math.max(1, Math.round(glyph.advance() * scale));
+            penX += atlas.scaledAdvance(cp, scale);
             maxHeight = Math.max(maxHeight, h);
         }
         glyphPages.forEach(SdfGlyphPage::updateHash);
