@@ -230,7 +230,12 @@ public final class SdfGlyphAtlas {
      */
     public int measureCodepoint(int codepoint) {
         GlyphEntry g = glyph(codepoint, SdfGlyphPage::updateHash);
-        return g == null ? this.cellSize / 2 : g.advance;
+        return g == null ? this.fontMetrics.charWidth(codepoint) : g.advance;
+    }
+
+    /** GUI advance, shared with layout even while a glyph is still being generated. */
+    public int scaledAdvance(int codepoint, float scale) {
+        return Math.max(1, Math.round(this.measureCodepoint(codepoint) * scale));
     }
 
     // ── Glyph creation ──────────────────────────────────────────

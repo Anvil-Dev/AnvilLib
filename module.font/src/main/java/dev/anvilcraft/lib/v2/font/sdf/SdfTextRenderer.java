@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.font.sdf;
 
 import com.google.common.annotations.Beta;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -8,14 +9,15 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.font.ALFPipelines;
-import dev.anvilcraft.lib.v2.font.ALFont;
 import dev.anvilcraft.lib.v2.font.sdf.state.SdfTextRenderState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
+import net.neoforged.neoforge.client.GlStateBackup;
 import javax.annotation.Nullable;
 
 import java.awt.Font;
@@ -51,20 +53,7 @@ public final class SdfTextRenderer {
         boolean dropShadow
     ) {
         if (text == null || text.isEmpty()) return;
-        drawStringWithAtlas(graphics, getAtlas(font), text, x, y, color);
-    }
-
-    private void drawStringWithAtlas(
-        GuiGraphics graphics, SdfGlyphAtlas atlas,
-        String text, int x, int y, int color
-    ) {
-        float scale = scaleFor(atlas);
-        SdfAtlasTexture.ensureUploaded(atlas);
-        SdfTextLayout layout = SdfTextLayout.fromAtlas(atlas, text, x, y, scale);
-        if (layout.pages().isEmpty()) return;
-        for (SdfTextLayout.PageQuads pq : layout.pages()) {
-            drawAtlas(graphics, pq, color, x, y);
-        }
+        this.drawFormatted(graphics, font, FormattedCharSequence.forward(text, Style.EMPTY), x, y, color, dropShadow);
     }
 
     private static float scaleFor(SdfGlyphAtlas atlas) {
@@ -74,18 +63,14 @@ public final class SdfTextRenderer {
     /**
      * Derive a styled font for bold/italic.
      */
-    private static Font styledFont(Font base, boolean bold, boolean italic) {
-        int mask = Font.PLAIN;
-        if (bold) mask |= Font.BOLD;
-        if (italic) mask |= Font.ITALIC;
-        return mask == Font.PLAIN ? base : base.deriveFont(mask);
+    private static Font styledFont(@Nullable Font base, boolean bold, boolean italic) {
+        return SdfTextMetrics.styledFont(base, Style.EMPTY.withBold(bold).withItalic(italic));
     }
 
     /**
      * Replace codepoint with random ASCII for obfuscated style.
      */
-    private static int obfuscateCodepoint(int codepoint, int index) {
-        long t = System.currentTimeMillis() / 300L;
+    private static int obfuscateCodepoint(int index, long t) {
         int r = (int) (((long) index * 7L + t) % 95L);
         return 32 + r;
     }
@@ -111,6 +96,19 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
+        long obfuscationTick = System.currentTimeMillis() / 300L;
+        if (dropShadow) {
+            this.drawFormattedPass(graphics, font, text, x + 1, y + 1, color, true, obfuscationTick);
+            // Decorations use the GUI buffer, so complete the whole shadow before the foreground.
+            graphics.flush();
+        }
+        this.drawFormattedPass(graphics, font, text, x, y, color, false, obfuscationTick);
+    }
+
+    private void drawFormattedPass(
+        GuiGraphics graphics, @Nullable Font font, FormattedCharSequence text,
+        int x, int y, int color, boolean shadow, long obfuscationTick
+    ) {
         int[] pen = {
             x,
             x
@@ -124,14 +122,18 @@ public final class SdfTextRenderer {
 
         text.accept((index, style, codepoint) -> {
             if (style.isObfuscated()) {
-                codepoint = obfuscateCodepoint(codepoint, index);
+                codepoint = obfuscateCodepoint(index, obfuscationTick);
             }
 
             int c = colorFromStyle(style, color);
+            if (shadow) c = shadowColor(c);
             boolean b = style.isBold();
             boolean i = style.isItalic();
+            boolean u = style.isUnderlined();
+            boolean s = style.isStrikethrough();
 
-            if ((c != segColor[0] || b != segBold[0] || i != segItalic[0]) && !buf.isEmpty()) {
+            if ((c != segColor[0] || b != segBold[0] || i != segItalic[0]
+                || u != segUnderline[0] || s != segStrikethrough[0]) && !buf.isEmpty()) {
                 Font segFont = styledFont(font, segBold[0], segItalic[0]);
                 pen[0] = flushFormattedSegment(graphics, segFont, buf.toString(), pen[0], y, segColor[0]);
                 drawDecorations(graphics, pen[1], pen[0], y, segColor[0], segUnderline[0], segStrikethrough[0]);
@@ -143,8 +145,8 @@ public final class SdfTextRenderer {
             segColor[0] = c;
             segBold[0] = b;
             segItalic[0] = i;
-            segUnderline[0] = style.isUnderlined();
-            segStrikethrough[0] = style.isStrikethrough();
+            segUnderline[0] = u;
+            segStrikethrough[0] = s;
             return true;
         });
 
@@ -206,12 +208,11 @@ public final class SdfTextRenderer {
         int color,
         boolean dropShadow
     ) {
-        SdfGlyphAtlas atlas = getAtlas(font);
-        float scale = scaleFor(atlas);
-        List<String> lines = wrapLines(atlas, text.getString(), width, scale);
         int lineHeight = Minecraft.getInstance().font.lineHeight;
+        SdfTextMetrics metrics = new SdfTextMetrics(font, lineHeight);
+        List<FormattedCharSequence> lines = Language.getInstance().getVisualOrder(metrics.split(text, width));
         for (int i = 0; i < lines.size(); i++) {
-            this.drawStringWithAtlas(graphics, atlas, lines.get(i), x, y + i * lineHeight, color);
+            this.drawFormatted(graphics, font, lines.get(i), x, y + i * lineHeight, color, dropShadow);
         }
     }
 
@@ -220,28 +221,17 @@ public final class SdfTextRenderer {
     }
 
     public void drawCentered(GuiGraphics graphics, @Nullable Font font, FormattedCharSequence text, int x, int y, int color) {
-        String value = flattenToString(text);
-        SdfGlyphAtlas atlas = getAtlas(font);
-        float scale = scaleFor(atlas);
-        int drawX = x - Math.round(atlas.measureText(value) * scale) / 2;
+        SdfTextMetrics metrics = new SdfTextMetrics(font, Minecraft.getInstance().font.lineHeight);
+        int drawX = x - (int) metrics.splitter().stringWidth(text) / 2;
         this.drawFormatted(graphics, font, text, drawX, y, color, false);
     }
 
     private static int colorFromStyle(Style style, int defaultColor) {
-        return style.getColor() != null ? style.getColor().getValue() | 0xFF000000 : defaultColor;
+        return style.getColor() != null ? style.getColor().getValue() | (defaultColor & 0xFF000000) : defaultColor;
     }
 
-    private static List<String> wrapLines(SdfGlyphAtlas atlas, String text, int maxWidth, float scale) {
-        return ALFont.wrapLines(atlas, text, maxWidth, scale);
-    }
-
-    private static String flattenToString(FormattedCharSequence text) {
-        StringBuilder buf = new StringBuilder();
-        text.accept((index, style, cp) -> {
-            buf.appendCodePoint(cp);
-            return true;
-        });
-        return buf.toString();
+    private static int shadowColor(int color) {
+        return (color & 0xFF000000) | ((color & 0x00FCFCFC) >> 2);
     }
 
     private static void drawAtlas(
@@ -260,12 +250,31 @@ public final class SdfTextRenderer {
             originX,
             originY
         );
-        // GUI rendering keeps blending enabled and depth test disabled; only the
-        // shader and atlas texture need to be swapped for SDF text.
-        RenderSystem.setShader(ALFPipelines::getSdfTextShader);
-        RenderSystem.setShaderTexture(0, state.atlasTexture());
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, ALFPipelines.SDF_TEXT_FORMAT);
-        state.buildVertices(builder);
-        BufferUploader.drawWithShader(builder.buildOrThrow());
+        GlStateBackup backup = new GlStateBackup();
+        RenderSystem.backupGlState(backup);
+        var previousShader = RenderSystem.getShader();
+        int previousTexture = RenderSystem.getShaderTexture(0);
+        try {
+            // Managed GUI backgrounds must reach the GPU before immediate text.
+            graphics.flush();
+            if (ALFPipelines.getSdfTextShader() == null) return;
+            RenderSystem.enableBlend();
+            RenderSystem.blendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
+            );
+            RenderSystem.disableDepthTest();
+            RenderSystem.depthMask(false);
+            RenderSystem.disableCull();
+            RenderSystem.setShader(ALFPipelines::getSdfTextShader);
+            RenderSystem.setShaderTexture(0, state.atlasTexture());
+            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, ALFPipelines.SDF_TEXT_FORMAT);
+            state.buildVertices(builder);
+            BufferUploader.drawWithShader(builder.buildOrThrow());
+        } finally {
+            RenderSystem.setShader(() -> previousShader);
+            RenderSystem.setShaderTexture(0, previousTexture);
+            RenderSystem.restoreGlState(backup);
+        }
     }
 }
