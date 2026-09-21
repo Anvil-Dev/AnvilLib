@@ -5,11 +5,13 @@ import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlDebugLabel;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.platform.GLX;
 import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
 import com.mojang.blaze3d.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.ALROptions;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHIHeuristics;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ExtendedTextureFormat;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRDebugLabelExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePipeline;
@@ -22,12 +24,14 @@ import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.bindless.Bindle
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.gl.GlExtendedTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.gl.GlExtendedTextureConstants;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.gl.bindless.GlBindlessTexturingSupport;
+import net.minecraft.util.Util;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.ARBComputeShader;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL46;
 import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -35,6 +39,8 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.util.Locale;
 import java.util.function.Supplier;
 
 @Mixin(targets = "com.mojang.blaze3d.opengl.GlDevice")
@@ -51,8 +57,13 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
     @Final
     private GlDebugLabel debugLabels;
 
+    @Shadow
+    public abstract String getRenderer();
+
     @Unique
     private ALRHICapabilities alr$capabilities = null;
+    @Unique
+    private ALRHIHeuristics alr$heuristics = null;
     @Unique
     private BindlessTexturingSupport alr$bindlessTexturingImpl;
 
@@ -111,15 +122,55 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
     public ALRHICapabilities alrhiCreateCapabilities() {
         if (this.alr$capabilities == null) {
             GLCapabilities capabilities = GL.getCapabilities();
+            int[] maxComputeWorkgroupCount = new int[3];
+            try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+                for (int i = 0; i < 3; i++) {
+                    IntBuffer buf = memoryStack.mallocInt(4);
+                    GL46.glGetIntegeri_v(GL46.GL_MAX_COMPUTE_WORK_GROUP_COUNT, i, buf);
+                    maxComputeWorkgroupCount[i] = buf.get();
+                }
+            }
             this.alr$capabilities = new ALRHICapabilities(
                 capabilities.GL_ARB_compute_shader,
                 capabilities.GL_ARB_bindless_texture,
                 capabilities.GL_ARB_buffer_storage,
                 capabilities.GL_KHR_shader_subgroup,
-                GL46.glGetInteger(GL46.GL_MAX_IMAGE_UNITS)
+                GL46.glGetInteger(GL46.GL_MAX_IMAGE_UNITS),
+                maxComputeWorkgroupCount
             );
         }
         return alr$capabilities;
+    }
+
+    @Override
+    public ALRHIHeuristics alrhiCreateHeuristics() {
+        if (this.alr$heuristics == null) {
+            this.alr$heuristics = new ALRHIHeuristics(this.alr$isWindowsArcGraphics());
+        }
+        return this.alr$heuristics;
+    }
+
+    @Unique
+    private boolean alr$isWindowsArcGraphics() {
+        if (Util.getPlatform() != Util.OS.WINDOWS) {
+            return false;
+        }
+        String renderer = this.getRenderer();
+        String lowerRenderer = renderer.toLowerCase(Locale.ROOT);
+        if (!lowerRenderer.contains("intel")) {
+            return false;
+        }
+        String cpuInfo = GLX._getCpuInfo();
+        String lowerCpuInfo = cpuInfo.toLowerCase(Locale.ROOT);
+        boolean windowsArcGraphics = lowerRenderer.contains("arc")
+            || (lowerCpuInfo.contains("intel") && lowerCpuInfo.contains("ultra"));
+        LOGGER.info(
+            "Windows graphics info: renderer='{}', cpu='{}', windowsArcGraphics={}",
+            renderer,
+            cpuInfo,
+            windowsArcGraphics
+        );
+        return windowsArcGraphics;
     }
 
     @Override

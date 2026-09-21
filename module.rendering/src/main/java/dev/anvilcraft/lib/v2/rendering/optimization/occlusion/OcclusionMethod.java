@@ -1,11 +1,9 @@
 package dev.anvilcraft.lib.v2.rendering.optimization.occlusion;
 
 import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.RenderSystem;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
-import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
+import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz.HierarchicalZSupport;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz.HierarchicalZOcclusionCuller;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.noop.NoOpOcclusionCuller;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.query.GpuQueryOcclusionCuller;
@@ -17,7 +15,7 @@ import org.jspecify.annotations.Nullable;
 public enum OcclusionMethod {
     GPU_QUERY {
         @Override
-        public boolean isSupported() {
+        public boolean isSupported(GpuDevice device) {
             return true;
         }
 
@@ -27,9 +25,9 @@ public enum OcclusionMethod {
         }
     }, HIERARCHICAL_Z {
         @Override
-        public boolean isSupported() {
-            boolean textureEnoughToUse = ALRHICapabilities.getInstance().bindlessTexturing() || ALRHICapabilities.getInstance().maxImageUnit() > 16;
-            return ALRComputeCapabilities.isComputeSupported() && textureEnoughToUse;
+        public boolean isSupported(GpuDevice device) {
+            return HierarchicalZSupport.available((ALRGpuDeviceExtension) device)
+                && ALRComputeCapabilities.isComputeSupported();
         }
 
         @Override
@@ -38,7 +36,7 @@ public enum OcclusionMethod {
         }
     }, NO_OP {
         @Override
-        public boolean isSupported() {
+        public boolean isSupported(GpuDevice device) {
             return true;
         }
 
@@ -48,7 +46,7 @@ public enum OcclusionMethod {
         }
     };
 
-    public abstract boolean isSupported();
+    public abstract boolean isSupported(GpuDevice device);
 
     @Nullable
     public abstract OcclusionCuller createInstance(GpuDevice device);
