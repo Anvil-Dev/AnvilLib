@@ -145,7 +145,9 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
     @Override
     public ALRHIHeuristics alrhiCreateHeuristics() {
         if (this.alr$heuristics == null) {
-            this.alr$heuristics = new ALRHIHeuristics(this.alr$isWindowsArcGraphics());
+//            this.alr$heuristics = new ALRHIHeuristics(this.alr$isWindowsArcGraphics());
+            // TODO: temporary return false as we need to test the workarounds
+            this.alr$heuristics = new ALRHIHeuristics(false);
         }
         return this.alr$heuristics;
     }
