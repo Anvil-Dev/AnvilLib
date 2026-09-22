@@ -1,0 +1,6 @@
+{
+  "required": true,
+  "package": "dev.anvilcraft.lib.v2.renderer.test.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["HiddenWindowMixin"]
+}
