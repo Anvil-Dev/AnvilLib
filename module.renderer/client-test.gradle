@@ -1,0 +1,29 @@
+sourceSets {
+    clientTest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+
+neoForge {
+    mods {
+        anvillib_renderer_test { sourceSet sourceSets.clientTest }
+    }
+    runs {
+        projectionTest {
+            client()
+            gameDirectory = project.file('build/projection-test/run')
+            programArguments.addAll '--width', '800', '--height', '600'
+        }
+    }
+}
+
+def projectionTestLog = layout.buildDirectory.file('projection-test/run/logs/latest.log')
+tasks.named('runProjectionTest') {
+    doLast {
+        def log = projectionTestLog.get().asFile.getText('UTF-8')
+        if (!log.contains('PROJECTION_TEST ALL PASS') || log.contains('PROJECTION_TEST FAILED')) {
+            throw new GradleException('Projection regression failed; inspect the isolated client log')
+        }
+    }
+}
