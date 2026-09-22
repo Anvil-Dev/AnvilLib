@@ -5,7 +5,6 @@ import com.mojang.blaze3d.opengl.GlSampler;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTexture;
-import dev.anvilcraft.lib.v2.rendering.ALROptions;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.NamedUniformAccess;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.ExtendedGpuTexture;
@@ -130,21 +129,10 @@ public class GlBindlessTexturingSupport implements BindlessTexturingSupport {
         String name,
         List<TextureHandle> handle
     ) {
-        if (!handle.isEmpty() && handle.stream().noneMatch(TextureHandle::isTexture)) {
-            switch (ALROptions.USE_INTEL_BINDLESS_IMAGE_ARRAY_WORKAROUND) {
-                case 1 -> {
-                    this.alrBindTextureHandleMultipleIntel(namedUniformAccess, name, handle);
-                    return;
-                }
-                case 2 -> {
-                    this.alrBindTextureHandleMultipleIntelBaseLocation(namedUniformAccess, name, handle);
-                    return;
-                }
-                case 3 -> {
-                    this.alrBindTextureHandleMultipleIntelPadded(namedUniformAccess, name, handle);
-                    return;
-                }
-            }
+        // Windows intel drivers has the wrong implementation of `glUniformHandleui64vARB`
+        if (this.backendExtension.alrhiCreateHeuristics().isWindowsIntelGraphics()) {
+            this.alrBindTextureHandleMultipleIntelBaseLocation(namedUniformAccess, name, handle);
+            return;
         }
 
         int uniformLocation = namedUniformAccess.getUniformLocation(name, this.backendExtension);
@@ -158,11 +146,7 @@ public class GlBindlessTexturingSupport implements BindlessTexturingSupport {
         ARBBindlessTexture.glUniformHandleui64vARB(uniformLocation, handles);
     }
 
-    /// Windows intel drivers has the wrong implementation of `glUniformHandleui64vARB`
-    ///
-    /// It reads the input `GLuint64 const *` using a 16 bytes stride instead of 8 bytes
-    ///
-    /// So query each of the array element location and set them separately may fix the segfault
+    /// Queries each array element by name; requires element names to be accepted by NamedUniformAccess.
     private void alrBindTextureHandleMultipleIntel(
         NamedUniformAccess namedUniformAccess,
         String name,
@@ -172,6 +156,9 @@ public class GlBindlessTexturingSupport implements BindlessTexturingSupport {
         for (TextureHandle textureHandle : handle) {
             String uniformName = name + "[" + i++ + "]";
             int uniformLocation = namedUniformAccess.getUniformLocation(uniformName, this.backendExtension);
+            if (uniformLocation == -1) {
+                continue;
+            }
             ARBBindlessTexture.glUniformHandleui64ARB(uniformLocation, handleId(textureHandle));
         }
     }
@@ -184,6 +171,7 @@ public class GlBindlessTexturingSupport implements BindlessTexturingSupport {
     ) {
         int i = 0;
         int locationStart = namedUniformAccess.getUniformLocation(name, this.backendExtension);
+        if (locationStart == -1) return;
         for (TextureHandle textureHandle : handle) {
             ARBBindlessTexture.glUniformHandleui64ARB(locationStart + i++, handleId(textureHandle));
         }
@@ -197,7 +185,7 @@ public class GlBindlessTexturingSupport implements BindlessTexturingSupport {
     ) {
         int uniformLocation = namedUniformAccess.getUniformLocation(name, this.backendExtension);
 
-        try (MemoryStack stack = MemoryStack.stackPush()){
+        try (MemoryStack stack = MemoryStack.stackPush()) {
             int count = handle.size();
             LongBuffer padded = stack.mallocLong(count * 2);
             for (int i = 0; i < count; i++) {

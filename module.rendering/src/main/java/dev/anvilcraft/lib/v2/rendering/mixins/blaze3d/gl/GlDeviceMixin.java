@@ -3,12 +3,10 @@ package dev.anvilcraft.lib.v2.rendering.mixins.blaze3d.gl;
 import com.mojang.blaze3d.GpuOutOfMemoryException;
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlDebugLabel;
+import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.opengl.GlTexture;
-import com.mojang.blaze3d.platform.GLX;
 import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
 import com.mojang.blaze3d.textures.GpuTexture;
-import dev.anvilcraft.lib.v2.rendering.ALROptions;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHIHeuristics;
@@ -38,12 +36,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
-import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Locale;
 import java.util.function.Supplier;
 
-@Mixin(targets = "com.mojang.blaze3d.opengl.GlDevice")
+@Mixin(GlDevice.class)
 public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
 
     @Shadow
@@ -145,34 +142,25 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
     @Override
     public ALRHIHeuristics alrhiCreateHeuristics() {
         if (this.alr$heuristics == null) {
-//            this.alr$heuristics = new ALRHIHeuristics(this.alr$isWindowsArcGraphics());
-            // TODO: temporary return false as we need to test the workarounds
-            this.alr$heuristics = new ALRHIHeuristics(false);
+            this.alr$heuristics = new ALRHIHeuristics(this.alr$isWindowsIntelGraphics());
         }
         return this.alr$heuristics;
     }
 
     @Unique
-    private boolean alr$isWindowsArcGraphics() {
+    private boolean alr$isWindowsIntelGraphics() {
         if (Util.getPlatform() != Util.OS.WINDOWS) {
             return false;
         }
-        String renderer = this.getRenderer();
-        String lowerRenderer = renderer.toLowerCase(Locale.ROOT);
-        if (!lowerRenderer.contains("intel")) {
-            return false;
-        }
-        String cpuInfo = GLX._getCpuInfo();
-        String lowerCpuInfo = cpuInfo.toLowerCase(Locale.ROOT);
-        boolean windowsArcGraphics = lowerRenderer.contains("arc")
-            || (lowerCpuInfo.contains("intel") && lowerCpuInfo.contains("ultra"));
+        String vendor = GL11.glGetString(GL11.GL_VENDOR);
+        boolean windowsIntelGraphics = vendor != null && vendor.toLowerCase(Locale.ROOT).contains("intel");
         LOGGER.info(
-            "Windows graphics info: renderer='{}', cpu='{}', windowsArcGraphics={}",
-            renderer,
-            cpuInfo,
-            windowsArcGraphics
+            "Windows graphics info: renderer='{}', vendor='{}', windowsIntelGraphics={}",
+            this.getRenderer(),
+            vendor,
+            windowsIntelGraphics
         );
-        return windowsArcGraphics;
+        return windowsIntelGraphics;
     }
 
     @Override
