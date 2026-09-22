@@ -17,7 +17,10 @@ import it.unimi.dsi.fastutil.objects.Object2ReferenceMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.opengl.ARBBindlessTexture;
 import org.lwjgl.opengl.GL46;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
+import java.nio.LongBuffer;
 import java.util.List;
 
 @ApiStatus.Internal
@@ -126,6 +129,12 @@ public class GlBindlessTexturingSupport implements BindlessTexturingSupport {
         String name,
         List<TextureHandle> handle
     ) {
+        // Windows intel drivers has the wrong implementation of `glUniformHandleui64vARB`
+        if (this.backendExtension.alrhiCreateHeuristics().isWindowsIntelGraphics()) {
+            this.alrBindTextureHandleMultipleIntelBaseLocation(namedUniformAccess, name, handle);
+            return;
+        }
+
         int uniformLocation = namedUniformAccess.getUniformLocation(name, this.backendExtension);
 
         long[] handles = new long[handle.size()];
@@ -135,6 +144,57 @@ public class GlBindlessTexturingSupport implements BindlessTexturingSupport {
         }
 
         ARBBindlessTexture.glUniformHandleui64vARB(uniformLocation, handles);
+    }
+
+    /// Queries each array element by name; requires element names to be accepted by NamedUniformAccess.
+    private void alrBindTextureHandleMultipleIntel(
+        NamedUniformAccess namedUniformAccess,
+        String name,
+        List<TextureHandle> handle
+    ) {
+        int i = 0;
+        for (TextureHandle textureHandle : handle) {
+            String uniformName = name + "[" + i++ + "]";
+            int uniformLocation = namedUniformAccess.getUniformLocation(uniformName, this.backendExtension);
+            if (uniformLocation == -1) {
+                continue;
+            }
+            ARBBindlessTexture.glUniformHandleui64ARB(uniformLocation, handleId(textureHandle));
+        }
+    }
+
+    /// Query the location of array uniform as base location and set each element separately
+    private void alrBindTextureHandleMultipleIntelBaseLocation(
+        NamedUniformAccess namedUniformAccess,
+        String name,
+        List<TextureHandle> handle
+    ) {
+        int i = 0;
+        int locationStart = namedUniformAccess.getUniformLocation(name, this.backendExtension);
+        if (locationStart == -1) return;
+        for (TextureHandle textureHandle : handle) {
+            ARBBindlessTexture.glUniformHandleui64ARB(locationStart + i++, handleId(textureHandle));
+        }
+    }
+
+    /// Pads the input array
+    private void alrBindTextureHandleMultipleIntelPadded(
+        NamedUniformAccess namedUniformAccess,
+        String name,
+        List<TextureHandle> handle
+    ) {
+        int uniformLocation = namedUniformAccess.getUniformLocation(name, this.backendExtension);
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            int count = handle.size();
+            LongBuffer padded = stack.mallocLong(count * 2);
+            for (int i = 0; i < count; i++) {
+                padded.put(i * 2, handleId(handle.get(i)));
+                padded.put(i * 2 + 1, handleId(handle.get(i)));
+            }
+
+            ARBBindlessTexture.nglUniformHandleui64vARB(uniformLocation, count, MemoryUtil.memAddress(padded));
+        }
     }
 
     @SuppressWarnings("resource")
