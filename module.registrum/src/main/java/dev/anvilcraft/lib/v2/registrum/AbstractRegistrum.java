@@ -358,7 +358,7 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      * Make {@code oldName} resolve to {@code newName} in {@code registryType}, for entries that were renamed. The old name is no longer registered, so every name-based lookup of it - a block state in
      * a chunk palette, an item stack, a block entity id - falls back to the current entry instead of silently resolving to nothing.
      * <p>
-     * Prefer {@link Builder#aliasFrom(ResourceLocation)}, which infers the registry from the entry being built. Applying an alias for a name that is still registered has no effect.
+     * Prefer {@link Builder#aliasFrom(ResourceLocation...)}, which infers the registry from the entry being built. Applying an alias for a name that is still registered has no effect.
      *
      * @param <R>
      *            The registry type

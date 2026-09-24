@@ -118,6 +118,8 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
     @Nullable
     private NonNullSupplier<Supplier<BlockColor>> colorHandler;
 
+    private boolean itemCreated, blockEntityCreated;
+
     protected BlockBuilder(AbstractRegistrum<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<BlockBehaviour.Properties, T> factory, NonNullSupplier<BlockBehaviour.Properties> initialProperties) {
         super(owner, parent, name, callback, Registries.BLOCK);
         this.factory = factory;
@@ -218,6 +220,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      * @return the {@link ItemBuilder} for the {@link BlockItem}
      */
     public <I extends Item> ItemBuilder<I, BlockBuilder<T, P>> item(NonNullBiFunction<? super T, Item.Properties, ? extends I> factory) {
+        this.itemCreated = true;
         final var sup = asSupplier();
         return getOwner().<I, BlockBuilder<T, P>> item(this, getName(), p -> factory.apply(getEntry(), p))
                 .setData(ProviderType.LANG, NonNullBiConsumer.noop()) // FIXME Need a beetter API for "unsetting" providers
@@ -253,14 +256,18 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
     /**
      * {@inheritDoc}
      * <p>
-     * The block item registered alongside this block shares its name, so the item registry is aliased too. The block entity type is not: it is registered by {@link BlockEntityBuilder}, which aliases
-     * its own registry, and blocks whose block entity is registered separately are covered by that builder instead.
+     * The block item and the block entity type registered by this builder share the block's name, so those registries are aliased too. Each is only aliased if it was actually created, since
+     * {@link #item(NonNullBiFunction)} and {@link #blockEntity(BlockEntityFactory)} are optional and neither is created by every block.
      */
     @Override
-    public BlockBuilder<T, P> aliasFrom(ResourceLocation oldName) {
-        super.aliasFrom(oldName);
-        getOwner().addAlias(Registries.ITEM, oldName, getEntryId());
-        return this;
+    protected void addAliases(ResourceLocation oldName) {
+        super.addAliases(oldName);
+        if (this.itemCreated) {
+            getOwner().addAlias(Registries.ITEM, oldName, getEntryId());
+        }
+        if (this.blockEntityCreated) {
+            getOwner().addAlias(Registries.BLOCK_ENTITY_TYPE, oldName, getEntryId());
+        }
     }
 
     /**
@@ -275,6 +282,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      * @return the {@link BlockEntityBuilder}
      */
     public <BE extends BlockEntity> BlockEntityBuilder<BE, BlockBuilder<T, P>> blockEntity(BlockEntityFactory<BE> factory) {
+        this.blockEntityCreated = true;
         return getOwner().<BE, BlockBuilder<T, P>>blockEntity(this, getName(), factory).validBlock(asSupplier());
     }
     

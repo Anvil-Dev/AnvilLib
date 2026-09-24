@@ -273,6 +273,8 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
 
     private boolean registerType;
 
+    private boolean blockCreated, bucketCreated;
+
     @Nullable
     private NonNullSupplier<? extends BaseFlowingFluid> source;
     private final List<TagKey<Fluid>> tags = new ArrayList<>();
@@ -446,6 +448,7 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
             throw new IllegalStateException("Only one call to block/noBlock per builder allowed");
         }
         this.defaultBlock = false;
+        this.blockCreated = true;
         final NonNullSupplier<T> supplier = asSupplier();
         final var lightLevel = Lazy.of(() -> fluidType.get().getLightLevel());
         final ToIntFunction<BlockState> lightLevelInt = $ -> lightLevel.get();
@@ -504,6 +507,7 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
             throw new IllegalStateException("Only one call to bucket/noBucket per builder allowed");
         }
         this.defaultBucket = false;
+        this.bucketCreated = true;
         NonNullSupplier<? extends BaseFlowingFluid> source = this.source;
         // TODO: Can we find a way to circumvent this limitation?
         if (source == null) {
@@ -596,18 +600,24 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
      * {@inheritDoc}
      * <p>
      * A fluid registers several entries derived from its name, and this builder's own name carries a {@code flowing_} prefix which the source fluid does not. {@code oldName} is therefore taken as the
-     * old name of the base fluid, as passed to the owning {@code Registrum}'s fluid factory, and every derived name is aliased from it: the flowing fluid, the source fluid, the fluid type, the fluid
-     * block, and the bucket. Derived entries that do not exist are skipped.
+     * old name of the base fluid, as passed to the owning {@code Registrum}'s fluid factory, and every derived name is aliased from it: the flowing fluid, the source fluid, and the entries that were
+     * actually created - the fluid type, the fluid block, and the bucket.
      */
     @Override
-    public FluidBuilder<T, P> aliasFrom(ResourceLocation oldName) {
+    protected void addAliases(ResourceLocation oldName) {
         ResourceLocation newName = ResourceLocation.fromNamespaceAndPath(getOwner().getModid(), sourceName);
+        // This builder's own entry is the flowing fluid, which is registered under a prefixed name rather than the source name
+        getOwner().addAlias(Registries.FLUID, oldName.withPrefix("flowing_"), getEntryId());
         getOwner().addAlias(Registries.FLUID, oldName, newName);
-        getOwner().addAlias(Registries.FLUID, oldName.withPrefix("flowing_"), newName.withPrefix("flowing_"));
-        getOwner().addAlias(NeoForgeRegistries.Keys.FLUID_TYPES, oldName, newName);
-        getOwner().addAlias(Registries.BLOCK, oldName, newName);
-        getOwner().addAlias(Registries.ITEM, oldName.withSuffix("_bucket"), newName.withSuffix("_bucket"));
-        return this;
+        if (this.registerType) {
+            getOwner().addAlias(NeoForgeRegistries.Keys.FLUID_TYPES, oldName, newName);
+        }
+        if (this.blockCreated) {
+            getOwner().addAlias(Registries.BLOCK, oldName, newName);
+        }
+        if (this.bucketCreated) {
+            getOwner().addAlias(Registries.ITEM, oldName.withSuffix("_bucket"), newName.withSuffix("_bucket"));
+        }
     }
 
     /**
