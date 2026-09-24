@@ -98,6 +98,27 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Builders which also register entries derived from this one under a different name - a block item, a spawn egg, a bucket - override this to alias those registries as well.
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public S aliasFrom(ResourceLocation oldName) {
+        getOwner().addAlias(getRegistryKey(), oldName, getEntryId());
+        return (S) this;
+    }
+
+    /**
+     * The {@link ResourceLocation} this entry is registered under, derived from the owning mod's id and this builder's name.
+     *
+     * @return the id of this entry
+     */
+    protected ResourceLocation getEntryId() {
+        return ResourceLocation.fromNamespaceAndPath(getOwner().getModid(), getName());
+    }
+
+    /**
      * Tag this entry with a tag (or tags) of the correct type. Multiple calls will add additional tags.
      *
      * @param type

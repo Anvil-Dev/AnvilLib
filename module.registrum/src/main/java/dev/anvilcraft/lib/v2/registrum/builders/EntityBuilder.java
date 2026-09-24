@@ -227,6 +227,18 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * The spawn egg created by {@link #spawnEgg(int, int)} is registered as {@code <name>_spawn_egg}, so the item registry is aliased from the old name with the same suffix.
+     */
+    @Override
+    public EntityBuilder<T, P> aliasFrom(ResourceLocation oldName) {
+        super.aliasFrom(oldName);
+        getOwner().addAlias(Registries.ITEM, oldName.withSuffix("_spawn_egg"), getEntryId().withSuffix("_spawn_egg"));
+        return this;
+    }
+
+    /**
      * Create a spawn egg item for this entity using the given colors, and return the builder for further configuration.
      *
      * @deprecated This does not work properly, see <a href="https://github.com/MinecraftForge/MinecraftForge/pull/6299">this issue</a>.

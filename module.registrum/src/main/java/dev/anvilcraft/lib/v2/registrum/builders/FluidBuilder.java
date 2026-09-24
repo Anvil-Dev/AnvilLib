@@ -595,6 +595,24 @@ public class FluidBuilder<T extends BaseFlowingFluid, P> extends AbstractBuilder
     /**
      * {@inheritDoc}
      * <p>
+     * A fluid registers several entries derived from its name, and this builder's own name carries a {@code flowing_} prefix which the source fluid does not. {@code oldName} is therefore taken as the
+     * old name of the base fluid, as passed to the owning {@code Registrum}'s fluid factory, and every derived name is aliased from it: the flowing fluid, the source fluid, the fluid type, the fluid
+     * block, and the bucket. Derived entries that do not exist are skipped.
+     */
+    @Override
+    public FluidBuilder<T, P> aliasFrom(ResourceLocation oldName) {
+        ResourceLocation newName = ResourceLocation.fromNamespaceAndPath(getOwner().getModid(), sourceName);
+        getOwner().addAlias(Registries.FLUID, oldName, newName);
+        getOwner().addAlias(Registries.FLUID, oldName.withPrefix("flowing_"), newName.withPrefix("flowing_"));
+        getOwner().addAlias(NeoForgeRegistries.Keys.FLUID_TYPES, oldName, newName);
+        getOwner().addAlias(Registries.BLOCK, oldName, newName);
+        getOwner().addAlias(Registries.ITEM, oldName.withSuffix("_bucket"), newName.withSuffix("_bucket"));
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Additionally registers the source fluid and the fluid type (if constructed).
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })

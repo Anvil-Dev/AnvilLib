@@ -215,11 +215,7 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
      *            The name this entry used to be registered under
      * @return this {@link Builder}
      */
-    @SuppressWarnings("unchecked")
-    default S aliasFrom(ResourceLocation oldName) {
-        getOwner().addAlias(getRegistryKey(), oldName, ResourceLocation.fromNamespaceAndPath(getOwner().getModid(), getName()));
-        return (S) this;
-    }
+    S aliasFrom(ResourceLocation oldName);
 
     /**
      * Add a callback to be invoked when this entry is registered, but only after some other registry type has been registered as well. Can be called multiple times to add multiple callbacks.

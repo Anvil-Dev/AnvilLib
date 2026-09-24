@@ -251,6 +251,19 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * The block item registered alongside this block shares its name, so the item registry is aliased too. The block entity type is not: it is registered by {@link BlockEntityBuilder}, which aliases
+     * its own registry, and blocks whose block entity is registered separately are covered by that builder instead.
+     */
+    @Override
+    public BlockBuilder<T, P> aliasFrom(ResourceLocation oldName) {
+        super.aliasFrom(oldName);
+        getOwner().addAlias(Registries.ITEM, oldName, getEntryId());
+        return this;
+    }
+
+    /**
      * Create a {@link BlockEntity} for this block, which is created by the given factory, and assigned this block as its one and only valid block.
      * <p>
      * The created {@link BlockEntityBuilder} is returned for further configuration.
