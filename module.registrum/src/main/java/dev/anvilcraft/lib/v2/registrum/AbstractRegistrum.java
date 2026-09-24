@@ -12,96 +12,16 @@
 
 package dev.anvilcraft.lib.v2.registrum;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Table;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-import dev.anvilcraft.lib.v2.registrum.providers.DataProviderInitializer;
-import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
-import dev.anvilcraft.lib.v2.registrum.providers.RegistrumDataProvider;
-import dev.anvilcraft.lib.v2.registrum.providers.RegistrumLangProvider;
-import dev.anvilcraft.lib.v2.registrum.providers.RegistrumProvider;
-import lombok.Setter;
-import net.minecraft.Util;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.MenuAccess;
-import net.minecraft.client.multiplayer.ClientPacketListener;
-import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType.EntityFactory;
-import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.ai.village.poi.PoiType;
-import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.entity.npc.VillagerType;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.level.ItemLike;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.gameevent.GameEvent;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.loading.FMLLoader;
-import net.neoforged.neoforge.attachment.IAttachmentHolder;
-import net.neoforged.neoforge.common.conditions.ICondition;
-import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
-import net.neoforged.neoforge.common.world.BiomeModifier;
-import net.neoforged.neoforge.common.world.StructureModifier;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
-import net.neoforged.neoforge.data.loading.DatagenModLoader;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.fluids.BaseFlowingFluid;
-import net.neoforged.neoforge.fluids.FluidType;
-import net.neoforged.neoforge.registries.*;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.message.Message;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import dev.anvilcraft.lib.v2.registrum.builders.BlockBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.BlockEntityBuilder.BlockEntityFactory;
@@ -132,6 +52,11 @@ import dev.anvilcraft.lib.v2.registrum.builders.self.SoundEventBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.villager.PoiTypeBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.villager.VillagerProfessionBuilder;
 import dev.anvilcraft.lib.v2.registrum.builders.villager.VillagerTypeBuilder;
+import dev.anvilcraft.lib.v2.registrum.providers.DataProviderInitializer;
+import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
+import dev.anvilcraft.lib.v2.registrum.providers.RegistrumDataProvider;
+import dev.anvilcraft.lib.v2.registrum.providers.RegistrumLangProvider;
+import dev.anvilcraft.lib.v2.registrum.providers.RegistrumProvider;
 import dev.anvilcraft.lib.v2.registrum.util.CreativeModeTabModifier;
 import dev.anvilcraft.lib.v2.registrum.util.DebugMarkers;
 import dev.anvilcraft.lib.v2.registrum.util.OneTimeEventReceiver;
@@ -144,11 +69,85 @@ import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullUnaryOperator;
 import dev.anvilcraft.lib.v2.util.nullness.NonnullType;
-
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.Value;
 import lombok.extern.log4j.Log4j2;
+import net.minecraft.Util;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.MenuAccess;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType.EntityFactory;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
+import net.minecraft.world.entity.npc.VillagerType;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.attachment.IAttachmentHolder;
+import net.neoforged.neoforge.common.conditions.ICondition;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.common.world.BiomeModifier;
+import net.neoforged.neoforge.common.world.StructureModifier;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.neoforged.neoforge.data.loading.DatagenModLoader;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.registries.DataPackRegistryEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.NewRegistryEvent;
+import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.neoforge.registries.RegistryBuilder;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.message.Message;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Manages all registrations and data generators for a mod.
@@ -221,6 +220,8 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
     /** Entry-less callbacks that are invoked after the registry type has completely finished */
     private final Multimap<ResourceKey<? extends Registry<?>>, Runnable> afterRegisterCallbacks = HashMultimap.create();
     private final Set<ResourceKey<? extends Registry<?>>> completedRegistrations = new HashSet<>();
+    /** Old name to current name, per registry, applied while that registry is being populated */
+    private final Multimap<ResourceKey<? extends Registry<?>>, Pair<ResourceLocation, ResourceLocation>> aliases = ArrayListMultimap.create();
 
     private final Table<Pair<String, ResourceKey<? extends Registry<?>>>, ProviderType<?>, Consumer<? extends RegistrumProvider>> datagensByEntry = HashBasedTable.create();
     private final ListMultimap<ProviderType<?>, @NonnullType NonNullConsumer<? extends RegistrumProvider>> datagens = ArrayListMultimap.create();
@@ -350,7 +351,47 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         Collection<Runnable> callbacks = afterRegisterCallbacks.get(type);
         callbacks.forEach(Runnable::run);
         callbacks.clear();
+        applyAliases(event.getRegistry());
         completedRegistrations.add(type);
+    }
+
+    /**
+     * Make {@code oldName} resolve to {@code newName} in {@code registryType}, for entries that were renamed. The old name is no longer registered, so every name-based lookup of it - a block state in
+     * a chunk palette, an item stack, a block entity id - falls back to the current entry instead of silently resolving to nothing.
+     * <p>
+     * Prefer {@link Builder#aliasFrom(ResourceLocation)}, which infers the registry from the entry being built. Applying an alias for a name that is still registered has no effect.
+     *
+     * @param <R>
+     *            The registry type
+     * @param registryType
+     *            A {@link ResourceKey} for the registry in question
+     * @param oldName
+     *            The name that used to refer to this entry
+     * @param newName
+     *            The name the entry is registered under now
+     * @return This {@link AbstractRegistrum} instance
+     */
+    public <R> S addAlias(ResourceKey<? extends Registry<R>> registryType, ResourceLocation oldName, ResourceLocation newName) {
+        Preconditions.checkNotNull(registryType, "registryType");
+        Preconditions.checkNotNull(oldName, "oldName");
+        Preconditions.checkNotNull(newName, "newName");
+        if (oldName.equals(newName)) return self();
+        aliases.put((ResourceKey<? extends Registry<?>>) registryType, Pair.of(oldName, newName));
+        return self();
+    }
+
+    private void applyAliases(Registry<?> registry) {
+        Collection<Pair<ResourceLocation, ResourceLocation>> pending = aliases.get(registry.key());
+        if (pending.isEmpty()) return;
+        for (Pair<ResourceLocation, ResourceLocation> alias : pending) {
+            if (registry.containsKey(alias.getLeft())) {
+                log.warn(DebugMarkers.REGISTER, "Ignoring alias {} -> {}: the old name is still registered", alias.getLeft(), alias.getRight());
+                continue;
+            }
+            log.debug(DebugMarkers.REGISTER, "Aliasing {} -> {}", alias.getLeft(), alias.getRight());
+            registry.addAlias(alias.getLeft(), alias.getRight());
+        }
+        pending.clear();
     }
 
     /**

@@ -25,6 +25,7 @@ import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 
 import java.util.function.Function;
@@ -200,6 +201,23 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
     @SuppressWarnings("unchecked")
     default S onRegister(NonNullConsumer<? super T> callback) {
         getOwner().<R, T>addRegisterCallback(getName(), getRegistryKey(), callback);
+        return (S) this;
+    }
+
+    /**
+     * Declare that this entry was previously registered under {@code oldName}, so that name-based lookups of the old name resolve to this entry. Use this when renaming an entry that already exists in
+     * saved data: a block state written into a chunk palette, an item stack in an inventory, or a block entity id all reference the entry by name, and would otherwise resolve to nothing once the old name
+     * is gone.
+     * <p>
+     * The old name must not still be registered - as is the case for a rename - otherwise the alias is ignored with a warning.
+     *
+     * @param oldName
+     *            The name this entry used to be registered under
+     * @return this {@link Builder}
+     */
+    @SuppressWarnings("unchecked")
+    default S aliasFrom(ResourceLocation oldName) {
+        getOwner().addAlias(getRegistryKey(), oldName, ResourceLocation.fromNamespaceAndPath(getOwner().getModid(), getName()));
         return (S) this;
     }
 
