@@ -358,7 +358,8 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      * Make {@code oldName} resolve to {@code newName} in {@code registryType}, for entries that were renamed. The old name is no longer registered, so every name-based lookup of it - a block state in
      * a chunk palette, an item stack, a block entity id - falls back to the current entry instead of silently resolving to nothing.
      * <p>
-     * Prefer {@link Builder#aliasFrom(ResourceLocation...)}, which infers the registry from the entry being built. Applying an alias for a name that is still registered has no effect.
+     * Prefer {@link Builder#aliasFrom(ResourceLocation...)}, which infers the registry from the entry being built. Applying an alias for a name that is still registered has no effect. Only lookups
+     * that go through this registry are covered: a name used as a datapack file name, or compared as a plain string, still has to be changed by hand.
      *
      * @param <R>
      *            The registry type
@@ -375,7 +376,14 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         Preconditions.checkNotNull(oldName, "oldName");
         Preconditions.checkNotNull(newName, "newName");
         if (oldName.equals(newName)) return self();
-        aliases.put((ResourceKey<? extends Registry<?>>) registryType, Pair.of(oldName, newName));
+        // Two entries claiming the same old name would reach Registry#addAlias with conflicting targets, which throws
+        for (Pair<ResourceLocation, ResourceLocation> alias : aliases.get(registryType)) {
+            if (alias.getLeft().equals(oldName) && !alias.getRight().equals(newName)) {
+                log.error(DebugMarkers.REGISTER, "Ignoring alias {} -> {}: {} is already aliased to {}", oldName, newName, oldName, alias.getRight());
+                return self();
+            }
+        }
+        aliases.put(registryType, Pair.of(oldName, newName));
         return self();
     }
 
@@ -388,7 +396,10 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
                 continue;
             }
             // Builders alias the derived entries they register under other names, which do not exist for every entry
-            if (!registry.containsKey(alias.getRight())) continue;
+            if (!registry.containsKey(alias.getRight())) {
+                log.debug(DebugMarkers.REGISTER, "Ignoring alias {} -> {}: the new name is not registered", alias.getLeft(), alias.getRight());
+                continue;
+            }
             // More than one builder can resolve to the same alias, and applying one twice throws
             if (registry.resolve(alias.getLeft()).equals(alias.getRight())) continue;
             log.debug(DebugMarkers.REGISTER, "Aliasing {} -> {}", alias.getLeft(), alias.getRight());

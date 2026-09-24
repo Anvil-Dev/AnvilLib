@@ -215,6 +215,8 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
      * <p>
      * Builders which register entries derived from this one - a block item, a spawn egg, a bucket - also alias the derived names, for the derived entries that they actually created. The aliases are
      * resolved when this builder is {@link #register() registered}, so the entries created by the rest of the builder chain are taken into account.
+     * <p>
+     * {@link FluidBuilder} registers several entries from a single name, and takes the names as the name of the base fluid rather than the {@code flowing_} name its own entry is registered under.
      *
      * @param oldNames
      *            The names this entry used to be registered under
