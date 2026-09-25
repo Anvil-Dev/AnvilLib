@@ -13,6 +13,7 @@
   { "module": "space-select", "needs": ["network"] },
   { "module": "util",         "needs": ["codec"] },
 
+  { "module": "math",       "needs": ["util"] },
   { "module": "multiblock", "needs": ["codec", "config", "network", "util"] },
   { "module": "recipe",     "needs": ["codec", "config", "util"] },
   { "module": "registrum",  "needs": ["util"] },
