@@ -101,6 +101,7 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
     private NonNullSupplier<NonNullFunction<EntityRendererProvider.Context, EntityRenderer<? super T>>> renderer;
 
     private boolean attributesConfigured, spawnConfigured; // TODO make this more reuse friendly
+    private boolean spawnEggCreated;
 
     protected EntityBuilder(AbstractRegistrum<?> owner, P parent, String name, BuilderCallback callback, EntityType.EntityFactory<T> factory, MobCategory classification) {
         super(owner, parent, name, callback, Registries.ENTITY_TYPE);
@@ -227,6 +228,20 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * The spawn egg created by {@link #spawnEgg(int, int)} is registered as {@code <name>_spawn_egg}, so the item registry is aliased from the old name with the same suffix. It is only aliased if a
+     * spawn egg was actually created, which is optional.
+     */
+    @Override
+    protected void addAliases(ResourceLocation oldName) {
+        super.addAliases(oldName);
+        if (this.spawnEggCreated) {
+            getOwner().addAlias(Registries.ITEM, oldName.withSuffix("_spawn_egg"), getEntryId().withSuffix("_spawn_egg"));
+        }
+    }
+
+    /**
      * Create a spawn egg item for this entity using the given colors, and return the builder for further configuration.
      *
      * @deprecated This does not work properly, see <a href="https://github.com/MinecraftForge/MinecraftForge/pull/6299">this issue</a>.
@@ -242,6 +257,7 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Deprecated
     public ItemBuilder<? extends SpawnEggItem, EntityBuilder<T, P>> spawnEgg(int primaryColor, int secondaryColor) {
+        this.spawnEggCreated = true;
         var sup = asSupplier();
         return getOwner().item(this, getName() + "_spawn_egg", p -> new DeferredSpawnEggItem((Supplier<EntityType<? extends Mob>>) (Supplier) sup, primaryColor, secondaryColor, p)).tab(CreativeModeTabs.SPAWN_EGGS)
                 .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), ResourceLocation.withDefaultNamespace("item/template_spawn_egg")));
