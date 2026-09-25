@@ -237,6 +237,8 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
      */
     private final Multimap<ResourceKey<? extends Registry<?>>, Runnable> afterRegisterCallbacks = HashMultimap.create();
     private final Set<ResourceKey<? extends Registry<?>>> completedRegistrations = new HashSet<>();
+    /** Old name to current name, per registry, applied while that registry is being populated */
+    private final Multimap<ResourceKey<? extends Registry<?>>, Pair<Identifier, Identifier>> aliases = ArrayListMultimap.create();
 
     private final Table<Pair<String, ResourceKey<? extends Registry<?>>>, GeneratorType<?>, Consumer<?>> datagensByEntry = HashBasedTable.create();
     private final ListMultimap<GeneratorType<?>, @NonnullType NonNullConsumer<?>> datagens = ArrayListMultimap.create();
@@ -384,7 +386,62 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         Collection<Runnable> callbacks = afterRegisterCallbacks.get(type);
         callbacks.forEach(Runnable::run);
         callbacks.clear();
+        applyAliases(event.getRegistry());
         completedRegistrations.add(type);
+    }
+
+    /**
+     * Make {@code oldName} resolve to {@code newName} in {@code registryType}, for entries that were renamed. The old name is no longer registered, so every name-based lookup of it - a block state in
+     * a chunk palette, an item stack, a block entity id - falls back to the current entry instead of silently resolving to nothing.
+     * <p>
+     * Prefer {@link Builder#aliasFrom(Identifier...)}, which infers the registry from the entry being built. Applying an alias for a name that is still registered has no effect. Only lookups
+     * that go through this registry are covered: a name used as a datapack file name, or compared as a plain string, still has to be changed by hand.
+     *
+     * @param <R>
+     *            The registry type
+     * @param registryType
+     *            A {@link ResourceKey} for the registry in question
+     * @param oldName
+     *            The name that used to refer to this entry
+     * @param newName
+     *            The name the entry is registered under now
+     * @return This {@link AbstractRegistrum} instance
+     */
+    public <R> S addAlias(ResourceKey<? extends Registry<R>> registryType, Identifier oldName, Identifier newName) {
+        Preconditions.checkNotNull(registryType, "registryType");
+        Preconditions.checkNotNull(oldName, "oldName");
+        Preconditions.checkNotNull(newName, "newName");
+        if (oldName.equals(newName)) return self();
+        // Two entries claiming the same old name would reach Registry#addAlias with conflicting targets, which throws
+        for (Pair<Identifier, Identifier> alias : aliases.get(registryType)) {
+            if (alias.getLeft().equals(oldName) && !alias.getRight().equals(newName)) {
+                log.error(DebugMarkers.REGISTER, "Ignoring alias {} -> {}: {} is already aliased to {}", oldName, newName, oldName, alias.getRight());
+                return self();
+            }
+        }
+        aliases.put(registryType, Pair.of(oldName, newName));
+        return self();
+    }
+
+    private void applyAliases(Registry<?> registry) {
+        Collection<Pair<Identifier, Identifier>> pending = aliases.get(registry.key());
+        if (pending.isEmpty()) return;
+        for (Pair<Identifier, Identifier> alias : pending) {
+            if (registry.containsKey(alias.getLeft())) {
+                log.warn(DebugMarkers.REGISTER, "Ignoring alias {} -> {}: the old name is still registered", alias.getLeft(), alias.getRight());
+                continue;
+            }
+            // Builders alias the derived entries they register under other names, which do not exist for every entry
+            if (!registry.containsKey(alias.getRight())) {
+                log.debug(DebugMarkers.REGISTER, "Ignoring alias {} -> {}: the new name is not registered", alias.getLeft(), alias.getRight());
+                continue;
+            }
+            // More than one builder can resolve to the same alias, and applying one twice throws
+            if (registry.resolve(alias.getLeft()).equals(alias.getRight())) continue;
+            log.debug(DebugMarkers.REGISTER, "Aliasing {} -> {}", alias.getLeft(), alias.getRight());
+            registry.addAlias(alias.getLeft(), alias.getRight());
+        }
+        pending.clear();
     }
 
     /**
