@@ -363,7 +363,7 @@ controller.onHoldKeyReleased();
 
 ### Main 模块
 
-`anvillib-neoforge-1.21.1` 为聚合发行模块，默认打包并重导出以下子模块：
+`anvillib-neoforge-26.1` 为聚合发行模块，默认打包并重导出以下子模块：
 
 - `config`
 - `codec`
@@ -377,7 +377,7 @@ controller.onHoldKeyReleased();
 - `util`
 - `wheel`
 
-`anvillib-test-neoforge-1.21.1` 为开发/测试模块，不包含在聚合运行时产物中。
+`anvillib-test-neoforge-26.1` 为开发/测试模块，不包含在聚合运行时产物中。
 
 ## 依赖引入
 
