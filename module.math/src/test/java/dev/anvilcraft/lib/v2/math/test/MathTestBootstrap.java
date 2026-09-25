@@ -154,7 +154,7 @@ public final class MathTestBootstrap {
     /**
      * 按完整资源位置注册函数，用于 {@code mymod:xxx} 这类非 anvillib 命名空间的名字。
      *
-     * <p>同名重复注册时改绑已有的引用，而不是新增条目：26.1 的 {@code MappedRegistry} 对重复键直接抛异常，
+     * <p>同名重复注册时改绑已有的引用，而不是新增条目：1.21.11 的 {@code MappedRegistry} 对重复键直接抛异常，
      * 而自引用、互相引用、以及「撞内建名」这几类用例本来就靠「同一个名字换个函数体」构造出来。</p>
      */
     public static Holder.Reference<IFunction> registerFunction(Identifier id, IFunction function) {

@@ -2,7 +2,7 @@ dependencies {
     if (System.getenv("NOT_DEV") == 'true') {
         jarJar(api("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.11:latest.release"))
     } else {
-        jarJar(implementation project(":anvillib-util-neoforge-1.21.11"))
+        jarJar(api project(":anvillib-util-neoforge-1.21.11"))
     }
 
     testImplementation platform("org.junit:junit-bom:5.10.2")

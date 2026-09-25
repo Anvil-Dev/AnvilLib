@@ -63,7 +63,7 @@ class ParseCacheTest {
     @Test
     @DisplayName("同一个注册表拿两次 lookup 仍是同一组缓存")
     void lookupsOfTheSameRegistryShareABucket() {
-        // 26.1 里注册表自己就是 HolderLookup.RegistryLookup（也就是 HolderGetter），
+        // 1.21.11 里注册表自己就是 HolderLookup.RegistryLookup（也就是 HolderGetter），
         // 同一注册表拿两次是同一个实例，所以缓存不会因为「每次新取一个 lookup」而永远命中不了
         HolderGetter<dev.anvilcraft.lib.v2.math.expression.function.IFunction> first =
             MathTestBootstrap.functions();
