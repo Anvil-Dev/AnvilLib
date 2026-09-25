@@ -26,6 +26,7 @@ import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 
 import java.util.function.Function;
@@ -192,6 +193,26 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
         getOwner().<R, T>addRegisterCallback(getName(), getRegistryKey(), callback);
         return (S) this;
     }
+
+    /**
+     * Declare that this entry was previously registered under {@code oldNames}, so that name-based lookups of those names resolve to this entry. Use this when renaming an entry that already exists in
+     * saved data: a block state written into a chunk palette, an item stack in an inventory, or a block entity id all reference the entry by name, and would otherwise resolve to nothing once the old
+     * names are gone.
+     * <p>
+     * Pass several names to merge the entries they referred to into this one, and call this method more than once to add further names; every name is aliased.
+     * <p>
+     * The old names must not still be registered - as is the case for a rename - otherwise the alias is ignored with a warning.
+     * <p>
+     * Builders which register entries derived from this one - a block item, a spawn egg, a bucket - also alias the derived names, for the derived entries that they actually created. The aliases are
+     * resolved when this builder is {@link #register() registered}, so the entries created by the rest of the builder chain are taken into account.
+     * <p>
+     * {@link FluidBuilder} registers several entries from a single name, and takes the names as the name of the base fluid rather than the {@code flowing_} name its own entry is registered under.
+     *
+     * @param oldNames
+     *            The names this entry used to be registered under
+     * @return this {@link Builder}
+     */
+    S aliasFrom(ResourceLocation... oldNames);
 
     /**
      * Add a callback to be invoked when this entry is registered, but only after some other registry type has been registered as well. Can be called multiple times to add multiple callbacks.
