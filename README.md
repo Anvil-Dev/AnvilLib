@@ -17,6 +17,7 @@ AnvilLib 采用模块化设计，包含以下功能模块：
 | **Codec**                 | 数据编解码与网络序列化工具  |
 | **Cube**                  | 模型斜棱线与精确拾取     |
 | **Integration**           | 模组兼容性集成框架      |
+| **Math**                  | 可序列化的数学表达式解析与回写       |
 | **Network**               | 网络通信与数据包自动注册框架 |
 | **Recipe**                | 世界内配方系统        |
 | **Moveable Entity Block** | 可被活塞推动的方块实体支持  |
@@ -190,6 +191,41 @@ public static void init() {
 }
 ```
 
+### Math 模块
+
+提供**可序列化的数学表达式系统**：表达式是普通对象树，既能按 JSON 对象读写，也能写成一段人类可读的 flat 文本。
+
+**主要特性：**
+
+- flat 语法：`x*2`、`2x`（隐式乘法）、`x^2`、`$(name)` 按名取值、`$(name...)` 取整份变参列表、`x -> $(x)*2` 匿名函数，乘号可写 `*`、`×`、`·`
+- 反向回写：表达式树可以写回 flat 文本，写出前会自校验「再解析一次、再写一次文本完全相同」，写不出来时自动退回对象形式，不会写出一段读不回来的文本
+- 双注册表：函数类型（`function_type`）与数据包函数（`function`，可用数据包/JSON 注册）都开放给下游扩展
+- 内建函数：四则运算、`pow`、`abs`、`floor`、`ceil`、`round`、`sqrt`、`min`、`max`、`foreach`
+- 自定义函数支持变参（`"x..."`，Java 变参语义，下限为 0），且可以不在末位
+- 三种内联编码形式：数字、flat 文本、对象，由 `IExpression.CODEC` 自动选择
+
+**使用示例：**
+
+```java
+// 解析一段 flat 文本并求值（functions 是函数注册表的查询入口）
+IExpression expression = IExpression.of(functions, "2x+1");
+double value = expression.evaluate(3);   // 7.0
+
+// 序列化：IExpression.CODEC 会自动在 flat 文本与对象两种形式之间选择，
+// 写不出 flat 文本时退回对象形式，不会写出一段读不回来的文本
+JsonElement json = IExpression.CODEC
+    .encodeStart(RegistryOps.create(JsonOps.INSTANCE, registryAccess), expression)
+    .getOrThrow();
+
+// 带变参的自定义函数："x..." 与 Java 变参同义，下限为 0，且可以不在末位
+CustomFunction smallest = CustomFunction.of(
+    List.of("x..."),
+    LibBuiltInFunctions.MIN.call(IExpression.ref("x..."))
+);
+```
+
+> 完整语法与用法见 [anvil-lib-docs](https://github.com/Anvil-Dev/anvil-lib-docs) 的 Math 章节。
+
 ### Network 模块
 
 提供面向 NeoForge 的网络通信抽象，支持按包扫描并自动注册数据包。
@@ -313,6 +349,7 @@ controller.onHoldKeyReleased();
 - `config`
 - `codec`
 - `integration`
+- `math`
 - `network`
 - `recipe`
 - `moveable-entity-block`
@@ -340,6 +377,7 @@ dependencies {
     implementation "dev.anvilcraft.lib:anvillib-config-neoforge-1.21.4:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.4:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.4:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-math-neoforge-1.21.4:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-network-neoforge-1.21.4:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.4:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.4:2.0.0"
@@ -365,6 +403,7 @@ dependencies {
     implementation("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.4:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.4:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.4:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-math-neoforge-1.21.4:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.4:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.4:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.4:2.0.0")
