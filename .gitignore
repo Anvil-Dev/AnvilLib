@@ -17,7 +17,7 @@ atlassian-ide-plugin.xml
 *.class
 
 # Log file
-*.log
+*.log*
 
 # BlueJ files
 *.ctxt
@@ -124,5 +124,4 @@ ref/
 /.vscode
 /docs/
 
-*.log.gz
 **/logs/

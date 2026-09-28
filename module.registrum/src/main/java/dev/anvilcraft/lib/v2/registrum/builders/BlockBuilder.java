@@ -101,6 +101,8 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
     @Nullable
     private NonNullSupplier<Supplier<BlockColor>> colorHandler;
 
+    private boolean itemCreated, blockEntityCreated;
+
     protected BlockBuilder(
         AbstractRegistrum<?> owner,
         P parent,
@@ -174,6 +176,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      * @return the {@link ItemBuilder} for the {@link BlockItem}
      */
     public <I extends Item> ItemBuilder<I, BlockBuilder<T, P>> item(NonNullBiFunction<? super T, Item.Properties, ? extends I> factory) {
+        this.itemCreated = true;
         return getOwner().<I, BlockBuilder<T, P>>item(this, getName(), p -> factory.apply(getEntry(), p))
             .setData(ProviderType.LANG, NonNullBiConsumer.noop()) // FIXME Need a beetter API for "unsetting" providers
             .model(() -> (ctx, prov) -> {
@@ -199,6 +202,23 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * The block item and the block entity type registered by this builder share the block's name, so those registries are aliased too. Each is only aliased if it was actually created, since
+     * {@link #item(NonNullBiFunction)} and {@link #blockEntity(BlockEntityFactory)} are optional and neither is created by every block.
+     */
+    @Override
+    protected void addAliases(ResourceLocation oldName) {
+        super.addAliases(oldName);
+        if (this.itemCreated) {
+            getOwner().addAlias(Registries.ITEM, oldName, getEntryId());
+        }
+        if (this.blockEntityCreated) {
+            getOwner().addAlias(Registries.BLOCK_ENTITY_TYPE, oldName, getEntryId());
+        }
+    }
+
+    /**
      * Create a {@link BlockEntity} for this block, which is created by the given factory, and assigned this block as its one and only valid block.
      * <p>
      * The created {@link BlockEntityBuilder} is returned for further configuration.
@@ -208,6 +228,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      * @return the {@link BlockEntityBuilder}
      */
     public <BE extends BlockEntity> BlockEntityBuilder<BE, BlockBuilder<T, P>> blockEntity(BlockEntityFactory<BE> factory) {
+        this.blockEntityCreated = true;
         return getOwner().<BE, BlockBuilder<T, P>>blockEntity(this, getName(), factory).validBlock(asSupplier());
     }
 
