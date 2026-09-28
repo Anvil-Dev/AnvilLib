@@ -47,6 +47,8 @@ public final class ALRComputeProgramInstance implements NamedUniformAccess {
         int orDefault = this.uniformLocationCache.getOrDefault(name, -2);
         if (orDefault == -2){
             orDefault = device.alrGetUniformLocation(this, owner, name);
+            System.out.println("uniformName = " + name);
+            System.out.println("uniformLocation = " + orDefault);
             this.uniformLocationCache.put(name, orDefault);
         }
         return orDefault;

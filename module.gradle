@@ -53,6 +53,7 @@ neoForge {
                     systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
                     systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
                     systemProperty("alrEnableDebugContext", "true")
+                    // systemProperty("alrUseIntelBindlessImageArrayWorkaround", "2")
                     jvmArgument("-XX:+UseParallelGC")
                     jvmArgument("-XX:+UnlockDiagnosticVMOptions")
                     jvmArgument("-XX:+DebugNonSafepoints")

@@ -1,11 +1,12 @@
 package dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz;
 
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
+import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz.spd.SinglePassDownsampler;
 import org.jetbrains.annotations.ApiStatus;
 
 /// Device policy for the hierarchical-Z backend.
 ///
-/// The {@link dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz.spd.SinglePassDownsampler SPD pass}
+/// The {@link SinglePassDownsampler SPD pass}
 /// and the Hi-Z occlusion test bind their mip chain either as consecutive image
 /// units, or - on devices that cannot spare that many units - through a bindless
 /// image array:
@@ -15,9 +16,8 @@ import org.jetbrains.annotations.ApiStatus;
 ///   `layout(binding = N)` index that is not below `GL_MAX_IMAGE_UNITS`.
 ///   {@link #REQUIRED_IMAGE_UNITS} is the smallest power of two that satisfies
 ///   this requirement.
-/// - The bindless fallback is what makes hierarchical-Z usable on devices with
-///   fewer image units, but it is broken on Intel Arc graphics under Windows:
-///   the driver advertises `GL_ARB_bindless_texture`, yet using it crashes the JVM.
+/// - The bindless fallback makes hierarchical-Z usable on devices with fewer
+///   image units. Windows Intel image arrays use the per-element upload workaround.
 @ApiStatus.Internal
 public final class HierarchicalZSupport {
     /// `GL_MAX_IMAGE_UNITS` needed to bind the SPD mip chain as image units.
@@ -46,8 +46,7 @@ public final class HierarchicalZSupport {
     /// @return `true` when the bindless path has to be and may be used
     public static boolean useBindlessTexturing(ALRGpuDeviceExtension device) {
         return !hasEnoughImageUnits(device)
-            && device.alrhiCreateCapabilities().bindlessTexturing()
-            && !device.alrhiCreateHeuristics().isWindowsArcGraphics();
+            && device.alrhiCreateCapabilities().bindlessTexturing();
     }
 
     /// Returns whether hierarchical-Z can run on the device at all.

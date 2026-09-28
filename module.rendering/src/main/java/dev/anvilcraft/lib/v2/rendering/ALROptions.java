@@ -11,13 +11,16 @@ public class ALROptions {
     public static final String OCCLUSION_CULLING_FORCE_IMPL = getProperty("alrOcclusionCullingForceImplementation", null);
     public static final boolean TEXTURE_DEBUG_CLEAR = getPropertyBoolean("alrTextureDebugClear", false);
     public static final boolean DEBUG_CONTEXT = getPropertyBoolean("alrEnableDebugContext", false);
+    // public static final int USE_INTEL_BINDLESS_IMAGE_ARRAY_WORKAROUND = getPropertyInt("alrUseIntelBindlessImageArrayWorkaround", 0);
 
     public static void logAllOptions() {
         log.info("ALR options: SPD_OPTION_WAVE_INTEROP_LDS={}, OCCLUSION_QUERY_USE_FRUSTUM_PRE_PASS={}, OCCLUSION_CULLING_FORCE_IMPL={}, TEXTURE_DEBUG_CLEAR={}",
+            // + ", USE_INTEL_BINDLESS_IMAGE_ARRAY_WORKAROUND={}",
             SPD_OPTION_WAVE_INTEROP_LDS,
             OCCLUSION_QUERY_USE_FRUSTUM_PRE_PASS,
             OCCLUSION_CULLING_FORCE_IMPL,
             TEXTURE_DEBUG_CLEAR
+            // , USE_INTEL_BINDLESS_IMAGE_ARRAY_WORKAROUND
         );
     }
 
@@ -31,6 +34,18 @@ public class ALROptions {
             return defaultValue;
         }
         return !"false".equals(prop);
+    }
+
+    private static int getPropertyInt(String key, int defaultValue) {
+        String prop = System.getProperty(key);
+        if (prop == null) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(prop);
+        } catch (NumberFormatException ignored) {
+            return defaultValue;
+        }
     }
 
     private static boolean getPropertyBoolean(String key) {
