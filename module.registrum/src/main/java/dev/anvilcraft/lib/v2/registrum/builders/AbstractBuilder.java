@@ -36,7 +36,9 @@ import net.minecraft.tags.TagEntry;
 import net.minecraft.tags.TagKey;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Base class which most builders should extend, instead of implementing [@link {@link Builder} directly.
@@ -76,6 +78,9 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
      */
     private boolean isOptional = false;
 
+    /** The names this entry was previously registered under, resolved into aliases by {@link #addAliases(Identifier)} when this builder is registered */
+    private final List<Identifier> aliasedFrom = new ArrayList<>();
+
     /**
      * Create the built entry. This method will be lazily resolved at registration time, so it is safe to bake in values from the builder.
      *
@@ -86,6 +91,9 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
 
     @Override
     public RegistryEntry<R, T> register() {
+        for (Identifier oldName : this.aliasedFrom) {
+            addAliases(oldName);
+        }
         return callback.accept(name, registryKey, this, this::createEntry, this::createEntryWrapper);
     }
 
@@ -96,6 +104,41 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
     @Override
     public NonNullSupplier<T> asSupplier() {
         return safeSupplier;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The aliases are not applied immediately: they are recorded and resolved by {@link #addAliases(Identifier)} when this builder is registered, so that builders which only create their derived
+     * entries for some configurations can skip aliasing the ones they did not create.
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public S aliasFrom(Identifier... oldNames) {
+        this.aliasedFrom.addAll(Arrays.asList(oldNames));
+        return (S) this;
+    }
+
+    /**
+     * Apply the aliases for every entry this builder registers, given one of the names this builder's entry was previously registered under. Called once per name.
+     * <p>
+     * Builders which register entries derived from this one under a different name - a block item, a spawn egg, a bucket - override this to alias those registries too. Such an override must only alias
+     * the derived entries that were actually created, as the configuration of this builder is final by the time it is called.
+     *
+     * @param oldName
+     *            One of the names this entry used to be registered under
+     */
+    protected void addAliases(Identifier oldName) {
+        getOwner().addAlias(getRegistryKey(), oldName, getEntryId());
+    }
+
+    /**
+     * The {@link Identifier} this entry is registered under, derived from the owning mod's id and this builder's name.
+     *
+     * @return the id of this entry
+     */
+    protected Identifier getEntryId() {
+        return Identifier.fromNamespaceAndPath(getOwner().getModid(), getName());
     }
 
     /**

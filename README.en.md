@@ -18,6 +18,7 @@ AnvilLib adopts a modular design and includes the following functional modules:
 | **Codec**                 | Data codecs and network serialization helpers     |
 | **Cube**                  | Model outlines and precise picking                |
 | **Integration**           | Mod compatibility integration framework           |
+| **Math**                  | Serializable math expression parsing and writing   |
 | **Network**               | Networking API with automatic packet registration |
 | **Recipe**                | In-world recipe system                            |
 | **Moveable Entity Block** | Support for block entities movable by pistons     |
@@ -202,6 +203,41 @@ public static void init() {
 }
 ```
 
+### Math Module
+
+Provides a **serializable mathematical expression system**: an expression is an ordinary object tree that can be read from and written to JSON objects, or rendered as a human-readable flat string.
+
+**Key Features:**
+
+- Flat syntax: `x*2`, `2x` (implicit multiplication), `x^2`, `$(name)` to look up by name, `$(name...)` to take a whole varargs list, `x -> $(x)*2` for anonymous functions; the multiplication sign may be written `*`, `×` or `·`
+- Reverse writing: an expression tree can be written back out as flat text. Before writing, the result is verified to parse and write back to exactly the same text; if that fails it falls back to the object form, so text that cannot be read back is never emitted
+- Two registries: function types (`function_type`) and datapack functions (`function`, registerable from a datapack or JSON) are both open to downstream extension
+- Built-in functions: the four basic operations, `pow`, `abs`, `floor`, `ceil`, `round`, `sqrt`, `min`, `max`, `foreach`
+- Custom functions support varargs (`"x..."`, with Java varargs semantics and a lower bound of 0), and may appear anywhere in the parameter list
+- Three inline encodings: a number, flat text, or an object, chosen automatically by `IExpression.CODEC`
+
+**Usage Example:**
+
+```java
+// Parse a snippet of flat text and evaluate it (functions is the lookup entry point of the function registry)
+IExpression expression = IExpression.of(functions, "2x+1");
+double value = expression.evaluate(3);   // 7.0
+
+// Serialization: IExpression.CODEC picks between flat text and the object form automatically,
+// falling back to the object form when the text cannot be written back
+JsonElement json = IExpression.CODEC
+    .encodeStart(RegistryOps.create(JsonOps.INSTANCE, registryAccess), expression)
+    .getOrThrow();
+
+// A custom function with varargs: "x..." means the same as Java varargs, has a lower bound of 0, and may appear anywhere
+CustomFunction smallest = CustomFunction.of(
+    List.of("x..."),
+    LibBuiltInFunctions.MIN.call(IExpression.ref("x..."))
+);
+```
+
+> See the Math chapter of [anvil-lib-docs](https://github.com/Anvil-Dev/anvil-lib-docs) for the full syntax and usage.
+
 ### Network Module
 
 Provides a NeoForge networking abstraction with package-based packet auto-registration.
@@ -323,6 +359,7 @@ controller.onHoldKeyReleased();
 - `config`
 - `codec`
 - `integration`
+- `math`
 - `network`
 - `recipe`
 - `moveable-entity-block`
@@ -348,6 +385,7 @@ dependencies {
     implementation "dev.anvilcraft.lib:anvillib-config-neoforge-1.21.11:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.11:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.11:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-math-neoforge-1.21.11:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.11:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-multiblock-neoforge-1.21.11:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-network-neoforge-1.21.11:2.0.0"
@@ -372,6 +410,7 @@ dependencies {
     implementation("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.11:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.11:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.11:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-math-neoforge-1.21.11:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.11:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-multiblock-neoforge-1.21.11:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.11:2.0.0")
