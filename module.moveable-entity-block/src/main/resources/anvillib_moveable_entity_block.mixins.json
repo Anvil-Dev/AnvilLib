@@ -6,7 +6,8 @@
   "refmap": "anvillib.refmap.json",
   "mixins": [
     "PistonBaseBlockMixin",
-    "PistonMovingBlockEntityMixin"
+    "PistonMovingBlockEntityMixin",
+    "YouerPistonCompatibilityMixin"
   ],
   "client": [
     "PistonHeadRendererMixin"
