@@ -109,6 +109,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
+    compileOnly("org.jspecify:jspecify:1.0.0")
     implementation project(":anvillib-cube-neoforge-1.21.4")
     implementation project(":anvillib-collision-neoforge-1.21.4")
     interfaceInjectionData(implementation project(":anvillib-font-neoforge-1.21.4"))
@@ -301,6 +302,17 @@ if (providers.gradleProperty('portSmoke').isPresent()) {
             if (!result.get().asFile.isFile() || !result.get().asFile.text.startsWith('PASS ')) {
                 throw new GradleException('Port smoke verification failed; inspect the client log and port-smoke-result.txt')
             }
+        }
+    }
+}
+
+if (providers.gradleProperty('recipeTests').isPresent()) {
+    neoForge.runs {
+        recipeGameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'anvillib.recipeTests', 'true'
+            gameDirectory = layout.buildDirectory.dir('recipe-test-run')
         }
     }
 }

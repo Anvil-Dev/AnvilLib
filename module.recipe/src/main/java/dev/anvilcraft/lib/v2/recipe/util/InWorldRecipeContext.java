@@ -1,5 +1,8 @@
 package dev.anvilcraft.lib.v2.recipe.util;
 
+import dev.anvilcraft.lib.v2.recipe.cache.BlockCache;
+import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
+import dev.anvilcraft.lib.v2.recipe.cache.TagCache;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import lombok.Getter;
 import net.minecraft.nbt.NbtOps;
@@ -15,13 +18,19 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * 世界内配方上下文类，用于存储和管理世界内配方执行过程中的数据和状态
@@ -50,11 +59,21 @@ public class InWorldRecipeContext implements RecipeInput {
      * 存储配方数据的映射表
      */
     private final Map<ResourceLocation, Object> data = new ConcurrentHashMap<>();
+    private final Map<Object, Object> identityData = new IdentityHashMap<>();
 
     /**
      * 存储接受者的映射表
      */
-    private final Map<ResourceLocation, Consumer<InWorldRecipeContext>> acceptors = new ConcurrentHashMap<>();
+    private final Map<ResourceLocation, CommitAction> acceptors = new LinkedHashMap<>();
+    private final List<Runnable> afterCommit = new ArrayList<>();
+    @Getter
+    private long batchId;
+    private boolean committing;
+    private boolean completed;
+    private boolean invalid;
+
+    private record CommitAction(ResourceLocation key, int order, Consumer<InWorldRecipeContext> action) {
+    }
 
     /**
      * 配方谓词堆栈
@@ -91,8 +110,12 @@ public class InWorldRecipeContext implements RecipeInput {
      * @param predicate 要弹出的配方谓词
      */
     public void pop(IRecipePredicate<?> predicate) {
-        predicate.rollback(this);
-        this.stack.removeLast();
+        if (this.stack.getLast() != predicate) throw new IllegalStateException("Predicate is not at the top of the stack");
+        try {
+            predicate.rollback(this);
+        } finally {
+            this.stack.removeLast();
+        }
     }
 
     /**
@@ -129,6 +152,12 @@ public class InWorldRecipeContext implements RecipeInput {
     @SuppressWarnings("unchecked")
     public <T> T computeIfAbsent(InWorldRecipeData<T> key) {
         return (T) this.data.computeIfAbsent(key.location(), k -> key.supplier().apply(this, key));
+    }
+
+    /** Caches instance-owned state without conflating equal keys or colliding hash codes. */
+    @SuppressWarnings("unchecked")
+    public <T> T computeByIdentity(Object key, Supplier<T> supplier) {
+        return (T) this.identityData.computeIfAbsent(Objects.requireNonNull(key), ignored -> supplier.get());
     }
 
     /**
@@ -169,14 +198,65 @@ public class InWorldRecipeContext implements RecipeInput {
      * @param acceptor 接受者
      */
     public void putAcceptor(ResourceLocation key, Consumer<InWorldRecipeContext> acceptor) {
-        this.acceptors.put(key, acceptor);
+        int order = key.equals(ItemCache.ITEM_CACHE.location()) ? 0
+            : key.equals(BlockCache.BLOCK_CACHE.location()) ? 100 : 200;
+        this.putAcceptor(key, order, acceptor);
     }
 
-    /**
-     * 执行所有接受者
-     */
+    /** Registers a resource commit, ordered by phase and then by key. */
+    public void putAcceptor(ResourceLocation key, int order, Consumer<InWorldRecipeContext> acceptor) {
+        this.assertPlanning();
+        this.acceptors.put(key, new CommitAction(key, order, Objects.requireNonNull(acceptor)));
+    }
+
+    /** Starts one recipe execution without discarding shared resource reservations. */
+    public void beginBatch() {
+        this.assertPlanning();
+        Object tags = this.data.get(TagCache.TAG_CACHE.location());
+        if (tags instanceof TagCache cache) cache.tags.clear();
+        this.batchId++;
+    }
+
+    /** Queues a side effect that runs only after every resource commit succeeds. */
+    public void afterCommit(Runnable action) {
+        this.assertPlanning();
+        this.afterCommit.add(Objects.requireNonNull(action));
+    }
+
+    /** Prevents a failed execution plan from being committed or retried. */
+    public void invalidate() {
+        this.invalid = true;
+        this.acceptors.clear();
+        this.afterCommit.clear();
+    }
+
+    /** Rejects new reservations or actions once this execution plan is no longer open. */
+    public void assertPlanning() {
+        if (this.invalid) throw new IllegalStateException("Recipe context has been invalidated");
+        if (this.completed) throw new IllegalStateException("Recipe context has already committed");
+        if (this.committing) throw new IllegalStateException("Cannot modify a recipe context during commit");
+    }
+
+    /** Commits pending resources once, followed by deferred world side effects. */
     public void accept() {
-        this.acceptors.values().forEach(acceptor -> acceptor.accept(this));
+        if (this.invalid) throw new IllegalStateException("Recipe context has been invalidated");
+        if (this.committing || this.completed) return;
+        List<CommitAction> resources = new ArrayList<>(this.acceptors.values());
+        resources.sort(Comparator.comparingInt(CommitAction::order).thenComparing(CommitAction::key));
+        List<Runnable> effects = List.copyOf(this.afterCommit);
+        this.acceptors.clear();
+        this.afterCommit.clear();
+        this.committing = true;
+        try {
+            for (CommitAction resource : resources) resource.action().accept(this);
+            this.completed = true;
+            for (Runnable effect : effects) effect.run();
+        } catch (RuntimeException | Error exception) {
+            this.invalidate();
+            throw exception;
+        } finally {
+            this.committing = false;
+        }
     }
 
     /**

@@ -18,12 +18,16 @@ import org.jetbrains.annotations.NotNull;
 public class ResourceEventListener {
     @SubscribeEvent
     public static void onServerStarted(@NotNull ServerStartedEvent event) {
-        ResourceEventListener.initManager(event.getServer().getRecipeManager());
+        RecipeManager manager = event.getServer().getRecipeManager();
+        if (manager.anvillib$getInWorldRecipeManager() == null) ResourceEventListener.initManager(manager);
     }
 
     @SubscribeEvent
     public static void onDatapackSync(@NotNull OnDatapackSyncEvent event) {
-        ResourceEventListener.initManager(event.getPlayerList().getServer().getRecipeManager());
+        RecipeManager manager = event.getPlayerList().getServer().getRecipeManager();
+        if (event.getPlayer() == null || manager.anvillib$getInWorldRecipeManager() == null) {
+            ResourceEventListener.initManager(manager);
+        }
     }
 
     public static void initManager(@NotNull RecipeManager manager) {
