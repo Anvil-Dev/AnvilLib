@@ -7,6 +7,7 @@ import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheInput;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheInputOutputImpl;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheOutput;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ItemEntityCacheElement;
+import dev.anvilcraft.lib.v2.recipe.cache.item.ItemCacheSlotProvider;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ItemResourceHandlerCacheElement;
 import dev.anvilcraft.lib.v2.recipe.cache.item.operation.SpawnOperation;
 import dev.anvilcraft.lib.v2.recipe.event.ItemCacheEvent;
@@ -37,8 +38,11 @@ import net.neoforged.neoforge.transfer.item.VanillaContainerWrapper;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,12 +76,12 @@ public class ItemCache {
     /**
      * 输入元素集合
      */
-    private final Set<ICacheElement> inputs = new HashSet<>();
+    private final Set<ICacheElement> inputs = new LinkedHashSet<>();
 
     /**
      * 输出元素集合
      */
-    private final Set<ICacheElement> outputs = new HashSet<>();
+    private final Set<ICacheElement> outputs = new LinkedHashSet<>();
 
     /**
      * 范围
@@ -92,12 +96,37 @@ public class ItemCache {
     /**
      * 输入缓存集合
      */
-    private final Set<ICacheInputOutputImpl> inputCache = new HashSet<>();
+    private final Set<ICacheInputOutputImpl> inputCache = new LinkedHashSet<>();
 
     /**
      * 输出缓存集合
      */
-    private final Set<ICacheInputOutputImpl> outputCache = new HashSet<>();
+    private final Set<ICacheInputOutputImpl> outputCache = new LinkedHashSet<>();
+
+    private static final Predicate<ICacheElement> ALL_SOURCES = element -> true;
+    private final Map<ItemEntity, ItemEntityCacheElement> entityElements = new IdentityHashMap<>();
+    private final Map<ResourceHandler<ItemResource>, Map<Integer, ItemResourceHandlerCacheElement>> handlerElements =
+        new IdentityHashMap<>();
+    private final Map<Container, ResourceHandler<ItemResource>> containerHandlers = new IdentityHashMap<>();
+    private final Map<ICacheElement, List<Range>> elementRanges = new IdentityHashMap<>();
+    private final List<Range> scannedRanges = new ArrayList<>();
+    private boolean committed;
+
+    private record InputKey(Predicate<ItemStack> item, Predicate<ICacheElement> source) {
+    }
+
+    private record OutputKey(ItemStack item, Predicate<ICacheElement> source) {
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof OutputKey key && this.source.equals(key.source)
+                && ItemStack.isSameItemSameComponents(this.item, key.item);
+        }
+
+        @Override
+        public int hashCode() {
+            return this.source.hashCode();
+        }
+    }
 
     /**
      * 构造一个新的物品缓存
@@ -127,7 +156,42 @@ public class ItemCache {
      * @return 是否在范围内
      */
     public boolean inRange(Vec3 pos, Vec3 range) {
-        return this.range.contains(pos, range);
+        return this.scannedRanges.stream().anyMatch(scanned -> scanned.contains(pos, range));
+    }
+
+    private ItemResourceHandlerCacheElement handlerElement(
+        ResourceHandler<ItemResource> handler,
+        int slot,
+        Vec3 pos,
+        Vec3 range
+    ) {
+        Set<ResourceHandler<ItemResource>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        while (handler instanceof ItemCacheSlotProvider provider) {
+            ItemCacheSlotProvider.Slot physical = provider.getItemCacheSlot(slot);
+            if (physical.handler() == handler && physical.slot() == slot) break;
+            if (!visited.add(handler)) throw new IllegalArgumentException("Cyclic item cache slot mapping");
+            handler = physical.handler();
+            slot = physical.slot();
+        }
+        Map<Integer, ItemResourceHandlerCacheElement> slots = this.handlerElements.computeIfAbsent(handler, key -> new HashMap<>());
+        ItemResourceHandlerCacheElement element = slots.get(slot);
+        if (element == null) {
+            element = new ItemResourceHandlerCacheElement(this, handler, slot, pos, range);
+            slots.put(slot, element);
+        }
+        this.addRange(element, Range.of(pos, range));
+        return element;
+    }
+
+    private void addRange(ICacheElement element, Range range) {
+        List<Range> ranges = this.elementRanges.computeIfAbsent(element, key -> new ArrayList<>());
+        if (!ranges.contains(range)) ranges.add(range);
+    }
+
+    private boolean matchesRange(ICacheElement element, Range range, boolean output) {
+        List<Range> ranges = this.elementRanges.get(element);
+        if (ranges == null) ranges = List.of(Range.of(element.getPos(), element.getRange()));
+        return ranges.stream().anyMatch(source -> output ? source.contains(range) : source.cross(range));
     }
 
     /**
@@ -150,24 +214,12 @@ public class ItemCache {
     ) {
         ResourceHandler<ItemResource> inputHandler = cache.getInput();
         for (int i = 0; i < inputHandler.size(); i++) {
-            ItemResourceHandlerCacheElement element = new ItemResourceHandlerCacheElement(
-                itemCache,
-                inputHandler,
-                i,
-                elementPos,
-                elementRange
-            );
+            ItemResourceHandlerCacheElement element = itemCache.handlerElement(inputHandler, i, elementPos, elementRange);
             input.add(element);
         }
         ResourceHandler<ItemResource> outputHandler = cache.getOutput();
         for (int i = 0; i < outputHandler.size(); i++) {
-            ItemResourceHandlerCacheElement element = new ItemResourceHandlerCacheElement(
-                itemCache,
-                outputHandler,
-                i,
-                elementPos,
-                elementRange
-            );
+            ItemResourceHandlerCacheElement element = itemCache.handlerElement(outputHandler, i, elementPos, elementRange);
             output.add(element);
         }
     }
@@ -184,20 +236,14 @@ public class ItemCache {
      */
     private static void toElement(
         ItemCache itemCache,
-        ResourceHandler<ItemResource>handler,
+        ResourceHandler<ItemResource> handler,
         Set<ICacheElement> input,
         Set<ICacheElement> output,
         Vec3 elementPos,
         Vec3 elementRange
     ) {
         for (int i = 0; i < handler.size(); i++) {
-            ItemResourceHandlerCacheElement element = new ItemResourceHandlerCacheElement(
-                itemCache,
-                handler,
-                i,
-                elementPos,
-                elementRange
-            );
+            ItemResourceHandlerCacheElement element = itemCache.handlerElement(handler, i, elementPos, elementRange);
             input.add(element);
             output.add(element);
         }
@@ -214,10 +260,13 @@ public class ItemCache {
         ItemCache itemCache,
         Entity entity
     ) {
-        Set<ICacheElement> input = new HashSet<>();
-        Set<ICacheElement> output = new HashSet<>();
+        Set<ICacheElement> input = new LinkedHashSet<>();
+        Set<ICacheElement> output = new LinkedHashSet<>();
         if (entity instanceof ItemEntity itemEntity) {
-            ItemEntityCacheElement element = new ItemEntityCacheElement(itemCache, itemEntity);
+            ItemEntityCacheElement element = itemCache.entityElements.computeIfAbsent(
+                itemEntity, source -> new ItemEntityCacheElement(itemCache, source)
+            );
+            itemCache.addRange(element, Range.of(element.getPos(), element.getRange()));
             input.add(element);
             output.add(element);
             return Map.entry(input, output);
@@ -231,7 +280,8 @@ public class ItemCache {
         if (entity instanceof ItemResourceHandlerCache cache) {
             ItemCache.toElement(itemCache, cache, input, output, elementPos, elementRange);
         } else if (entity instanceof Container container && entity.is(LibEntityTypeTags.ITEM_CACHE)) {
-            ItemCache.toElement(itemCache, VanillaContainerWrapper.of(container), input, output, elementPos, elementRange);
+            ResourceHandler<ItemResource> handler = itemCache.containerHandlers.computeIfAbsent(container, VanillaContainerWrapper::of);
+            ItemCache.toElement(itemCache, handler, input, output, elementPos, elementRange);
         }
         return Map.entry(input, output);
     }
@@ -247,8 +297,8 @@ public class ItemCache {
         ItemCache itemCache,
         BlockEntity entity
     ) {
-        Set<ICacheElement> input = new HashSet<>();
-        Set<ICacheElement> output = new HashSet<>();
+        Set<ICacheElement> input = new LinkedHashSet<>();
+        Set<ICacheElement> output = new LinkedHashSet<>();
         Vec3 elementPos = entity.getBlockPos().getCenter();
         Vec3 elementRange = new Vec3(1, 1, 1);
         Predicate<BlockEntity> inTag;
@@ -266,7 +316,8 @@ public class ItemCache {
         if (entity instanceof ItemResourceHandlerCache cache) {
             ItemCache.toElement(itemCache, cache, input, output, elementPos, elementRange);
         } else if (entity instanceof Container container && inTag.test(entity)) {
-            ItemCache.toElement(itemCache, VanillaContainerWrapper.of(container), input, output, elementPos, elementRange);
+            ResourceHandler<ItemResource> handler = itemCache.containerHandlers.computeIfAbsent(container, VanillaContainerWrapper::of);
+            ItemCache.toElement(itemCache, handler, input, output, elementPos, elementRange);
         }
         return Map.entry(input, output);
     }
@@ -278,12 +329,14 @@ public class ItemCache {
      * @param range 范围
      */
     public void grow(Vec3 pos, Vec3 range) {
+        this.ensureOpen();
         Range newRange = Range.of(pos, range);
-        if (this.range.contains(pos, range)) return;
+        if (this.inRange(pos, range)) return;
+        this.scannedRanges.add(newRange);
         if (!this.range.isEmpty()) {
             this.range.grow(newRange);
         } else {
-            this.range = newRange;
+            this.range = Range.of(pos, range);
         }
         List<Entity> entities = this.level.getEntities(EntityTypeTest.forClass(Entity.class), newRange.toAABB(), (entity) -> true);
         for (Entity entity : entities) {
@@ -366,20 +419,32 @@ public class ItemCache {
      * @return 输入缓存
      */
     public ICacheInput getInput(Predicate<ItemStack> predicate, Vec3 pos, Vec3 range) {
+        return this.getInput(predicate, pos, range, ALL_SOURCES);
+    }
+
+    public ICacheInput getInput(
+        Predicate<ItemStack> predicate,
+        Vec3 pos,
+        Vec3 range,
+        Predicate<ICacheElement> sourceFilter
+    ) {
+        this.ensureOpen();
         Range range1 = Range.of(pos, range);
+        InputKey key = new InputKey(predicate, sourceFilter);
         for (ICacheInputOutputImpl element : this.inputCache) {
-            if (!element.equals(predicate, range1)) continue;
+            if (!element.equals(key, range1)) continue;
             return element;
         }
         this.grow(pos, range);
-        Set<ICacheElement> inputs = new HashSet<>();
+        Set<ICacheElement> inputs = new LinkedHashSet<>();
         for (ICacheElement input : this.inputs) {
-            Range inputRange = Range.of(input.getPos(), input.getRange());
-            if (!inputRange.cross(Range.of(pos, range))) continue;
-            if (!input.is(predicate)) continue;
+            if (!this.matchesRange(input, range1, false)) continue;
             inputs.add(input);
         }
-        ICacheInputOutputImpl input = new ICacheInputOutputImpl(predicate, this, pos, range1, inputs);
+        ICacheInputOutputImpl input = new ICacheInputOutputImpl(
+            key, this, pos, range1, inputs,
+            element -> sourceFilter.test(element) && predicate.test(element.getStack())
+        );
         this.inputCache.add(input);
         return input;
     }
@@ -404,17 +469,30 @@ public class ItemCache {
      * @return 输出缓存
      */
     public ICacheOutput getOutput(ItemStack stack, Vec3 pos, Vec3 range) {
+        return this.getOutput(stack, pos, range, ALL_SOURCES);
+    }
+
+    public ICacheOutput getOutput(
+        ItemStack stack,
+        Vec3 pos,
+        Vec3 range,
+        Predicate<ICacheElement> sourceFilter
+    ) {
+        this.ensureOpen();
         Range range1 = Range.of(pos, range);
+        OutputKey key = new OutputKey(stack.copyWithCount(1), sourceFilter);
         for (ICacheInputOutputImpl element : this.outputCache) {
-            if (!element.equals(stack, range1)) continue;
+            if (!element.equals(key, range1)) continue;
             return element;
         }
         this.grow(pos, range);
-        Set<ICacheElement> outputs = new HashSet<>();
+        Set<ICacheElement> outputs = new LinkedHashSet<>();
         for (ICacheElement output : this.outputs) {
-            Range outputRange = Range.of(output.getPos(), output.getRange());
-            if (!outputRange.contains(range1)) continue;
+            if (!this.matchesRange(output, range1, true)) continue;
             if (!output.is(stack)) continue;
+            if (!sourceFilter.test(output)) continue;
+            ItemCacheEvent.SelectOutput event = new ItemCacheEvent.SelectOutput(this, stack, pos, range, output);
+            if (NeoForge.EVENT_BUS.post(event).isCanceled()) continue;
             outputs.add(output);
         }
         if (outputs.isEmpty()) {
@@ -422,7 +500,7 @@ public class ItemCache {
             this.outputs.add(output);
             outputs.add(output);
         }
-        ICacheInputOutputImpl output = new ICacheInputOutputImpl(stack, this, pos, range1, outputs);
+        ICacheInputOutputImpl output = new ICacheInputOutputImpl(key, this, pos, range1, outputs);
         this.outputCache.add(output);
         return output;
     }
@@ -436,23 +514,35 @@ public class ItemCache {
         this.spawnList.addAll(spawnOperations);
     }
 
+    public void ensureOpen() {
+        if (this.committed) throw new IllegalStateException("This item cache has already been committed");
+    }
+
     /**
      * 结束缓存并同步所有更改
      */
     public void endCache() {
-        for (ICacheInput input : this.inputCache) {
-            input.sync();
+        if (this.committed) return;
+        this.committed = true;
+        List<ICacheElement> elements = new ArrayList<>();
+        for (ICacheInputOutputImpl input : this.inputCache) {
+            input.prepareSync(elements);
         }
-        for (ICacheOutput output : this.outputCache) {
-            output.sync();
+        for (ICacheInputOutputImpl output : this.outputCache) {
+            output.prepareSync(elements);
         }
-        Map<Map.Entry<ItemStack, Vec3>, Integer> map = new HashMap<>();
-        for (SpawnOperation spawnOperation : this.spawnList) {
-            ItemStack stack = spawnOperation.stack();
+        Set<ICacheElement> synchronizedElements = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (ICacheElement element : elements) {
+            if (synchronizedElements.add(element)) element.sync();
+        }
+        Map<Map.Entry<ItemStack, Vec3>, Integer> map = new LinkedHashMap<>();
+        List<SpawnOperation> pending = List.copyOf(this.spawnList);
+        this.spawnList.clear();
+        for (SpawnOperation spawnOperation : pending) {
+            ItemStack stack = spawnOperation.stack().copyWithCount(1);
             if (stack.isEmpty()) continue;
             int count = spawnOperation.count();
             if (count <= 0) continue;
-            stack.setCount(1);
             Vec3 spawnPos = spawnOperation.pos();
             Map.Entry<ItemStack, Vec3> key = Map.entry(stack, spawnPos);
             for (Map.Entry<ItemStack, Vec3> mapKey : map.keySet()) {
@@ -461,6 +551,7 @@ public class ItemCache {
                 if (!ItemStack.isSameItemSameComponents(stack, stack1)) continue;
                 if (!pos.closerThan(spawnPos, 0.25)) continue;
                 key = mapKey;
+                break;
             }
             map.put(key, map.getOrDefault(key, 0) + count);
         }
@@ -475,7 +566,7 @@ public class ItemCache {
                 stack1.setCount(newCount);
                 ItemEntity entity = new ItemEntity(this.level, pos.x, pos.y, pos.z, stack1, 0, 0, 0);
                 NeoForge.EVENT_BUS.post(new ItemCacheEvent.SpawnItemEntity(this, entity));
-                this.level.addFreshEntity(entity);
+                if (!entity.isRemoved() && !entity.getItem().isEmpty()) this.level.addFreshEntity(entity);
                 count -= newCount;
             }
         }
