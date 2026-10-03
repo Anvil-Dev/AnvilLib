@@ -9,7 +9,7 @@ import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * 物品处理器缓存元素类，继承自抽象缓存元素类
@@ -92,8 +92,8 @@ public class ItemResourceHandlerCacheElement extends AbstractCacheElement implem
      */
     @Override
     public void sync() {
-        this.growSimulateStack.clear();
-        this.shrinkSimulateStack.clear();
+        this.clearStack();
+        if (!this.dirty) return;
         try (Transaction transaction = Transaction.openRoot()) {
             ItemResource resource = this.iItemHandler.getResource(this.slot);
             ItemResource result = ItemResource.of(this.simulate);
@@ -102,7 +102,10 @@ public class ItemResourceHandlerCacheElement extends AbstractCacheElement implem
             // 未变化的槽位无需取出再放回；相同物品只同步差量，兼容拒绝插入的输出槽。
             if (resource.equals(result)) {
                 int difference = resultAmount - amount;
-                if (difference == 0) return;
+                if (difference == 0) {
+                    this.dirty = false;
+                    return;
+                }
                 int changed = difference > 0
                     ? this.iItemHandler.insert(this.slot, result, difference, transaction)
                     : this.iItemHandler.extract(this.slot, resource, -difference, transaction);
@@ -110,6 +113,7 @@ public class ItemResourceHandlerCacheElement extends AbstractCacheElement implem
                     throw new IllegalStateException("Recipe item cache could not synchronize slot " + this.slot);
                 }
                 transaction.commit();
+                this.dirty = false;
                 return;
             }
             if (!resource.isEmpty()) {
@@ -129,6 +133,17 @@ public class ItemResourceHandlerCacheElement extends AbstractCacheElement implem
                 }
             }
             transaction.commit();
+            this.dirty = false;
         }
+    }
+
+    @Override
+    public Object getSource() {
+        return this.iItemHandler;
+    }
+
+    @Override
+    public int getSourceSlot() {
+        return this.slot;
     }
 }

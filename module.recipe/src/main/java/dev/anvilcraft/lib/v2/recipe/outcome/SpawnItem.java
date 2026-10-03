@@ -109,7 +109,7 @@ public record SpawnItem(ItemStackTemplate item, Vec3 offset, NumberProvider coun
         ItemCache cache = context.computeIfAbsent(ItemCache.ITEM_CACHE);
         int count = context.getInt(this.count, 0, 99);
         if (count == 0) return;
-        ItemStack stack = this.item.withCount(count).create();
+        ItemStack stack = this.item.withCount(1).create().copyWithCount(count);
         BlockCache blockCache = context.computeIfAbsent(BlockCache.BLOCK_CACHE);
         Vec3 offset = context.getPos().add(this.offset);
         BlockPos blockPos = BlockPos.containing(offset);

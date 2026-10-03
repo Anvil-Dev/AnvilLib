@@ -6,10 +6,14 @@ import dev.anvilcraft.lib.v2.recipe.cache.item.operation.CacheOperation;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * 抽象缓存元素类，实现了缓存元素接口
@@ -40,6 +44,11 @@ public abstract class AbstractCacheElement implements ICacheElement {
      */
     protected final Deque<CacheOperation> shrinkSimulateStack = new ArrayDeque<>();
 
+    private final Map<CacheOperation, ItemStack> shrinkSnapshots = new IdentityHashMap<>();
+    private final Map<CacheOperation, ItemStack> growSnapshots = new IdentityHashMap<>();
+    private final Set<CacheOperation> releasedReservations = Collections.newSetFromMap(new IdentityHashMap<>());
+    protected boolean dirty;
+
     /**
      * 构造一个新的抽象缓存元素
      *
@@ -60,10 +69,42 @@ public abstract class AbstractCacheElement implements ICacheElement {
      */
     @Override
     public int shrink(int count) {
+        if (count < 0) throw new IllegalArgumentException("Cannot consume a negative item count");
         int shrink = Math.min(this.simulate.getCount(), count);
+        CacheOperation operation = new CacheOperation(shrink);
+        this.shrinkSnapshots.put(operation, this.simulate.copyWithCount(shrink));
         this.simulate.shrink(shrink);
-        this.shrinkSimulateStack.add(new CacheOperation(shrink));
+        this.shrinkSimulateStack.push(operation);
+        this.dirty |= shrink > 0;
         return count - shrink;
+    }
+
+    @Override
+    public ItemConsumption consume(int count) {
+        ItemStack before = this.simulate.copy();
+        int consumed = count - this.shrink(count);
+        CacheOperation operation = this.shrinkSimulateStack.getFirst();
+        return new ItemConsumption(this, before.copyWithCount(consumed), () -> this.restoreReservation(operation));
+    }
+
+    private void restoreReservation(CacheOperation operation) {
+        ItemStack stack = this.shrinkSnapshots.get(operation);
+        if (stack == null) throw new IllegalStateException("The item reservation is no longer available");
+        if (!this.releasedReservations.add(operation)) return;
+        this.restoreStack(stack);
+    }
+
+    private void restoreStack(ItemStack stack) {
+        if (stack.isEmpty()) return;
+        if (this.simulate.isEmpty()) {
+            this.simulate = stack.copy();
+        } else {
+            if (!ItemStack.isSameItemSameComponents(this.simulate, stack)) {
+                throw new IllegalStateException("Cannot restore a reservation into a different item");
+            }
+            this.simulate.grow(stack.getCount());
+        }
+        this.dirty = true;
     }
 
     /**
@@ -80,8 +121,8 @@ public abstract class AbstractCacheElement implements ICacheElement {
         if (!this.simulate.isEmpty() && !ItemStack.isSameItemSameComponents(stack, this.simulate)) return copy;
         int growCount = copy.getCount();
         int simulateCount = this.simulate.getCount();
-        int grownSimulateCount = Math.min(this.getCapacity(stack), simulateCount + growCount);
-        int grownCount = grownSimulateCount - simulateCount;
+        int grownCount = Math.max(0, Math.min(this.getCapacity(stack) - simulateCount, growCount));
+        if (grownCount == 0) return copy;
         int remainingCount = growCount - grownCount;
         if (remainingCount > 0) {
             copy.setCount(remainingCount);
@@ -93,7 +134,10 @@ public abstract class AbstractCacheElement implements ICacheElement {
         } else {
             this.simulate = stack.copyWithCount(grownCount);
         }
-        this.growSimulateStack.push(new CacheOperation(grownCount));
+        CacheOperation operation = new CacheOperation(grownCount);
+        this.growSimulateStack.push(operation);
+        this.growSnapshots.put(operation, stack.copyWithCount(grownCount));
+        this.dirty = true;
         return copy;
     }
 
@@ -105,9 +149,9 @@ public abstract class AbstractCacheElement implements ICacheElement {
     @Override
     public ItemStack rollbackGrow() {
         CacheOperation operation = this.growSimulateStack.pop();
-        ItemStack copy = this.simulate.copy();
+        ItemStack copy = this.growSnapshots.remove(operation);
         this.simulate.shrink(operation.amount());
-        copy.setCount(operation.amount());
+        this.dirty |= operation.amount() > 0;
         return copy;
     }
 
@@ -119,7 +163,9 @@ public abstract class AbstractCacheElement implements ICacheElement {
     @Override
     public int rollbackShrink() {
         CacheOperation operation = this.shrinkSimulateStack.pop();
-        this.simulate.grow(operation.amount());
+        ItemStack stack = this.shrinkSnapshots.remove(operation);
+        if (this.releasedReservations.remove(operation)) return 0;
+        this.restoreStack(stack);
         return operation.amount();
     }
 
@@ -130,6 +176,9 @@ public abstract class AbstractCacheElement implements ICacheElement {
     public void clearStack() {
         this.growSimulateStack.clear();
         this.shrinkSimulateStack.clear();
+        this.growSnapshots.clear();
+        this.shrinkSnapshots.clear();
+        this.releasedReservations.clear();
     }
 
     /**
@@ -162,6 +211,11 @@ public abstract class AbstractCacheElement implements ICacheElement {
     @Override
     public int getCount() {
         return this.simulate.isEmpty() ? 0 : this.simulate.getCount();
+    }
+
+    @Override
+    public ItemStack getStack() {
+        return this.simulate.copy();
     }
 
     @Override

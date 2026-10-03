@@ -19,8 +19,20 @@ dependencies {
     implementation project(":anvillib-util-neoforge-26.1")
     implementation project(":anvillib-wheel-neoforge-26.1")
 
-    if (!providers.gradleProperty('portSmoke').isPresent()) {
+    if (!providers.gradleProperty('portSmoke').isPresent() && !providers.gradleProperty('recipeTests').isPresent()) {
         runtimeOnly("dev.dubhe:anvilcraft-neoforge-26.1.2:1.6.0+snapshot.2284"){ transitive = false }
+    }
+}
+
+if (providers.gradleProperty('recipeTests').isPresent()) {
+    neoForge.runs {
+        recipeGameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'anvillib.recipeTests', 'true'
+            gameDirectory = layout.buildDirectory.dir('recipe-test-run')
+            programArguments.addAll '--tests', 'anvillib_test:recipe_*'
+        }
     }
 }
 
