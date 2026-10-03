@@ -37,3 +37,15 @@ if (providers.gradleProperty('portSmoke').isPresent()) {
         }
     }
 }
+
+if (providers.gradleProperty('recipeTests').isPresent()) {
+    neoForge.runs {
+        recipeGameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'anvillib.recipeTests', 'true'
+            gameDirectory = layout.buildDirectory.dir('recipe-test-run')
+            programArguments.addAll '--tests', 'anvillib_test:recipe_*'
+        }
+    }
+}

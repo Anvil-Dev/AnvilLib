@@ -6,6 +6,7 @@ import com.google.common.collect.MultimapBuilder;
 import dev.anvilcraft.lib.v2.recipe.AnvilLibRecipe;
 import dev.anvilcraft.lib.v2.recipe.InWorldRecipe;
 import dev.anvilcraft.lib.v2.recipe.cache.BlockCache;
+import dev.anvilcraft.lib.v2.recipe.event.InWorldRecipeCommittedEvent;
 import dev.anvilcraft.lib.v2.recipe.event.InWorldRecipeEvent;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.block.HasBlockBase;
@@ -147,6 +148,10 @@ public class InWorldRecipeManager {
                 accept = true;
                 recipe.assemble(ctx);
                 NeoForge.EVENT_BUS.post(new InWorldRecipeEvent(recipe.getType(), holder.id().location(), recipe, ctx));
+                long batchId = ctx.getBatchId();
+                ctx.afterCommit(() -> NeoForge.EVENT_BUS.post(new InWorldRecipeCommittedEvent(
+                    recipe.getType(), holder.id().location(), recipe, ctx, batchId
+                )));
             }
             if (accept) break;
         }
