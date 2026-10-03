@@ -2,6 +2,9 @@ package dev.anvilcraft.lib.v2.recipe.cache.item;
 
 import net.minecraft.world.item.ItemStack;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -41,4 +44,27 @@ public interface ICacheInput {
     int getCount();
 
     void apply(Consumer<ItemStack> consumer);
+
+    default boolean supportsConsumptionReceipts() {
+        return false;
+    }
+
+    /** Returns copies of the items consumed by the oldest unclaimed shrink operation. */
+    default List<ItemStack> getConsumedItems() {
+        return List.of();
+    }
+
+    /** Claims the oldest shrink receipt without changing the reserved inventory. */
+    default void clearConsumedItems() {
+    }
+
+    /** Releases the oldest reservation back to its original physical slots. */
+    default void restoreConsumedItems() {
+        throw new UnsupportedOperationException("This item input cannot restore reservations");
+    }
+
+    /** Exposes physical candidates for conservative matching optimizations when supported. */
+    default Optional<Map<ICacheElement, Integer>> availableElements() {
+        return Optional.empty();
+    }
 }

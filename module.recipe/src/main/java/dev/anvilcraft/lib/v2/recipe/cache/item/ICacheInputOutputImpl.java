@@ -7,13 +7,20 @@ import dev.anvilcraft.lib.v2.recipe.util.Range;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
-import javax.annotation.Nullable;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import org.jspecify.annotations.Nullable;
 
 /**
  * 缓存输入输出实现类，实现了缓存输入和输出接口
@@ -27,7 +34,11 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
     /**
      * 元素集合
      */
-    private final Set<ICacheElement> elements = new HashSet<>();
+    private final Set<ICacheElement> elements = new LinkedHashSet<>();
+
+    private final Predicate<ICacheElement> sourceFilter;
+    private final Deque<List<ItemConsumption>> consumedOperations = new ArrayDeque<>();
+    private final Map<InputOutputOperation, List<ItemConsumption>> consumptionByOperation = new IdentityHashMap<>();
 
     /**
      * 增加模拟栈
@@ -69,11 +80,23 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
      * @param elements 元素集合
      */
     public ICacheInputOutputImpl(Object key, ItemCache cache, Vec3 pos, Range range, Collection<ICacheElement> elements) {
+        this(key, cache, pos, range, elements, element -> true);
+    }
+
+    public ICacheInputOutputImpl(
+        Object key,
+        ItemCache cache,
+        Vec3 pos,
+        Range range,
+        Collection<ICacheElement> elements,
+        Predicate<ICacheElement> sourceFilter
+    ) {
         this.key = key;
         this.cache = cache;
         this.pos = pos;
         this.range = range;
         this.elements.addAll(elements);
+        this.sourceFilter = sourceFilter;
     }
 
     /**
@@ -84,13 +107,24 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
      */
     @Override
     public int shrink(int count) {
-        Set<ICacheElement> elements = new HashSet<>();
+        this.cache.ensureOpen();
+        if (count < 0) throw new IllegalArgumentException("Cannot consume a negative item count");
+        Set<ICacheElement> elements = new LinkedHashSet<>();
+        List<ItemConsumption> consumed = new ArrayList<>();
         for (ICacheElement element : this.elements) {
-            count = element.shrink(count);
+            if (count == 0) break;
+            if (!this.sourceFilter.test(element)) continue;
+            ItemConsumption consumption = element.consume(count);
+            count -= consumption.count();
+            consumed.add(consumption);
             elements.add(element);
             if (count <= 0) break;
         }
-        this.shrinkSimulateStack.push(new InputOutputOperation(elements));
+        InputOutputOperation operation = new InputOutputOperation(elements);
+        List<ItemConsumption> receipt = List.copyOf(consumed);
+        this.shrinkSimulateStack.push(operation);
+        this.consumedOperations.addLast(receipt);
+        this.consumptionByOperation.put(operation, receipt);
         return count;
     }
 
@@ -106,6 +140,8 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
         for (ICacheElement element : pop.elements()) {
             count += element.rollbackShrink();
         }
+        List<ItemConsumption> receipt = this.consumptionByOperation.remove(pop);
+        this.consumedOperations.removeIf(candidate -> candidate == receipt);
         return count;
     }
 
@@ -118,7 +154,8 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
      */
     @Override
     public ItemStack grow(ItemStack stack, boolean spawn) {
-        Set<ICacheElement> elements = new HashSet<>();
+        this.cache.ensureOpen();
+        Set<ICacheElement> elements = new LinkedHashSet<>();
         for (ICacheElement element : this.elements) {
             int previousCount = stack.getCount();
             ItemStack remaining = element.grow(stack, false);
@@ -156,7 +193,11 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
             }
         }
         SpawnOperation spawnOperation = this.spawnSimulateStack.pop();
-        stack.grow(spawnOperation.count());
+        if (stack.isEmpty()) {
+            stack = spawnOperation.stack().copyWithCount(spawnOperation.count());
+        } else {
+            stack.grow(spawnOperation.count());
+        }
         return stack;
     }
 
@@ -167,8 +208,7 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
     public void clearStack() {
         this.growSimulateStack.clear();
         this.shrinkSimulateStack.clear();
-        this.spawnSimulateStack.clear();
-        this.elements.forEach(ICacheElement::clearStack);
+        this.consumptionByOperation.clear();
     }
 
     /**
@@ -176,11 +216,20 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
      */
     @Override
     public void sync() {
-        this.growSimulateStack.clear();
-        this.shrinkSimulateStack.clear();
+        this.prepareSync();
+        this.elements.forEach(ICacheElement::sync);
+    }
+
+    public void prepareSync(Collection<ICacheElement> elements) {
+        this.prepareSync();
+        elements.addAll(this.elements);
+    }
+
+    private void prepareSync() {
+        this.clearStack();
         this.cache.pushSpawnList(this.spawnSimulateStack);
         this.spawnSimulateStack.clear();
-        this.elements.forEach(ICacheElement::sync);
+        this.consumedOperations.clear();
     }
 
     /**
@@ -190,7 +239,8 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
      */
     @Override
     public int getCount() {
-        return this.elements.stream().mapToInt(ICacheElement::getCount).sum();
+        long count = this.elements.stream().filter(this.sourceFilter).mapToLong(ICacheElement::getCount).sum();
+        return (int) Math.min(Integer.MAX_VALUE, count);
     }
 
     /**
@@ -213,6 +263,37 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
 
     @Override
     public void apply(Consumer<ItemStack> consumer) {
-        this.elements.forEach(element -> element.apply(consumer));
+        this.elements.stream().filter(this.sourceFilter).forEach(element -> element.apply(consumer));
+    }
+
+    @Override
+    public List<ItemStack> getConsumedItems() {
+        List<ItemConsumption> receipt = this.consumedOperations.peekFirst();
+        if (receipt == null) return List.of();
+        return receipt.stream().filter(item -> item.count() > 0).map(ItemConsumption::stack).toList();
+    }
+
+    @Override
+    public boolean supportsConsumptionReceipts() {
+        return true;
+    }
+
+    @Override
+    public void clearConsumedItems() {
+        this.consumedOperations.pollFirst();
+    }
+
+    @Override
+    public void restoreConsumedItems() {
+        List<ItemConsumption> receipt = this.consumedOperations.peekFirst();
+        if (receipt == null) throw new IllegalStateException("There is no item reservation to restore");
+        receipt.forEach(ItemConsumption::restore);
+    }
+
+    @Override
+    public Optional<Map<ICacheElement, Integer>> availableElements() {
+        Map<ICacheElement, Integer> available = new IdentityHashMap<>();
+        this.elements.stream().filter(this.sourceFilter).forEach(element -> available.put(element, element.getCount()));
+        return Optional.of(Collections.unmodifiableMap(available));
     }
 }

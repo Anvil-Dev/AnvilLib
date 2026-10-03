@@ -121,9 +121,22 @@ dependencies {
     implementation project(":anvillib-registrum-neoforge-1.21.1")
     implementation project(":anvillib-util-neoforge-1.21.1")
     implementation project(":anvillib-wheel-neoforge-1.21.1")
-    implementation("dev.dubhe:anvilcraft-neoforge-1.21.1:1.6.0+snapshot.2184") { transitive = false }
+    if (!providers.gradleProperty('recipeTests').isPresent()) {
+        implementation("dev.dubhe:anvilcraft-neoforge-1.21.1:1.6.0+snapshot.2184") { transitive = false }
+    }
 }
 
+
+if (providers.gradleProperty('recipeTests').isPresent()) {
+    neoForge.runs {
+        recipeGameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'anvillib.recipeTests', 'true'
+            gameDirectory = layout.buildDirectory.dir('recipe-test-run')
+        }
+    }
+}
 tasks.withType(JavaExec).configureEach {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(21)
