@@ -1,8 +1,8 @@
 package dev.anvilcraft.lib.v2.recipe.cache.item;
 
+import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import dev.anvilcraft.lib.v2.recipe.event.ItemCacheEvent;
 import dev.anvilcraft.lib.v2.recipe.mixin.ItemEntityAccessor;
-import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -13,17 +13,20 @@ import net.neoforged.neoforge.common.NeoForge;
 /**
  * 物品实体缓存元素类，继承自抽象缓存元素类
  */
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = false, onlyExplicitlyIncluded = true)
 public class ItemEntityCacheElement extends AbstractCacheElement implements ICacheElement {
     /**
      * 物品实体
      */
+    @EqualsAndHashCode.Include
     private final ItemEntity entity;
 
     /**
      * 是否在世界中
      */
     private boolean isInLevel;
+
+    private final boolean generatedOutput;
 
     /**
      * 位置
@@ -38,10 +41,15 @@ public class ItemEntityCacheElement extends AbstractCacheElement implements ICac
      * @param entity 物品实体
      */
     public ItemEntityCacheElement(ItemCache cache, ItemEntity entity) {
+        this(cache, entity, false);
+    }
+
+    private ItemEntityCacheElement(ItemCache cache, ItemEntity entity, boolean generatedOutput) {
         super(cache, entity.getItem().copy());
-        this.pos = entity.position().add(0.0, 0.125, 0.0);
+        this.pos = generatedOutput ? entity.position() : entity.position().add(0.0, 0.125, 0.0);
         this.entity = entity;
-        this.isInLevel = true;
+        this.isInLevel = !generatedOutput;
+        this.generatedOutput = generatedOutput;
     }
 
     /**
@@ -54,8 +62,7 @@ public class ItemEntityCacheElement extends AbstractCacheElement implements ICac
      */
     public static ItemEntityCacheElement create(ItemCache cache, ItemStack stack, Vec3 pos) {
         ItemEntity itemEntity = new ItemEntity(cache.getLevel(), pos.x, pos.y, pos.z, stack, 0, 0, 0);
-        ItemEntityCacheElement element = new ItemEntityCacheElement(cache, itemEntity);
-        element.isInLevel = false;
+        ItemEntityCacheElement element = new ItemEntityCacheElement(cache, itemEntity, true);
         element.simulate.setCount(0);
         return element;
     }
@@ -65,13 +72,21 @@ public class ItemEntityCacheElement extends AbstractCacheElement implements ICac
      */
     @Override
     public void sync() {
-        this.growSimulateStack.clear();
-        this.shrinkSimulateStack.clear();
+        this.clearStack();
+        if (!this.dirty) return;
+        this.dirty = false;
+        if (this.simulate.isEmpty()) {
+            this.entity.discard();
+            return;
+        }
         ((ItemEntityAccessor) this.entity).setAge(0);
-        this.entity.setItem(this.simulate);
+        this.entity.setItem(this.simulate.copy());
         if (this.isInLevel) return;
+        this.isInLevel = true;
         NeoForge.EVENT_BUS.post(new ItemCacheEvent.SpawnItemEntity(this.cache, this.entity));
-        this.cache.getLevel().addFreshEntity(this.entity);
+        if (!this.entity.isRemoved() && !this.entity.getItem().isEmpty()) {
+            this.cache.getLevel().addFreshEntity(this.entity);
+        }
     }
 
     /**
@@ -83,6 +98,16 @@ public class ItemEntityCacheElement extends AbstractCacheElement implements ICac
     @Override
     public int getCapacity(ItemStack stack) {
         return this.simulate.isEmpty() ? stack.getMaxStackSize() : this.simulate.getMaxStackSize();
+    }
+
+    @Override
+    public Object getSource() {
+        return this.entity;
+    }
+
+    @Override
+    public boolean isGeneratedOutput() {
+        return this.generatedOutput;
     }
 }
 
