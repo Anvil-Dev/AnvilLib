@@ -3,13 +3,12 @@ package dev.anvilcraft.lib.v2.recipe.predicate.item;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
-import dev.anvilcraft.lib.v2.recipe.AnvilLibRecipe;
 import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheInput;
+import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheElement;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.IPredicateFunction;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
-import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeData;
 import dev.anvilcraft.lib.v2.util.predicate.IItemStackPredicate;
 import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -19,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * 物品条件基类
@@ -31,6 +31,8 @@ import java.util.List;
  */
 @Getter
 public abstract class HasItemBase<T extends HasItemBase<T, P>, P extends IItemStackPredicate> implements IRecipePredicate<T> {
+    private static final Predicate<ICacheElement> ANY_SOURCE = element -> true;
+
     /**
      * 偏移量
      */
@@ -62,7 +64,7 @@ public abstract class HasItemBase<T extends HasItemBase<T, P>, P extends IItemSt
         this.offset = offset;
         this.range = range;
         this.item = item;
-        this.functions = functions;
+        this.functions = List.copyOf(functions);
     }
 
     @Override
@@ -71,16 +73,22 @@ public abstract class HasItemBase<T extends HasItemBase<T, P>, P extends IItemSt
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void accept(InWorldRecipeContext context) {
-        ICacheInput item1 = this.getItem(context);
-        item1.apply(itemStack -> {
-            for (IPredicateFunction<?> function : this.functions) {
-                // TODO: This cast is unsafe. Refactor in the future?
-                IPredicateFunction<ItemStack> function1 = (IPredicateFunction<ItemStack>) function;
-                itemStack = function1.apply(context, itemStack);
-            }
-        });
+        this.getItem(context).apply(stack -> this.applyFunctions(context, stack));
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void applyFunctions(InWorldRecipeContext context, ItemStack stack) {
+        if (stack.isEmpty()) return;
+        ItemStack value = stack.copy();
+        for (IPredicateFunction<?> function : this.functions) {
+            value = ((IPredicateFunction<ItemStack>) function).apply(context, value);
+        }
+    }
+
+    /** Filters input sources before both counting and reservation. */
+    protected Predicate<ICacheElement> getSourceFilter(InWorldRecipeContext context) {
+        return ANY_SOURCE;
     }
 
     /**
@@ -90,15 +98,12 @@ public abstract class HasItemBase<T extends HasItemBase<T, P>, P extends IItemSt
      * @return 物品缓存输入
      */
     public ICacheInput getItem(InWorldRecipeContext context) {
-        context.computeIfAbsent(ItemCache.ITEM_CACHE);
-        final InWorldRecipeData<ICacheInput> cacheInput = InWorldRecipeData.of(
-            AnvilLibRecipe.of("item_cache_input/%s".formatted(this.hashCode())),
-            (ctx, key) -> {
-                ItemCache itemCache = ctx.get(ItemCache.ITEM_CACHE);
-                return itemCache.getInput(this.item.testIgnoreCount(), context.getPos().add(this.offset), this.range);
-            }
-        );
-        return context.computeIfAbsent(cacheInput);
+        return context.computeByIdentity(this, () -> {
+            ItemCache itemCache = context.computeIfAbsent(ItemCache.ITEM_CACHE);
+            return itemCache.getInput(
+                this.item.testIgnoreCount(), context.getPos().add(this.offset), this.range, this.getSourceFilter(context)
+            );
+        });
     }
 
     /**

@@ -55,7 +55,7 @@ public record ProduceExplosion(Vec3 offset, float power, boolean fire, Level.Exp
     public void accept(InWorldRecipeContext ctx) {
         ServerLevel level = ctx.getLevel();
         Vec3 ctr = ctx.getPos().add(this.offset);
-        level.explode(null, ctr.x(), ctr.y(), ctr.z(), this.power, this.fire, this.explodeInteraction);
+        ctx.afterCommit(() -> level.explode(null, ctr.x(), ctr.y(), ctr.z(), this.power, this.fire, this.explodeInteraction));
     }
 
     public static class Type implements IRecipeOutcome.Type<ProduceExplosion> {
