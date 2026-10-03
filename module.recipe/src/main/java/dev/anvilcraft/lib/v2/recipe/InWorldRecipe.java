@@ -98,9 +98,10 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
     ) {
         this.icon = icon;
         this.trigger = trigger;
-        this.conflicting = conflicting;
-        this.nonConflicting = nonConflicting;
-        this.outcomes = outcomes;
+        if (maxEfficiency < 1) throw new IllegalArgumentException("maxEfficiency must be positive");
+        this.conflicting = List.copyOf(conflicting);
+        this.nonConflicting = List.copyOf(nonConflicting);
+        this.outcomes = List.copyOf(outcomes);
         this.priority = priority;
         this.compatible = compatible;
         this.maxEfficiency = maxEfficiency;
@@ -228,33 +229,43 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
      */
     @Override
     public boolean matches(InWorldRecipeContext context, Level level) {
+        context.assertPlanning();
         int initialStackSize = context.getStack().size();
-        boolean nonConflicting = ShapelessMatcher.compatible(this.nonConflicting, context);
-        if (!nonConflicting) {
-            InWorldRecipe.rollbackPredicates(context, initialStackSize);
-            return false;
+        try {
+            boolean matches = ShapelessMatcher.compatible(this.nonConflicting, context)
+                && (this.compatible
+                    ? ShapelessMatcher.compatible(this.conflicting, context)
+                    : ShapelessMatcher.incompatible(this.conflicting, context));
+            if (!matches) InWorldRecipe.rollbackPredicates(context, initialStackSize);
+            return matches;
+        } catch (RuntimeException | Error exception) {
+            InWorldRecipe.rollbackAfterFailure(context, initialStackSize, exception);
+            throw exception;
         }
-        boolean flag;
-        if (this.compatible) {
-            flag = ShapelessMatcher.compatible(this.conflicting, context);
-        } else {
-            flag = ShapelessMatcher.incompatible(this.conflicting, context);
-        }
-        if (!flag) {
-            InWorldRecipe.rollbackPredicates(context, initialStackSize);
-            return false;
-        }
-        List<IRecipePredicate<?>> stack = context.getStack();
-        for (int i = initialStackSize; i < stack.size(); i++) {
-            stack.get(i).clearStack(context);
-        }
-        return true;
     }
 
     private static void rollbackPredicates(InWorldRecipeContext context, int initialStackSize) {
         List<IRecipePredicate<?>> stack = context.getStack();
+        Throwable failure = null;
         while (stack.size() > initialStackSize) {
-            context.pop(stack.getLast());
+            try {
+                context.pop(stack.getLast());
+            } catch (RuntimeException | Error exception) {
+                if (failure == null) failure = exception;
+                else if (failure != exception) failure.addSuppressed(exception);
+            }
+        }
+        if (failure instanceof RuntimeException exception) throw exception;
+        if (failure instanceof Error error) throw error;
+    }
+
+    private static void rollbackAfterFailure(InWorldRecipeContext context, int initialStackSize, Throwable failure) {
+        try {
+            InWorldRecipe.rollbackPredicates(context, initialStackSize);
+        } catch (RuntimeException | Error rollbackFailure) {
+            if (failure != rollbackFailure) failure.addSuppressed(rollbackFailure);
+        } finally {
+            context.invalidate();
         }
     }
 
@@ -270,16 +281,19 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
     }
 
     public ItemStack assemble(InWorldRecipeContext context) {
+        context.assertPlanning();
         List<IRecipePredicate<?>> stack = context.getStack();
-        IRecipePredicate<?> predicate;
-        while (!stack.isEmpty()) {
-            predicate = stack.removeFirst();
-            predicate.accept(context);
+        context.beginBatch();
+        try {
+            for (IRecipePredicate<?> predicate : stack) predicate.accept(context);
+            for (IRecipeOutcome<?> outcome : this.outcomes) outcome.acceptWithChance(context);
+            for (IRecipePredicate<?> predicate : stack) predicate.clearStack(context);
+            stack.clear();
+            return this.icon.copy();
+        } catch (RuntimeException | Error exception) {
+            InWorldRecipe.rollbackAfterFailure(context, 0, exception);
+            throw exception;
         }
-        for (IRecipeOutcome<?> outcome : this.outcomes) {
-            outcome.acceptWithChance(context);
-        }
-        return this.icon.copy();
     }
 
     @Override
@@ -376,7 +390,7 @@ public class InWorldRecipe implements Recipe<InWorldRecipeContext>, IPrioritized
             OUTCOME_CODEC.listOf().fieldOf("outcomes").forGetter(InWorldRecipe::outcomes),
             Codec.INT.fieldOf("priority").orElse(1).forGetter(InWorldRecipe::priority),
             Codec.BOOL.fieldOf("compatible").orElse(true).forGetter(InWorldRecipe::compatible),
-            Codec.INT.optionalFieldOf("max_efficiency", Integer.MAX_VALUE).forGetter(InWorldRecipe::maxEfficiency)
+            Codec.intRange(1, Integer.MAX_VALUE).optionalFieldOf("max_efficiency", Integer.MAX_VALUE).forGetter(InWorldRecipe::maxEfficiency)
         ).apply(instance, InWorldRecipe::new));
 
         /**

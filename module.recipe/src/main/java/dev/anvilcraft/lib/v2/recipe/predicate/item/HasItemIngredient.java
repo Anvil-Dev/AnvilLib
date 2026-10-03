@@ -1,6 +1,9 @@
 package dev.anvilcraft.lib.v2.recipe.predicate.item;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
 import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheInput;
 import dev.anvilcraft.lib.v2.util.predicate.ItemIngredientPredicate;
@@ -14,6 +17,8 @@ import net.minecraft.advancements.criterion.DataComponentMatchers;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -32,6 +37,8 @@ import java.util.List;
  */
 @Getter
 public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngredientPredicate> {
+    private final boolean consume;
+
     /**
      * 构造一个物品原料条件谓词
      *
@@ -40,7 +47,15 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
      * @param item   物品原料谓词
      */
     public HasItemIngredient(Vec3 offset, Vec3 range, ItemIngredientPredicate item, List<IPredicateFunction<?>> functions) {
+        this(offset, range, item, functions, true);
+    }
+
+    public HasItemIngredient(
+        Vec3 offset, Vec3 range, ItemIngredientPredicate item, List<IPredicateFunction<?>> functions, boolean consume
+    ) {
         super(offset, range, item, functions);
+        if (item.count() <= 0) throw new IllegalArgumentException("Ingredient count must be positive");
+        this.consume = consume;
     }
 
     /**
@@ -79,7 +94,15 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
 
     @Override
     public void accept(InWorldRecipeContext context) {
-        super.accept(context);
+        ICacheInput input = this.getItem(context);
+        if (input.supportsConsumptionReceipts()) {
+            input.getConsumedItems().forEach(stack -> this.applyFunctions(context, stack));
+            if (!this.consume) input.restoreConsumedItems();
+            input.clearConsumedItems();
+        } else {
+            if (!this.consume) throw new UnsupportedOperationException("This item input cannot reserve catalysts");
+            super.accept(context);
+        }
         context.putAcceptor(ItemCache.ITEM_CACHE.location(), ItemCache.DEFAULT_ACCEPTOR);
     }
 
@@ -96,6 +119,33 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
      * HasItemIngredient的类型
      */
     public static class Type extends AbstractType<HasItemIngredient, ItemIngredientPredicate> {
+        private static final MapCodec<HasItemIngredient> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Vec3.CODEC.fieldOf("offset").forGetter(HasItemIngredient::getOffset),
+            Vec3.CODEC.fieldOf("range").forGetter(HasItemIngredient::getRange),
+            ItemIngredientPredicate.CODEC.fieldOf("item").forGetter(HasItemIngredient::getItem),
+            IPredicateFunction.CODEC.listOf().optionalFieldOf("functions", List.of()).forGetter(HasItemIngredient::getFunctions),
+            Codec.BOOL.optionalFieldOf("consume", true).forGetter(HasItemIngredient::isConsume)
+        ).apply(instance, HasItemIngredient::new));
+
+        private static final StreamCodec<RegistryFriendlyByteBuf, HasItemIngredient> STREAM_CODEC = StreamCodec.composite(
+            StreamCodecUtil.VEC3, HasItemIngredient::getOffset,
+            StreamCodecUtil.VEC3, HasItemIngredient::getRange,
+            ItemIngredientPredicate.STREAM_CODEC, HasItemIngredient::getItem,
+            StreamCodecUtil.codec2Stream(IPredicateFunction.CODEC).apply(ByteBufCodecs.list()), HasItemIngredient::getFunctions,
+            ByteBufCodecs.BOOL, HasItemIngredient::isConsume,
+            HasItemIngredient::new
+        );
+
+        @Override
+        public MapCodec<HasItemIngredient> codec() {
+            return CODEC;
+        }
+
+        @Override
+        public StreamCodec<RegistryFriendlyByteBuf, HasItemIngredient> streamCodec() {
+            return STREAM_CODEC;
+        }
+
         @Override
         protected HasItemIngredient create(Vec3 offset, Vec3 range, ItemIngredientPredicate item, List<IPredicateFunction<?>> functions) {
             return new HasItemIngredient(offset, range, item, functions);
@@ -130,6 +180,13 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
         private Vec3 range = new Vec3(1.0, 1.0, 1.0);
         private final ItemIngredientPredicate.Builder item = ItemIngredientPredicate.Builder.item();
         private final List<IPredicateFunction<?>> functions = new ArrayList<>();
+        private boolean consume = true;
+
+        /** Sets whether the matched ingredients are consumed or only reserved as catalysts. */
+        public Builder consume(boolean consume) {
+            this.consume = consume;
+            return this;
+        }
 
         /**
          * 设置检测范围
@@ -288,7 +345,7 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
          * @return HasItemIngredient实例
          */
         public HasItemIngredient build() {
-            return new HasItemIngredient(offset, range, item.build(), functions);
+            return new HasItemIngredient(offset, range, item.build(), functions, this.consume);
         }
     }
 }
