@@ -30,10 +30,11 @@ public final class CubePicking {
             HitResult vanilla = entity.pick(range, partialTick, fluids);
             if (!(vanilla instanceof BlockHitResult block) || CubeSelection.searchRadius() == 0) return vanilla;
             Vec3 start = entity.getEyePosition(partialTick);
+            Vec3 end = start.add(entity.getViewVector(partialTick).scale(range));
             double distanceToHit = start.distanceToSqr(block.getLocation());
             // Sable 等模组可能返回子空间存储坐标，不能从玩家位置跨坐标空间逐格补扫。
-            if (!(distanceToHit <= range * range + 1.0E-7)) return vanilla;
-            Vec3 end = start.add(entity.getViewVector(partialTick).scale(range));
+            // 原版视线向量存在浮点误差，使用实际射线长度，避免误拒绝正常的 MISS 终点。
+            if (!(distanceToHit <= start.distanceToSqr(end) + 1.0E-7)) return vanilla;
             context.nearest = block;
             context.distance = distanceToHit;
             context.visited.clear();
