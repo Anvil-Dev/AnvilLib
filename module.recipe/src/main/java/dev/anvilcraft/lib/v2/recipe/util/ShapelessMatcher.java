@@ -1,9 +1,17 @@
 package dev.anvilcraft.lib.v2.recipe.util;
 
+import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheElement;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
+import dev.anvilcraft.lib.v2.recipe.predicate.item.HasItemIngredient;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * 无序匹配器
@@ -20,21 +28,71 @@ public class ShapelessMatcher {
      * @return 是否不兼容
      */
     public static boolean incompatible(List<IRecipePredicate<?>> predicates, InWorldRecipeContext ctx) {
+        ItemMatchPlan plan = ShapelessMatcher.checkItemCapacity(predicates, ctx);
+        if (plan == ItemMatchPlan.IMPOSSIBLE) return false;
+        if (plan == ItemMatchPlan.LINEAR) return ShapelessMatcher.compatible(predicates, ctx);
+        return ShapelessMatcher.backtrack(predicates, ctx);
+    }
+
+    private static boolean backtrack(List<IRecipePredicate<?>> predicates, InWorldRecipeContext ctx) {
         if (predicates.isEmpty()) return true;
-        for (IRecipePredicate<?> predicate : predicates) {
+        for (int i = 0; i < predicates.size(); i++) {
+            IRecipePredicate<?> predicate = predicates.get(i);
             if (!predicate.test(ctx)) continue;
-            List<IRecipePredicate<?>> next = new ArrayList<>();
-            for (IRecipePredicate<?> predicate1 : predicates) {
-                if (predicate1 == predicate) continue;
-                next.add(predicate1);
-            }
+            List<IRecipePredicate<?>> next = new ArrayList<>(predicates);
+            next.remove(i);
             ctx.push(predicate);
-            if (next.isEmpty()) return true;
-            boolean flag = incompatible(next, ctx);
-            if (flag) return true;
+            if (next.isEmpty() || ShapelessMatcher.backtrack(next, ctx)) return true;
             ctx.pop(predicate);
         }
         return false;
+    }
+
+    private enum ItemMatchPlan {
+        IMPOSSIBLE,
+        LINEAR,
+        BACKTRACK
+    }
+
+    private static ItemMatchPlan checkItemCapacity(List<IRecipePredicate<?>> predicates, InWorldRecipeContext ctx) {
+        for (IRecipePredicate<?> predicate : predicates) {
+            if (predicate.getClass() != HasItemIngredient.class) return ItemMatchPlan.BACKTRACK;
+        }
+        Map<ICacheElement, Integer> capacities = new IdentityHashMap<>();
+        Map<Set<ICacheElement>, Long> demands = new HashMap<>();
+        long totalDemand = 0;
+        for (IRecipePredicate<?> predicate : predicates) {
+            HasItemIngredient ingredient = (HasItemIngredient) predicate;
+            int count = ingredient.getItem().count();
+            if (count < 1) return ItemMatchPlan.BACKTRACK;
+            Optional<Map<ICacheElement, Integer>> available = ingredient.getItem(ctx).availableElements();
+            if (available.isEmpty()) return ItemMatchPlan.BACKTRACK;
+            Set<ICacheElement> candidates = Collections.newSetFromMap(new IdentityHashMap<>());
+            long capacity = 0;
+            for (Map.Entry<ICacheElement, Integer> entry : available.orElseThrow().entrySet()) {
+                if (entry.getValue() <= 0) continue;
+                candidates.add(entry.getKey());
+                capacities.put(entry.getKey(), entry.getValue());
+                capacity += entry.getValue();
+            }
+            if (count > capacity) return ItemMatchPlan.IMPOSSIBLE;
+            demands.merge(candidates, (long) count, Long::sum);
+            totalDemand += count;
+        }
+        long totalCapacity = 0;
+        for (int capacity : capacities.values()) totalCapacity += capacity;
+        if (totalDemand > totalCapacity) return ItemMatchPlan.IMPOSSIBLE;
+        Set<ICacheElement> assigned = Collections.newSetFromMap(new IdentityHashMap<>());
+        boolean independent = true;
+        for (Map.Entry<Set<ICacheElement>, Long> group : demands.entrySet()) {
+            long capacity = 0;
+            for (ICacheElement element : group.getKey()) {
+                capacity += capacities.get(element);
+                if (!assigned.add(element)) independent = false;
+            }
+            if (group.getValue() > capacity) return ItemMatchPlan.IMPOSSIBLE;
+        }
+        return independent ? ItemMatchPlan.LINEAR : ItemMatchPlan.BACKTRACK;
     }
 
     /**

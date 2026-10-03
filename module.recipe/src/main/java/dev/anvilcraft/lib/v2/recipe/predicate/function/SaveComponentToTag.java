@@ -22,11 +22,15 @@ public record SaveComponentToTag<T>(
 ) implements IPredicateFunction<ItemStack> {
     @Override
     public ItemStack apply(InWorldRecipeContext context, ItemStack stack) {
-        RegistryOps<Tag> ops = context.getNbtRegistryOps();
-        T object = stack.get(this.component);
-        DataResult<Tag> result = Objects.requireNonNull(this.component.codec()).encodeStart(ops, object);
         TagCache cache = context.computeIfAbsent(TagCache.TAG_CACHE);
-        cache.computeIfAbsent(this.path, key -> result.getOrThrow());
+        T object = stack.get(this.component);
+        if (object == null) {
+            cache.tags.remove(this.path);
+            return stack;
+        }
+        RegistryOps<Tag> ops = context.getNbtRegistryOps();
+        DataResult<Tag> result = Objects.requireNonNull(this.component.codec()).encodeStart(ops, object);
+        cache.putTag(this.path, result.getOrThrow());
         return stack;
     }
 
