@@ -243,9 +243,17 @@ public class BlockStatePredicate {
         }
         for (Holder<Block> blockHolder : this.blocks) {
             for (List<PropertyMatcher> matchers : this.properties) {
+                List<BlockState> candidates = List.of(blockHolder.value().defaultBlockState());
                 for (PropertyMatcher matcher : matchers) {
-                    states.addAll(matcher.applyToState(blockHolder.value().getStateDefinition(), blockHolder.value().defaultBlockState()));
+                    candidates = candidates.stream()
+                        .flatMap(state -> matcher.applyToState(blockHolder.value().getStateDefinition(), state).stream())
+                        .distinct()
+                        .toList();
                 }
+                candidates.stream()
+                    .filter(state -> matchers.stream()
+                        .allMatch(matcher -> matcher.match(blockHolder.value().getStateDefinition(), state)))
+                    .forEach(states::add);
             }
         }
         this.statesCache = List.copyOf(states);
@@ -619,9 +627,9 @@ public class BlockStatePredicate {
             List<S> states = new ArrayList<>();
             property.getAllValues()
                 .filter(value -> this.minValue.isEmpty() || this.minValue.flatMap(property::getValue)
-                    .map(minValue -> value.value().compareTo(minValue) < 0).orElse(false))
+                    .map(minValue -> value.value().compareTo(minValue) >= 0).orElse(false))
                 .filter(value -> this.maxValue.isEmpty() || this.maxValue.flatMap(property::getValue)
-                    .map(maxValue -> value.value().compareTo(maxValue) > 0).orElse(false))
+                    .map(maxValue -> value.value().compareTo(maxValue) <= 0).orElse(false))
                 .forEachOrdered(value -> states.add(state.setValue(property, value.value())));
             return List.copyOf(states);
         }
