@@ -184,7 +184,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
         } else {
             this.mipmapUpdateCd--;
         }
-
+        if (this.currentFrameState.keyAssociations.isEmpty()) return;
         this.dispatch(commandEncoder, camera, this.depthTexConverter.getOutput());
     }
 
@@ -239,7 +239,8 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
         ByteBuffer buffer = this.stagingInputBuffer.getBuffer(this.gpuDevice, commandEncoder, actualRequestedSize);
         this.inputSSBO.write(buffer);
         buffer.position(0);
-        // TODO check if mojang added coherent flag
+
+        // TODO check if mojang added coherent flag. UPDATE: seems not, pray for driver handles this correctly
         ((ALRCommandEncoderExtension) commandEncoder).alrMemoryBarrier(MemoryBarrierFlag.BUFFER_UPDATE_BARRIER);
         this.stagingInputBuffer.copyToBuffer(
             commandEncoder,
