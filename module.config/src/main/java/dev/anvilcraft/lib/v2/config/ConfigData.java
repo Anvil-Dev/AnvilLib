@@ -71,16 +71,19 @@ public class ConfigData {
                 name = FormattingUtil.toEnglishName(fieldName);
             }
             if (parent != null) fieldName = parent + "." + fieldName;
+            Comment comment = field.getAnnotation(Comment.class);
             boolean flag = field.isAnnotationPresent(CollapsibleObject.class);
             Class<?> fieldType = field.getType();
             if (flag) {
                 proxy.add(COLLAPSIBLE_OBJECT_BUTTON_STRING.formatted(modId, fieldName), name);
-                proxy.add(COLLAPSIBLE_OBJECT_TOOLTIP_STRING.formatted(modId, fieldName), name);
+                proxy.add(
+                    COLLAPSIBLE_OBJECT_TOOLTIP_STRING.formatted(modId, fieldName),
+                    comment == null ? name : comment.value()
+                );
                 ConfigData.readConfigClass(proxy, modId, type, fieldType, fieldName);
             }
             proxy.add(OPTION_STRING.formatted(modId, fieldName), name);
-            if (field.isAnnotationPresent(Comment.class)) {
-                Comment comment = field.getAnnotation(Comment.class);
+            if (comment != null) {
                 proxy.add(TOOLTIP_STRING.formatted(modId, fieldName), comment.value());
             }
             if (Enum.class.isAssignableFrom(fieldType) && TranslatableEnum.class.isAssignableFrom(fieldType)) {
