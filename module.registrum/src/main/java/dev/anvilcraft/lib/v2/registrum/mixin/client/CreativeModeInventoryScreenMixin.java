@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.registrum.mixin.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import dev.anvilcraft.lib.v2.registrum.client.CreativeTabSectionRenderListener;
 import dev.anvilcraft.lib.v2.registrum.client.gui.CreativeVariantPickerOverlay;
 import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSection;
 import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSections;
@@ -33,7 +34,8 @@ import java.util.List;
 /** 创造栏分区绘制和变体叠加层的客户端交互。 */
 @Mixin(CreativeModeInventoryScreen.class)
 abstract class CreativeModeInventoryScreenMixin
-    extends AbstractContainerScreen<CreativeModeInventoryScreen.ItemPickerMenu> {
+    extends AbstractContainerScreen<CreativeModeInventoryScreen.ItemPickerMenu>
+    implements CreativeTabSectionRenderListener.Renderer {
     @Unique
     private static final int anvillib$COLUMN_COUNT = 9;
     @Unique
@@ -44,8 +46,6 @@ abstract class CreativeModeInventoryScreenMixin
     private static final int anvillib$GRID_LEFT = 9;
     @Unique
     private static final int anvillib$GRID_TOP = 18;
-    @Unique
-    private static final int anvillib$BANNER_Z = 200;
     @Unique
     private static final int anvillib$TEXT_PADDING = CreativeTabSection.DEFAULT_TEXT_PADDING;
 
@@ -76,21 +76,8 @@ abstract class CreativeModeInventoryScreenMixin
         super(menu, inventory, title);
     }
 
-    @Inject(
-        method = "render",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen;"
-                + "renderTooltip(Lnet/minecraft/client/gui/GuiGraphics;II)V"
-        )
-    )
-    private void anvillib$renderSections(
-        GuiGraphics graphics,
-        int mouseX,
-        int mouseY,
-        float partialTick,
-        CallbackInfo ci
-    ) {
+    @Override
+    public void anvillib$renderSections(GuiGraphics graphics, int mouseX, int mouseY) {
         this.anvillib$hoveredSection = null;
         if (selectedTab == null || selectedTab.getType() != CreativeModeTab.Type.CATEGORY) return;
         ResourceLocation tabId = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(selectedTab);
@@ -465,7 +452,6 @@ abstract class CreativeModeInventoryScreenMixin
             && mouseY >= bannerY && mouseY < bannerY + anvillib$CELL_SIZE;
         graphics.pose().pushPose();
         try {
-            graphics.pose().translate(0.0F, 0.0F, anvillib$BANNER_Z);
             graphics.blit(
                 section.bannerTexture(),
                 bannerX,
