@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.registrum.mixin.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import dev.anvilcraft.lib.v2.registrum.client.CreativeTabSectionRenderListener;
 import dev.anvilcraft.lib.v2.registrum.client.gui.CreativeVariantPickerOverlay;
 import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSection;
 import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSections;
@@ -34,7 +35,8 @@ import java.util.List;
 /** 创造栏分区绘制和变体叠加层的客户端交互。 */
 @Mixin(CreativeModeInventoryScreen.class)
 abstract class CreativeModeInventoryScreenMixin
-    extends AbstractContainerScreen<CreativeModeInventoryScreen.ItemPickerMenu> {
+    extends AbstractContainerScreen<CreativeModeInventoryScreen.ItemPickerMenu>
+    implements CreativeTabSectionRenderListener.Renderer {
     @Unique
     private static final int anvillib$COLUMN_COUNT = 9;
     @Unique
@@ -77,18 +79,13 @@ abstract class CreativeModeInventoryScreenMixin
 
     @Override
     protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-        this.anvillib$renderSections(graphics, mouseX, mouseY);
         this.anvillib$renderVariantOverlay(graphics, mouseX, mouseY);
         super.renderTooltip(graphics, mouseX, mouseY);
         this.anvillib$renderTooltips(graphics, mouseX, mouseY);
     }
 
-    @Unique
-    private void anvillib$renderSections(
-        GuiGraphics graphics,
-        int mouseX,
-        int mouseY
-    ) {
+    @Override
+    public void anvillib$renderSections(GuiGraphics graphics, int mouseX, int mouseY) {
         this.anvillib$hoveredSection = null;
         if (selectedTab == null || selectedTab.getType() != CreativeModeTab.Type.CATEGORY) return;
         ResourceLocation tabId = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(selectedTab);
@@ -437,7 +434,6 @@ abstract class CreativeModeInventoryScreenMixin
             && mouseY >= bannerY && mouseY < bannerY + anvillib$CELL_SIZE;
         graphics.pose().pushMatrix();
         try {
-            graphics.nextStratum();
             graphics.blit(
                 RenderPipelines.GUI_TEXTURED,
                 section.bannerTexture(),
