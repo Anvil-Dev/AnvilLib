@@ -20,16 +20,15 @@ abstract class CreativeModeTabMixin {
     private Collection<ItemStack> displayItems;
 
     @Inject(method = "buildContents", at = @At("TAIL"))
-    private void anvillib$arrangeSections(
+    private void anvillib$foldVariants(
         CreativeModeTab.ItemDisplayParameters parameters,
         CallbackInfo ci
     ) {
         CreativeModeTab tab = (CreativeModeTab) (Object) this;
         ResourceLocation tabId = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab);
-        if (tabId == null) return;
+        if (tabId == null || CreativeTabSections.hasSections(tabId)) return;
         if (tab.getType() == CreativeModeTab.Type.CATEGORY) {
             this.displayItems = CreativeVariantPickerRegistry.fold(this.displayItems);
         }
-        this.displayItems = CreativeTabSections.arrange(tabId, this.displayItems);
     }
 }
