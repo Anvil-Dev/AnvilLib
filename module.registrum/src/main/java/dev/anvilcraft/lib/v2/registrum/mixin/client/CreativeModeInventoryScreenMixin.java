@@ -1,16 +1,17 @@
 package dev.anvilcraft.lib.v2.registrum.mixin.client;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.input.KeyEvent;
 import dev.anvilcraft.lib.v2.registrum.client.CreativeTabSectionRenderListener;
 import dev.anvilcraft.lib.v2.registrum.client.gui.CreativeVariantPickerOverlay;
 import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSection;
 import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSections;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -31,6 +32,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Collection;
 import java.util.List;
 
 /** 创造栏分区绘制和变体叠加层的客户端交互。 */
@@ -76,6 +78,19 @@ abstract class CreativeModeInventoryScreenMixin
         Component title
     ) {
         super(menu, inventory, title);
+    }
+
+    @ModifyExpressionValue(
+        method = "selectTab",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/item/CreativeModeTab;getDisplayItems()Ljava/util/Collection;"
+        )
+    )
+    private Collection<ItemStack> anvillib$arrangeSections(Collection<ItemStack> items) {
+        Identifier tabId = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(selectedTab);
+        if (tabId == null || !CreativeTabSections.hasSections(tabId)) return items;
+        return CreativeTabSections.arrange(tabId, items, true);
     }
 
     @Override

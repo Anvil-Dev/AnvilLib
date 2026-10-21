@@ -114,6 +114,10 @@ public final class CreativeTabSections implements CreativeModeTab.Output {
         return enabled ? CreativeVariantPickerRegistry.fold(items) : items;
     }
 
+    public static boolean hasSections(Identifier tabId) {
+        return LAYOUTS.containsKey(tabId);
+    }
+
     public static List<PlacedSection> placedSections(Identifier tabId) {
         return PLACEMENTS.getOrDefault(tabId, List.of());
     }
