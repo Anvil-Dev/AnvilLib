@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.rendering.projection;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -52,11 +53,18 @@ public final class ProjectionFeatures implements AutoCloseable {
         this.nodes.clear();
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void render(List<BlockEntity> blockEntities, List<Entity> entities, PoseStack pose, CameraRenderState camera, int alpha) {
-        var client = Minecraft.getInstance();
+        this.render(blockEntities, entities, pose, camera, alpha, false);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void render(List<BlockEntity> blockEntities, List<Entity> entities, PoseStack pose,
+                CameraRenderState camera, int alpha, boolean depthOnly) {
         this.buffers.alpha = alpha;
+        this.buffers.depthOnly = depthOnly;
+        this.buffers.reversed = pose.last().pose().determinant3x3() < 0;
         this.states.keySet().retainAll(blockEntities);
+        var client = Minecraft.getInstance();
         for (BlockEntity entity : blockEntities) {
             BlockEntityRenderer renderer = client.getBlockEntityRenderDispatcher().getRenderer(entity);
             if (renderer == null) continue;
@@ -85,6 +93,8 @@ public final class ProjectionFeatures implements AutoCloseable {
 
     private static final class GhostBuffers extends MultiBufferSource.BufferSource {
         private int alpha;
+        private boolean depthOnly;
+        private boolean reversed;
         private final ByteBufferBuilder memory;
 
         private GhostBuffers() {
@@ -98,20 +108,23 @@ public final class ProjectionFeatures implements AutoCloseable {
 
         @Override
         public VertexConsumer getBuffer(RenderType type) {
-            if (this.alpha == 255) return Minecraft.getInstance().renderBuffers().bufferSource().getBuffer(type);
+            if (this.alpha == 255 && !this.depthOnly) return super.getBuffer(type);
             return new ProjectionRenderer.GhostConsumer(
-                Minecraft.getInstance().renderBuffers().bufferSource().getBuffer(ProjectionRenderTypes.ghost(type)),
-                BlockPos.ZERO, this.alpha);
-        }
-
-        @Override
-        public void endBatch() {
-            Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
+                super.getBuffer(ProjectionRenderTypes.ghost(type, this.depthOnly)), BlockPos.ZERO, this.alpha);
         }
 
         @Override
         public void endBatch(RenderType type) {
-            Minecraft.getInstance().renderBuffers().bufferSource().endBatch(this.alpha == 255 ? type : ProjectionRenderTypes.ghost(type));
+            var builder = this.startedBuilders.remove(type);
+            if (builder != null) {
+                var mesh = builder.build();
+                if (mesh != null) {
+                    if (this.reversed && type.pipeline().isCull()) ProjectionMesh.reverseWinding(mesh);
+                    if (type.sortOnUpload()) mesh.sortQuads(this.memory, RenderSystem.getProjectionType().vertexSorting());
+                    type.draw(mesh);
+                }
+            }
+            if (type.equals(this.lastSharedType)) this.lastSharedType = null;
         }
     }
 }

@@ -15,6 +15,7 @@ public final class ProjectionRenderEvents {
     @SubscribeEvent
     public static void pipelines(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(ProjectionRenderTypes.BLOCK_PIPELINE);
+        event.registerPipeline(ProjectionRenderTypes.BLOCK_DEPTH_PIPELINE);
     }
 
     @SubscribeEvent
