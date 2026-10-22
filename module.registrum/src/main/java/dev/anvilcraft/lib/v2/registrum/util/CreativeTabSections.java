@@ -103,6 +103,10 @@ public final class CreativeTabSections implements CreativeModeTab.Output {
         return arranged;
     }
 
+    public static boolean hasSections(ResourceLocation tabId) {
+        return LAYOUTS.containsKey(tabId);
+    }
+
     public static List<PlacedSection> placedSections(ResourceLocation tabId) {
         return PLACEMENTS.getOrDefault(tabId, List.of());
     }
