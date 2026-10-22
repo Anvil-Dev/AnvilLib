@@ -44,6 +44,18 @@ public final class CubeHighlightEvents {
         event.addCustomRenderer((state, buffer, poses, translucentPass, levelState) -> {
             if (state.isTranslucent() != translucentPass) return true;
             Vec3 camera = levelState.cameraRenderState.pos;
+            Vec3 localCamera = camera.subtract(pos.getX() + offset.x, pos.getY() + offset.y, pos.getZ() + offset.z);
+            PackedOutline[] visible = new PackedOutline[outlines.length];
+            int visibleSegments = 0;
+            if (fallback == null) {
+                for (int i = 0; i < outlines.length; i++) {
+                    visible[i] = outlines[i].forView(parts.get(i).localPosition(localCamera));
+                    visibleSegments += visible[i].segmentCount();
+                }
+                if (visibleSegments > SelectionGeometry.MAX_OUTLINE_SEGMENTS) {
+                    System.arraycopy(outlines, 0, visible, 0, outlines.length);
+                }
+            }
             poses.pushPose();
             try {
                 poses.translate(pos.getX() - camera.x + offset.x, pos.getY() - camera.y + offset.y, pos.getZ() - camera.z + offset.z);
@@ -60,7 +72,7 @@ public final class CubeHighlightEvents {
                         for (int i = 0; i < outlines.length; i++) {
                             poses.pushPose();
                             parts.get(i).apply(poses);
-                            OutlineRenderer.render(poses, consumer, outlines[i], red, green, blue, alpha, SelectionGeometry.MAX_OUTLINE_SEGMENTS, width);
+                            OutlineRenderer.render(poses, consumer, visible[i], red, green, blue, alpha, SelectionGeometry.MAX_OUTLINE_SEGMENTS, width);
                             poses.popPose();
                         }
                     }
