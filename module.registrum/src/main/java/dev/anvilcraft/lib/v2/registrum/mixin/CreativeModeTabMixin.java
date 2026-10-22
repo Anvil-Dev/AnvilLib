@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.registrum.mixin;
 
 import dev.anvilcraft.lib.v2.registrum.util.CreativeTabSections;
+import dev.anvilcraft.lib.v2.registrum.util.CreativeVariantPickerRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTab;
@@ -19,13 +20,15 @@ abstract class CreativeModeTabMixin {
     private Collection<ItemStack> displayItems;
 
     @Inject(method = "buildContents", at = @At("TAIL"))
-    private void anvillib$arrangeSections(
+    private void anvillib$foldVariants(
         CreativeModeTab.ItemDisplayParameters parameters,
         CallbackInfo ci
     ) {
         CreativeModeTab tab = (CreativeModeTab) (Object) this;
         Identifier tabId = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab);
-        if (tabId == null) return;
-        this.displayItems = CreativeTabSections.arrange(tabId, this.displayItems, tab.getType() == CreativeModeTab.Type.CATEGORY);
+        if (tabId == null || CreativeTabSections.hasSections(tabId)) return;
+        if (tab.getType() == CreativeModeTab.Type.CATEGORY) {
+            this.displayItems = CreativeVariantPickerRegistry.fold(this.displayItems);
+        }
     }
 }
