@@ -48,6 +48,19 @@ public final class CubeHighlightEvents {
             outlines[i] = CubeSelection.outlines().get(target.parts().get(i).geometry());
             segments += outlines[i].segmentCount();
         }
+        Vec3 localCamera = camera.subtract(pos.getX() + offset.x, pos.getY() + offset.y, pos.getZ() + offset.z);
+        PackedOutline[] visible = outlines;
+        if (segments <= SelectionGeometry.MAX_OUTLINE_SEGMENTS || target.bounds() == null) {
+            visible = new PackedOutline[outlines.length];
+            int visibleSegments = 0;
+            for (int i = 0; i < outlines.length; i++) {
+                visible[i] = outlines[i].forView(target.parts().get(i).localPosition(localCamera));
+                visibleSegments += visible[i].segmentCount();
+            }
+            if (visibleSegments > SelectionGeometry.MAX_OUTLINE_SEGMENTS) {
+                System.arraycopy(outlines, 0, visible, 0, outlines.length);
+            }
+        }
         try {
             boolean highContrast = minecraft.options.highContrastBlockOutline().get();
             for (int pass = highContrast ? 0 : 1; pass < 2; pass++) {
@@ -65,7 +78,7 @@ public final class CubeHighlightEvents {
                         stack.pushPose();
                         try {
                             target.parts().get(i).apply(stack);
-                            OutlineRenderer.render(stack, consumer, outlines[i], red, green, blue, alpha);
+                            OutlineRenderer.render(stack, consumer, visible[i], red, green, blue, alpha);
                         } finally {
                             stack.popPose();
                         }
