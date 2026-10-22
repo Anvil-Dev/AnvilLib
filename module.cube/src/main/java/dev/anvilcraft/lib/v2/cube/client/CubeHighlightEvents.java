@@ -45,13 +45,26 @@ public final class CubeHighlightEvents {
             outlines[i] = CubeSelection.outlines().get(target.parts().get(i).geometry());
             segments += outlines[i].segmentCount();
         }
+        Vec3 localCamera = camera.subtract(pos.getX() + offset.x, pos.getY() + offset.y, pos.getZ() + offset.z);
+        PackedOutline[] visible = outlines;
+        if (segments <= SelectionGeometry.MAX_OUTLINE_SEGMENTS || target.bounds() == null) {
+            visible = new PackedOutline[outlines.length];
+            int visibleSegments = 0;
+            for (int i = 0; i < outlines.length; i++) {
+                visible[i] = outlines[i].forView(target.parts().get(i).localPosition(localCamera));
+                visibleSegments += visible[i].segmentCount();
+            }
+            if (visibleSegments > SelectionGeometry.MAX_OUTLINE_SEGMENTS) {
+                System.arraycopy(outlines, 0, visible, 0, outlines.length);
+            }
+        }
         if (segments > SelectionGeometry.MAX_OUTLINE_SEGMENTS && target.bounds() != null) {
             net.minecraft.client.renderer.ShapeRenderer.renderLineBox(stack, consumer, target.bounds(), 0, 0, 0, 0.4F);
         } else {
             for (int i = 0; i < outlines.length; i++) {
                 stack.pushPose();
                 target.parts().get(i).apply(stack);
-                OutlineRenderer.render(stack, consumer, outlines[i], 0, 0, 0, 0.4F);
+                OutlineRenderer.render(stack, consumer, visible[i], 0, 0, 0, 0.4F);
                 stack.popPose();
             }
         }

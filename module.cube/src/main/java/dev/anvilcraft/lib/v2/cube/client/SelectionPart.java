@@ -48,6 +48,10 @@ public final class SelectionPart {
     public SelectionGeometry geometry() { return this.geometry; }
     public AABB bounds() { return this.bounds; }
 
+    public Vec3 localPosition(Vec3 blockPosition) {
+        return this.inverse == null ? blockPosition : position(this.inverse, blockPosition);
+    }
+
     /** 供资源烘焙阶段组合 multipart 使用，动画每帧只应复用几何并更新矩阵。 */
     public List<ConvexShape> blockSpaceShapes() {
         if (this.transform == null) return this.geometry.shapes();
