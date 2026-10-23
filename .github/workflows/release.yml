@@ -165,7 +165,9 @@ jobs:
       maven_pass: ${{ secrets.MAVEN_PASS }}
 
   main-maven-central-deploy:
-    needs: [main]
+    # 汇总模块的 pom 依赖各子模块，必须等子模块全部落到 Maven Central 之后再发布，
+    # 否则消费者在这段窗口里会解析到依赖尚未就绪的 pom。
+    needs: [main, processor-deploy, deploy-l0, deploy-l1, deploy-l2]
     uses: ./.github/workflows/publish_maven_central.yml
     with:
       module: main
