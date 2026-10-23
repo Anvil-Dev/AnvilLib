@@ -69,6 +69,20 @@ jobs:
           name: ${{ inputs.module_id }}-deploy
           path: ${{ env.MODULE_DIR }}/build/staging-deploy/
 
+      # Maven Central 的版本一经发布不可撤回，且不允许覆盖。
+      # 构建号后缀（+snapshot.N / +pr.N）只用于 dev 分支的临时制品，
+      # 万一本工作流被重新接入 CI 流程，这里会直接失败而不是污染正式仓库。
+      - name: Verify release version
+        shell: bash
+        run: |
+          BAD=$(find "$MODULE_DIR/build/staging-deploy" -name '*.pom' \
+            | grep -E '[+](snapshot|pr)[.]' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::staging-deploy 中存在带构建号后缀的版本，拒绝发布到 Maven Central："
+            echo "$BAD"
+            exit 1
+          fi
+
       - name: Publish to Maven Central
         run: ./gradlew :${{ env.GRADLE_PROJECT }}:jreleaserDeploy --no-configuration-cache
         env:
