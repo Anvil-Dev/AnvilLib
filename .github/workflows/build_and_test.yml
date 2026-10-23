@@ -123,6 +123,7 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.maven_pass }}
 
       - name: capture maven artifacts
+        if: ${{ !inputs.ci_build && !inputs.pr_build }}
         uses: actions/upload-artifact@v7
         with:
           name: "${{ inputs.module_id }}-deploy"
