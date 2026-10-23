@@ -1,10 +1,12 @@
 name: Release for Mod
+# 发布到 Maven Central 的唯一入口：发布 Release 事件。
+# 推送 dev/** 分支由 ci.yml 负责构建与测试，不做任何 Maven Central 发布。
+# 制品版本取自 gradle.properties 的 mod_version，发布前必须确认已推进该版本号：
+# Maven Central 的版本一经发布不可撤回，重复使用同一版本号会导致部署失败。
 on:
   release:
     types:
       - published
-    branches:
-      - dev/**
 
 jobs:
   prepare:
