@@ -69,14 +69,24 @@ jobs:
           name: ${{ inputs.module_id }}-deploy
           path: ${{ env.MODULE_DIR }}/build/staging-deploy/
 
-      # Maven Central 的版本一经发布不可撤回，且不允许覆盖。
-      # 构建号后缀（+snapshot.N / +pr.N）只用于 dev 分支的临时制品，
-      # 万一本工作流被重新接入 CI 流程，这里会直接失败而不是污染正式仓库。
+      # Maven Central 的版本一经发布不可撤回，且不允许覆盖，
+      # 而构建号后缀（+snapshot.N / +pr.N）只属于 dev 分支的临时制品，
+      # 因此带后缀的版本一律拒绝发布，避免占用正式版本坐标。
+      # 这里同时断言制品确实存在，否则后面的 jreleaserDeploy 只会给出难以定位的错误。
       - name: Verify release version
         shell: bash
         run: |
-          BAD=$(find "$MODULE_DIR/build/staging-deploy" -name '*.pom' \
-            | grep -E '[+](snapshot|pr)[.]' || true)
+          STAGING="$MODULE_DIR/build/staging-deploy"
+          if [ ! -d "$STAGING" ]; then
+            echo "::error::未找到 $STAGING，制品下载失败，无法发布到 Maven Central。"
+            exit 1
+          fi
+          POMS=$(find "$STAGING" -name '*.pom')
+          if [ -z "$POMS" ]; then
+            echo "::error::$STAGING 中没有 pom 文件，没有可分发的制品。"
+            exit 1
+          fi
+          BAD=$(echo "$POMS" | grep -E '[+](snapshot|pr)[.]' || true)
           if [ -n "$BAD" ]; then
             echo "::error::staging-deploy 中存在带构建号后缀的版本，拒绝发布到 Maven Central："
             echo "$BAD"
