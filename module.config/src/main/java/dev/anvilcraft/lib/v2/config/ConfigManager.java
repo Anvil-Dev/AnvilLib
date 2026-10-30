@@ -122,17 +122,17 @@ public class ConfigManager {
         for (Field field : fields) {
             field.setAccessible(true);
             String fieldName = FormattingUtil.toLowerCaseUnder(field.getName());
+            String name = fieldName;
+            if (parent != null) name = parent + "." + name;
             Object object = field.get(configObj);
             if (field.isAnnotationPresent(Comment.class)) {
                 Comment comment = field.getAnnotation(Comment.class);
-                String name = fieldName;
-                if (parent != null) name = parent + "." + name;
                 builder.translation(ConfigData.OPTION_STRING.formatted(modId, name));
                 builder.comment(comment.value());
             }
             if (field.isAnnotationPresent(CollapsibleObject.class)) {
                 builder.push(fieldName);
-                ConfigManager.register(builder, modId, fieldName, object, values);
+                ConfigManager.register(builder, modId, name, object, values);
                 builder.pop();
                 continue;
             }
