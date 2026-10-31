@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.cube.client.model;
 
+import com.google.common.collect.MapMaker;
 import net.minecraft.client.renderer.block.model.BlockElement;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.resources.model.BakedModel;
@@ -13,7 +14,8 @@ import java.util.Map;
 
 /** 临时关联原版模型烘焙结果；发布选择几何后清空，避免长期保留纹理及未烘焙模型。 */
 public final class ModelCapture {
-    private static final Map<BakedModel, Source> SOURCES = new IdentityHashMap<>();
+    // 模组可能在资源重载后继续烘焙临时模型；弱键不延长其生命周期，且仍按对象身份区分模型。
+    private static final Map<BakedModel, Source> SOURCES = new MapMaker().weakKeys().makeMap();
     private ModelCapture() { }
 
     public static synchronized void remember(List<BlockElement> elements, ModelState state, Transformation root, BakedModel baked) {
