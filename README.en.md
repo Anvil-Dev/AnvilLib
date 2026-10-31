@@ -69,6 +69,23 @@ public class MyModConfig {
 MyModConfig config = ConfigManager.register("my_mod", MyModConfig::new);
 ```
 
+**Sidebar configuration screen (1.21.1):**
+
+Add `screenStyle = ConfigScreenStyle.SIDEBAR` to `@Config` and register the
+configuration with `ConfigManager.register` as usual. First-level
+`@CollapsibleObject` groups become sidebar tabs, root values appear under
+“General”, and deeper groups open in a modal with back navigation.
+The `group` annotation parameter specifies the configuration directory.
+Enum values use dropdown menus with arrow-key selection, Enter to confirm, and Esc to cancel.
+
+Each file can independently select `DEFAULT` or `SIDEBAR`. NeoForge's file
+selector remains the entry point; the sidebar screen also has a file dropdown
+when multiple files opt in. Tab switches and modal navigation retain edits.
+Switching files, pressing Done, or pressing Esc on the main editor saves the
+current file. Undo and reset affect the current page's direct entries; saving
+clears that file's undo history. NeoForge's server configuration editing
+restrictions continue to apply.
+
 ### Codec Module
 
 Provides practical helpers around Mojang `Codec` and `StreamCodec` to reduce boilerplate in

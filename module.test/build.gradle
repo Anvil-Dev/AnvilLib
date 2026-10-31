@@ -298,3 +298,36 @@ machete {
 lombok {
     version = "1.18.44"
 }
+
+if (providers.gradleProperty('configUiDemo').isPresent()) {
+    neoForge.runs.client {
+        gameDirectory = layout.buildDirectory.dir('config-ui-run')
+    }
+}
+
+if (providers.gradleProperty('configUiTest').isPresent()) {
+    neoForge.runs.client {
+        systemProperty 'anvillib.configUiTest', 'true'
+        gameDirectory = layout.buildDirectory.dir('config-ui-test-run')
+    }
+    def uiResult = layout.buildDirectory.file('config-ui-test-run/config-ui-result.txt')
+    tasks.named('runClient') {
+        doFirst { uiResult.get().asFile.delete() }
+        doLast {
+            if (!uiResult.get().asFile.isFile() || !uiResult.get().asFile.text.startsWith('PASS ')) {
+                throw new GradleException('Config UI verification failed; inspect config-ui-result.txt and the client log')
+            }
+        }
+    }
+    neoForge.runs.server {
+        gameDirectory = layout.buildDirectory.dir('config-server-run')
+    }
+    neoForge.runs {
+        configGameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'anvillib.configServerTest', 'true'
+            gameDirectory = layout.buildDirectory.dir('config-server-run')
+        }
+    }
+}
