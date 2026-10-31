@@ -39,6 +39,8 @@ class RegistrumBlockModelGeneratorTest {
         var generator = generator();
         generator.family(Blocks.IRON_BLOCK);
         generator.family(Blocks.IRON_BLOCK);
+        generator.family(Blocks.WHITE_WOOL);
+        generator.family(Blocks.WHITE_WOOL);
 
         assertTrue(this.states.isEmpty());
         assertTrue(this.models.isEmpty());
@@ -49,14 +51,14 @@ class RegistrumBlockModelGeneratorTest {
     @Test
     void familyStillGeneratesRequestedSlabAndReusesVanillaTextures() {
         // 用已注册的台阶作为输出夹具，基底仅供引用，派生方块仍应正常生成。
-        generator().family(Blocks.IRON_BLOCK).slab(Blocks.STONE_SLAB);
+        generator().family(Blocks.WHITE_WOOL).slab(Blocks.STONE_SLAB);
 
         assertEquals(Set.of(Blocks.STONE_SLAB), this.states);
         assertEquals(Set.of(Blocks.STONE_SLAB.asItem()), this.items);
         assertEquals(2, this.models.size());
-        assertFalse(this.models.containsKey(ModelLocationUtils.getModelLocation(Blocks.IRON_BLOCK)));
+        assertFalse(this.models.containsKey(ModelLocationUtils.getModelLocation(Blocks.WHITE_WOOL)));
         var slab = this.models.get(ModelLocationUtils.getModelLocation(Blocks.STONE_SLAB)).get().getAsJsonObject();
-        assertEquals("minecraft:block/iron_block", slab.getAsJsonObject("textures").get("bottom").getAsString());
+        assertEquals("minecraft:block/white_wool", slab.getAsJsonObject("textures").get("bottom").getAsString());
     }
 
     @Test
