@@ -122,7 +122,10 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.maven_user }}
           MAVEN_PASSWORD: ${{ secrets.maven_pass }}
 
+      # staging-deploy 只有 release.yml 的 Maven Central 部署会用到，
+      # CI 与 PR 构建不上传，避免产生无人消费的部署制品。
       - name: capture maven artifacts
+        if: ${{ !inputs.ci_build && !inputs.pr_build }}
         uses: actions/upload-artifact@v7
         with:
           name: "${{ inputs.module_id }}-deploy"

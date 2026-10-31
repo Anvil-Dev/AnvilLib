@@ -7,8 +7,8 @@
   { "module": "moveable-entity-block", "needs": [] },
   { "module": "network",               "needs": [] },
   { "module": "rendering",             "needs": [] },
-  { "module": "space-select",          "needs": ["network"] },
 
+  { "module": "space-select",          "needs": ["network"] },
   { "module": "font",  "needs": ["rendering"] },
   { "module": "util",  "needs": ["codec"] },
   { "module": "explosion",  "needs": ["config"] },
