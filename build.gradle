@@ -5,6 +5,7 @@ plugins {
     alias libs.plugins.machete apply false
     alias libs.plugins.jreleaser apply false
     alias libs.plugins.modPublish apply false
+    alias libs.plugins.foeniculum apply false
 }
 
 group = 'dev.anvilcraft.lib'
@@ -129,6 +130,7 @@ subprojects {
     apply plugin: 'io.github.p03w.machete'
     apply plugin: 'org.jreleaser'
     apply plugin: "me.modmuss50.mod-publish-plugin"
+    apply plugin: 'dev.anvilcraft.resource.foeniculum'
 
     apply from: rootProject.file("module.gradle")
     if (it.name != "anvillib-test-neoforge-26.1") {

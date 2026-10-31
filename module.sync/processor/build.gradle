@@ -4,6 +4,7 @@ plugins {
     alias libs.plugins.lombok
     alias libs.plugins.modDevGradle
     alias libs.plugins.jreleaser
+    alias libs.plugins.foeniculum
 }
 
 String buildType = 'snapshot'
