@@ -1,4 +1,5 @@
 plugins {
+    alias libs.plugins.foeniculum apply false
     id 'java'
     alias libs.plugins.modDevGradle apply false
     alias libs.plugins.lombok apply false
@@ -116,6 +117,7 @@ subprojects {
     if (it.name == "anvillib-sync-processor-neoforge-1.21.8") return
     apply plugin: 'java'
     apply plugin: 'java-library'
+    apply plugin: 'dev.anvilcraft.resource.foeniculum'
     apply plugin: 'eclipse'
     apply plugin: 'idea'
     apply plugin: 'maven-publish'
