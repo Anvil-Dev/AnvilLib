@@ -37,7 +37,7 @@ public final class OutlineBuilder {
         OutlineBuilder builder = new OutlineBuilder(geometry, maxNanos, maxOperations);
         List<Segment> segments = builder.buildIslands();
         if (segments.size() > SelectionGeometry.MAX_OUTLINE_SEGMENTS) throw new BudgetExceededException();
-        return PackedOutline.of(segments);
+        return PackedOutline.of(segments, geometry, builder::step);
     }
 
     private void step() {
