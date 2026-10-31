@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.config;
 
 import com.google.common.collect.ImmutableList;
 import dev.anvilcraft.lib.v2.config.util.FormattingUtil;
+import dev.anvilcraft.lib.v2.config.client.ConfigScreens;
 import lombok.extern.slf4j.Slf4j;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -14,8 +15,6 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
 import net.neoforged.fml.loading.FMLLoader;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.lang.reflect.Field;
@@ -104,7 +103,10 @@ public class ConfigManager {
 
     @OnlyIn(Dist.CLIENT)
     public void registerScreen(ModContainer container) {
-        container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        ConfigScreens.register(container, spec -> this.configSpecMap.values().stream()
+            .filter(record -> record.spec() == spec)
+            .map(record -> record.object().getClass().getAnnotation(Config.class).screenStyle())
+            .findFirst().orElse(ConfigScreenStyle.DEFAULT));
     }
 
     private static void register(
@@ -122,9 +124,9 @@ public class ConfigManager {
             String name = fieldName;
             if (parent != null) name = parent + "." + name;
             Object object = field.get(configObj);
+            builder.translation(ConfigData.OPTION_STRING.formatted(modId, name));
             if (field.isAnnotationPresent(Comment.class)) {
                 Comment comment = field.getAnnotation(Comment.class);
-                builder.translation(ConfigData.OPTION_STRING.formatted(modId, name));
                 builder.comment(comment.value());
             }
             if (field.isAnnotationPresent(CollapsibleObject.class)) {
@@ -153,25 +155,29 @@ public class ConfigManager {
     }
 
     public static ModConfigSpec.ConfigValue<?> defineInRange(ModConfigSpec.Builder builder, String name, Field field, Number number) {
-        if (field.isAnnotationPresent(BoundedDiscrete.class)) {
-            BoundedDiscrete discrete = field.getAnnotation(BoundedDiscrete.class);
-            return switch (number) {
-                case Byte value ->
-                    builder.defineInRange(name, value, BoundedDiscrete.Util.minByte(discrete), BoundedDiscrete.Util.maxByte(discrete));
-                case Short value ->
-                    builder.defineInRange(name, value, BoundedDiscrete.Util.minShort(discrete), BoundedDiscrete.Util.maxShort(discrete));
-                case Integer value ->
-                    builder.defineInRange(name, value, BoundedDiscrete.Util.minInt(discrete), BoundedDiscrete.Util.maxInt(discrete));
-                case Long value ->
-                    builder.defineInRange(name, value, BoundedDiscrete.Util.minLong(discrete), BoundedDiscrete.Util.maxLong(discrete));
-                case Float value ->
-                    builder.defineInRange(name, value, BoundedDiscrete.Util.minFloat(discrete), BoundedDiscrete.Util.maxFloat(discrete));
-                case Double value ->
-                    builder.defineInRange(name, value, BoundedDiscrete.Util.minDouble(discrete), BoundedDiscrete.Util.maxDouble(discrete));
-                default -> builder.define(name, number);
-            };
-        } else {
-            return builder.define(name, number);
-        }
+        BoundedDiscrete discrete = field.getAnnotation(BoundedDiscrete.class);
+        // TOML 不保留 Byte/Short/Float 等 Java 包装类型。使用 NeoForge 的数值
+        // ConfigValue 进行归一化，避免保存后反复校正，也让原生编辑控件识别这些字段。
+        return switch (number) {
+            case Byte value -> builder.defineInRange(name, value.intValue(),
+                discrete == null ? Byte.MIN_VALUE : (int) BoundedDiscrete.Util.minByte(discrete),
+                discrete == null ? Byte.MAX_VALUE : (int) BoundedDiscrete.Util.maxByte(discrete));
+            case Short value -> builder.defineInRange(name, value.intValue(),
+                discrete == null ? Short.MIN_VALUE : (int) BoundedDiscrete.Util.minShort(discrete),
+                discrete == null ? Short.MAX_VALUE : (int) BoundedDiscrete.Util.maxShort(discrete));
+            case Integer value -> builder.defineInRange(name, value.intValue(),
+                discrete == null ? Integer.MIN_VALUE : BoundedDiscrete.Util.minInt(discrete),
+                discrete == null ? Integer.MAX_VALUE : BoundedDiscrete.Util.maxInt(discrete));
+            case Long value -> builder.defineInRange(name, value.longValue(),
+                discrete == null ? Long.MIN_VALUE : BoundedDiscrete.Util.minLong(discrete),
+                discrete == null ? Long.MAX_VALUE : BoundedDiscrete.Util.maxLong(discrete));
+            case Float value -> builder.defineInRange(name, Double.parseDouble(value.toString()),
+                discrete == null ? Double.NEGATIVE_INFINITY : BoundedDiscrete.Util.minFloat(discrete),
+                discrete == null ? Double.POSITIVE_INFINITY : BoundedDiscrete.Util.maxFloat(discrete));
+            case Double value -> builder.defineInRange(name, value.doubleValue(),
+                discrete == null ? Double.NEGATIVE_INFINITY : BoundedDiscrete.Util.minDouble(discrete),
+                discrete == null ? Double.POSITIVE_INFINITY : BoundedDiscrete.Util.maxDouble(discrete));
+            default -> builder.define(name, number);
+        };
     }
 }
