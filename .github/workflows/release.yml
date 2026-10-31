@@ -1,12 +1,12 @@
 name: Release for Mod
+# 发布到 Maven Central 的唯一入口：发布 Release 事件。
+# 推送 dev/** 分支由 ci.yml 负责构建与测试，不做任何 Maven Central 发布。
+# 制品版本取自 gradle.properties 的 mod_version，发布前必须确认已推进该版本号：
+# Maven Central 的版本一经发布不可撤回，重复使用同一版本号会导致部署失败。
 on:
-  workflow_dispatch:
   release:
     types:
       - published
-    branches:
-      - dev/**
-      # - releases/**
 
 jobs:
   prepare:
@@ -165,7 +165,9 @@ jobs:
       maven_pass: ${{ secrets.MAVEN_PASS }}
 
   main-maven-central-deploy:
-    needs: [main]
+    # 汇总模块的 pom 依赖各子模块，必须等子模块全部落到 Maven Central 之后再发布，
+    # 否则消费者在这段窗口里会解析到依赖尚未就绪的 pom。
+    needs: [main, processor-deploy, deploy-l0, deploy-l1, deploy-l2]
     uses: ./.github/workflows/publish_maven_central.yml
     with:
       module: main

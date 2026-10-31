@@ -4,6 +4,7 @@ plugins {
     id 'idea'
     id 'maven-publish'
     alias libs.plugins.modDevGradle
+    alias libs.plugins.foeniculum
     alias libs.plugins.lombok
     alias libs.plugins.machete
     id 'org.jreleaser' version '1.23.0'
@@ -117,15 +118,15 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 dependencies {
 
     if (System.getenv("NOT_DEV") == 'true') {
-        jarJar(api("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.4:latest.release"))
-        jarJar(api("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.4:latest.release"))
-        jarJar(api("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.4:latest.release"))
-        jarJar(api("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.4:latest.release"))
+        slimJarJar(api("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.4:latest.release"))
+        slimJarJar(api("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.4:latest.release"))
+        slimJarJar(api("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.4:latest.release"))
+        slimJarJar(api("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.4:latest.release"))
     } else {
-        jarJar(implementation project(":anvillib-config-neoforge-1.21.4"))
-        jarJar(implementation project(":anvillib-codec-neoforge-1.21.4"))
-        jarJar(implementation project(":anvillib-network-neoforge-1.21.4"))
-        jarJar(implementation project(":anvillib-util-neoforge-1.21.4"))
+        slimJarJar(implementation project(":anvillib-config-neoforge-1.21.4"))
+        slimJarJar(implementation project(":anvillib-codec-neoforge-1.21.4"))
+        slimJarJar(implementation project(":anvillib-network-neoforge-1.21.4"))
+        slimJarJar(implementation project(":anvillib-util-neoforge-1.21.4"))
     }
 }
 

@@ -1,4 +1,5 @@
 [versions]
+foeniculum = "0.1.0-dev.7"
 minecraft = "1.21.4"
 neoForge = "21.4.157"
 modDevGradle = "2.0.140"
@@ -9,6 +10,7 @@ machete = "2.0.1"
 neoForge = { group = "net.neoforged", name = "neoforge", version.ref = "neoForge" }
 
 [plugins]
+foeniculum = { id = "dev.anvilcraft.resource.foeniculum", version.ref = "foeniculum" }
 modDevGradle = { id = "net.neoforged.moddev", version.ref = "modDevGradle" }
 lombok = { id = "io.freefair.lombok", version.ref = "lombok" }
 machete = { id = "io.github.p03w.machete", version.ref = "machete" }

@@ -2,6 +2,7 @@ pluginManagement {
     repositories {
         mavenLocal()
         gradlePluginPortal()
+        maven { url = 'https://server.cjsah.net:1002/maven/releases' }
         maven { url = 'https://maven.neoforged.net/releases' }
     }
 }
@@ -22,6 +23,7 @@ include 'module.moveable-entity-block'
 include 'module.multiblock'
 include 'module.network'
 include 'module.recipe'
+include 'module.renderer'
 include 'module.registrum'
 include 'module.rpc'
 include 'module.space-select'
@@ -44,6 +46,7 @@ project(':module.moveable-entity-block').name = 'anvillib-moveable-entity-block-
 project(':module.multiblock').name = 'anvillib-multiblock-neoforge-1.21.4'
 project(':module.network').name = 'anvillib-network-neoforge-1.21.4'
 project(':module.recipe').name = 'anvillib-recipe-neoforge-1.21.4'
+project(':module.renderer').name = 'anvillib-renderer-neoforge-1.21.4'
 project(':module.registrum').name = 'anvillib-registrum-neoforge-1.21.4'
 project(':module.rpc').name = 'anvillib-rpc-neoforge-1.21.4'
 project(':module.space-select').name = 'anvillib-space-select-neoforge-1.21.4'

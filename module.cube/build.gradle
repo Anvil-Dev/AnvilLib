@@ -4,6 +4,7 @@ plugins {
     id 'idea'
     id 'maven-publish'
     alias libs.plugins.modDevGradle
+    alias libs.plugins.foeniculum
     alias libs.plugins.lombok
     alias libs.plugins.machete
     id 'org.jreleaser' version '1.23.0'
@@ -265,10 +266,6 @@ lombok {
     version = "1.18.34"
 }
 
-// 默认构建不扫描被 Git 忽略的本地测试，避免本地文件影响 CI 和发布结果。
-sourceSets.test.java.setSrcDirs([])
-sourceSets.test.resources.setSrcDirs([])
-tasks.named('test') { enabled = false }
 
 if (providers.gradleProperty('cubeLocalTests').isPresent() || providers.gradleProperty('cubeClientSmoke').isPresent()) {
     def localTests = layout.projectDirectory.file('local-tests.gradle').asFile
@@ -277,3 +274,20 @@ if (providers.gradleProperty('cubeLocalTests').isPresent() || providers.gradlePr
     }
     apply from: localTests
 }
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+neoForge {
+    addModdingDependenciesTo(sourceSets.test)
+}
+
+test {
+    useJUnitPlatform()
+}
+
+sourceSets.test.java.setSrcDirs(['src/regressionTest/java'])
+sourceSets.test.resources.setSrcDirs([])

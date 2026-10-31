@@ -6,6 +6,7 @@
   { "module": "integration",           "needs": [] },
   { "module": "moveable-entity-block", "needs": [] },
   { "module": "network",               "needs": [] },
+  { "module": "renderer",              "needs": [] },
   { "module": "font",                  "needs": [] },
 
   { "module": "explosion",    "needs": ["config"] },
