@@ -6,7 +6,7 @@ lombok = "9.2.0"
 machete = "2.0.1"
 jreleaser = "1.23.0"
 modPublish = "1.1.0"
-foeniculum = "0.1.0-dev.5"
+foeniculum = "0.1.0-dev.6"
 
 [plugins]
 modDevGradle = { id = "net.neoforged.moddev", version.ref = "modDevGradle" }
