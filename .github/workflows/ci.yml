@@ -7,7 +7,6 @@ on:
     paths:
       - .github/modules.json
       - .github/workflows/build_and_test.yml
-      - .github/workflows/publish_maven_central.yml
       - .github/workflows/ci.yml
       - .github/workflows/generate-matrix.js
       - gradle/**
@@ -100,68 +99,6 @@ jobs:
       maven_user: ${{ secrets.MAVEN_USER }}
       maven_pass: ${{ secrets.MAVEN_PASS }}
 
-  # ── Maven Central deploy ────────────────────────────────────────
-
-  processor-deploy:
-    needs: [processor-build]
-    uses: ./.github/workflows/publish_maven_central.yml
-    with:
-      module: sync
-      module_id: anvillib-sync-processor
-      gradle_project: anvillib-sync-neoforge-1.21.11:anvillib-sync-processor-neoforge-1.21.11
-      module_dir: module.sync/processor
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-
-  deploy-l0:
-    needs: [prepare, build-l0]
-    strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
-    uses: ./.github/workflows/publish_maven_central.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-
-  deploy-l1:
-    needs: [prepare, build-l1]
-    strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
-    uses: ./.github/workflows/publish_maven_central.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-
-  deploy-l2:
-    needs: [prepare, build-l2]
-    strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
-    uses: ./.github/workflows/publish_maven_central.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-
   # ── Main (aggregator) ───────────────────────────────────────────
 
   main:
@@ -180,16 +117,3 @@ jobs:
       maven_pass: ${{ secrets.MAVEN_PASS }}
       curseforge_token: ${{ secrets.CURSEFORGE_TOKEN }}
       modrinth_token: ${{ secrets.MODRINTH_TOKEN }}
-
-  main-maven-central-deploy:
-    needs: [main]
-    uses: ./.github/workflows/publish_maven_central.yml
-    with:
-      module: main
-      module_id: anvillib
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}

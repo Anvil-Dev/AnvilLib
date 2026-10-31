@@ -1,9 +1,9 @@
 dependencies {
     if (System.getenv("NOT_DEV") == 'true') {
-        jarJar(api("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.11:latest.release"))
-        jarJar(api("dev.anvilcraft.lib:anvillib-rendering-neoforge-1.21.11:latest.release"))
+        slimJarJar(api("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.11:latest.release"))
+        slimJarJar(api("dev.anvilcraft.lib:anvillib-rendering-neoforge-1.21.11:latest.release"))
     } else {
-        jarJar(api project(":anvillib-util-neoforge-1.21.11"))
-        jarJar(api project(":anvillib-rendering-neoforge-1.21.11"))
+        slimJarJar(api project(":anvillib-util-neoforge-1.21.11"))
+        slimJarJar(api project(":anvillib-rendering-neoforge-1.21.11"))
     }
 }

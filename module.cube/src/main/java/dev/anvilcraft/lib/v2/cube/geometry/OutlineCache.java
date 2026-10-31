@@ -66,6 +66,10 @@ public final class OutlineCache implements AutoCloseable {
             failed = true;
             LogUtils.getLogger().warn("Unable to build cube outline; keeping bounded fallback", exception);
         }
+        if (result.estimatedBytes() + geometry.estimatedBytes() > MAX_CACHED_BYTES) {
+            result = geometry.fallbackOutline();
+            limited = true;
+        }
         synchronized (this) {
             if (generation != this.epoch) return;
             this.pending.remove(geometry);
