@@ -20,4 +20,7 @@ public @interface Config {
     String name();
     String group() default "";
     ModConfig.Type type() default ModConfig.Type.COMMON;
+
+    /** 通过 ConfigManager 注册时自动选择此配置文件的界面。 */
+    ConfigScreenStyle screenStyle() default ConfigScreenStyle.DEFAULT;
 }
