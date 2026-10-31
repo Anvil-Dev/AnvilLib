@@ -1,5 +1,5 @@
 [versions]
-foeniculum = "0.1.0-dev.6"
+foeniculum = "0.1.0-dev.7"
 minecraft = "1.21.4"
 neoForge = "21.4.157"
 modDevGradle = "2.0.140"
