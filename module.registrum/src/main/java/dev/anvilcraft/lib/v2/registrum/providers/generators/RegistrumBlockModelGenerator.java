@@ -19,10 +19,12 @@ import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelOutput;
 import net.minecraft.client.data.models.blockstates.BlockModelDefinitionGenerator;
 import net.minecraft.client.data.models.model.ModelInstance;
+import net.minecraft.client.data.models.model.ModelLocationUtils;
 import net.minecraft.client.data.models.model.ModelTemplate;
 import net.minecraft.client.data.models.model.TextureMapping;
 import net.minecraft.client.data.models.model.TexturedModel;
 import net.minecraft.client.renderer.block.model.BlockModelDefinition;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.fml.util.ObfuscationReflectionHelper;
@@ -58,6 +60,17 @@ public class RegistrumBlockModelGenerator extends BlockModelGenerators {
     @Override
     public void run() {
         parent.genData(ProviderType.BLOCKSTATE, this);
+    }
+
+    /** 原版方块只作为族的纹理与完整方块模型来源，不重复输出它的资源。 */
+    @Override
+    public BlockFamilyProvider family(Block block) {
+        if (!BuiltInRegistries.BLOCK.getKey(block).getNamespace().equals("minecraft")) return super.family(block);
+        var textured = TEXTURED_MODELS.getOrDefault(block, TexturedModel.CUBE.get(block));
+        var family = new BlockFamilyProvider(textured.getMapping());
+        ObfuscationReflectionHelper.setPrivateValue(BlockFamilyProvider.class, family,
+            plainModel(ModelLocationUtils.getModelLocation(block)), "fullBlock");
+        return family;
     }
 
     public void create(Block block, Identifier model) {
