@@ -18,6 +18,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,6 +29,8 @@ import javax.annotation.Nullable;
 @Slf4j
 public class ConfigManager {
     private static final Map<String, ConfigManager> INSTANCES = new ConcurrentHashMap<>();
+
+    private static final Map<ModConfigSpec.ConfigValue<?>, Slider.Range> SLIDERS = new ConcurrentHashMap<>();
 
     private final Map<Object, ConfigRecord> configSpecMap = new HashMap<>();
     private final String modId;
@@ -145,12 +148,41 @@ public class ConfigManager {
 
     @ApiStatus.Internal
     public static ModConfigSpec.ConfigValue<?> define(ModConfigSpec.Builder builder, String name, Field field, Object object) {
-        return switch (object) {
+        Slider slider = field.getAnnotation(Slider.class);
+        Slider.Range range = null;
+        if (slider != null) {
+            BoundedDiscrete bounds = field.getAnnotation(BoundedDiscrete.class);
+            if (!(object instanceof Double || object instanceof Float) || bounds == null) {
+                throw new IllegalArgumentException("@Slider requires a float/double field with @BoundedDiscrete: " + field);
+            }
+            range = new Slider.Range(bounds.min(), bounds.max(), slider.step());
+        }
+        ModConfigSpec.ConfigValue<?> value = switch (object) {
             case Number num -> ConfigManager.defineInRange(builder, name, field, num);
             case Enum<?> enumValue -> ConfigManager.defineEnum(builder, name, enumValue);
             case Boolean bool -> builder.define(name, bool.booleanValue());
             default -> builder.define(name, object);
         };
+        if (range != null) SLIDERS.put(value, range);
+        return value;
+    }
+
+    @ApiStatus.Internal
+    public static @Nullable Slider.Range slider(ModConfigSpec.ConfigValue<?> value) {
+        return SLIDERS.get(value);
+    }
+
+    /** Applies edited client values without writing the file or reloading server configuration. */
+    @ApiStatus.Internal
+    public static void previewClientValue(ModConfigSpec spec, List<String> path) {
+        for (ConfigManager manager : INSTANCES.values()) {
+            for (ConfigRecord record : manager.configSpecMap.values()) {
+                if (record.spec() != spec || record.type() != ModConfig.Type.CLIENT || !spec.isLoaded()) continue;
+                for (ConfigField field : record.values()) {
+                    if (field.value().getPath().equals(path)) field.load();
+                }
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -178,8 +210,8 @@ public class ConfigManager {
                 discrete == null ? Long.MIN_VALUE : BoundedDiscrete.Util.minLong(discrete),
                 discrete == null ? Long.MAX_VALUE : BoundedDiscrete.Util.maxLong(discrete));
             case Float value -> builder.defineInRange(name, Double.parseDouble(value.toString()),
-                discrete == null ? Double.NEGATIVE_INFINITY : BoundedDiscrete.Util.minFloat(discrete),
-                discrete == null ? Double.POSITIVE_INFINITY : BoundedDiscrete.Util.maxFloat(discrete));
+                discrete == null ? Double.NEGATIVE_INFINITY : BoundedDiscrete.Util.minDouble(discrete),
+                discrete == null ? Double.POSITIVE_INFINITY : BoundedDiscrete.Util.maxDouble(discrete));
             case Double value -> builder.defineInRange(name, value.doubleValue(),
                 discrete == null ? Double.NEGATIVE_INFINITY : BoundedDiscrete.Util.minDouble(discrete),
                 discrete == null ? Double.POSITIVE_INFINITY : BoundedDiscrete.Util.maxDouble(discrete));
