@@ -1,6 +1,10 @@
 package dev.anvilcraft.lib.v2.config.client;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
+import dev.anvilcraft.lib.v2.config.ConfigManager;
+import dev.anvilcraft.lib.v2.config.Slider;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.OptionInstance;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -16,6 +20,7 @@ import net.neoforged.neoforge.common.ModConfigSpec.RestartType;
 import net.neoforged.neoforge.common.TranslatableEnum;
 import org.jetbrains.annotations.Nullable;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -347,14 +352,18 @@ public class SidebarConfigScreen extends ConfigurationScreen.ConfigurationSectio
 
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(0, 0, width, height, 0xFF141922);
+        // The sidebar paints its background once, without the menu blur or opaque texture.
+    }
+
+    static int backgroundColor(int color, int inGameAlpha) {
+        return Minecraft.getInstance().level == null ? color : (color & 0x00FFFFFF) | (inGameAlpha << 24);
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.pose().pushPose();
-        graphics.fill(0, 0, width, height, 0xFF141922);
-        graphics.fill(0, 42, sidebarWidth(), height, 0xFF1A202B);
+        graphics.fill(0, 0, width, height, backgroundColor(0xFF141922, 0x66));
+        graphics.fill(0, 42, sidebarWidth(), height, backgroundColor(0xFF1A202B, 0x80));
         int titleWidth = session.files.size() > 1 ? Math.max(20, width / 2 - 30) : width - 24;
         graphics.drawString(font, ellipsis(getTitle().getString(), titleWidth), 12, 20, 0xFFE8EDF5, false);
         if (tabs.isEmpty()) graphics.drawString(font, text("empty"), sidebarWidth() + 16, 62, 0xFFABB7C8, false);
@@ -364,13 +373,13 @@ public class SidebarConfigScreen extends ConfigurationScreen.ConfigurationSectio
             if (base != null) base.panel().render(graphics, -1, -1, partialTick);
             // 旧版字体和原版控件使用独立深度，弹层必须整体高于背景内容。
             graphics.pose().translate(0, 0, 200);
-            graphics.fill(0, 0, width, height, 0xB0000000);
+            graphics.fill(0, 0, width, height, backgroundColor(0xB0000000, 0x40));
             int panelWidth = modalWidth();
             int panelHeight = modalHeight();
             int x = (width - panelWidth) / 2;
             int y = (height - panelHeight) / 2;
-            graphics.fill(x, y, x + panelWidth, y + panelHeight, 0xFF1A222E);
-            graphics.fill(x, y, x + panelWidth, y + 36, 0xFF242E3D);
+            graphics.fill(x, y, x + panelWidth, y + panelHeight, backgroundColor(0xFF1A222E, 0xC8));
+            graphics.fill(x, y, x + panelWidth, y + 36, backgroundColor(0xFF242E3D, 0xC8));
         }
         SectionPage page = activePage();
         if (undo != null && page != null) undo.active = page.canUndo();
@@ -462,8 +471,31 @@ public class SidebarConfigScreen extends ConfigurationScreen.ConfigurationSectio
         @Override
         protected void onChanged(String key) {
             super.onChanged(key);
+            ConfigManager.previewClientValue(context.modSpec(), absolutePath(key));
             SidebarConfigScreen.this.changed = true;
             SidebarConfigScreen.this.needsRestart = SidebarConfigScreen.this.needsRestart.with(needsRestart);
+        }
+
+        @Override
+        protected Element createDoubleValue(String key, ModConfigSpec.ValueSpec spec,
+                                            Supplier<Double> source, Consumer<Double> target) {
+            ModConfigSpec.ConfigValue<?> configValue = context.modSpec().getValues().get(absolutePath(key));
+            Slider.Range range = ConfigManager.slider(configValue);
+            if (range == null) return super.createDoubleValue(key, spec, source, target);
+            Consumer<Double> update = value -> {
+                target.accept(value);
+                onChanged(key);
+            };
+            OptionInstance<Double> option = new OptionInstance<>(getTranslationKey(key), getTooltip(key, spec.getRange()),
+                    // Opening the screen must still show an existing value between steps.
+                    (caption, value) -> Component.literal(BigDecimal.valueOf(source.get()).stripTrailingZeros().toPlainString()),
+                    new OptionInstance.IntRange(0, range.steps()).xmap(range::value, range::index),
+                    null, source.get(), value -> {
+                        if (!value.equals(source.get())) undoManager.add(update, value, update, source.get());
+                    });
+            AbstractWidget slider = option.createButton(options);
+            panel().immediateSlider(slider);
+            return new Element(getTranslationComponent(key), getTooltipComponent(key, null), slider);
         }
 
         @Override

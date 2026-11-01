@@ -1,5 +1,7 @@
 package dev.anvilcraft.lib.v2.test.config;
 
+import dev.anvilcraft.lib.v2.config.BoundedDiscrete;
+import dev.anvilcraft.lib.v2.config.Slider;
 import dev.anvilcraft.lib.v2.config.CollapsibleObject;
 import dev.anvilcraft.lib.v2.config.Config;
 import dev.anvilcraft.lib.v2.config.ConfigManager;
@@ -9,12 +11,15 @@ import net.neoforged.fml.config.ModConfig;
 
 /** 两种风格混用，用于文件切换和默认界面兼容性验收。 */
 public final class ConfigUiExamples {
+    public static Client client;
+    public static Server server;
+
     private ConfigUiExamples() {}
 
     public static void register() {
-        ConfigManager.register(AnvilLibTest.MOD_ID, Client::new);
+        client = ConfigManager.register(AnvilLibTest.MOD_ID, Client::new);
         ConfigManager.register(AnvilLibTest.MOD_ID, Legacy::new);
-        ConfigManager.register(AnvilLibTest.MOD_ID, Server::new);
+        server = ConfigManager.register(AnvilLibTest.MOD_ID, Server::new);
     }
 
     @Config(name = AnvilLibTest.MOD_ID, group = "anvillib", type = ModConfig.Type.CLIENT,
@@ -22,6 +27,12 @@ public final class ConfigUiExamples {
     public static class Client {
         public boolean showHints = true;
         public String greeting = "Welcome";
+        @BoundedDiscrete(min = 0.5, max = 4)
+        @Slider(step = 0.05)
+        public double previewScale = 1.37;
+        @BoundedDiscrete(min = 0, max = 1)
+        @Slider(step = 0.1)
+        public float previewFraction = 0.3f;
         @CollapsibleObject
         public Appearance appearance = new Appearance();
     }
@@ -40,5 +51,8 @@ public final class ConfigUiExamples {
         screenStyle = ConfigScreenStyle.SIDEBAR)
     public static class Server {
         public boolean allowEditing = true;
+        @BoundedDiscrete(min = 0.5, max = 4)
+        @Slider(step = 0.05)
+        public double previewScale = 1.37;
     }
 }
