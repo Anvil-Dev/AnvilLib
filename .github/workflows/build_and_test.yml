@@ -131,11 +131,28 @@ jobs:
           name: "${{ inputs.module_id }}-deploy"
           path: ${{ env.MODULE_DIR }}/build/staging-deploy/
 
+      - name: Read Game Versions
+        id: game_versions
+        if: ${{ inputs.ci_build && inputs.gametest }}
+        shell: python
+        run: |
+          import os
+          import tomllib
+
+          with open("gradle/libs.versions.toml", "rb") as catalog:
+              versions = tomllib.load(catalog)["versions"]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              print(f"minecraft={versions['minecraft']}", file=output)
+              print(f"neoforge={versions['neoForge']}", file=output)
+
       - name: gametest
         if: ${{ inputs.ci_build && inputs.gametest }}
-        uses: Anvil-Dev/dedicated-server-launch-test@26.3-neoforge
+        uses: Anvil-Dev/dedicated-server-launch-test@universal
         with:
-          mod: ${{ steps.version.outputs.artifact }}
+          minecraft_version: ${{ steps.game_versions.outputs.minecraft }}
+          mod_loader: neoforge
+          loader_version: ${{ steps.game_versions.outputs.neoforge }}
+          mods: ${{ steps.version.outputs.artifact }}
 
       - name: Upload Release Jar
         if: ${{ !inputs.ci_build && !inputs.pr_build }}
