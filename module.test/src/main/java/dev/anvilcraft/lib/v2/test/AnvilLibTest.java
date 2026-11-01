@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.test;
 
 import dev.anvilcraft.lib.v2.config.ConfigManager;
+import dev.anvilcraft.lib.v2.test.config.ConfigUiExamples;
 import dev.anvilcraft.lib.v2.registrum.Registrum;
 import dev.anvilcraft.lib.v2.test.multiblock.init.LibBlocks;
 import dev.anvilcraft.lib.v2.test.multiblock.init.LibItemGroups;
@@ -17,6 +18,7 @@ public class AnvilLibTest {
     public static final AnvilLibTestConfig CONFIG = ConfigManager.register(MOD_ID, AnvilLibTestConfig::new);
 
     public AnvilLibTest(IEventBus bus, ModContainer container) {
+        ConfigUiExamples.register();
         LibBlocks.init();
         LibItemGroups.init(bus);
         LibMultiblockControllers.init();
