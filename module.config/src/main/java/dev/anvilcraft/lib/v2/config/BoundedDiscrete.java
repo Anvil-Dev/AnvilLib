@@ -38,22 +38,22 @@ public @interface BoundedDiscrete {
 
         public static float minFloat(BoundedDiscrete annotation) {
             if (annotation.min() == Double.NEGATIVE_INFINITY) return Float.NEGATIVE_INFINITY;
-            return (float) Math.clamp(Math.floor(annotation.min()), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
+            return (float) annotation.min();
         }
 
         public static float maxFloat(BoundedDiscrete annotation) {
             if (annotation.max() == Double.POSITIVE_INFINITY) return Float.POSITIVE_INFINITY;
-            return (float) Math.clamp(Math.ceil(annotation.max()), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
+            return (float) annotation.max();
         }
 
         public static double minDouble(BoundedDiscrete annotation) {
             if (annotation.min() == Double.NEGATIVE_INFINITY) return Double.NEGATIVE_INFINITY;
-            return Math.clamp(Math.floor(annotation.min()), Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+            return annotation.min();
         }
 
         public static double maxDouble(BoundedDiscrete annotation) {
             if (annotation.max() == Double.POSITIVE_INFINITY) return Double.POSITIVE_INFINITY;
-            return Math.clamp(Math.ceil(annotation.max()), Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+            return annotation.max();
         }
 
         public static double minShort(BoundedDiscrete annotation) {

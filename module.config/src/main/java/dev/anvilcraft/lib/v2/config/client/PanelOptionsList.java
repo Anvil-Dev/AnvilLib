@@ -12,6 +12,8 @@ import net.minecraft.client.input.MouseButtonEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 
 /** 让 NeoForge 生成的配置控件在面板内部布局，而不是固定在屏幕中间。 */
@@ -19,6 +21,7 @@ final class PanelOptionsList extends OptionsList {
     static final int MENU_ROW_HEIGHT = 25;
     private final List<Row> rows = new ArrayList<>();
     private boolean stacked;
+    private final Set<AbstractWidget> immediateSliders = new HashSet<>();
 
     PanelOptionsList(OptionsSubScreen screen) {
         super(Minecraft.getInstance(), screen.width, screen);
@@ -28,6 +31,7 @@ final class PanelOptionsList extends OptionsList {
     public void clearEntries() {
         super.clearEntries();
         rows.clear();
+        immediateSliders.clear();
     }
 
     @Override
@@ -99,10 +103,17 @@ final class PanelOptionsList extends OptionsList {
     @Override
     protected void renderListSeparators(GuiGraphics graphics) {}
 
+    void immediateSlider(AbstractWidget slider) {
+        immediateSliders.add(slider);
+    }
+
     @Override
     public void applyUnsavedChanges() {
         for (Row row : rows) {
-            if (row.control instanceof OptionInstance.OptionInstanceSliderButton<?> slider) slider.applyUnsavedValue();
+            // Immediate sliders have already applied every edit. Flushing an untouched stepped
+            // slider would otherwise round an existing value that lies between steps.
+            if (row.control instanceof OptionInstance.OptionInstanceSliderButton<?> slider
+                && !immediateSliders.contains(slider)) slider.applyUnsavedValue();
         }
     }
 
@@ -128,11 +139,11 @@ final class PanelOptionsList extends OptionsList {
                 // 单按钮行只绘制按钮背景，相邻选项之间恰好留一个 GUI 像素。
                 label.setRectangle(width, MENU_ROW_HEIGHT - 1, x, y);
             } else if (stacked) {
-                graphics.fill(x, y, x + width, y + getHeight() - 4, hovered ? 0xFF252F3D : 0xFF202733);
+                graphics.fill(x, y, x + width, y + getHeight() - 4, SidebarConfigScreen.backgroundColor(hovered ? 0xFF252F3D : 0xFF202733, hovered ? 0x70 : 0x50));
                 label.setRectangle(width - 16, 14, x + 8, y + 4);
                 control.setRectangle(width - 16, 20, x + 8, y + 22);
             } else {
-                graphics.fill(x, y, x + width, y + getHeight() - 4, hovered ? 0xFF252F3D : 0xFF202733);
+                graphics.fill(x, y, x + width, y + getHeight() - 4, SidebarConfigScreen.backgroundColor(hovered ? 0xFF252F3D : 0xFF202733, hovered ? 0x70 : 0x50));
                 int controlWidth = Math.min(200, (width - 24) / 2);
                 label.setRectangle(width - controlWidth - 24, 20, x + 8, y + 4);
                 control.setRectangle(controlWidth, 20, x + width - controlWidth - 8, y + 4);
