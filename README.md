@@ -73,6 +73,20 @@ public class MyModConfig {
 MyModConfig config = ConfigManager.register("my_mod", MyModConfig::new);
 ```
 
+**侧栏配置界面（1.21.11）：**
+
+在配置类上设置 `@Config(name = "my_mod", screenStyle = ConfigScreenStyle.SIDEBAR)`，
+照常调用 `ConfigManager.register` 即可自动启用。
+首层 `@CollapsibleObject` 配置组显示在左侧；根层普通项目集中到“常规”，更深的组在弹窗中逐级浏览。
+`group` 参数用于配置文件目录，不表示界面选项卡。
+枚举配置项使用下拉菜单，支持方向键选择、Enter 确认与 Esc 取消。
+
+同一模组的多个文件可分别选择 `DEFAULT` 或 `SIDEBAR`。
+入口保留 NeoForge 文件选择页；新界面右上角可以切换其他启用侧栏的文件。
+切换选项卡或返回弹窗会保留修改，切换文件、点击“完成”或在主界面按 Esc 时保存。
+撤销与恢复默认值作用于当前页的直接配置项；保存文件后清空撤销历史。
+服务端配置遵守 NeoForge 的本地世界、远程服务器和局域网编辑限制。
+
 ### Codec 模块
 
 提供围绕 Mojang `Codec` 与 `StreamCodec` 的实用工具，减少网络包、配方数据与注册表对象序列化时的样板代码。
