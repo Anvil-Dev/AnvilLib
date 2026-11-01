@@ -19,8 +19,43 @@ dependencies {
     implementation project(":anvillib-util-neoforge-26.1")
     implementation project(":anvillib-wheel-neoforge-26.1")
 
-    if (!providers.gradleProperty('portSmoke').isPresent() && !providers.gradleProperty('recipeTests').isPresent()) {
+    if (!providers.gradleProperty('portSmoke').isPresent() && !providers.gradleProperty('recipeTests').isPresent()
+        && !providers.gradleProperty('configUiTest').isPresent() && !providers.gradleProperty('configUiDemo').isPresent()) {
         runtimeOnly("dev.dubhe:anvilcraft-neoforge-26.1.2:1.6.0+snapshot.2284"){ transitive = false }
+    }
+}
+
+if (providers.gradleProperty('configUiDemo').isPresent()) {
+    neoForge.runs.client {
+        gameDirectory = layout.buildDirectory.dir('config-ui-run')
+    }
+}
+
+if (providers.gradleProperty('configUiTest').isPresent()) {
+    neoForge.runs.client {
+        systemProperty 'anvillib.configUiTest', 'true'
+        gameDirectory = layout.buildDirectory.dir('config-ui-test-run')
+    }
+    def uiResult = layout.buildDirectory.file('config-ui-test-run/config-ui-result.txt')
+    tasks.named('runClient') {
+        doFirst { uiResult.get().asFile.delete() }
+        doLast {
+            if (!uiResult.get().asFile.isFile() || !uiResult.get().asFile.text.startsWith('PASS ')) {
+                throw new GradleException('Config UI verification failed; inspect config-ui-result.txt and the client log')
+            }
+        }
+    }
+    neoForge.runs.server {
+        gameDirectory = layout.buildDirectory.dir('config-server-run')
+    }
+    neoForge.runs {
+        configGameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'anvillib.configServerTest', 'true'
+            gameDirectory = layout.buildDirectory.dir('config-server-run')
+            programArguments.addAll '--tests', 'anvillib_test:config_server_registration'
+        }
     }
 }
 
