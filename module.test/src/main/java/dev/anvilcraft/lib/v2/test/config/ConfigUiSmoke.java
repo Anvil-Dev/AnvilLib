@@ -56,6 +56,7 @@ public final class ConfigUiSmoke {
     private static int enumStage;
     private static int nestedEnumStage;
     private static int compactStage;
+    private static int clientSliderStage;
     private static long marqueeTime;
 
     @SubscribeEvent
@@ -221,6 +222,7 @@ public final class ConfigUiSmoke {
                 editor = (SidebarConfigScreen) minecraft.gui.screen();
             }
             case 6 -> {
+                if (!checkClientSliders()) return;
                 pressFileMenu(editor);
                 press(editor, file(ModConfig.Type.COMMON, false).getFileName());
                 editor = (SidebarConfigScreen) minecraft.gui.screen();
@@ -287,6 +289,34 @@ public final class ConfigUiSmoke {
         }
         stage++;
         if (finished) minecraft.execute(minecraft::stop);
+    }
+
+    private static boolean checkClientSliders() {
+        if (clientSliderStage++ == 0) {
+            List<AbstractWidget> sliders = all(editor).stream()
+                .filter(node -> node instanceof net.minecraft.client.OptionInstance.OptionInstanceSliderButton<?>)
+                .map(node -> (AbstractWidget) node).toList();
+            check(sliders.size() == 2, "double and float metadata create native sliders");
+            double before = ConfigUiExamples.client.previewScale;
+            check(sliders.getFirst().getMessage().getString().equals(java.math.BigDecimal.valueOf(before).stripTrailingZeros().toPlainString()),
+                "opening a slider displays the exact saved value between steps");
+            click(editor, sliders.getFirst());
+            double changed = ConfigUiExamples.client.previewScale;
+            check(changed != before && changed >= 0.5 && changed <= 4, "slider immediately previews the client object");
+            check(Math.abs((changed - 0.5) / 0.05 - Math.rint((changed - 0.5) / 0.05)) < 1e-8,
+                "floating slider applies its declared step");
+            press(editor, ConfigurationScreen.UNDO.getString());
+            check(ConfigUiExamples.client.previewScale == before, "undo restores the exact previous client value");
+            press(editor, ConfigurationScreen.RESET.getString());
+            check(ConfigUiExamples.client.previewScale == 1.37, "reset preserves an existing off-step default");
+            return false; // Rebuilt widgets receive their positions on the next rendered frame.
+        }
+        AbstractWidget fraction = all(editor).stream()
+            .filter(node -> node instanceof net.minecraft.client.OptionInstance.OptionInstanceSliderButton<?>)
+            .map(node -> (AbstractWidget) node).toList().get(1);
+        click(editor, fraction);
+        check(ConfigUiExamples.client.previewFraction == 0.5f, "float preview converts normalized TOML doubles back to float");
+        return true;
     }
 
     private static void check(boolean condition, String message) {
