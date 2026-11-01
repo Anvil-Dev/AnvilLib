@@ -1,7 +1,8 @@
 #version                330
+#extension GL_ARB_separate_shader_objects : require
 
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+#include <minecraft:dynamictransforms.glsl>
+#include <minecraft:projection.glsl>
 
 #define MAX_SDFS 256
 
@@ -16,14 +17,14 @@ layout(std140) uniform SDFParameters {
     Sdf[MAX_SDFS]       SDFs;
 };
 
-in      vec3            Position;
-in      vec4            Color;
-in      vec2            UV0;
-in      ivec2           UV1;
+layout(location = 0) in      vec3            Position;
+layout(location = 1) in      vec4            Color;
+layout(location = 2) in      vec2            UV0;
+layout(location = 3) in      ivec2           UV1;
 
-out     vec2            vPosition;
-out     vec4            vColor;
-flat out int            vIndex;
+layout(location = 0) out     vec2            vPosition;
+layout(location = 1) out     vec4            vColor;
+layout(location = 2) flat out int            vIndex;
 
 void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);

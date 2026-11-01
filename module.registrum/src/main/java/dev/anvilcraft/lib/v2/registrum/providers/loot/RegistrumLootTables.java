@@ -13,13 +13,12 @@
 
 package dev.anvilcraft.lib.v2.registrum.providers.loot;
 
-import net.minecraft.core.WritableRegistry;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.data.loot.LootTableSubProvider;
-import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.ValidationContextSource;
 
 @SuppressWarnings("unused")
 public interface RegistrumLootTables extends LootTableSubProvider {
-    default void validate(WritableRegistry<LootTable> writableRegistry, ValidationContextSource validationContext) {
+    default void validate(HolderLookup.Provider registries, ValidationContextSource validationContext) {
     }
 }

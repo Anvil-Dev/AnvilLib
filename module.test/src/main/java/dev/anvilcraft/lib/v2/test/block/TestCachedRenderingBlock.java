@@ -1,7 +1,6 @@
 package dev.anvilcraft.lib.v2.test.block;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
-import com.mojang.serialization.MapCodec;
+import org.jspecify.annotations.NullMarked;
 import dev.anvilcraft.lib.v2.rendering.cachedber.pipeline.CachedBlockEntityRenderingPipeline;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.block.tile.TestCachedRenderingTile;
@@ -26,18 +25,13 @@ import org.jspecify.annotations.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NullMarked
 public class TestCachedRenderingBlock extends BaseEntityBlock {
     public static final BooleanProperty UP = BlockStateProperties.UP;
 
     public TestCachedRenderingBlock(Properties properties) {
         super(properties);
         registerDefaultState(getStateDefinition().any().setValue(UP, false));
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return simpleCodec(TestCachedRenderingBlock::new);
     }
 
     @Override

@@ -1,12 +1,12 @@
 package dev.anvilcraft.lib.v2.rendering.mixins.blaze3d.gl;
 
-import com.mojang.blaze3d.GpuOutOfMemoryException;
-import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.opengl.GlDebugLabel;
-import com.mojang.blaze3d.opengl.GlDevice;
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
-import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.renderpearl.api.device.GpuOutOfMemoryException;
+import com.mojang.renderpearl.backend.opengl.GlConst;
+import com.mojang.renderpearl.backend.opengl.GlDebugLabel;
+import com.mojang.renderpearl.backend.opengl.GlDevice;
+import com.mojang.renderpearl.backend.opengl.FrameBufferCache;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
+import com.mojang.renderpearl.api.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHIHeuristics;
@@ -54,8 +54,9 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
     @Final
     private GlDebugLabel debugLabels;
 
-    @Shadow
-    public abstract String getRenderer();
+    @Shadow @Final private FrameBufferCache frameBufferCache;
+
+    @Shadow public abstract com.mojang.renderpearl.api.device.DeviceInfo getDeviceInfo();
 
     @Unique
     private ALRHICapabilities alr$capabilities = null;
@@ -74,9 +75,9 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
         ALRComputePipeline pipeline,
         ALRComputeProgramInstanceKey instanceKey
     ) {
-        String source = ALRComputeShaderManager.INSTANCE.getSource(instanceKey.location());
+        String source = ALRComputeShaderManager.INSTANCE.getSource(instanceKey.location(), instanceKey.defines());
         int shaderId = GL46.glCreateShader(ARBComputeShader.GL_COMPUTE_SHADER);
-        GL46.glShaderSource(shaderId, GlslPreprocessor.injectDefines(source, instanceKey.defines()));
+        GL46.glShaderSource(shaderId, source);
         GL46.glCompileShader(shaderId);
         if (GL46.glGetShaderi(shaderId, GL46.GL_COMPILE_STATUS) == 0) {
             String infoLog = GL46.glGetShaderInfoLog(shaderId);
@@ -156,7 +157,7 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
         boolean windowsIntelGraphics = vendor != null && vendor.toLowerCase(Locale.ROOT).contains("intel");
         LOGGER.info(
             "Windows graphics info: renderer='{}', vendor='{}', windowsIntelGraphics={}",
-            this.getRenderer(),
+            this.getDeviceInfo().name(),
             vendor,
             windowsIntelGraphics
         );
@@ -239,7 +240,8 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
                 height,
                 depthOrLayers,
                 mipLevels,
-                id
+                id,
+                this.frameBufferCache
             );
             this.debugLabels.applyLabel(texture);
             return texture;

@@ -220,17 +220,17 @@ public class Range implements Iterable<BlockPos> {
             }
             BlockPos nextPos = this.lastPos.offset(1, 0, 0);
             final Vec3 vec3_1 = new Vec3(1.0, 1.0, 1.0);
-            if (this.range.cross(nextPos.getCenter(), vec3_1)) {
+            if (this.range.cross(Vec3.atCenterOf(nextPos), vec3_1)) {
                 this.nextPos = nextPos;
                 return;
             }
             nextPos = new BlockPos(startX, this.lastPos.getY(), this.lastPos.getZ() + 1);
-            if (this.range.cross(nextPos.getCenter(), vec3_1)) {
+            if (this.range.cross(Vec3.atCenterOf(nextPos), vec3_1)) {
                 this.nextPos = nextPos;
                 return;
             }
             nextPos = new BlockPos(startX, this.lastPos.getY() + 1, startZ);
-            if (this.range.cross(nextPos.getCenter(), vec3_1)) {
+            if (this.range.cross(Vec3.atCenterOf(nextPos), vec3_1)) {
                 this.nextPos = nextPos;
             }
         }

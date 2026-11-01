@@ -2,8 +2,8 @@ package dev.anvilcraft.lib.v2.font.sdf;
 
 import com.google.common.annotations.Beta;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
 import dev.anvilcraft.lib.v2.font.ALFont;
 import dev.anvilcraft.lib.v2.font.sdf.state.SdfTextRenderState;
 import net.minecraft.client.Minecraft;

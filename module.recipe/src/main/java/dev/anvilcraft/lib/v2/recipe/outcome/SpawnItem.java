@@ -26,8 +26,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ import javax.annotation.Nullable;
  * @param count     数量
  * @param functions 函数列表
  */
-public record SpawnItem(ItemStackTemplate item, Vec3 offset, NumberProvider count, List<IOutcomeFunction<?>> functions)
+public record SpawnItem(ItemStackTemplate item, Vec3 offset, ContextIntProvider count, List<IOutcomeFunction<?>> functions)
     implements IRecipeOutcome<SpawnItem> {
     /**
      * 构造一个新的生成物品配方结果
@@ -65,7 +65,7 @@ public record SpawnItem(ItemStackTemplate item, Vec3 offset, NumberProvider coun
      * @param offset 偏移量
      * @param count  数量
      */
-    public SpawnItem(Holder<Item> item, DataComponentPatch patch, Vec3 offset, NumberProvider count, List<IOutcomeFunction<?>> functions) {
+    public SpawnItem(Holder<Item> item, DataComponentPatch patch, Vec3 offset, ContextIntProvider count, List<IOutcomeFunction<?>> functions) {
         this(new ItemStackTemplate(item, 1, patch), offset, count, functions);
     }
 
@@ -144,8 +144,8 @@ public record SpawnItem(ItemStackTemplate item, Vec3 offset, NumberProvider coun
                 Vec3.CODEC
                     .fieldOf("offset")
                     .forGetter(SpawnItem::offset),
-                CodecUtil.NUMBER_PROVIDER
-                    .optionalFieldOf("count", ConstantValue.exactly(1.0f))
+                CodecUtil.INT_NUMBER_PROVIDER
+                    .optionalFieldOf("count", new ConstantValue(1))
                     .forGetter(SpawnItem::count),
                 IOutcomeFunction.CODEC
                     .listOf()
@@ -162,7 +162,7 @@ public record SpawnItem(ItemStackTemplate item, Vec3 offset, NumberProvider coun
             SpawnItem::item,
             StreamCodecUtil.VEC3,
             SpawnItem::offset,
-            StreamCodecUtil.NUMBER_PROVIDER,
+            StreamCodecUtil.INT_NUMBER_PROVIDER,
             SpawnItem::count,
             StreamCodecUtil.codec2Stream(IOutcomeFunction.CODEC).apply(ByteBufCodecs.list()),
             SpawnItem::functions,
@@ -202,7 +202,7 @@ public record SpawnItem(ItemStackTemplate item, Vec3 offset, NumberProvider coun
         /**
          * 数量
          */
-        private NumberProvider count = ConstantValue.exactly(1.0f);
+        private ContextIntProvider count = new ConstantValue(1);
 
         /**
          * 物品堆
@@ -282,7 +282,7 @@ public record SpawnItem(ItemStackTemplate item, Vec3 offset, NumberProvider coun
          * @param count 数量
          * @return 构建器实例
          */
-        public Builder count(NumberProvider count) {
+        public Builder count(ContextIntProvider count) {
             this.count = count;
             return this;
         }
@@ -294,7 +294,7 @@ public record SpawnItem(ItemStackTemplate item, Vec3 offset, NumberProvider coun
          * @return 构建器实例
          */
         public Builder count(float chance) {
-            return this.count(ConstantValue.exactly(chance));
+            return this.count(new ConstantValue(net.minecraft.util.Mth.floor(chance)));
         }
 
         /**

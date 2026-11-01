@@ -1,6 +1,5 @@
 package dev.anvilcraft.lib.v2.test.block;
 
-import com.mojang.serialization.MapCodec;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.block.tile.TestOcclusionTile;
 import net.minecraft.core.BlockPos;
@@ -14,11 +13,6 @@ import org.jspecify.annotations.Nullable;
 public class TestOcclusionBlock extends BaseEntityBlock {
     public TestOcclusionBlock(BlockBehaviour.Properties properties) {
         super(properties);
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return simpleCodec(TestOcclusionBlock::new);
     }
 
     @Override

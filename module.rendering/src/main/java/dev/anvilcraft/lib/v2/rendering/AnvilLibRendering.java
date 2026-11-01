@@ -11,7 +11,6 @@ import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.OcclusionCuller;
 import lombok.extern.slf4j.Slf4j;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -19,8 +18,8 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.neoforged.neoforge.client.event.PrepareRenderBuffersEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 import org.jetbrains.annotations.ApiStatus;
 
 @Slf4j
@@ -40,16 +39,13 @@ public class AnvilLibRendering {
 
     @SubscribeEvent
     public static void on(RenderFrameEvent.Pre event) {
+        // Loading overlays can render frames before Minecraft construction has completed.
+        if (ALRPostEffects.getBloomPostEffect() == null) return;
         if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
             CachedBlockEntityRenderingPipeline.getInstance().runTasks();
         }
         ALRPostEffects.getBloomPostEffect().beginFrame();
         ALROptimizations.getOcclusionCuller().beginRenderingFrame();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void on(SubmitCustomGeometryEvent event) {
-        ALROptimizations.getOcclusionCuller().processFeatures(event.getLevelRenderState().cameraRenderState);
     }
 
     @SubscribeEvent
@@ -61,8 +57,7 @@ public class AnvilLibRendering {
     public static void on(RenderLevelStageEvent.AfterOpaqueBlocks event) {
         if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
             CachedBlockEntityRenderingPipeline.getInstance().render(
-                event.getLevelRenderState().cameraRenderState.cullFrustum,
-                false
+                false, event.getRenderPass(), null
             );
         }
     }
@@ -71,8 +66,7 @@ public class AnvilLibRendering {
     public static void on(RenderLevelStageEvent.AfterTranslucentFeatures event) {
         if (CachedBlockEntityRenderingPipeline.getInstance() != null) {
             CachedBlockEntityRenderingPipeline.getInstance().render(
-                event.getLevelRenderState().cameraRenderState.cullFrustum,
-                true
+                true, event.getRenderPass(), null
             );
         }
     }
@@ -84,12 +78,24 @@ public class AnvilLibRendering {
     }
 
     @SubscribeEvent
-    public static void on(RenderLevelStageEvent.AfterTranslucentParticles event) {
-        ALRPostEffects.runBloomDraws(event.getModelViewMatrix());
+    public static void on(PrepareRenderBuffersEvent event) {
+        var pipeline = CachedBlockEntityRenderingPipeline.getInstance();
+        if (pipeline != null) {
+            var camera = event.getLevelRenderState().cameraRenderState;
+            pipeline.prepare(camera.cullFrustum, camera.pos);
+        }
+    }
+
+    @SubscribeEvent
+    public static void on(RenderLevelStageEvent.OitTranslucent event) {
+        var pipeline = CachedBlockEntityRenderingPipeline.getInstance();
+        if (pipeline != null) pipeline.render(true, event.getRenderPass(), event.getOitStage());
     }
 
     @SubscribeEvent
     public static void on(RenderLevelStageEvent.AfterLevel event) {
+        ALROptimizations.getOcclusionCuller().processFeatures(event.getLevelRenderState().cameraRenderState);
+        ALRPostEffects.runBloomDraws(event.getModelViewMatrix());
         try {
             ALRPostEffects.getBloomPostEffect().process();
         } catch (Exception e) {

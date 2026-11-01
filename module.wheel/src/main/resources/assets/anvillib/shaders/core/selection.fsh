@@ -1,6 +1,7 @@
-#version 150
+#version 330
+#extension GL_ARB_separate_shader_objects : require
 
-in vec4 vertexColor;
+layout(location = 0) in vec4 vertexColor;
 
 layout (std140) uniform SelectionUniform {
     vec2 FramebufferSize;
@@ -9,7 +10,7 @@ layout (std140) uniform SelectionUniform {
     float AntiAliasingRadius;
 };
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main() {
     vec2 fragPos = vec2(gl_FragCoord.x, FramebufferSize.y - gl_FragCoord.y);

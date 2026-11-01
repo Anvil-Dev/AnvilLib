@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.ComputeBindingLayout;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.bindings.BindlessImageArrayBinding;

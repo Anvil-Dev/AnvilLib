@@ -16,35 +16,49 @@ package dev.anvilcraft.lib.v2.registrum.providers.generators;
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
 import dev.anvilcraft.lib.v2.registrum.providers.RegistrumProvider;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistrySetBuilder;
+import net.minecraft.data.CachedOutput;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.neoforged.fml.LogicalSide;
+import net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider;
 import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.Set;
 
 @SuppressWarnings("unused")
-public class RegistrumRecipeRunner extends RecipeProvider.Runner implements RegistrumProvider {
+public class RegistrumRecipeRunner implements RegistrumProvider {
 
     final AbstractRegistrum<?> owner;
 
     @Nullable
     RegistrumRecipeProvider provider;
+    private final DatapackBuiltinEntriesProvider delegate;
 
-    public RegistrumRecipeRunner(AbstractRegistrum<?> owner, PackOutput p_365369_, CompletableFuture<HolderLookup.Provider> p_361563_) {
-        super(p_365369_, p_361563_);
+    public RegistrumRecipeRunner(
+        AbstractRegistrum<?> owner,
+        PackOutput output,
+        CompletableFuture<HolderLookup.Provider> worldRegistries,
+        CompletableFuture<HolderLookup.Provider> reloadableRegistries
+    ) {
         this.owner = owner;
+        RegistrySetBuilder entries = new RegistrySetBuilder().add(
+            RecipeProvider.asBootstrap((recipes, advancements) -> new RegistrumRecipeProvider(this, recipes, advancements))
+        );
+        this.delegate = DatapackBuiltinEntriesProvider.forReloadableLayer(
+            output, "Registrum recipes", worldRegistries, reloadableRegistries, entries, Set.of(owner.getModid())
+        );
     }
 
     @Override
-    protected RecipeProvider createRecipeProvider(HolderLookup.Provider p_362946_, RecipeOutput p_365274_) {
-        return new RegistrumRecipeProvider(this, p_362946_, p_365274_);
+    public CompletableFuture<?> run(CachedOutput cache) {
+        return this.delegate.run(cache);
     }
 
     @Override
     public String getName() {
-        return "";
+        return "Recipes";
     }
 
     @Override

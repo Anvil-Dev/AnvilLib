@@ -186,7 +186,7 @@ abstract class CreativeModeInventoryScreenMixin
         if (overlay != null && overlay.contains(this.leftPos, this.topPos, mouseX, mouseY)) {
             this.anvillib$consumeMouseButton(button);
             overlay.variantAt(this.leftPos, this.topPos, mouseX, mouseY).ifPresent(variant -> {
-                if (button == 0 || button == 1) {
+                if (button == InputConstants.MOUSE_BUTTON_LEFT || button == InputConstants.MOUSE_BUTTON_RIGHT) {
                     this.anvillib$selectPickerVariant(overlay, variant, button, event.hasShiftDown());
                 } else if (this.anvillib$isPickerCloneMouseButton(button)) {
                     this.anvillib$clickPickerVariant(overlay, variant, button, ContainerInput.CLONE);
@@ -201,13 +201,13 @@ abstract class CreativeModeInventoryScreenMixin
         Slot sourceSlot = this.anvillib$findCreativeSlot(mouseX, mouseY);
         if (overlay != null) {
             this.anvillib$closeVariantOverlay();
-            if (button == 1 && sourceSlot == overlay.sourceSlot()) {
+            if (button == InputConstants.MOUSE_BUTTON_RIGHT && sourceSlot == overlay.sourceSlot()) {
                 this.anvillib$consumeMouseButton(button);
                 cir.setReturnValue(true);
                 return;
             }
         }
-        if (button != 1 || sourceSlot == null
+        if (button != InputConstants.MOUSE_BUTTON_RIGHT || sourceSlot == null
             || selectedTab == null || selectedTab.getType() != CreativeModeTab.Type.CATEGORY) return;
         CreativeVariantPickerOverlay.create(sourceSlot).ifPresent(created -> {
             this.anvillib$variantOverlay = created;

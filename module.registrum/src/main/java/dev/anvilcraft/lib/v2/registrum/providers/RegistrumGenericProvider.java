@@ -47,7 +47,7 @@ public final class RegistrumGenericProvider implements RegistrumProvider {
         this.providerType = providerType;
 
         output = event.getGenerator().getPackOutput();
-        registries = event.getLookupProvider();
+        registries = event.getWorldLookupProvider();
     }
 
     public RegistrumGenericProvider add(Generator generator) {

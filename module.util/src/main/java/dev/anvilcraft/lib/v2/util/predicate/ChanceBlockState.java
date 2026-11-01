@@ -9,14 +9,13 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.context.ContextKeySet;
 import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProvider;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -33,7 +32,7 @@ import java.util.function.Supplier;
  * @param nbt    方块的 NBT 数据
  * @param chance 出现概率
  */
-public record ChanceBlockState(BlockState state, CompoundTag nbt, NumberProvider chance) {
+public record ChanceBlockState(BlockState state, CompoundTag nbt, ContextFloatProvider chance) {
     /**
      * 构造一个带有概率的方块状态
      *
@@ -50,7 +49,7 @@ public record ChanceBlockState(BlockState state, CompoundTag nbt, NumberProvider
      * @param state  方块状态
      * @param chance 出现概率（固定值）
      */
-    public ChanceBlockState(BlockState state, NumberProvider chance) {
+    public ChanceBlockState(BlockState state, ContextFloatProvider chance) {
         this(state, new CompoundTag(), chance);
     }
 
@@ -61,11 +60,11 @@ public record ChanceBlockState(BlockState state, CompoundTag nbt, NumberProvider
      * @param chance 出现概率（固定值）
      */
     public ChanceBlockState(BlockState state, float chance) {
-        this(state, ConstantValue.exactly(chance));
+        this(state, new ConstantValue(chance));
     }
 
     public static ChanceBlockState of(Supplier<? extends Block> block, CompoundTag nbt) {
-        return new ChanceBlockState(block.get().defaultBlockState(), nbt, ConstantValue.exactly(1.0f));
+        return new ChanceBlockState(block.get().defaultBlockState(), nbt, new ConstantValue(1.0f));
     }
 
     public static ChanceBlockState of(Supplier<? extends Block> block) {
@@ -82,8 +81,8 @@ public record ChanceBlockState(BlockState state, CompoundTag nbt, NumberProvider
             CompoundTag.CODEC
                 .optionalFieldOf("nbt", new CompoundTag())
                 .forGetter(ChanceBlockState::nbt),
-            CodecUtil.NUMBER_PROVIDER
-                .optionalFieldOf("chance", ConstantValue.exactly(1.0f))
+            CodecUtil.FLOAT_NUMBER_PROVIDER
+                .optionalFieldOf("chance", new ConstantValue(1.0f))
                 .forGetter(ChanceBlockState::chance)
         ).apply(instance, ChanceBlockState::new));
 
@@ -95,7 +94,7 @@ public record ChanceBlockState(BlockState state, CompoundTag nbt, NumberProvider
         ChanceBlockState::state,
         ByteBufCodecs.COMPOUND_TAG,
         ChanceBlockState::nbt,
-        StreamCodecUtil.NUMBER_PROVIDER,
+        StreamCodecUtil.FLOAT_NUMBER_PROVIDER,
         ChanceBlockState::chance,
         ChanceBlockState::new
     );
@@ -104,7 +103,7 @@ public record ChanceBlockState(BlockState state, CompoundTag nbt, NumberProvider
         LootContext context = new LootContext.Builder(
             new LootParams(
                 level,
-                new ContextMap.Builder().create(new ContextKeySet.Builder().build()),
+                ContextMap.EMPTY,
                 Map.of(),
                 0
             )

@@ -1,21 +1,22 @@
 package dev.anvilcraft.lib.v2.rendering.glitch;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
+import java.util.Optional;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
 import dev.anvilcraft.lib.v2.rendering.bloom.TransformsUbo;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
@@ -27,12 +28,12 @@ import org.joml.Matrix4f;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
-public class GlitchPostEffect {
+public class GlitchPostEffect implements AutoCloseable {
     public static final int UNIFORM_GLITCH_SIZE = GlitchParametersUbo.DEFINITION.size(BufferLayout.STD140);
     public static final int UNIFORM_TRANSFORM_SIZE = TransformsUbo.DEFINITION.size(BufferLayout.STD140);
 
     @Getter
-    private final RenderTarget glitchOutputTarget = new TextureTarget("Glitch Result", 854, 480, false);
+    private final RenderTarget glitchOutputTarget = new TextureTarget("Glitch Result", 854, 480, com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM, null);
 
     private final GpuDevice device = RenderSystem.getDevice();
 
@@ -84,8 +85,8 @@ public class GlitchPostEffect {
         if (lastHeight != height || lastWidth != width) {
             this.lastWidth = width;
             this.lastHeight = height;
-            Tesselator tesselator = Tesselator.getInstance();
-            BufferBuilder builder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+            ByteBufferBuilder meshBuffer = new ByteBufferBuilder(1024);
+            BufferBuilder builder = new BufferBuilder(meshBuffer, com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX);
 
             builder.addVertex(0, 0, 100).setUv(0, 1);
             builder.addVertex(0, height, 100).setUv(0, 0);
@@ -96,6 +97,7 @@ public class GlitchPostEffect {
             commandEncoder.writeToBuffer(vertexBuffer.slice(), data.vertexBuffer());
             this.indexCount = data.drawState().indexCount();
             data.close();
+            meshBuffer.close();
         }
 
         transform.getProjMat().setOrtho(
@@ -104,7 +106,8 @@ public class GlitchPostEffect {
             0,
             glitchOutputTarget.height,
             -10000,
-            10000
+            10000,
+            device.getDeviceInfo().isZZeroToOne()
         );
         glitchParameters.getInSize().set(width, height);
         float uGameTime = (float) (gameTime % 24000L) + deltaTracker.getGameTimeDeltaPartialTick(false);
@@ -113,21 +116,29 @@ public class GlitchPostEffect {
 
         transform.upload(commandEncoder, transformUBO.slice());
         glitchParameters.upload(commandEncoder, glitchParameterUBO.slice());
-        RenderSystem.AutoStorageIndexBuffer buffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+        RenderSystem.AutoStorageIndexBuffer buffer = RenderSystem.getSequentialBuffer(com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS);
         GpuBuffer indexBuffer = buffer.getBuffer(indexCount);
         try (RenderPass pass = commandEncoder.createRenderPass(
             () -> "Glitch Post Pass",
             glitchOutputTarget.getColorTextureView(),
-            OptionalInt.of(0)
+            java.util.Optional.of(new org.joml.Vector4f())
         )) {
-            pass.setPipeline(ALRPipelines.GLITCH);
+            pass.setPipeline(RenderSystem.getCompiledPipeline(ALRPipelines.GLITCH));
             pass.setUniform("Transforms", transformUBO);
             pass.setUniform("GlitchParameters", glitchParameterUBO);
-            pass.bindTexture("DiffuseSampler", input, sampler);
-            pass.setVertexBuffer(0, vertexBuffer);
+            pass.setUniform("DiffuseSampler", input, sampler);
+            pass.setVertexBuffer(0, vertexBuffer.slice());
             pass.setIndexBuffer(indexBuffer, buffer.type());
-            pass.drawIndexed(0, 0, indexCount, 1);
+            pass.drawIndexed(indexCount, 1, 0, 0, 0);
         }
         return glitchOutputTarget.getColorTextureView();
+    }
+    @Override
+    public void close() {
+        this.transformUBO.close();
+        this.glitchParameterUBO.close();
+        this.vertexBuffer.close();
+        this.sampler.close();
+        this.glitchOutputTarget.destroyBuffers();
     }
 }

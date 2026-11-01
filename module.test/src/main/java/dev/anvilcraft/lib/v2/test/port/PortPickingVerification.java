@@ -14,7 +14,7 @@ public final class PortPickingVerification {
 
     public static void prepare() throws Exception {
         Minecraft minecraft = Minecraft.getInstance();
-        minecraft.setScreen(null);
+        minecraft.gui.setScreen(null);
         target = minecraft.player.blockPosition().offset(0, 0, 3).immutable();
         minecraft.getSingleplayerServer().submit(() -> {
             var level = minecraft.getSingleplayerServer().overworld();

@@ -1,6 +1,7 @@
-#version 150
+#version 330
+#extension GL_ARB_separate_shader_objects : require
 
-in vec4 vertexColor;
+layout(location = 0) in vec4 vertexColor;
 
 layout (std140) uniform RingUniform {
     vec2 Center;
@@ -9,7 +10,7 @@ layout (std140) uniform RingUniform {
     float AntiAliasingRadius;
 };
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main() {
     float distance = distance(gl_FragCoord.xy, Center);

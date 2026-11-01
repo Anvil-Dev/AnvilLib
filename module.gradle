@@ -144,7 +144,7 @@ tasks.named("processResources") {
         expand replaceProperties
     }
 
-    if (project.name != "anvillib-test-neoforge-26.1") {
+    if (project.name != "anvillib-test-neoforge-26.3") {
         finalizedBy 'changeModsToml'
     }
 }

@@ -1,11 +1,12 @@
 package dev.anvilcraft.lib.v2.rendering.projection;
 
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
@@ -59,7 +60,7 @@ public final class ProjectionRenderer implements AutoCloseable {
         this.entities.addAll(view.entities());
         var mc = Minecraft.getInstance();
         try (ByteBufferBuilder memory = new ByteBufferBuilder(2_097_152)) {
-            var buffer = new BufferBuilder(memory, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+            var buffer = new BufferBuilder(memory, PrimitiveTopology.QUADS, DefaultVertexFormat.BLOCK);
             VertexConsumer vertices = new GhostConsumer(buffer, BlockPos.ZERO, alpha, vertexCount);
             var pose = new PoseStack();
             var renderer = new ModelBlockRenderer(true, true, mc.getBlockColors());
@@ -241,6 +242,11 @@ public final class ProjectionRenderer implements AutoCloseable {
         @Override
         public VertexConsumer setNormal(float x, float y, float z) {
             this.delegate.setNormal(x, y, z);
+            return this;
+        }
+        @Override
+        public VertexConsumer setUv3(float u, float v) {
+            this.delegate.setUv3(u, v);
             return this;
         }
     }

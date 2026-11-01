@@ -57,10 +57,11 @@ public class RegistrumDataProvider implements DataProvider {
     private final Map<ProviderType<?>, RegistrumProvider> subProviders = new LinkedHashMap<>();
     private final Map<GeneratorType<?>, Object> subGenerators = new LinkedHashMap<>();
     private final CompletableFuture<HolderLookup.Provider> registriesLookup;
+    private final CompletableFuture<Void> started = new CompletableFuture<>();
 
     public RegistrumDataProvider(AbstractRegistrum<?> parent, String modid, GatherDataEvent event) {
         this.mod = modid;
-        this.registriesLookup = event.getLookupProvider();
+        this.registriesLookup = event.getWorldLookupProvider().thenCombine(this.started, (registries, ignored) -> registries);
 
         // For now, generate everything together
         /*
@@ -94,6 +95,7 @@ public class RegistrumDataProvider implements DataProvider {
 
     @Override
     public CompletableFuture<?> run(CachedOutput cache) {
+        this.started.complete(null);
         return registriesLookup.thenCompose(_ -> {
             var list = Lists.<CompletableFuture<?>>newArrayList();
 

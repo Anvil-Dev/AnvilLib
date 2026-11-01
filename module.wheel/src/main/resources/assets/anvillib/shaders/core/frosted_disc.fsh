@@ -1,7 +1,8 @@
-#version 150
+#version 330
+#extension GL_ARB_separate_shader_objects : require
 
-in vec2 texCoord0;
-in vec4 vertexColor;
+layout(location = 0) in vec2 texCoord0;
+layout(location = 1) in vec4 vertexColor;
 
 layout (std140) uniform FrostedDiscUniform {
     vec2 FramebufferSize;
@@ -12,7 +13,7 @@ layout (std140) uniform FrostedDiscUniform {
 
 uniform sampler2D Sampler0;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main() {
     // GUI 渲染通道的 gl_FragCoord 与 GUI 坐标一致（左上角原点，Y 向下）。

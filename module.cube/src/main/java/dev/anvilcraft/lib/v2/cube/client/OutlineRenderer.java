@@ -22,7 +22,11 @@ public final class OutlineRenderer {
 
     public static int render(PoseStack poses, VertexConsumer consumer, PackedOutline outline,
                              float red, float green, float blue, float alpha, int maximumSegments, float lineWidth) {
-        PoseStack.Pose pose = poses.last();
+        return render(poses.last(), consumer, outline, red, green, blue, alpha, maximumSegments, lineWidth);
+    }
+
+    public static int render(PoseStack.Pose pose, VertexConsumer consumer, PackedOutline outline,
+                             float red, float green, float blue, float alpha, int maximumSegments, float lineWidth) {
         int count = Math.min(outline.segmentCount(), maximumSegments);
         Vector3f direction = new Vector3f();
         for (int line = 0; line < count; line++) {

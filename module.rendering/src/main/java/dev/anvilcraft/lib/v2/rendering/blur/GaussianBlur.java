@@ -1,23 +1,24 @@
 package dev.anvilcraft.lib.v2.rendering.blur;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
+import java.util.Optional;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.blaze3d.pipeline.MainTarget;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
 import dev.anvilcraft.lib.v2.rendering.bloom.TransformsUbo;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
@@ -30,8 +31,8 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
 public class GaussianBlur implements AutoCloseable {
-    private final RenderTarget inputTarget = new MainTarget(854, 480, false);
-    private final RenderTarget tempTarget = new TextureTarget("BloomTemp", 854, 480, false);
+    private final RenderTarget inputTarget = new MainTarget(854, 480);
+    private final RenderTarget tempTarget = new TextureTarget("BloomTemp", 854, 480, com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM, null);
 
     private final GpuDevice device = RenderSystem.getDevice();
 
@@ -94,14 +95,14 @@ public class GaussianBlur implements AutoCloseable {
         CommandEncoder commandEncoder = device.createCommandEncoder();
         transformsUbo.upload(commandEncoder, transformUBO.slice());
 
-        commandEncoder.clearColorTexture(tempTarget.getColorTexture(), 0);
+        commandEncoder.clearColorTexture(tempTarget.getColorTexture(), new org.joml.Vector4f());
         blurOnce(commandEncoder, input, tempTarget, true);
-        commandEncoder.clearColorTexture(inputTarget.getColorTexture(), 0);
+        commandEncoder.clearColorTexture(inputTarget.getColorTexture(), new org.joml.Vector4f());
         blurOnce(commandEncoder, tempTarget.getColorTexture(), inputTarget, true);
 
-        commandEncoder.clearColorTexture(tempTarget.getColorTexture(), 0);
+        commandEncoder.clearColorTexture(tempTarget.getColorTexture(), new org.joml.Vector4f());
         blurOnce(commandEncoder, inputTarget.getColorTexture(), tempTarget, false);
-        commandEncoder.clearColorTexture(inputTarget.getColorTexture(), 0);
+        commandEncoder.clearColorTexture(inputTarget.getColorTexture(), new org.joml.Vector4f());
         blurOnce(commandEncoder, tempTarget.getColorTexture(), inputTarget, false);
 
         return inputTarget.getColorTexture();
@@ -118,19 +119,21 @@ public class GaussianBlur implements AutoCloseable {
         blurParameters.setDirection(direction);
         blurParameters.upload(commandEncoder, blurUBO.slice());
 
-        try (RenderPass blurPass = commandEncoder.createRenderPass(
+        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS);
+        GpuBuffer indexBuffer = sequentialBuffer.getBuffer(indexCount);
+        try (var inputView = device.createTextureView(inputTarget);
+             RenderPass blurPass = commandEncoder.createRenderPass(
             () -> "BloomPostEffect Blur " + (horizontal ? "H" : "V"),
             outputTarget.getColorTextureView(),
-            OptionalInt.of(0)
+            java.util.Optional.of(new org.joml.Vector4f())
         )) {
-            blurPass.setPipeline(ALRPipelines.BLUR);
+            blurPass.setPipeline(RenderSystem.getCompiledPipeline(ALRPipelines.BLUR));
             blurPass.setUniform("Transforms", transformUBO);
             blurPass.setUniform("BlurParameters", blurUBO);
-            blurPass.bindTexture("DiffuseSampler", device.createTextureView(inputTarget), inputSampler);
-            blurPass.setVertexBuffer(0, vertexBuffer);
-            RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
-            blurPass.setIndexBuffer(sequentialBuffer.getBuffer(indexCount), sequentialBuffer.type());
-            blurPass.drawIndexed(0, 0, indexCount, 1);
+            blurPass.setUniform("DiffuseSampler", inputView, inputSampler);
+            blurPass.setVertexBuffer(0, vertexBuffer.slice());
+            blurPass.setIndexBuffer(indexBuffer, sequentialBuffer.type());
+            blurPass.drawIndexed(indexCount, 1, 0, 0, 0);
         }
     }
 
@@ -140,11 +143,11 @@ public class GaussianBlur implements AutoCloseable {
         inputTarget.resize(width, height);
         tempTarget.resize(width, height);
         transformsUbo.getProjMat().setOrtho(
-            0, width, 0, height, -1, -10000f
+            0, width, 0, height, -1, -10000f, device.getDeviceInfo().isZZeroToOne()
         );
 
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder builder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        ByteBufferBuilder meshBuffer = new ByteBufferBuilder(1024);
+        BufferBuilder builder = new BufferBuilder(meshBuffer, com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX);
 
         builder.addVertex(0, 0, 100).setUv(0, 0);
         builder.addVertex(0, height, 100).setUv(0, 1);
@@ -156,6 +159,7 @@ public class GaussianBlur implements AutoCloseable {
         commandEncoder.writeToBuffer(vertexBuffer.slice(), data.vertexBuffer());
         this.indexCount = data.drawState().indexCount();
         data.close();
+        meshBuffer.close();
     }
 
     @Override

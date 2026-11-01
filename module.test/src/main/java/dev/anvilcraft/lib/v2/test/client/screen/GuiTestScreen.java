@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.test.client.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
@@ -88,7 +88,7 @@ public class GuiTestScreen extends Screen {
         for (int ix = 0, x = startX; ix < 10; ix++, x += 16 + 2) {
             GuiRenderExtras.itemWithTransparency(
                 graphics,
-                Items.LIME_STAINED_GLASS.getDefaultInstance(),
+                Items.STAINED_GLASS.lime().getDefaultInstance(),
                 x,
                 startY + 16 * 1,
                 (ix + 1) / 10f
@@ -142,11 +142,11 @@ public class GuiTestScreen extends Screen {
 
         PoseStack poseStack = new PoseStack();
         poseStack.pushPose();
-        poseStack.mulPose(Axis.XP.rotationDegrees(30));
-        poseStack.mulPose(Axis.YP.rotationDegrees(45));
+        poseStack.rotate(Axis.XP.rotationDegrees(30));
+        poseStack.rotate(Axis.YP.rotationDegrees(45));
 
         poseStack.pushPose();
-        poseStack.mulPose(Axis.YP.rotationDegrees(gameTime * 4.25f));
+        poseStack.rotate(Axis.YP.rotationDegrees(gameTime * 4.25f));
 
         GuiRenderExtras.tessellateBlock(
             graphics,
@@ -163,7 +163,7 @@ public class GuiTestScreen extends Screen {
         poseStack.popPose();
 
         poseStack.pushPose();
-        poseStack.mulPose(Axis.YP.rotationDegrees(-gameTime * 4.25f));
+        poseStack.rotate(Axis.YP.rotationDegrees(-gameTime * 4.25f));
         GuiRenderExtras.tessellateBlock(
             graphics,
             Blocks.GRASS_BLOCK.defaultBlockState(),
@@ -182,9 +182,9 @@ public class GuiTestScreen extends Screen {
 
         poseStack.pushPose();
 
-        poseStack.mulPose(Axis.XP.rotationDegrees(30));
-        poseStack.mulPose(Axis.YP.rotationDegrees(45));
-        poseStack.mulPose(Axis.YP.rotationDegrees(gameTime * 4.25f));
+        poseStack.rotate(Axis.XP.rotationDegrees(30));
+        poseStack.rotate(Axis.YP.rotationDegrees(45));
+        poseStack.rotate(Axis.YP.rotationDegrees(gameTime * 4.25f));
 
         GuiRenderExtras.submitStructure(
             graphics,

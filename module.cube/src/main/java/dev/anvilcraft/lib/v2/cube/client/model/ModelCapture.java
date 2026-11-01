@@ -19,7 +19,7 @@ public final class ModelCapture {
     public static synchronized void remember(ResolvedModel model, ModelState state, BlockStateModelPart baked) {
         if (!(baked instanceof SimpleModelWrapper)
             || !(model.getTopGeometry() instanceof UnbakedCuboidGeometry geometry) || geometry.elements().isEmpty()) return;
-        var root = model.getTopAdditionalProperties().getOptional(NeoForgeModelProperties.TRANSFORM);
+        var root = model.getTopAdditionalProperties().get(NeoForgeModelProperties.TRANSFORM);
         ModelState transformed = root == null ? state : UnbakedElementsHelper.composeRootTransformIntoModelState(state, root);
         SOURCES.put(baked, new Source(geometry.elements(), transformed));
     }

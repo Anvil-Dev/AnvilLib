@@ -1,5 +1,5 @@
 {
   "net/minecraft/client/gui/GuiGraphicsExtractor": [
-    "dev/anvilcraft/lib/v2/font/extension/GuiGraphicsExtractorExtension"
+    "dev/anvilcraft/lib/v2/font/extension/AnvilFontGuiGraphicsExtractorExtension"
   ]
 }

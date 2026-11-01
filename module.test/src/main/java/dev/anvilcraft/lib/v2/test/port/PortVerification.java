@@ -71,6 +71,7 @@ public final class PortVerification {
         itemCache();
         persistence();
         PortRpcVerification.run();
+        dev.anvilcraft.lib.v2.test.data.NumberProviderCodecChecks.verify();
     }
 
     private static void geometry() {
@@ -171,7 +172,10 @@ public final class PortVerification {
         check(context.getStack().equals(List.of(previous)) && successful.balance == 0 && previous.balance == 1,
             "失败匹配必须回滚本轮谓词并保留外层快照");
         check(recipe(null, List.of(successful), 1).matches(context, null), "后续配方仍可匹配");
-        check(previous.clears == 0 && successful.clears == 1, "成功匹配仅清理新增谓词");
+        check(previous.clears == 0 && successful.clears == 0
+                && context.getStack().equals(List.of(previous, successful)), "成功匹配保留快照供组装或回滚");
+        context.pop(successful);
+        check(successful.balance == 0 && previous.balance == 1, "成功匹配仍可回滚且保留外层快照");
     }
 
     @SuppressWarnings("unchecked")

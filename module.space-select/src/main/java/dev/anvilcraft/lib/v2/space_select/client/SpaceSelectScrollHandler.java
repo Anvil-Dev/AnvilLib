@@ -23,7 +23,7 @@ public final class SpaceSelectScrollHandler {
     @SubscribeEvent
     public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.screen != null) return;
+        if (mc.player == null || mc.gui.screen() != null) return;
 
         boolean ctrlDown = mc.hasControlDown();
         boolean altDown = mc.hasAltDown();

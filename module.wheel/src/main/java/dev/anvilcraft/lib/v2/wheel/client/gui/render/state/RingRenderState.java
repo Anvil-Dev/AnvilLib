@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.wheel.client.gui.render.state;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.anvilcraft.lib.v2.rendering.state.LibGuiElementRenderState;
 import dev.anvilcraft.lib.v2.rendering.state.LibQuadGuiElementRenderState;

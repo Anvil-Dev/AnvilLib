@@ -1,6 +1,6 @@
 dependencies {
-    compileOnly("maven.modrinth:AANobbMI:775xoFNg") // sodium mc26.1.2-0.8.12-neoforge
-    compileOnly("maven.modrinth:YL57xq9U:YEGDGnJM") // iris 1.10.9+26.1-neoforge
+    compileOnly("maven.modrinth:AANobbMI:SS023RVV") // sodium mc26.3-0.9.3-beta.1-neoforge
+    compileOnly("maven.modrinth:YL57xq9U:Ag5S66CF") // iris 1.11.7+26.3-neoforge
 }
 
 repositories {

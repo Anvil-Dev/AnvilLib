@@ -18,15 +18,17 @@ import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
 import dev.anvilcraft.lib.v2.registrum.util.DataIngredient;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import lombok.experimental.Delegate;
-import net.minecraft.advancements.Criterion;
-import net.minecraft.advancements.criterion.BredAnimalsTrigger;
-import net.minecraft.advancements.criterion.EnterBlockTrigger;
-import net.minecraft.advancements.criterion.InventoryChangeTrigger;
-import net.minecraft.advancements.criterion.ItemPredicate;
-import net.minecraft.advancements.criterion.MinMaxBounds;
+import net.minecraft.advancements.triggers.Criterion;
+import net.minecraft.advancements.triggers.BredAnimalsTrigger;
+import net.minecraft.advancements.triggers.EnterBlockTrigger;
+import net.minecraft.advancements.triggers.InventoryChangeTrigger;
+import net.minecraft.advancements.predicates.ItemPredicate;
+import net.minecraft.advancements.predicates.MinMaxBounds;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
-import net.minecraft.core.HolderLookup;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.data.worldgen.BootstrapContext;
+import net.minecraft.data.worldgen.BootstrapContextAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.BlockFamily;
@@ -71,21 +73,26 @@ public class RegistrumRecipeProvider extends RecipeProvider implements RecipeOut
     @Delegate
     private final RecipeOutput outputDelegated;
 
-    public RegistrumRecipeProvider(RegistrumRecipeRunner runner, HolderLookup.Provider registries, RecipeOutput output) {
-        super(registries, output);
+    public RegistrumRecipeProvider(
+        RegistrumRecipeRunner runner, BootstrapContext<Recipe<?>> recipes, BootstrapContext<Advancement> advancements
+    ) {
+        super(recipes, advancements, runner.owner.getModid());
         this.runner = runner;
-        this.outputDelegated = output;
+        this.outputDelegated = this.output;
     }
 
     @Override
     public void buildRecipes() {
         runner.provider = this;
-        runner.owner.genData(ProviderType.RECIPE, this);
-        runner.provider = null;
+        try {
+            runner.owner.genData(ProviderType.RECIPE, this);
+        } finally {
+            runner.provider = null;
+        }
     }
 
     public <T> Holder<T> resolve(ResourceKey<T> key) {
-        return registries.lookupOrThrow(key.registryKey()).getOrThrow(key);
+        return this.output.lookup(key.registryKey()).getOrThrow(key);
     }
 
     public Identifier safeId(Identifier id) {
@@ -649,9 +656,9 @@ public class RegistrumRecipeProvider extends RecipeProvider implements RecipeOut
         return super.signBuilder(p_176727_, p_176728_);
     }
 
-    @Override
-    public void hangingSign(ItemLike p_252355_, ItemLike p_250437_) {
-        super.hangingSign(p_252355_, p_250437_);
+    public void hangingSign(ItemLike result, ItemLike ingredient) {
+        this.hangingSignBuilder(result, Ingredient.of(ingredient))
+            .unlockedBy(getHasName(ingredient), has(ingredient)).save(this);
     }
 
     @Override
@@ -1035,7 +1042,7 @@ public class RegistrumRecipeProvider extends RecipeProvider implements RecipeOut
         return this.items;
     }
 
-    public HolderLookup.Provider getRegistries() {
-        return this.registries;
+    public BootstrapContextAccess getRegistries() {
+        return this.output;
     }
 }

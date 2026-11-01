@@ -1,14 +1,16 @@
 package dev.anvilcraft.lib.v2.rendering;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.renderpearl.api.pipeline.BlendFunction;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormatElement;
 import dev.anvilcraft.lib.v2.rendering.bloom.TransformsUbo;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -22,51 +24,50 @@ import java.util.Optional;
 public class ALRPipelines {
     public static final RenderPipeline.Snippet POST_PASS = RenderPipeline.builder()
         .withVertexShader(AnvilLibRendering.location("core/blit"))
-        .withUniform("Transforms", UniformType.UNIFORM_BUFFER)
-        .withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS)
-        .withSampler("DiffuseSampler")
+        .withColorTargetState(ColorTargetState.DEFAULT)
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("Transforms", UniformType.UNIFORM_BUFFER).build())
+        .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX).withPrimitiveTopology(com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS)
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("DiffuseSampler", UniformType.COMBINED_IMAGE_SAMPLER).build())
         .withCull(false)
         .buildSnippet();
 
     public static final RenderPipeline GLITCH = RenderPipeline.builder(POST_PASS)
         .withLocation(AnvilLibRendering.location("glitch"))
         .withFragmentShader(AnvilLibRendering.location("core/glitch"))
-        .withUniform("GlitchParameters", UniformType.UNIFORM_BUFFER)
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("GlitchParameters", UniformType.UNIFORM_BUFFER).build())
         .build();
 
     public static final RenderPipeline BLUR = RenderPipeline.builder(POST_PASS)
         .withLocation(AnvilLibRendering.location("blur"))
         .withFragmentShader(AnvilLibRendering.location("core/blur"))
-        .withUniform("BlurParameters", UniformType.UNIFORM_BUFFER)
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("BlurParameters", UniformType.UNIFORM_BUFFER).build())
         .build();
 
     public static final RenderPipeline APPLY_BLOOM = RenderPipeline.builder(POST_PASS)
         .withLocation(AnvilLibRendering.location("apply_bloom"))
         .withFragmentShader(AnvilLibRendering.location("core/apply_bloom"))
-        .withSampler("GameSampler")
-        .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("GameSampler", UniformType.COMBINED_IMAGE_SAMPLER).build())
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("BloomParameters", UniformType.UNIFORM_BUFFER).build())
         .build();
 
     public static final RenderPipeline DOWNSAMPLE = RenderPipeline.builder(POST_PASS)
         .withLocation(AnvilLibRendering.location("down_sample"))
         .withFragmentShader(AnvilLibRendering.location("core/down_sample"))
-        .withSampler("DiffuseSampler")
-        .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("BloomParameters", UniformType.UNIFORM_BUFFER).build())
         .build();
 
     public static final RenderPipeline UPSAMPLE = RenderPipeline.builder(POST_PASS)
         .withLocation(AnvilLibRendering.location("up_sample"))
         .withFragmentShader(AnvilLibRendering.location("core/up_sample"))
-        .withSampler("DiffuseSampler")
-        .withSampler("PreviousSampler")
-        .withUniform("BloomParameters", UniformType.UNIFORM_BUFFER)
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("PreviousSampler", UniformType.COMBINED_IMAGE_SAMPLER).build())
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("BloomParameters", UniformType.UNIFORM_BUFFER).build())
         .build();
 
-    public static final VertexFormat SDF_GRAPHICS_FORMAT = VertexFormat.builder()
-        .add("Position", VertexFormatElement.POSITION)
-        .add("Color", VertexFormatElement.COLOR)
-        .add("UV0", VertexFormatElement.UV)
-        .add("UV1", VertexFormatElement.UV1)
+    public static final VertexFormat SDF_GRAPHICS_FORMAT = VertexFormat.builder(0)
+        .addAttribute("Position", GpuFormat.RGB32_FLOAT)
+        .addAttribute("Color", GpuFormat.RGBA8_UNORM)
+        .addAttribute("UV0", GpuFormat.RG32_FLOAT)
+        .addAttribute("UV1", GpuFormat.RG16_SINT)
         .build();
 
     public static final RenderPipeline SDF_GRAPHICS = RenderPipeline.builder()
@@ -74,21 +75,21 @@ public class ALRPipelines {
         .withVertexShader(AnvilLibRendering.location("core/sdf_graphics"))
         .withFragmentShader(AnvilLibRendering.location("core/sdf_graphics"))
         .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-        .withVertexFormat(SDF_GRAPHICS_FORMAT, VertexFormat.Mode.QUADS)
-        .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
-        .withUniform("Projection", UniformType.UNIFORM_BUFFER)
-        .withUniform("SDFParameters", UniformType.UNIFORM_BUFFER)
+        .withVertexBinding(0, SDF_GRAPHICS_FORMAT).withPrimitiveTopology(com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS)
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER).build())
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("Projection", UniformType.UNIFORM_BUFFER).build())
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("SDFParameters", UniformType.UNIFORM_BUFFER).build())
         .withCull(false)
         .build();
 
     public static final RenderPipeline OCCLUSION_QUERY = RenderPipeline.builder()
         .withLocation(AnvilLibRendering.location("occlusion_query"))
-        .withVertexFormat(DefaultVertexFormat.POSITION, VertexFormat.Mode.QUADS)
-        .withUniform("Transforms", UniformType.UNIFORM_BUFFER)
+        .withVertexBinding(0, DefaultVertexFormat.POSITION).withPrimitiveTopology(com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS)
+        .withBindGroupLayout(BindGroupLayout.builder().withUniform("Transforms", UniformType.UNIFORM_BUFFER).build())
         .withVertexShader(AnvilLibRendering.location("core/occlusion_query"))
         .withFragmentShader(AnvilLibRendering.location("core/occlusion_query"))
-        .withColorTargetState(new ColorTargetState(Optional.empty(), ColorTargetState.WRITE_NONE))
-        .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
+        .withColorTargetState(new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_NONE))
+        .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
         .withCull(false)
         .build();
 
@@ -96,6 +97,7 @@ public class ALRPipelines {
     @ApiStatus.Internal
     @SubscribeEvent
     public static void on(RegisterRenderPipelinesEvent event) {
+        event.registerPipeline(GLITCH);
         event.registerPipeline(BLUR);
         event.registerPipeline(APPLY_BLOOM);
         event.registerPipeline(DOWNSAMPLE);

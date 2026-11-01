@@ -10,9 +10,9 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProvider;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProviders;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -22,7 +22,7 @@ import net.minecraft.world.phys.Vec3;
  * @param explodeInteraction 爆炸的方块交互类型
  * @param chance             爆炸发生的概率，范围为0f到1.0f
  */
-public record ProduceExplosion(Vec3 offset, float power, boolean fire, Level.ExplosionInteraction explodeInteraction, NumberProvider chance)
+public record ProduceExplosion(Vec3 offset, float power, boolean fire, Level.ExplosionInteraction explodeInteraction, ContextFloatProvider chance)
     implements IRecipeOutcome<ProduceExplosion> {
     /**
      * 构建一个新的产生爆炸配方结果
@@ -67,7 +67,7 @@ public record ProduceExplosion(Vec3 offset, float power, boolean fire, Level.Exp
             Codec.FLOAT.fieldOf("power").forGetter(ProduceExplosion::power),
             Codec.BOOL.fieldOf("fire").forGetter(ProduceExplosion::fire),
             Level.ExplosionInteraction.CODEC.fieldOf("interact").forGetter(ProduceExplosion::explodeInteraction),
-            NumberProviders.CODEC.optionalFieldOf("chance", ConstantValue.exactly(1f)).forGetter(ProduceExplosion::chance)
+            ContextFloatProviders.DIRECT_CODEC.optionalFieldOf("chance", new ConstantValue(1f)).forGetter(ProduceExplosion::chance)
         ).apply(ins, ProduceExplosion::new));
 
         public static final Codec<ProduceExplosion> CODEC = MAP_CODEC.codec();

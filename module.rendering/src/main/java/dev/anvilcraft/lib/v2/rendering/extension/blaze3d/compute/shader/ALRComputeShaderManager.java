@@ -1,14 +1,13 @@
 package dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader;
 
 import com.google.common.collect.ImmutableMap;
-import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.anvilcraft.lib.v2.rendering.event.RegisterComputePipelinesEvent;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePipeline;
 import lombok.extern.slf4j.Slf4j;
-import net.minecraft.client.renderer.ShaderManager;
+import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -48,12 +47,10 @@ public class ALRComputeShaderManager extends SimplePreparableReloadListener<ALRC
         );
 
         for (Map.Entry<Identifier, Resource> it : shaders.entrySet()) {
-            GlslPreprocessor preprocessor = ShaderManager.createPreprocessor(shaders, it.getKey());
 
             try (Reader reader = it.getValue().openAsReader()) {
                 String source = IOUtils.toString(reader);
-                List<String> processed = preprocessor.process(source);
-                sources.put(it.getKey(), String.join("", processed));
+                sources.put(it.getKey(), source);
             } catch (IOException ex) {
                 log.error("Failed to load compute shader source at {}", it.getKey(), ex);
             }
@@ -91,7 +88,11 @@ public class ALRComputeShaderManager extends SimplePreparableReloadListener<ALRC
     }
 
     public String getSource(Identifier location) {
-        return source.source.get(location.withPrefix("shaders/"));
+        return this.getSource(location, ShaderDefines.EMPTY);
+    }
+
+    public String getSource(Identifier location, ShaderDefines defines) {
+        return ComputeShaderPreprocessor.process(this.source.source, location.withPrefix("shaders/"), defines);
     }
 
     @Nullable

@@ -1,8 +1,9 @@
 package dev.anvilcraft.lib.v2.rendering.mixins.blaze3d;
 
-import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.GpuDeviceBackend;
-import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.frontend.FrontendGpuDevice;
+import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
+import com.mojang.renderpearl.api.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.*;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePipeline;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
@@ -18,7 +19,7 @@ import org.spongepowered.asm.mixin.Unique;
 import java.util.function.Supplier;
 
 @SuppressWarnings("AddedMixinMembersNamePattern")
-@Mixin(GpuDevice.class)
+@Mixin(FrontendGpuDevice.class)
 public class GpuDeviceMixin implements ALRGpuDeviceExtension {
     @Shadow
     @Final
@@ -41,22 +42,23 @@ public class GpuDeviceMixin implements ALRGpuDeviceExtension {
 
     @Override
     public void alrPushDebugGroup(Supplier<String> message) {
-        alrBackend().alrPushDebugGroup(message);
+        if (this.backend instanceof ALRGpuDeviceBackendExtension extension) extension.alrPushDebugGroup(message);
     }
 
     @Override
     public void alrPopDebugGroup() {
-        alrBackend().alrPopDebugGroup();
+        if (this.backend instanceof ALRGpuDeviceBackendExtension extension) extension.alrPopDebugGroup();
     }
 
     @Override
     public ALRHICapabilities alrhiCreateCapabilities() {
-        return alrBackend().alrhiCreateCapabilities();
+        return this.backend instanceof ALRGpuDeviceBackendExtension extension ? extension.alrhiCreateCapabilities()
+            : new ALRHICapabilities(false, false, false, false, 0, new int[3]);
     }
 
     @Override
     public ALRHIHeuristics alrhiCreateHeuristics() {
-        return alrBackend().alrhiCreateHeuristics();
+        return this.backend instanceof ALRGpuDeviceBackendExtension extension ? extension.alrhiCreateHeuristics() : new ALRHIHeuristics(false);
     }
 
     @Override

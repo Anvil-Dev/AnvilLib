@@ -10,14 +10,14 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.context.ContextKeySet;
 import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProvider;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -269,7 +269,7 @@ public class InWorldRecipeContext implements RecipeInput {
     public LootContext emptyLootContext() {
         return new LootContext.Builder(new LootParams(
             this.level,
-            new ContextMap.Builder().create(new ContextKeySet.Builder().build()),
+            ContextMap.EMPTY,
             Map.of(),
             0
         )).create(Optional.empty());
@@ -283,7 +283,7 @@ public class InWorldRecipeContext implements RecipeInput {
      * @param max      最大值
      * @return 浮点数值
      */
-    public float getFloat(NumberProvider provider, float min, float max) {
+    public float getFloat(ContextFloatProvider provider, float min, float max) {
         return Math.clamp(provider.getFloat(this.emptyLootContext()), min, max);
     }
 
@@ -294,7 +294,7 @@ public class InWorldRecipeContext implements RecipeInput {
      * @param max      最大值
      * @return 浮点数值
      */
-    public float getFloat(NumberProvider provider, float max) {
+    public float getFloat(ContextFloatProvider provider, float max) {
         return Math.min(provider.getFloat(this.emptyLootContext()), max);
     }
 
@@ -304,7 +304,7 @@ public class InWorldRecipeContext implements RecipeInput {
      * @param provider 数字提供器
      * @return 浮点数值
      */
-    public float getFloat(NumberProvider provider) {
+    public float getFloat(ContextFloatProvider provider) {
         return provider.getFloat(this.emptyLootContext());
     }
 
@@ -316,7 +316,7 @@ public class InWorldRecipeContext implements RecipeInput {
      * @param max      最大值
      * @return 整数数值
      */
-    public int getInt(NumberProvider provider, int min, int max) {
+    public int getInt(ContextIntProvider provider, int min, int max) {
         return Math.clamp(provider.getInt(this.emptyLootContext()), min, max);
     }
 
@@ -327,7 +327,7 @@ public class InWorldRecipeContext implements RecipeInput {
      * @param max      最大值
      * @return 整数数值
      */
-    public int getInt(NumberProvider provider, int max) {
+    public int getInt(ContextIntProvider provider, int max) {
         return Math.min(provider.getInt(this.emptyLootContext()), max);
     }
 
@@ -337,7 +337,7 @@ public class InWorldRecipeContext implements RecipeInput {
      * @param provider 数字提供器
      * @return 整数数值
      */
-    public int getInt(NumberProvider provider) {
+    public int getInt(ContextIntProvider provider) {
         return provider.getInt(this.emptyLootContext());
     }
 

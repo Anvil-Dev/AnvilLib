@@ -29,6 +29,7 @@ public final class PortSmokeClient {
     private static int uiTicks;
     private static java.util.concurrent.CompletableFuture<Void> reload;
     private static int reloadTicks;
+    private static boolean renderingStarted;
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void prepare(ModelEvent.ModifyBakingResult event) {
@@ -45,10 +46,11 @@ public final class PortSmokeClient {
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (!ENABLED || finished || minecraft.getOverlay() != null) return;
+        if (!ENABLED || finished || minecraft.gui.overlay() != null) return;
         if (!startedWorld) {
-            if (minecraft.screen == null) return;
+            if (minecraft.gui.screen() == null) return;
             startedWorld = true;
+            minecraft.options.pauseOnLostFocus = false;
             minecraft.options.renderDistance().set(2);
             minecraft.options.simulationDistance().set(5);
             minecraft.createWorldOpenFlows().createFreshLevel("port-verification-" + System.currentTimeMillis(),
@@ -56,7 +58,7 @@ public final class PortSmokeClient {
                     net.minecraft.world.level.LevelSettings.DifficultySettings.DEFAULT, true,
                     net.minecraft.world.level.WorldDataConfiguration.DEFAULT),
                 new net.minecraft.world.level.levelgen.WorldOptions(12345L, false, false),
-                net.minecraft.world.level.levelgen.presets.WorldPresets::createFlatWorldDimensions, new TitleScreen());
+                net.minecraft.world.level.levelgen.presets.WorldPresets::createTestWorldDimensions, new TitleScreen());
             return;
         }
         if (minecraft.level == null || minecraft.player == null || ++worldTicks < 20) return;
@@ -77,7 +79,7 @@ public final class PortSmokeClient {
                 return;
             }
             if (++uiTicks == 10) {
-                net.minecraft.client.Screenshot.grab(minecraft.gameDirectory, "port-creative-variants.png", minecraft.getMainRenderTarget(), 1,
+                net.minecraft.client.Screenshot.grab(minecraft.gameDirectory, "port-creative-variants.png", minecraft.gameRenderer.mainRenderTarget(), 1,
                     message -> LOGGER.info("Port UI screenshot: {}", message.getString()));
             }
             if (uiTicks == 30) {
@@ -92,7 +94,13 @@ public final class PortSmokeClient {
             }
             if (!reload.isDone() || ++reloadTicks < 10) return;
             reload.join();
-            PortPickingVerification.verify();
+            if (!renderingStarted) {
+                PortPickingVerification.verify();
+                PortRenderingVerification.prepare();
+                renderingStarted = true;
+                return;
+            }
+            if (!PortRenderingVerification.tick()) return;
             finished = true;
             LOGGER.info("PORT_SMOKE_PASSED checks={} cube={}", PortVerification.checks(), CubeSelection.statistics());
             java.nio.file.Files.writeString(minecraft.gameDirectory.toPath().resolve("port-smoke-result.txt"), "PASS " + PortVerification.checks());

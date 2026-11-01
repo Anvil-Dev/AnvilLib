@@ -10,12 +10,12 @@ public final class WheelScreenController {
     private WheelScreen currentHoldScreen;
 
     public void openTap(WheelMenuModel menuModel) {
-        Minecraft.getInstance().setScreen(WheelScreen.tap(menuModel));
+        Minecraft.getInstance().gui.setScreen(WheelScreen.tap(menuModel));
     }
 
     public void onHoldKeyPressed(WheelMenuModel menuModel) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (this.currentHoldScreen != null && minecraft.screen != this.currentHoldScreen) {
+        if (this.currentHoldScreen != null && minecraft.gui.screen() != this.currentHoldScreen) {
             this.currentHoldScreen = null;
         }
         if (this.currentHoldScreen != null) {
@@ -23,7 +23,7 @@ public final class WheelScreenController {
         }
         WheelScreen screen = WheelScreen.hold(menuModel);
         this.currentHoldScreen = screen;
-        minecraft.setScreen(screen);
+        minecraft.gui.setScreen(screen);
     }
 
     public void onHoldKeyReleased() {
@@ -31,7 +31,7 @@ public final class WheelScreenController {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen != this.currentHoldScreen) {
+        if (minecraft.gui.screen() != this.currentHoldScreen) {
             this.currentHoldScreen = null;
             return;
         }

@@ -39,9 +39,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProvider;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProviders;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 
 import java.util.Collections;
 import java.util.Deque;
@@ -118,22 +119,10 @@ public abstract class CodecUtil {
         }
     );
 
-    /**
-     * 数值提供器编解码器，既支持标准 provider 结构，也支持纯整数写法。
-     *
-     * <p>编码时，整数形式的 {@link ConstantValue} 会被压缩为整数字段。
-     */
-    public static final Codec<NumberProvider> NUMBER_PROVIDER = Codec.either(
-        NumberProviders.CODEC,
-        Codec.INT.xmap(ConstantValue::new, value -> Math.round(value.value()))
-    ).xmap(
-        Either::unwrap, provider -> {
-            if (!(provider instanceof ConstantValue(float value)) || value - Math.floor(value) >= 1E-5) {
-                return Either.left(provider);
-            }
-            return Either.right((ConstantValue) provider);
-        }
-    );
+    /** Integer counts, including all registered context-provider types. */
+    public static final Codec<ContextIntProvider> INT_NUMBER_PROVIDER = ContextIntProviders.DIRECT_CODEC;
+    /** Float probabilities and weights, including all registered context-provider types. */
+    public static final Codec<ContextFloatProvider> FLOAT_NUMBER_PROVIDER = ContextFloatProviders.DIRECT_CODEC;
     /**
      * 带注册表校验的 {@link EntityType} 编解码器。
      */

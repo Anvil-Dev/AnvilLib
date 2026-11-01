@@ -59,10 +59,20 @@ public interface ProviderType<T extends RegistrumProvider> extends GeneratorType
 
     // SERVER DATA
     ProviderType<RegistrumDatapackProvider> DYNAMIC = registerServerData("dynamic", RegistrumDatapackProvider::new);
+    ProviderType<RegistrumReloadableDatapackProvider> RELOADABLE_DYNAMIC = registerProvider(
+        "reloadable_dynamic",
+        c -> new RegistrumReloadableDatapackProvider(c.parent(), c.output(), c.provider(), c.event().getReloadableLookupProvider())
+    );
     ProviderType<RegistrumDataMapProvider> DATA_MAP = registerServerData("data_map", RegistrumDataMapProvider::new);
-    ProviderType<RegistrumRecipeRunner> RECIPE_RUNNER = registerServerData("recipe_runner", RegistrumRecipeRunner::new);
+    ProviderType<RegistrumRecipeRunner> RECIPE_RUNNER = registerProvider(
+        "recipe_runner",
+        c -> new RegistrumRecipeRunner(c.parent(), c.output(), c.get(DYNAMIC).getFilledProvider(), c.provider())
+    );
     ProviderType<RegistrumAdvancementProvider> ADVANCEMENT = registerServerData("advancement", RegistrumAdvancementProvider::new);
-    ProviderType<RegistrumLootTableProvider> LOOT = registerServerData("loot", RegistrumLootTableProvider::new);
+    ProviderType<RegistrumLootTableProvider> LOOT = registerProvider(
+        "loot",
+        c -> new RegistrumLootTableProvider(c.parent(), c.output(), c.get(DYNAMIC).getFilledProvider(), c.provider())
+    );
     ProviderType<RegistrumTagsProvider.IntrinsicImpl<Block>> BLOCK_TAGS = registerIntrinsicTag(
         "tags/block",
         "blocks",

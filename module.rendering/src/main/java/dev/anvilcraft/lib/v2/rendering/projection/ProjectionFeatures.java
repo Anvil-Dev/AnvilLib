@@ -5,7 +5,14 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.StagedVertexBuffer;
+import dev.anvilcraft.lib.v2.rendering.foundation.FeatureGeometryCapture;
+import dev.anvilcraft.lib.v2.rendering.foundation.FeatureRendering;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import java.util.Optional;
+import java.util.OptionalDouble;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
@@ -28,29 +35,27 @@ public final class ProjectionFeatures implements AutoCloseable {
     private boolean closed;
     private final SubmitNodeStorage nodes = new SubmitNodeStorage();
     private final GhostBuffers buffers = new GhostBuffers();
+    private final RenderBuffers renderBuffers = new RenderBuffers(1);
     private final FeatureRenderDispatcher features;
     private final Map<BlockEntity, BlockEntityRenderState> states = new IdentityHashMap<>();
 
     public ProjectionFeatures() {
-        var client = Minecraft.getInstance();
-        var renderBuffers = client.renderBuffers();
-        this.features = new FeatureRenderDispatcher(this.nodes, client.getModelManager(), this.buffers, client.getAtlasManager(),
-            renderBuffers.outlineBufferSource(), renderBuffers.crumblingBufferSource(),
-            client.font, client.gameRenderer.getGameRenderState());
+        this.features = FeatureRendering.dispatcher(this.renderBuffers);
     }
 
     @Override
     public void close() {
         if (this.closed) return;
         this.closed = true;
-        this.buffers.memory.close();
+        this.buffers.close();
+        this.renderBuffers.close();
         this.features.close();
         this.clear();
     }
 
     public void clear() {
         this.states.clear();
-        this.nodes.clear();
+        FeatureRendering.clear(this.nodes);
     }
 
     public void render(List<BlockEntity> blockEntities, List<Entity> entities, PoseStack pose, CameraRenderState camera, int alpha) {
@@ -85,46 +90,62 @@ public final class ProjectionFeatures implements AutoCloseable {
             state.lightCoords = LightCoordsUtil.FULL_BRIGHT;
             client.getEntityRenderDispatcher().submit(state, camera, entity.getX(), entity.getY(), entity.getZ(), pose, this.nodes);
         }
-        this.features.renderAllFeatures();
+        try (FeatureGeometryCapture capture = new FeatureGeometryCapture(this.buffers::getBuffer);
+             var frame = this.features.prepareFrame(this.nodes)) {
+            // Feature preparation writes the same native geometry into opacity-aware buffers.
+        }
         this.buffers.endBatch();
-        this.features.endFrame();
-        this.nodes.endFrame();
+        this.renderBuffers.endFrame();
     }
 
-    private static final class GhostBuffers extends MultiBufferSource.BufferSource {
+    private static final class GhostBuffers implements AutoCloseable {
         private int alpha;
         private boolean depthOnly;
         private boolean reversed;
-        private final ByteBufferBuilder memory;
+        private final Map<RenderType, ByteBufferBuilder> memory = new LinkedHashMap<>();
+        private final Map<RenderType, BufferBuilder> builders = new LinkedHashMap<>();
 
-        private GhostBuffers() {
-            this(new ByteBufferBuilder(256));
+        public VertexConsumer getBuffer(RenderType original) {
+            RenderType type = this.alpha == 255 && !this.depthOnly ? original : ProjectionRenderTypes.ghost(original, this.depthOnly);
+            var builder = this.builders.computeIfAbsent(type, key -> new BufferBuilder(
+                this.memory.computeIfAbsent(key, ignored -> new ByteBufferBuilder(1024)), key.primitiveTopology(), key.format()));
+            return this.alpha == 255 && !this.depthOnly ? builder : new ProjectionRenderer.GhostConsumer(builder, BlockPos.ZERO, this.alpha);
         }
 
-        private GhostBuffers(ByteBufferBuilder memory) {
-            super(memory, new LinkedHashMap<>());
-            this.memory = memory;
-        }
-
-        @Override
-        public VertexConsumer getBuffer(RenderType type) {
-            if (this.alpha == 255 && !this.depthOnly) return super.getBuffer(type);
-            return new ProjectionRenderer.GhostConsumer(
-                super.getBuffer(ProjectionRenderTypes.ghost(type, this.depthOnly)), BlockPos.ZERO, this.alpha);
-        }
-
-        @Override
-        public void endBatch(RenderType type) {
-            var builder = this.startedBuilders.remove(type);
-            if (builder != null) {
-                var mesh = builder.build();
-                if (mesh != null) {
+        public void endBatch() {
+            var target = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+            for (var entry : this.builders.entrySet()) {
+                RenderType type = entry.getKey();
+                var mesh = entry.getValue().build();
+                if (mesh == null) continue;
+                try (mesh) {
                     if (this.reversed && type.pipeline().isCull()) ProjectionMesh.reverseWinding(mesh);
-                    if (type.sortOnUpload()) mesh.sortQuads(this.memory, RenderSystem.getProjectionType().vertexSorting());
-                    type.draw(mesh);
+                    if (type.sortOnUpload()) mesh.sortQuads(this.memory.get(type), RenderSystem.getProjectionType().vertexSorting());
+                    var device = RenderSystem.getDevice();
+                    var state = mesh.drawState();
+                    var sequential = RenderSystem.getSequentialBuffer(type.primitiveTopology());
+                    var sequentialIndices = sequential.getBuffer(state.indexCount());
+                    try (var vertices = device.createBuffer(() -> "Projection entity vertices", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
+                         var indices = mesh.indexBuffer() == null ? null : device.createBuffer(
+                             () -> "Projection entity indices", GpuBuffer.USAGE_INDEX, mesh.indexBuffer())) {
+                        var prepared = type.prepare();
+                        try (var pass = device.createCommandEncoder().createRenderPass(() -> "Projection entities",
+                            target.getColorTextureView(), Optional.empty(), target.getDepthTextureView(), OptionalDouble.empty())) {
+                            prepared.drawFromBuffer(new StagedVertexBuffer.ExecuteInfo(vertices, indices == null ? sequentialIndices : indices,
+                                indices == null ? sequential.type() : state.indexType(), 0, 0, state.indexCount(), type.primitiveTopology()), pass);
+                        }
+                    }
                 }
+                this.memory.get(type).clear();
             }
-            if (type.equals(this.lastSharedType)) this.lastSharedType = null;
+            this.builders.clear();
+        }
+
+        @Override
+        public void close() {
+            this.memory.values().forEach(ByteBufferBuilder::close);
+            this.memory.clear();
+            this.builders.clear();
         }
     }
 }

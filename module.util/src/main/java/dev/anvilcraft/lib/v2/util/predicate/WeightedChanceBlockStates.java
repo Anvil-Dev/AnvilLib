@@ -15,8 +15,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProvider;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * A list of weighted ChanceBlockState entries. Selection is done by weights (NumberProvider),
+ * A list of weighted ChanceBlockState entries. Selection is done by weights (ContextFloatProvider),
  * and the selected entry's own chance is honored by delegating to ChanceBlockState#getResult.
  */
 public record WeightedChanceBlockStates(List<Entry> states) {
@@ -72,19 +72,19 @@ public record WeightedChanceBlockStates(List<Entry> states) {
         return null;
     }
 
-    public record Entry(ChanceBlockState state, NumberProvider weight) {
+    public record Entry(ChanceBlockState state, ContextFloatProvider weight) {
         public static final MapCodec<Entry> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
             ChanceBlockState.CODEC.codec()
                 .fieldOf("state")
                 .forGetter(Entry::state),
-            CodecUtil.NUMBER_PROVIDER
-                .optionalFieldOf("weight", ConstantValue.exactly(1.0f))
+            CodecUtil.FLOAT_NUMBER_PROVIDER
+                .optionalFieldOf("weight", new ConstantValue(1.0f))
                 .forGetter(Entry::weight)
         ).apply(inst, Entry::new));
         public static final StreamCodec<RegistryFriendlyByteBuf, Entry> STREAM_CODEC = StreamCodec.composite(
             ChanceBlockState.STREAM_CODEC,
             Entry::state,
-            StreamCodecUtil.NUMBER_PROVIDER,
+            StreamCodecUtil.FLOAT_NUMBER_PROVIDER,
             Entry::weight,
             Entry::new
         );
@@ -93,157 +93,157 @@ public record WeightedChanceBlockStates(List<Entry> states) {
     public static class Builder {
         private final ImmutableList.Builder<Entry> states = ImmutableList.builder();
 
-        public Builder add(NumberProvider weight, ChanceBlockState state) {
+        public Builder add(ContextFloatProvider weight, ChanceBlockState state) {
             this.states.add(new Entry(state, weight));
             return this;
         }
 
         public Builder add(float weight, ChanceBlockState state) {
-            return this.add(ConstantValue.exactly(weight), state);
+            return this.add(new ConstantValue(weight), state);
         }
 
         public Builder add(ChanceBlockState state) {
             return this.add(1.0F, state);
         }
 
-        public Builder add(NumberProvider weight, BlockState state, CompoundTag nbt, NumberProvider chance) {
+        public Builder add(ContextFloatProvider weight, BlockState state, CompoundTag nbt, ContextFloatProvider chance) {
             return this.add(weight, new ChanceBlockState(state, nbt, chance));
         }
 
-        public Builder add(float weight, BlockState state, CompoundTag nbt, NumberProvider chance) {
-            return this.add(ConstantValue.exactly(weight), state, nbt, chance);
+        public Builder add(float weight, BlockState state, CompoundTag nbt, ContextFloatProvider chance) {
+            return this.add(new ConstantValue(weight), state, nbt, chance);
         }
 
-        public Builder add(BlockState state, CompoundTag nbt, NumberProvider chance) {
+        public Builder add(BlockState state, CompoundTag nbt, ContextFloatProvider chance) {
             return this.add(1.0F, state, nbt, chance);
         }
 
-        public Builder add(NumberProvider weight, BlockState state, CompoundTag nbt, float chance) {
-            return this.add(weight, state, nbt, ConstantValue.exactly(chance));
+        public Builder add(ContextFloatProvider weight, BlockState state, CompoundTag nbt, float chance) {
+            return this.add(weight, state, nbt, new ConstantValue(chance));
         }
 
         public Builder add(float weight, BlockState state, CompoundTag nbt, float chance) {
-            return this.add(ConstantValue.exactly(weight), state, nbt, chance);
+            return this.add(new ConstantValue(weight), state, nbt, chance);
         }
 
         public Builder add(BlockState state, CompoundTag nbt, float chance) {
             return this.add(1.0F, state, nbt, chance);
         }
 
-        public Builder add(NumberProvider weight, BlockState state, float chance) {
+        public Builder add(ContextFloatProvider weight, BlockState state, float chance) {
             return this.add(weight, state, new CompoundTag(), chance);
         }
 
         public Builder add(float weight, BlockState state, float chance) {
-            return this.add(ConstantValue.exactly(weight), state, chance);
+            return this.add(new ConstantValue(weight), state, chance);
         }
 
         public Builder add(BlockState state, float chance) {
             return this.add(1.0F, state, chance);
         }
 
-        public Builder add(NumberProvider weight, BlockState state) {
+        public Builder add(ContextFloatProvider weight, BlockState state) {
             return this.add(weight, state, 1.0F);
         }
 
         public Builder add(float weight, BlockState state) {
-            return this.add(ConstantValue.exactly(weight), state);
+            return this.add(new ConstantValue(weight), state);
         }
 
         public Builder add(BlockState state) {
             return this.add(1.0F, state);
         }
 
-        public Builder add(NumberProvider weight, Block block, CompoundTag nbt, NumberProvider chance) {
+        public Builder add(ContextFloatProvider weight, Block block, CompoundTag nbt, ContextFloatProvider chance) {
             return this.add(weight, block.defaultBlockState(), nbt, chance);
         }
 
-        public Builder add(float weight, Block block, CompoundTag nbt, NumberProvider chance) {
-            return this.add(ConstantValue.exactly(weight), block, nbt, chance);
+        public Builder add(float weight, Block block, CompoundTag nbt, ContextFloatProvider chance) {
+            return this.add(new ConstantValue(weight), block, nbt, chance);
         }
 
-        public Builder add(Block block, CompoundTag nbt, NumberProvider chance) {
+        public Builder add(Block block, CompoundTag nbt, ContextFloatProvider chance) {
             return this.add(1.0F, block, nbt, chance);
         }
 
-        public Builder add(NumberProvider weight, Block block, CompoundTag nbt, float chance) {
-            return this.add(weight, block, nbt, ConstantValue.exactly(chance));
+        public Builder add(ContextFloatProvider weight, Block block, CompoundTag nbt, float chance) {
+            return this.add(weight, block, nbt, new ConstantValue(chance));
         }
 
         public Builder add(float weight, Block block, CompoundTag nbt, float chance) {
-            return this.add(ConstantValue.exactly(weight), block, nbt, chance);
+            return this.add(new ConstantValue(weight), block, nbt, chance);
         }
 
         public Builder add(Block block, CompoundTag nbt, float chance) {
             return this.add(1.0F, block, nbt, chance);
         }
 
-        public Builder add(NumberProvider weight, Block block, float chance) {
+        public Builder add(ContextFloatProvider weight, Block block, float chance) {
             return this.add(weight, block, new CompoundTag(), chance);
         }
 
         public Builder add(float weight, Block block, float chance) {
-            return this.add(ConstantValue.exactly(weight), block, chance);
+            return this.add(new ConstantValue(weight), block, chance);
         }
 
         public Builder add(Block block, float chance) {
             return this.add(1.0F, block, chance);
         }
 
-        public Builder add(NumberProvider weight, Block block) {
+        public Builder add(ContextFloatProvider weight, Block block) {
             return this.add(weight, block, 1.0F);
         }
 
         public Builder add(float weight, Block block) {
-            return this.add(ConstantValue.exactly(weight), block);
+            return this.add(new ConstantValue(weight), block);
         }
 
         public Builder add(Block block) {
             return this.add(1.0F, block);
         }
 
-        public Builder add(NumberProvider weight, Supplier<? extends Block> block, CompoundTag nbt, NumberProvider chance) {
+        public Builder add(ContextFloatProvider weight, Supplier<? extends Block> block, CompoundTag nbt, ContextFloatProvider chance) {
             return this.add(weight, block.get(), nbt, chance);
         }
 
-        public Builder add(float weight, Supplier<? extends Block> block, CompoundTag nbt, NumberProvider chance) {
-            return this.add(ConstantValue.exactly(weight), block, nbt, chance);
+        public Builder add(float weight, Supplier<? extends Block> block, CompoundTag nbt, ContextFloatProvider chance) {
+            return this.add(new ConstantValue(weight), block, nbt, chance);
         }
 
-        public Builder add(Supplier<? extends Block> block, CompoundTag nbt, NumberProvider chance) {
+        public Builder add(Supplier<? extends Block> block, CompoundTag nbt, ContextFloatProvider chance) {
             return this.add(1.0F, block, nbt, chance);
         }
 
-        public Builder add(NumberProvider weight, Supplier<? extends Block> block, CompoundTag nbt, float chance) {
-            return this.add(weight, block, nbt, ConstantValue.exactly(chance));
+        public Builder add(ContextFloatProvider weight, Supplier<? extends Block> block, CompoundTag nbt, float chance) {
+            return this.add(weight, block, nbt, new ConstantValue(chance));
         }
 
         public Builder add(float weight, Supplier<? extends Block> block, CompoundTag nbt, float chance) {
-            return this.add(ConstantValue.exactly(weight), block, nbt, chance);
+            return this.add(new ConstantValue(weight), block, nbt, chance);
         }
 
         public Builder add(Supplier<? extends Block> block, CompoundTag nbt, float chance) {
             return this.add(1.0F, block, nbt, chance);
         }
 
-        public Builder add(NumberProvider weight, Supplier<? extends Block> block, float chance) {
+        public Builder add(ContextFloatProvider weight, Supplier<? extends Block> block, float chance) {
             return this.add(weight, block, new CompoundTag(), chance);
         }
 
         public Builder add(float weight, Supplier<? extends Block> block, float chance) {
-            return this.add(ConstantValue.exactly(weight), block, chance);
+            return this.add(new ConstantValue(weight), block, chance);
         }
 
         public Builder add(Supplier<? extends Block> block, float chance) {
             return this.add(1.0F, block, chance);
         }
 
-        public Builder add(NumberProvider weight, Supplier<? extends Block> block) {
+        public Builder add(ContextFloatProvider weight, Supplier<? extends Block> block) {
             return this.add(weight, block, 1.0F);
         }
 
         public Builder add(float weight, Supplier<? extends Block> block) {
-            return this.add(ConstantValue.exactly(weight), block);
+            return this.add(new ConstantValue(weight), block);
         }
 
         public Builder add(Supplier<? extends Block> block) {

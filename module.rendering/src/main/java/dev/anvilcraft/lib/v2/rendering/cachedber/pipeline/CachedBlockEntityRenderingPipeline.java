@@ -1,6 +1,8 @@
 package dev.anvilcraft.lib.v2.rendering.cachedber.pipeline;
 
 import dev.anvilcraft.lib.v2.rendering.cachedber.renderer.CachedBlockEntityRenderDispatcher;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import net.minecraft.client.renderer.oit.OitStage;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -46,7 +48,8 @@ public class CachedBlockEntityRenderingPipeline {
     private static int glMaxLabelLength = 0;
 
     public static void create() {
-        if (GL.getCapabilities().GL_KHR_debug) {
+        if ("OpenGL".equals(com.mojang.blaze3d.systems.RenderSystem.getDevice().getDeviceInfo().backendName())
+            && GL.getCapabilities().GL_KHR_debug) {
             glMaxLabelLength = GL46.glGetInteger(GL46.GL_MAX_LABEL_LENGTH);
             glMaxLabelLength /= 2;
         }
@@ -137,6 +140,17 @@ public class CachedBlockEntityRenderingPipeline {
         for (CachedRenderingChunk value : chunks.values()) {
             value.render(frustum, translucent);
         }
+    }
+
+    public void prepare(Frustum frustum, Vec3 cameraPosition) {
+        for (CachedRenderingChunk chunk : this.chunks.values()) {
+            chunk.prepare(frustum, cameraPosition);
+            chunk.enqueueBloom();
+        }
+    }
+
+    public void render(boolean translucent, RenderPass pass, @Nullable OitStage stage) {
+        for (CachedRenderingChunk chunk : this.chunks.values()) chunk.render(translucent, pass, stage);
     }
 
     public String truncateName(String s) {

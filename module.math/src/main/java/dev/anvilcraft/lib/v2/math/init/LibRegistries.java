@@ -7,7 +7,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.registries.DataPackRegistryEvent;
+import net.neoforged.neoforge.registries.NewDatapackRegistryEvent;
 import net.neoforged.neoforge.registries.NewRegistryEvent;
 import net.neoforged.neoforge.registries.RegistryBuilder;
 
@@ -50,8 +50,8 @@ public class LibRegistries {
     }
 
     @SubscribeEvent
-    public static void registerDataRegistries(DataPackRegistryEvent.NewRegistry event) {
-        event.dataPackRegistry(
+    public static void registerDataRegistries(NewDatapackRegistryEvent event) {
+        event.worldRegistry(
             LibRegistries.FUNCTION_KEY,
             IFunction.DIRECT_CODEC,
             IFunction.DIRECT_CODEC

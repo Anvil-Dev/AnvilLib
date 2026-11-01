@@ -28,6 +28,10 @@ public class ALRIntegrationCompatMixinPlugin implements IMixinConfigPlugin {
                 "dev.anvilcraft.lib.v2.rendering.integration.mixins.RebuildTaskMixin",
                 isPresent("iris")
             )
+            .put(
+                "dev.anvilcraft.lib.v2.rendering.integration.mixins.OuterWrappedRenderTypeAccess",
+                isPresent("iris")
+            )
             .build();
     }
 
@@ -43,7 +47,6 @@ public class ALRIntegrationCompatMixinPlugin implements IMixinConfigPlugin {
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         Boolean bl = mixinConditions.get(mixinClassName);
-        System.out.println("mixinClassName = " + mixinClassName);
         return bl == null || bl;
     }
 

@@ -18,6 +18,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.registries.RegistryPatchGenerator;
 import net.neoforged.fml.LogicalSide;
+import net.neoforged.neoforge.registries.DataPackRegistriesHooks;
 import net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider;
 
 import java.util.Set;
@@ -28,7 +29,9 @@ public class RegistrumDatapackProvider extends DatapackBuiltinEntriesProvider im
     public RegistrumDatapackProvider(AbstractRegistrum<?> parent, PackOutput output, CompletableFuture<HolderLookup.Provider> provider) {
         super(
             output,
-            RegistryPatchGenerator.createLookup(provider, parent.getDataGenInitializer().getDatapackRegistryProviders()),
+            "Registrum world registries",
+            DataPackRegistriesHooks.getWorldRegistriesWithDimensions().toList(),
+            RegistryPatchGenerator.createWorldLookup(provider, parent.getDataGenInitializer().getDatapackRegistryProviders()),
             Set.of(parent.getModid())
         );
     }

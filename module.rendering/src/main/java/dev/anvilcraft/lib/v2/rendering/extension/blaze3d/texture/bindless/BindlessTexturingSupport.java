@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.bindless;
 
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTexture;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.NamedUniformAccess;
 
 import java.util.List;

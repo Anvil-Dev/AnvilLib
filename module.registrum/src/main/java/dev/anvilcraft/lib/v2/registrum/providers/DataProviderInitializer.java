@@ -16,6 +16,8 @@ package dev.anvilcraft.lib.v2.registrum.providers;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.core.registries.SingleRegistryBootstrap;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,15 +30,32 @@ import org.jspecify.annotations.Nullable;
 public class DataProviderInitializer {
 
     private final RegistrySetBuilder datapackEntryProvider = new RegistrySetBuilder();
+    private final RegistrySetBuilder reloadableDatapackEntryProvider = new RegistrySetBuilder();
+    private final List<Runnable> pendingRegistryProviders = new ArrayList<>();
 
     private final Map<ProviderType<?>, ProviderType<? extends RegistrumLookupFillerProvider>> providerDependencies = new ConcurrentHashMap<>();
 
     public DataProviderInitializer() {
         addDependency(ProviderType.ITEM_TAGS, ProviderType.BLOCK_TAGS);
+        addDependency(ProviderType.RELOADABLE_DYNAMIC, ProviderType.DYNAMIC);
+        addDependency(ProviderType.RECIPE_RUNNER, ProviderType.RELOADABLE_DYNAMIC);
+        addDependency(ProviderType.LOOT, ProviderType.RELOADABLE_DYNAMIC);
+        addDependency(ProviderType.ADVANCEMENT, ProviderType.RELOADABLE_DYNAMIC);
     }
 
     protected RegistrySetBuilder getDatapackRegistryProviders() {
+        prepareRegistryProviders();
         return datapackEntryProvider;
+    }
+
+    protected RegistrySetBuilder getReloadableDatapackRegistryProviders() {
+        prepareRegistryProviders();
+        return reloadableDatapackEntryProvider;
+    }
+
+    private void prepareRegistryProviders() {
+        this.pendingRegistryProviders.forEach(Runnable::run);
+        this.pendingRegistryProviders.clear();
     }
 
     protected List<Sorted> getSortedProviders() {
@@ -60,8 +79,15 @@ public class DataProviderInitializer {
         return ans;
     }
 
-    public <T> void add(ResourceKey<Registry<T>> registry, RegistrySetBuilder.RegistryBootstrap<T> provider) {
-        datapackEntryProvider.add(registry, provider);
+    public <T> void add(ResourceKey<Registry<T>> registry, SingleRegistryBootstrap<T> provider) {
+        // 模组构造时原生注册表尚未初始化，延迟到 GatherDataEvent 再确定所属层。
+        this.pendingRegistryProviders.add(() -> {
+            if (RegistryDataLoader.RELOADABLE_REGISTRIES.stream().anyMatch(data -> data.key().equals(registry))) {
+                reloadableDatapackEntryProvider.add(registry, provider);
+            } else {
+                datapackEntryProvider.add(registry, provider);
+            }
+        });
     }
 
     public void addDependency(ProviderType<?> dependent, ProviderType<? extends RegistrumLookupFillerProvider> parent) {

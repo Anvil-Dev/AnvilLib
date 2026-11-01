@@ -2,12 +2,12 @@ package dev.anvilcraft.lib.v2.util.predicate;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.advancements.criterion.DataComponentMatchers;
-import net.minecraft.advancements.criterion.MinMaxBounds;
+import net.minecraft.advancements.predicates.DataComponentMatchers;
+import net.minecraft.advancements.predicates.MinMaxBounds;
 import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.RegistryCodecs;
+import net.minecraft.core.registries.codec.RegistryCodecs;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -38,7 +38,7 @@ public record ItemPredicate(
      * ItemPredicate编解码器
      */
     public static final Codec<ItemPredicate> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-        RegistryCodecs.homogeneousList(Registries.ITEM)
+        RegistryCodecs.holderSet(Registries.ITEM)
             .optionalFieldOf("items")
             .forGetter(ItemPredicate::items),
         MinMaxBounds.Ints.CODEC

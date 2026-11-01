@@ -1,8 +1,8 @@
 # AnvilLib **中文** | [English](README.en.md)
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.1-green.svg)](https://minecraft.net/)
-[![Maven Central](https://img.shields.io/maven-central/v/dev.anvilcraft.lib/anvillib-neoforge-26.1)](https://central.sonatype.com/search?q=anvillib)
-[![NeoForge](https://img.shields.io/badge/NeoForge-26.1.x-orange.svg)](https://neoforged.net/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.3-green.svg)](https://minecraft.net/)
+[![Maven Central](https://img.shields.io/maven-central/v/dev.anvilcraft.lib/anvillib-neoforge-26.3)](https://central.sonatype.com/search?q=anvillib)
+[![NeoForge](https://img.shields.io/badge/NeoForge-26.3.x-orange.svg)](https://neoforged.net/)
 [![License](https://img.shields.io/badge/License-MIT%20License-blue.svg)](https://opensource.org/licenses/MIT)
 
 **AnvilLib** 是一个由 [Anvil Dev](https://github.com/Anvil-Dev) 开发的 NeoForge 模组库，为 Minecraft 模组开发者提供一系列实用的工具和框架。
@@ -52,7 +52,7 @@ AnvilLib 采用模块化设计，包含以下功能模块：
 
 ```java
 
-@Config(name = "my_mod", type = ModConfig.Type.COMMON)
+@Config(name = "my_mod", type = ModConfig.Type.LOCAL)
 public class MyModConfig {
     @Comment("启用调试模式")
     public boolean debugMode = false;
@@ -66,6 +66,20 @@ public class MyModConfig {
 MyModConfig config = ConfigManager.register("my_mod", MyModConfig::new);
 ```
 
+**侧栏配置界面（26.3）：**
+
+在配置类上设置 `@Config(name = "my_mod", screenStyle = ConfigScreenStyle.SIDEBAR)`，
+照常调用 `ConfigManager.register` 即可自动启用。
+首层 `@CollapsibleObject` 配置组显示在左侧；根层普通项目集中到“常规”，更深的组在弹窗中逐级浏览。
+`group` 参数用于配置文件目录，不表示界面选项卡。
+枚举配置项使用下拉菜单，支持方向键选择、Enter 确认与 Esc 取消。
+
+同一模组的多个文件可分别选择 `DEFAULT` 或 `SIDEBAR`。
+入口保留 NeoForge 文件选择页；新界面右上角可以切换其他启用侧栏的文件。
+切换选项卡或返回弹窗会保留修改，切换文件、点击“完成”或在主界面按 Esc 时保存。
+撤销与恢复默认值作用于当前页的直接配置项；保存文件后清空撤销历史。
+服务端配置遵守 NeoForge 的本地世界、远程服务器和局域网编辑限制。
+
 ### Codec 模块
 
 提供围绕 Mojang `Codec` 与 `StreamCodec` 的实用工具，减少网络包、配方数据与注册表对象序列化时的样板代码。
@@ -74,7 +88,7 @@ MyModConfig config = ConfigManager.register("my_mod", MyModConfig::new);
 
 - 常用对象编解码：`Item` / `Block` / `BlockState` / `EntityType` / `Vec3` / `Vec3i`
 - `Codec` 与 `StreamCodec` 互转（支持注册表上下文 + NBT 中间格式）
-- `NumberProvider` 的紧凑网络编码
+- `ContextIntProvider` / `ContextFloatProvider` 的原生 JSON 与网络编码（支持嵌套及扩展类型）
 - `composite(...)` 高阶重载（支持 `Function7` 到 `Function16`）
 
 **使用示例：**
@@ -96,7 +110,7 @@ public record ExamplePayload(Item item, int count) {
 
 提供旋转模型的斜棱线高亮和精确准星拾取，支持父模型、反向描边壳、随机变体、multipart、资源重载和 BER 动态部件。
 通过 `CubeSelection.enableNamespace("your_mod")` 启用；`registerTargetExclusion` 可按 ID 注册、替换和注销运行时排除规则，而无需丢弃模型缓存。
-几何共享、BVH 射线检测和后台轮廓任务均有数量及内存预算。26.1 使用 `CuboidModelElement`、`BlockStateModel` 和高亮状态提取接口。
+几何共享、BVH 射线检测和后台轮廓任务均有数量及内存预算。26.3 使用 `CuboidModelElement`、`BlockStateModel` 和高亮状态提取接口。
 
 ### RPC 模块
 
@@ -363,7 +377,7 @@ controller.onHoldKeyReleased();
 
 ### Main 模块
 
-`anvillib-neoforge-26.1` 为聚合发行模块，默认打包并重导出以下子模块：
+`anvillib-neoforge-26.3` 为聚合发行模块，默认打包并重导出以下子模块：
 
 - `config`
 - `codec`
@@ -377,7 +391,7 @@ controller.onHoldKeyReleased();
 - `util`
 - `wheel`
 
-`anvillib-test-neoforge-26.1` 为开发/测试模块，不包含在聚合运行时产物中。
+`anvillib-test-neoforge-26.3` 为开发/测试模块，不包含在聚合运行时产物中。
 
 ## 依赖引入
 
@@ -390,20 +404,20 @@ repositories {
 
 dependencies {
     // 完整库
-    implementation "dev.anvilcraft.lib:anvillib-neoforge-26.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-neoforge-26.3:2.0.0"
 
     // 或按需引入单独模块
-    implementation "dev.anvilcraft.lib:anvillib-config-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-codec-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-integration-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-math-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-multiblock-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-network-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-util-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-26.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-config-neoforge-26.3:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-codec-neoforge-26.3:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-integration-neoforge-26.3:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-math-neoforge-26.3:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-26.3:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-multiblock-neoforge-26.3:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-network-neoforge-26.3:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-26.3:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-26.3:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-util-neoforge-26.3:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-26.3:2.0.0"
 }
 ```
 
@@ -415,20 +429,20 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.anvilcraft.lib:anvillib-neoforge-26.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-neoforge-26.3:2.0.0")
 
     // 按需引入示例
-    implementation("dev.anvilcraft.lib:anvillib-config-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-integration-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-math-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-multiblock-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-network-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-util-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-26.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-config-neoforge-26.3:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-26.3:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-integration-neoforge-26.3:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-math-neoforge-26.3:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-26.3:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-multiblock-neoforge-26.3:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-network-neoforge-26.3:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-26.3:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-26.3:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-util-neoforge-26.3:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-26.3:2.0.0")
 }
 ```
 
@@ -451,8 +465,8 @@ gradlew.bat build
 ## 环境要求
 
 - Java 25+
-- Minecraft 26.1
-- NeoForge 26.1.x
+- Minecraft 26.3
+- NeoForge 26.3.x
 
 ## 许可证
 

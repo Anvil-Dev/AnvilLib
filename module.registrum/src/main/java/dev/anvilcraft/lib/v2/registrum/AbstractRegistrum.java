@@ -126,7 +126,7 @@ import net.neoforged.neoforge.data.loading.DatagenModLoader;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
-import net.neoforged.neoforge.registries.DataPackRegistryEvent;
+import net.neoforged.neoforge.registries.NewDatapackRegistryEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.NewRegistryEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
@@ -1085,8 +1085,8 @@ public abstract class AbstractRegistrum<S extends AbstractRegistrum<S>> {
         final ResourceKey<Registry<R>> registryId = ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath(getModid(), name));
         OneTimeEventReceiver.addModListener(
             this,
-            DataPackRegistryEvent.NewRegistry.class,
-            event -> event.dataPackRegistry(registryId, codec, networkCodec)
+            NewDatapackRegistryEvent.class,
+            event -> event.worldRegistry(registryId, codec, networkCodec)
         );
         return registryId;
     }

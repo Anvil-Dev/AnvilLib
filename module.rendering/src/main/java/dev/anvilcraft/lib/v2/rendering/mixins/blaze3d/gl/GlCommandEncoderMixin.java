@@ -1,9 +1,11 @@
 package dev.anvilcraft.lib.v2.rendering.mixins.blaze3d.gl;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.opengl.GlBuffer;
-import com.mojang.blaze3d.opengl.GlDevice;
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.backend.opengl.GlBuffer;
+import com.mojang.renderpearl.backend.opengl.GlDevice;
+import com.mojang.renderpearl.backend.opengl.GlRenderPipeline;
+import org.jspecify.annotations.Nullable;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
@@ -16,21 +18,25 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(targets = "com.mojang.blaze3d.opengl.GlCommandEncoder")
+@Mixin(targets = "com.mojang.renderpearl.backend.opengl.GlCommandEncoder")
 public class GlCommandEncoderMixin implements ALRCommandEncoderBackendExtension {
     @Shadow
     @Final
     private GlDevice device;
 
+    @Shadow private @Nullable GlRenderPipeline lastPipeline;
+
     @Override
     public void alrDispatchWorkgroups(int groupCountX, int groupCountY, int groupCountZ) {
         ARBComputeShader.glDispatchCompute(groupCountX, groupCountY, groupCountZ);
+        this.lastPipeline = null;
     }
 
     @Override
     public void alrDispatchWorkgroupsIndirect(GpuBufferSlice parameters) {
         GlStateManager._glBindBuffer(GL46.GL_DISPATCH_INDIRECT_BUFFER, ((GlBuffer) parameters.buffer()).handle);
         ARBComputeShader.glDispatchComputeIndirect(parameters.offset());
+        this.lastPipeline = null;
     }
 
     @Override

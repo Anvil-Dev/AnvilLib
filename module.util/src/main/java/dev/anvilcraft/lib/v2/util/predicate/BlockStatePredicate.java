@@ -11,7 +11,7 @@ import lombok.Getter;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.RegistryCodecs;
+import net.minecraft.core.registries.codec.RegistryCodecs;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -74,7 +74,7 @@ public class BlockStatePredicate {
      */
     public static final Codec<BlockStatePredicate> CODEC = RecordCodecBuilder.create(
         instance -> instance.group(
-                RegistryCodecs.homogeneousList(Registries.BLOCK)
+                RegistryCodecs.holderSet(Registries.BLOCK)
                     .optionalFieldOf("blocks", HolderSet.empty())
                     .forGetter(BlockStatePredicate::getBlocks),
                 PROPERTIES_CODEC

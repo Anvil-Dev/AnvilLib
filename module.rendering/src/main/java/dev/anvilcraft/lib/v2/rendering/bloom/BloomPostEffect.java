@@ -1,23 +1,26 @@
 package dev.anvilcraft.lib.v2.rendering.bloom;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
+import java.util.Optional;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.blaze3d.pipeline.MainTarget;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import dev.anvilcraft.lib.v2.rendering.foundation.FeatureRendering;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.layout.BufferLayout;
 import dev.anvilcraft.lib.v2.rendering.foundation.compound.CompoundSubmitNodeStorage;
@@ -36,7 +39,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
 @SuppressWarnings({"FieldMayBeFinal", "SameParameterValue"})
-public class BloomPostEffect implements DirtyTracked {
+public class BloomPostEffect implements DirtyTracked, AutoCloseable {
     public static final int UNIFORM_TRANSFORM_SIZE = TransformsUbo.DEFINITION.size(BufferLayout.STD140);
     public static final int UNIFORM_BLOOM_SIZE = BloomParametersUbo.DEFINITION.size(BufferLayout.STD140);
     public static final int UNIFORM_ENHANCED_BLOOM_SIZE = BloomPipelineParametersUbo.DEFINITION.size(BufferLayout.STD140);
@@ -46,8 +49,8 @@ public class BloomPostEffect implements DirtyTracked {
     private static final int PASS_STEP = 1;
 
     @Getter
-    private final RenderTarget bloomInputTarget = new MainTarget(854, 480, false);
-    private final RenderTarget bloomTempTarget = new TextureTarget("BloomTemp", 854, 480, false);
+    private final RenderTarget bloomInputTarget = new MainTarget(854, 480);
+    private final RenderTarget bloomTempTarget = new TextureTarget("BloomTemp", 854, 480, com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM, null);
 
     private final RenderTarget[] downsampleTargets = arrayInit("DownSample", PASSES_AMOUNT);
     private final RenderTarget[] upsampleTargets = arrayInit("UpSample", PASSES_AMOUNT - 1);
@@ -110,6 +113,8 @@ public class BloomPostEffect implements DirtyTracked {
     private int height;
     private int indexCount;
     private boolean dirty = false;
+    @Getter
+    private boolean drawingBloom;
 
     private int passes;
     private int step;
@@ -127,7 +132,7 @@ public class BloomPostEffect implements DirtyTracked {
         int passes,
         int step
     ) {
-        RenderTarget mainRenderTarget = Minecraft.getInstance().getMainRenderTarget();
+        RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 
         this.width = mainRenderTarget.width;
         this.height = mainRenderTarget.height;
@@ -144,7 +149,7 @@ public class BloomPostEffect implements DirtyTracked {
         clearColorAndDepth(bloomTempTarget, 0);
         dirty = false;
         bloomCalls.clear();
-        submitNodeStorage.clear();
+        FeatureRendering.clear(submitNodeStorage);
     }
 
     public void markDirty() {
@@ -161,7 +166,7 @@ public class BloomPostEffect implements DirtyTracked {
     }
 
     public void beginBloomDraw() {
-        RenderTarget mainRenderTarget = Minecraft.getInstance().getMainRenderTarget();
+        RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 
         this.guardSize(mainRenderTarget);
 
@@ -182,14 +187,12 @@ public class BloomPostEffect implements DirtyTracked {
     }
 
     public void setupOutputOverride() {
-        RenderSystem.outputColorTextureOverride = bloomInputTarget.getColorTextureView();
-        RenderSystem.outputDepthTextureOverride = bloomInputTarget.getDepthTextureView();
+        this.drawingBloom = true;
         this.markDirty();
     }
 
     public void teardownOutputOverride() {
-        RenderSystem.outputColorTextureOverride = null;
-        RenderSystem.outputDepthTextureOverride = null;
+        this.drawingBloom = false;
     }
 
     public void runBloomDraws(Matrix4fc modelViewMatrix, FeatureRenderDispatcher featureRenderDispatcher) {
@@ -202,11 +205,10 @@ public class BloomPostEffect implements DirtyTracked {
             beginBloomDraw();
             if (!bloomCalls.isEmpty()) {
                 for (BloomRenderCallback bloomCall : bloomCalls) {
-                    bloomCall.render(featureRenderDispatcher.getSubmitNodeStorage(), poseStack);
+                    bloomCall.render(this.submitNodeStorage, poseStack);
                 }
             }
-            featureRenderDispatcher.renderAllFeatures();
-            Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
+            FeatureRendering.draw(featureRenderDispatcher, this.submitNodeStorage, this.bloomInputTarget);
         } finally {
             endBloomDraw();
             RenderSystem.getModelViewStack().popMatrix();
@@ -217,7 +219,7 @@ public class BloomPostEffect implements DirtyTracked {
     public void process() {
         if (!dirty) return;
         CommandEncoder commandEncoder = device.createCommandEncoder();
-        RenderTarget mainRenderTarget = Minecraft.getInstance().getMainRenderTarget();
+        RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 
         this.guardSize(mainRenderTarget);
 
@@ -247,10 +249,10 @@ public class BloomPostEffect implements DirtyTracked {
 
     @SuppressWarnings("DataFlowIssue")
     private void clearColorAndDepth(RenderTarget rt, int color) {
-        if (rt.useDepth) {
-            device.createCommandEncoder().clearColorAndDepthTextures(rt.getColorTexture(), color, rt.getDepthTexture(), 1);
+        if (rt.hasDepth()) {
+            device.createCommandEncoder().clearColorAndDepthTextures(rt.getColorTexture(), net.minecraft.util.ARGB.vector4fFromARGB32(color), rt.getDepthTexture(), 0);
         } else {
-            device.createCommandEncoder().clearColorTexture(rt.getColorTexture(), color);
+            device.createCommandEncoder().clearColorTexture(rt.getColorTexture(), net.minecraft.util.ARGB.vector4fFromARGB32(color));
         }
     }
 
@@ -263,21 +265,22 @@ public class BloomPostEffect implements DirtyTracked {
     ) {
         transformsUbo.upload(commandEncoder, transformUBO.slice());
         bloomParameters.upload(commandEncoder, bloomUBO.slice());
-        RenderPass bloomPass = commandEncoder.createRenderPass(
+        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
+        GpuBuffer indexBuffer = sequentialBuffer.getBuffer(indexCount);
+        try (RenderPass bloomPass = commandEncoder.createRenderPass(
             () -> "BloomPostEffect BloomApply",
             outputTarget.getColorTextureView(),
-            OptionalInt.of(0)
-        );
-        bloomPass.setPipeline(ALRPipelines.APPLY_BLOOM);
-        bloomPass.setUniform("Transforms", transformUBO);
-        bloomPass.setUniform("BloomParameters", bloomUBO);
-        bloomPass.bindTexture("DiffuseSampler", inputTarget.getColorTextureView(), inputSampler);
-        bloomPass.bindTexture("GameSampler", gameTexture, mainSampler);
-        bloomPass.setVertexBuffer(0, vertexBuffer);
-        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
-        bloomPass.setIndexBuffer(sequentialBuffer.getBuffer(indexCount), sequentialBuffer.type());
-        bloomPass.drawIndexed(0, 0, indexCount, 1);
-        bloomPass.close();
+            Optional.of(new org.joml.Vector4f())
+        )) {
+            bloomPass.setPipeline(RenderSystem.getCompiledPipeline(ALRPipelines.APPLY_BLOOM));
+            bloomPass.setUniform("Transforms", transformUBO);
+            bloomPass.setUniform("BloomParameters", bloomUBO);
+            bloomPass.setUniform("DiffuseSampler", inputTarget.getColorTextureView(), inputSampler);
+            bloomPass.setUniform("GameSampler", gameTexture, mainSampler);
+            bloomPass.setVertexBuffer(0, vertexBuffer.slice());
+            bloomPass.setIndexBuffer(indexBuffer, sequentialBuffer.type());
+            bloomPass.drawIndexed(indexCount, 1, 0, 0, 0);
+        }
     }
 
     private void doDownSample(
@@ -314,22 +317,23 @@ public class BloomPostEffect implements DirtyTracked {
         this.enhancedBloomParameters.setResolution(src.width, src.height);
         this.enhancedBloomParameters.upload(commandEncoder, enhancedBloomParametersUBO.slice());
 
-        var pass = commandEncoder.createRenderPass(
+        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
+        GpuBuffer indexBuffer = sequentialBuffer.getBuffer(indexCount);
+        try (RenderPass pass = commandEncoder.createRenderPass(
             () -> ("BloomPostEffect DownSample " + frameIndex),
             dst.getColorTextureView(),
-            OptionalInt.of(0)
-        );
+            Optional.of(new org.joml.Vector4f())
+        )) {
 
-        pass.setPipeline(ALRPipelines.DOWNSAMPLE);
-        pass.setUniform("Transforms", transformUBO);
-        pass.setUniform("BloomParameters", enhancedBloomParametersUBO);
-        pass.bindTexture("DiffuseSampler", src.getColorTextureView(), inputSampler);
+            pass.setPipeline(RenderSystem.getCompiledPipeline(ALRPipelines.DOWNSAMPLE));
+            pass.setUniform("Transforms", transformUBO);
+            pass.setUniform("BloomParameters", enhancedBloomParametersUBO);
+            pass.setUniform("DiffuseSampler", src.getColorTextureView(), inputSampler);
 
-        pass.setVertexBuffer(0, vertexBuffer);
-        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
-        pass.setIndexBuffer(sequentialBuffer.getBuffer(indexCount), sequentialBuffer.type());
-        pass.drawIndexed(0, 0, indexCount, 1);
-        pass.close();
+            pass.setVertexBuffer(0, vertexBuffer.slice());
+            pass.setIndexBuffer(indexBuffer, sequentialBuffer.type());
+            pass.drawIndexed(indexCount, 1, 0, 0, 0);
+        }
     }
 
     private void doUpSample(CommandEncoder commandEncoder) {
@@ -366,23 +370,24 @@ public class BloomPostEffect implements DirtyTracked {
         this.enhancedBloomParameters.setResolution(curr.width, curr.height);
         this.enhancedBloomParameters.upload(commandEncoder, enhancedBloomParametersUBO.slice());
 
-        var pass = commandEncoder.createRenderPass(
+        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
+        GpuBuffer indexBuffer = sequentialBuffer.getBuffer(indexCount);
+        try (RenderPass pass = commandEncoder.createRenderPass(
             () -> ("BloomPostEffect UpSample " + frameIndex),
             dst.getColorTextureView(),
-            OptionalInt.of(0)
-        );
+            Optional.of(new org.joml.Vector4f())
+        )) {
 
-        pass.setPipeline(ALRPipelines.UPSAMPLE);
-        pass.setUniform("Transforms", transformUBO);
-        pass.setUniform("BloomParameters", enhancedBloomParametersUBO);
-        pass.bindTexture("DiffuseSampler", curr.getColorTextureView(), inputSampler);
-        pass.bindTexture("PreviousSampler", prev.getColorTextureView(), mainSampler);
+            pass.setPipeline(RenderSystem.getCompiledPipeline(ALRPipelines.UPSAMPLE));
+            pass.setUniform("Transforms", transformUBO);
+            pass.setUniform("BloomParameters", enhancedBloomParametersUBO);
+            pass.setUniform("DiffuseSampler", curr.getColorTextureView(), inputSampler);
+            pass.setUniform("PreviousSampler", prev.getColorTextureView(), mainSampler);
 
-        pass.setVertexBuffer(0, vertexBuffer);
-        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
-        pass.setIndexBuffer(sequentialBuffer.getBuffer(indexCount), sequentialBuffer.type());
-        pass.drawIndexed(0, 0, indexCount, 1);
-        pass.close();
+            pass.setVertexBuffer(0, vertexBuffer.slice());
+            pass.setIndexBuffer(indexBuffer, sequentialBuffer.type());
+            pass.drawIndexed(indexCount, 1, 0, 0, 0);
+        }
     }
 
     public void resize(int width, int height) {
@@ -391,11 +396,11 @@ public class BloomPostEffect implements DirtyTracked {
         bloomInputTarget.resize(width, height);
         bloomTempTarget.resize(width, height);
         transformsUbo.getProjMat().setOrtho(
-            0, width, 0, height, -1, -10000f
+            0, width, 0, height, -1, -10000f, device.getDeviceInfo().isZZeroToOne()
         );
 
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder builder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        try (ByteBufferBuilder memory = new ByteBufferBuilder(256)) {
+        BufferBuilder builder = new BufferBuilder(memory, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX);
 
         builder.addVertex(0, 0, 100).setUv(0, 0);
         builder.addVertex(0, height, 100).setUv(0, 1);
@@ -407,6 +412,7 @@ public class BloomPostEffect implements DirtyTracked {
         commandEncoder.writeToBuffer(vertexBuffer.slice(), data.vertexBuffer());
         this.indexCount = data.drawState().indexCount();
         data.close();
+        }
 
         this.passes = PASSES_AMOUNT;
 
@@ -438,11 +444,24 @@ public class BloomPostEffect implements DirtyTracked {
             var target = new TextureTarget(
                 "Bloom_" + name + "_" + i,
                 854 >> i, 480 >> i,
-                false
+                com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM, null
             );
             targets[i] = target;
         }
 
         return targets;
+    }
+    @Override
+    public void close() {
+        this.transformUBO.close();
+        this.bloomUBO.close();
+        this.enhancedBloomParametersUBO.close();
+        this.vertexBuffer.close();
+        this.inputSampler.close();
+        this.mainSampler.close();
+        this.bloomInputTarget.destroyBuffers();
+        this.bloomTempTarget.destroyBuffers();
+        for (RenderTarget target : this.downsampleTargets) target.destroyBuffers();
+        for (RenderTarget target : this.upsampleTargets) target.destroyBuffers();
     }
 }

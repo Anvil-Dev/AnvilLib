@@ -8,6 +8,7 @@ import dev.anvilcraft.lib.v2.test.all.TestItemGroups;
 import dev.anvilcraft.lib.v2.test.all.TestItems;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.data.TestLangGenerator;
+import dev.anvilcraft.lib.v2.test.config.ConfigUiExamples;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -23,6 +24,7 @@ public class AnvilLibTest {
     }
 
     public AnvilLibTest(IEventBus modBus) {
+        ConfigUiExamples.register();
         TestItemGroups.setupRegistration();
         TestBlocks.setupRegistration();
         TestTiles.setupRegistration();

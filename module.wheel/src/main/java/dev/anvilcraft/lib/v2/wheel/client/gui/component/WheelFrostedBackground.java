@@ -2,11 +2,11 @@ package dev.anvilcraft.lib.v2.wheel.client.gui.component;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import dev.anvilcraft.lib.v2.rendering.blur.GaussianBlur;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.render.TextureSetup;
@@ -44,7 +44,7 @@ public final class WheelFrostedBackground implements AutoCloseable {
      * @return 可直接用于 GUI 元素渲染的 TextureSetup
      */
     public TextureSetup capture() {
-        RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
+        RenderTarget mainTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
         this.guardSize(mainTarget);
         GpuTexture blurred = this.blur.process(mainTarget.getColorTexture());
         if (this.blurredTextureView == null || this.blurredTexture != blurred) {

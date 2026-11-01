@@ -31,19 +31,32 @@ import dev.anvilcraft.lib.v2.util.nullness.NonNullFunction;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullUnaryOperator;
 import net.minecraft.client.data.models.model.ModelTemplates;
+import net.minecraft.advancements.predicates.StatePropertiesPredicate;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.Compostable;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ComposterBlock;
+import net.minecraft.world.level.storage.loot.predicates.MatchBlock;
+import net.minecraft.world.level.storage.loot.predicates.LootPredicates;
+import net.minecraft.world.level.storage.loot.providers.number.DispatcherProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ConditionalValue;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
+import net.minecraft.world.level.storage.loot.providers.number.ints.NumberDispatcher;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.datamaps.builtin.Compostable;
-import net.neoforged.neoforge.registries.datamaps.builtin.FurnaceFuel;
-import net.neoforged.neoforge.registries.datamaps.builtin.NeoForgeDataMaps;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -275,7 +288,21 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
      * @param tick time in ticks for this item to burn in furnace.
      */
     public ItemBuilder<T, P> burnTime(int tick) {
-        return dataMap(NeoForgeDataMaps.FURNACE_FUELS, new FurnaceFuel(tick));
+        ResourceKey<ContextIntProvider> burnTime = ResourceKey.create(
+            Registries.CONTEXT_INT_PROVIDER, Identifier.fromNamespaceAndPath(getOwner().getModid(), "cooking/" + getName())
+        );
+        if (getOwner().doDatagen().get()) {
+            getOwner().getDataGenInitializer().add(Registries.CONTEXT_INT_PROVIDER, context -> {
+                var providers = context.lookup(Registries.CONTEXT_INT_PROVIDER);
+                var divisor = new ConditionalValue(
+                    context.lookup(Registries.PREDICATE).getOrThrow(LootPredicates.FAST_FURNACE),
+                    providers.getOrThrow(ContextIntProviders.COOKING_FAST_BURN_TIME_REDUCTION_FACTOR),
+                    providers.getOrThrow(ContextIntProviders.COOKING_NORMAL_BURN_TIME_REDUCTION_FACTOR)
+                );
+                context.register(burnTime, ContextIntProviders.div(ContextIntProviders.exactly(tick), Holder.direct(divisor)).value());
+            });
+        }
+        return properties(properties -> properties.cookingFuel(burnTime));
     }
 
     /**
@@ -284,7 +311,27 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
      * @param chance chance for composter to increase one level when composting this item.
      */
     public ItemBuilder<T, P> compostable(float chance) {
-        return dataMap(NeoForgeDataMaps.COMPOSTABLES, new Compostable(chance));
+        if (chance <= 0 || chance >= 1) {
+            return properties(properties -> properties.component(
+                DataComponents.COMPOSTABLE, new Compostable(new ResolvableInt.Constant(chance > 0 ? 1 : 0))
+            ));
+        }
+        ResourceKey<ContextIntProvider> layers = ResourceKey.create(
+            Registries.CONTEXT_INT_PROVIDER, Identifier.fromNamespaceAndPath(getOwner().getModid(), "compostable/" + getName())
+        );
+        if (getOwner().doDatagen().get()) {
+            getOwner().getDataGenInitializer().add(Registries.CONTEXT_INT_PROVIDER, context -> {
+                var emptyComposter = new DispatcherProvider.Case<ContextIntProvider>(
+                    Holder.direct(MatchBlock.blockMatches(
+                        context.lookup(Registries.BLOCK), Blocks.COMPOSTER,
+                        StatePropertiesPredicate.Builder.properties().hasProperty(ComposterBlock.LEVEL, 0)
+                    ).build()),
+                    ContextIntProviders.exactly(1)
+                );
+                context.register(layers, new NumberDispatcher(List.of(emptyComposter), ContextIntProviders.binomial(1, chance)));
+            });
+        }
+        return properties(properties -> properties.compostable(layers));
     }
 
     @Nullable

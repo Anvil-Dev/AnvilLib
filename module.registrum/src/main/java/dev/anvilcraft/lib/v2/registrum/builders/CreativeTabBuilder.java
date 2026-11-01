@@ -127,11 +127,6 @@ public class CreativeTabBuilder<P> extends AbstractBuilder<CreativeModeTab, Crea
         return this;
     }
 
-    public CreativeTabBuilder<P> withTabsImage(Identifier tabsImage) {
-        this.builder = this.builder.withTabsImage(tabsImage);
-        return this;
-    }
-
     public CreativeTabBuilder<P> withLabelColor(int labelColor) {
         this.builder = this.builder.withLabelColor(labelColor);
         return this;

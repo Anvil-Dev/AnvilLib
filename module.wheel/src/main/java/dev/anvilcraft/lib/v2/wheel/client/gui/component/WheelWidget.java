@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.wheel.client.gui.component;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.platform.Window;
 import dev.anvilcraft.lib.v2.rendering.sdf.SdfGraphics;
 import dev.anvilcraft.lib.v2.wheel.AnvilLibWheel;
@@ -634,7 +634,7 @@ public class WheelWidget extends AbstractWidget {
         float delta = this.displayTime + this.closingAnimationMs - System.currentTimeMillis();
         float progress = delta / this.closingAnimationMs;
         if (progress >= 1 || progress <= 0) {
-            this.minecraft.setScreen(null);
+            this.minecraft.gui.setScreen(null);
         }
         this.renderProgressAnimation(guiGraphics, progress);
     }
@@ -888,7 +888,7 @@ public class WheelWidget extends AbstractWidget {
             this.displayTime = System.currentTimeMillis();
             this.closingAnimationStarted = true;
         } else {
-            this.minecraft.setScreen(null);
+            this.minecraft.gui.setScreen(null);
         }
     }
 

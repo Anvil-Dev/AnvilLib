@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.gui;
 
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.anvilcraft.lib.v2.rendering.ALRSharedMath;
 import dev.anvilcraft.lib.v2.rendering.extension.GuiGraphicsExtractorExtension;

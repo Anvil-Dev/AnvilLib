@@ -1,8 +1,8 @@
 package dev.anvilcraft.lib.v2.font.sdf.state;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.anvilcraft.lib.v2.font.ALFPipelines;
 import dev.anvilcraft.lib.v2.font.sdf.SdfTextLayout;
@@ -50,7 +50,7 @@ public record SdfTextRenderState(
     @Override
     public void executeDrawAfterSetPipeline(RenderPass renderPass) {
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(this.atlasTexture);
-        renderPass.bindTexture("DiffuseSampler", texture.getTextureView(), diffuseSampler);
+        renderPass.setUniform("DiffuseSampler", texture.getTextureView(), diffuseSampler);
     }
 
     @Override

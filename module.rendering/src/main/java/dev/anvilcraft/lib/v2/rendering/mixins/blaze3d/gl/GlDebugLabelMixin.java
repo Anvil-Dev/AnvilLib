@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.rendering.mixins.blaze3d.gl;
 
-import com.mojang.blaze3d.opengl.GlDebugLabel;
+import com.mojang.renderpearl.backend.opengl.GlDebugLabel;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRDebugLabelExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.shader.ALRComputeProgramInstance;
 import net.minecraft.util.StringUtil;
@@ -20,7 +20,7 @@ public class GlDebugLabelMixin {
         }
     }
 
-    @Mixin(targets = "com.mojang.blaze3d.opengl.GlDebugLabel$Core")
+    @Mixin(targets = "com.mojang.renderpearl.backend.opengl.GlDebugLabel$Core")
     public static class Core implements ALRDebugLabelExtension {
 
         @Shadow
@@ -41,7 +41,7 @@ public class GlDebugLabelMixin {
         }
     }
 
-    @Mixin(targets = "com.mojang.blaze3d.opengl.GlDebugLabel$Ext")
+    @Mixin(targets = "com.mojang.renderpearl.backend.opengl.GlDebugLabel$Ext")
     public static class Ext implements ALRDebugLabelExtension {
 
         @Override

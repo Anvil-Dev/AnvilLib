@@ -9,14 +9,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 public class DirectStateAccessMixin {
 
-    @Mixin(targets = "com.mojang.blaze3d.opengl.DirectStateAccess$Emulated")
+    @Mixin(targets = "com.mojang.renderpearl.backend.opengl.GlUtil")
     public static class Emulated {
         @Inject(
             method = "selectBufferBindTarget",
             at = @At("HEAD"),
             cancellable = true
         )
-        void handleSSBO(int usage, CallbackInfoReturnable<Integer> cir) {
+        private static void handleSSBO(int usage, CallbackInfoReturnable<Integer> cir) {
             if ((usage & GpuBufferConstants.USAGE_SHADER_STORAGE) != 0) {
                 cir.setReturnValue(ARBShaderStorageBufferObject.GL_SHADER_STORAGE_BUFFER);
             }

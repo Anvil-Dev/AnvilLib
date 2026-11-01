@@ -31,6 +31,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.neoforge.common.conditions.ICondition;
+import net.neoforged.neoforge.common.conditions.ConditionalOps;
 import net.neoforged.neoforge.common.conditions.WithConditions;
 
 import java.nio.file.Path;
@@ -123,7 +124,7 @@ public class RegistrumAdvancementProvider implements RegistrumProvider, Consumer
                 advancementsToSave.add(DataProvider.saveStable(cache, lookup, Advancement.CODEC, holder.value(), path));
             } else {
                 advancementsToSave.add(DataProvider.saveStable(
-                    cache, lookup, Advancement.CONDITIONAL_CODEC,
+                    cache, lookup, ConditionalOps.createConditionalCodecWithConditions(Advancement.CODEC),
                     Optional.of(new WithConditions<>(conditions, holder.value())), path
                 ));
             }

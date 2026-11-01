@@ -8,9 +8,9 @@ import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipeOutcomeTypes;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProvider;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProviders;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import java.util.List;
  * @param chance  整个ChooseOneOutcome发生的概率
  * @param choices 多选一中的所有选项列表
  */
-public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) implements IRecipeOutcome<ChooseOneOutcome> {
+public record ChooseOneOutcome(ContextFloatProvider chance, List<Choice> choices) implements IRecipeOutcome<ChooseOneOutcome> {
     /**
      * 多选一Outcome的构造器
      * 请使用builder类
@@ -31,7 +31,7 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
      * @param chance  整个ChooseOneOutcome发生的概率
      * @param choices 多选一中的所有选项列表
      */
-    public ChooseOneOutcome(NumberProvider chance, @Unmodifiable List<Choice> choices) {
+    public ChooseOneOutcome(ContextFloatProvider chance, @Unmodifiable List<Choice> choices) {
         this.chance = chance;
         this.choices = choices;
     }
@@ -103,7 +103,7 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
      * @param weight  选项的权重
      * @return 选项实例对象
      */
-    public static Choice quickChoice(IRecipeOutcome<?> outcome, NumberProvider weight) {
+    public static Choice quickChoice(IRecipeOutcome<?> outcome, ContextFloatProvider weight) {
         return new Choice(outcome, weight);
     }
 
@@ -113,7 +113,7 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
      * @param outcome 每个选项的产出
      * @param weight  每个选项的权重，概率为 权重/权重总和
      */
-    public record Choice(IRecipeOutcome<?> outcome, NumberProvider weight) {
+    public record Choice(IRecipeOutcome<?> outcome, ContextFloatProvider weight) {
         /**
          * 编解码器
          */
@@ -121,7 +121,7 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
                 IRecipeOutcome.CODEC
                     .fieldOf("outcome")
                     .forGetter(Choice::outcome),
-                NumberProviders.CODEC
+                ContextFloatProviders.DIRECT_CODEC
                     .fieldOf("weight")
                     .forGetter(Choice::weight)
             )
@@ -133,7 +133,7 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
         /**
          * （builder的）整个ChooseOneOutcome的概率
          */
-        private NumberProvider chance;
+        private ContextFloatProvider chance;
 
         /**
          * （构建器中的）各个选项
@@ -144,7 +144,7 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
          * 构建器
          */
         public Builder() {
-            chance = ConstantValue.exactly(1f);
+            chance = new ConstantValue(1f);
             choices = new ArrayList<>();
         }
 
@@ -166,7 +166,7 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
          * @param weight  该选项的权重
          * @return builder自身
          */
-        public Builder choice(IRecipeOutcome<?> outcome, NumberProvider weight) {
+        public Builder choice(IRecipeOutcome<?> outcome, ContextFloatProvider weight) {
             return this.choice(ChooseOneOutcome.quickChoice(outcome, weight));
         }
 
@@ -178,7 +178,7 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
          * @return builder自身
          */
         public Builder choice(IRecipeOutcome<?> outcome, float weight) {
-            return this.choice(outcome, ConstantValue.exactly(weight));
+            return this.choice(outcome, new ConstantValue(weight));
         }
 
         /**
@@ -187,7 +187,7 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
          * @param provider 数字提供器格式的概率
          * @return builder自身
          */
-        public Builder chance(NumberProvider provider) {
+        public Builder chance(ContextFloatProvider provider) {
             chance = provider;
             return this;
         }
@@ -199,7 +199,7 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
          * @return builder自身
          */
         public Builder chance(float value) {
-            chance = ConstantValue.exactly(value);
+            chance = new ConstantValue(value);
             return this;
         }
 
@@ -222,9 +222,9 @@ public record ChooseOneOutcome(NumberProvider chance, List<Choice> choices) impl
          * 映射编解码器
          */
         public static final MapCodec<ChooseOneOutcome> MAP_CODEC = RecordCodecBuilder.mapCodec(ins -> ins.group(
-            NumberProviders.CODEC.optionalFieldOf(
+            ContextFloatProviders.DIRECT_CODEC.optionalFieldOf(
                 "chance",
-                ConstantValue.exactly(1f)
+                new ConstantValue(1f)
             ).forGetter(ChooseOneOutcome::chance),
             Choice.CODEC.listOf().fieldOf("choices").forGetter(ChooseOneOutcome::choices)
         ).apply(ins, ChooseOneOutcome::new));

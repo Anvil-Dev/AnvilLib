@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:number_dispatcher",
+  "cases": [
+    {
+      "condition": {
+        "type": "minecraft:match_block",
+        "blocks": "minecraft:composter",
+        "state": {
+          "level": "0"
+        }
+      },
+      "value": 1
+    }
+  ],
+  "default": {
+    "type": "minecraft:binomial",
+    "n": 1,
+    "p": 0.65
+  }
+}

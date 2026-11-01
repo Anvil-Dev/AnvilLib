@@ -25,6 +25,8 @@ import net.minecraft.world.level.block.RedstoneLampBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class TestCachedRenderer implements CachedBlockEntityRenderer<TestCachedRenderingTile, TestCachedRenderer.State> {
+    public static int submittedFrames;
+
 
     @Override
     public State createRenderState() {
@@ -51,7 +53,7 @@ public class TestCachedRenderer implements CachedBlockEntityRenderer<TestCachedR
 
         minecraft.getBlockModelResolver().update(
             state.blockModelRenderState1,
-            Blocks.LIME_STAINED_GLASS.defaultBlockState(),
+            Blocks.STAINED_GLASS.lime().defaultBlockState(),
             state.displayContext
         );
 
@@ -60,9 +62,10 @@ public class TestCachedRenderer implements CachedBlockEntityRenderer<TestCachedR
 
     @Override
     public void submit(State renderState, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+        submittedFrames++;
         poseStack.pushPose();
         poseStack.translate(0.5, 1, 0.5);
-        poseStack.mulPose(Axis.YP.rotationDegrees(90));
+        poseStack.rotate(Axis.YP.rotationDegrees(90));
         renderState.renderState.submit(
             poseStack,
             submitNodeCollector,

@@ -1,8 +1,9 @@
 package dev.anvilcraft.lib.v2.rendering.mixins.blaze3d;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.CommandEncoderBackend;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.frontend.FrontendCommandEncoder;
+import com.mojang.renderpearl.backend.api.CommandEncoderBackend;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
@@ -11,7 +12,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(CommandEncoder.class)
+@Mixin(FrontendCommandEncoder.class)
 public class CommandEncoderMixin implements ALRCommandEncoderExtension {
     @Shadow
     @Final

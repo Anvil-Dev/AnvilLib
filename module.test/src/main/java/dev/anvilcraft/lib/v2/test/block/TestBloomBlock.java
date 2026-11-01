@@ -1,7 +1,6 @@
 package dev.anvilcraft.lib.v2.test.block;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
-import com.mojang.serialization.MapCodec;
+import org.jspecify.annotations.NullMarked;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.block.tile.TestBloomTile;
 import net.minecraft.core.BlockPos;
@@ -18,15 +17,10 @@ import org.jspecify.annotations.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NullMarked
 public class TestBloomBlock extends BaseEntityBlock {
     public TestBloomBlock(Properties properties) {
         super(properties);
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return simpleCodec(TestBloomBlock::new);
     }
 
     @Override

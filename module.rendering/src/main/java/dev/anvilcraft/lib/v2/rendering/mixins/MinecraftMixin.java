@@ -48,7 +48,7 @@ public class MinecraftMixin {
         at = @At("HEAD")
     )
     private void onBeforeRenderFrame(boolean advanceGameTime, CallbackInfo ci) {
-        ALROptimizations.getOcclusionCuller().beforeExtract();
+        if (ALRPostEffects.getBloomPostEffect() != null) ALROptimizations.getOcclusionCuller().beforeExtract();
     }
 
 //    @Inject(
@@ -72,4 +72,9 @@ public class MinecraftMixin {
     private void onUpdateLevel(ClientLevel level, boolean stopSound, CallbackInfo ci) {
         CachedBlockEntityRenderingPipeline.updateLevel(level);
     }
+    @Inject(method = "close", at = @At("HEAD"))
+    private void anvillib$closeRendering(CallbackInfo ci) {
+        ALRPostEffects.close();
+    }
+
 }

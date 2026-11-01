@@ -1,14 +1,14 @@
 package dev.anvilcraft.lib.v2.rendering.optimization.occlusion.query;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.query.GpuQueryObject;
 import dev.anvilcraft.lib.v2.rendering.foundation.GpuReusableResource;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.FullTransformsUbo;
@@ -184,9 +184,9 @@ public final class QueryInstance implements GpuReusableResource {
             float y1 = 1;
             float z1 = 1;
 
-            BufferBuilder bufferBuilder = Tesselator.getInstance()
-                .begin(
-                    VertexFormat.Mode.QUADS,
+            ByteBufferBuilder meshBuffer = new ByteBufferBuilder(1024);
+            BufferBuilder bufferBuilder = new BufferBuilder(meshBuffer,
+                    com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS,
                     DefaultVertexFormat.POSITION
                 );
 

@@ -11,18 +11,26 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 
 @Mixin(RecipeManager.class)
 abstract class RecipeManagerMixin implements IRecipeManagerExtension {
     @Shadow
-    private RecipeMap recipes;
-    @Shadow
     @Final
-    private HolderLookup.Provider registries;
+    private RecipeMap recipes;
+    @Unique
+    private HolderLookup.Provider anvillib$registries;
     @Unique
     private InWorldRecipeManager anvillib$inWorldRecipeManager = null;
+
+    @Inject(method = "<init>", at = @At("TAIL"))
+    private void anvillib$captureRegistries(HolderLookup.Provider registries, CallbackInfo ci) {
+        this.anvillib$registries = registries;
+    }
 
     @Override
     public void anvillib$setInWorldRecipeManager(InWorldRecipeManager manager) {
@@ -38,7 +46,7 @@ abstract class RecipeManagerMixin implements IRecipeManagerExtension {
     @Deprecated
     @SuppressWarnings("deprecation")
     public HolderLookup.Provider anvillib$getRegistries() {
-        return this.registries;
+        return this.anvillib$registries;
     }
 
     @Override

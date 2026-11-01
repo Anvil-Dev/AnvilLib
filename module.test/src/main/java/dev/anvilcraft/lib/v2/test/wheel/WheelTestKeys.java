@@ -7,7 +7,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = AnvilLibTest.MOD_ID, value = Dist.CLIENT)
 public final class WheelTestKeys {
@@ -18,8 +17,8 @@ public final class WheelTestKeys {
      */
     public static final KeyMapping TAP_KEY = new KeyMapping(
         "key.anvillib_test.wheel_tap",
-        InputConstants.Type.KEYSYM,
-        GLFW.GLFW_KEY_R,
+        InputConstants.Type.KEYBOARD,
+        InputConstants.KEY_R,
         CATEGORY
     );
 
@@ -28,8 +27,8 @@ public final class WheelTestKeys {
      */
     public static final KeyMapping HOLD_KEY = new KeyMapping(
         "key.anvillib_test.wheel_hold",
-        InputConstants.Type.KEYSYM,
-        GLFW.GLFW_KEY_V,
+        InputConstants.Type.KEYBOARD,
+        InputConstants.KEY_V,
         CATEGORY
     );
 
@@ -38,8 +37,8 @@ public final class WheelTestKeys {
      */
     public static final KeyMapping TAP_ANNULAR_KEY = new KeyMapping(
         "key.anvillib_test.wheel_tap_annular",
-        InputConstants.Type.KEYSYM,
-        GLFW.GLFW_KEY_B,
+        InputConstants.Type.KEYBOARD,
+        InputConstants.KEY_B,
         CATEGORY
     );
 
@@ -48,8 +47,8 @@ public final class WheelTestKeys {
      */
     public static final KeyMapping HOLD_ANNULAR_KEY = new KeyMapping(
         "key.anvillib_test.wheel_hold_annular",
-        InputConstants.Type.KEYSYM,
-        GLFW.GLFW_KEY_N,
+        InputConstants.Type.KEYBOARD,
+        InputConstants.KEY_N,
         CATEGORY
     );
 

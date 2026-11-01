@@ -13,7 +13,7 @@ layout(std140, binding = 0) uniform CB {
     int elementCount;// number of aabb elements
     int mipLevels;// number of valid entries of uInputs and mipLayers, including mip 0
     vec2 viewportSize;
-    vec4 cameraPos;// avoid vec3 in std140, cameraPos.w = 1
+    vec4 cameraPos;// avoid vec3 in std140, cameraPos.w indicates a zero-to-one clip depth range
     mat4 ProjMat;// CameraRenderState#projectionMatrix
     mat4 CameraMat;// new Matrix4f(CameraRenderState#viewRotationMatrix)
 } cbOcclusionTest;
@@ -93,7 +93,8 @@ void main() {
         //pixel *= vec2(mipLayers[0]) / cbOcclusionTest.viewportSize;
         minPixel = min(minPixel, pixel);
         maxPixel = max(maxPixel, pixel);
-        nearestDepth = min(nearestDepth, ndc.z * 0.5 + 0.5);
+        float depth = cbOcclusionTest.cameraPos.w > 0.5 ? ndc.z : ndc.z * 0.5 + 0.5;
+        nearestDepth = min(nearestDepth, 1.0 - depth);
         projected = true;
     }
 

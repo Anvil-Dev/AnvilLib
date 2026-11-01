@@ -1,4 +1,5 @@
 #version                330
+#extension GL_ARB_separate_shader_objects : require
 
 #define MAX_SDFS        256
 
@@ -27,11 +28,11 @@ layout(std140) uniform SDFParameters {
 #define PASS_FILL       0
 #define PASS_LIGHT      1
 
-in      vec2            vPosition;
-in      vec4            vColor;
-flat in int             vIndex;
+layout(location = 0) in      vec2            vPosition;
+layout(location = 1) in      vec4            vColor;
+layout(location = 2) flat in int             vIndex;
 
-out     vec4            fragColor;
+layout(location = 0) out     vec4            fragColor;
 
 #define uSmoothRadius   (params.Shared.x)
 #define uStrokeWidth    (params.Shared.y)

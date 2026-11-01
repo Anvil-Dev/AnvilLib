@@ -15,7 +15,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.RegistryFileCodec;
+import net.minecraft.core.registries.codec.RegistryFileCodec;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.StringRepresentable;
@@ -45,7 +45,8 @@ public interface IFunction {
      */
     Codec<Holder<IFunction>> HOLDER_CODEC = RegistryFileCodec.create(
         LibRegistries.FUNCTION_KEY,
-        IFunction.DIRECT_CODEC
+        IFunction.DIRECT_CODEC,
+        true
     );
     StreamCodec<RegistryFriendlyByteBuf, Holder<IFunction>> HOLDER_STREAM_CODEC = ByteBufCodecs
         .holderRegistry(LibRegistries.FUNCTION_KEY);

@@ -13,7 +13,7 @@ import dev.anvilcraft.lib.v2.recipe.predicate.function.IPredicateFunction;
 import dev.anvilcraft.lib.v2.recipe.predicate.function.SaveComponentToTag;
 import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import lombok.Getter;
-import net.minecraft.advancements.criterion.DataComponentMatchers;
+import net.minecraft.advancements.predicates.DataComponentMatchers;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.RegistryFriendlyByteBuf;

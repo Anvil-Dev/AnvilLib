@@ -31,7 +31,7 @@ jobs:
       mod_id: anvillib_sync_processor
       ci_build: false
       pr_build: false
-      gradle_project: anvillib-sync-neoforge-26.1:anvillib-sync-processor-neoforge-26.1
+      gradle_project: anvillib-sync-neoforge-26.3:anvillib-sync-processor-neoforge-26.3
       module_dir: module.sync/processor
     secrets:
       maven_url: ${{ secrets.MAVEN_URL }}
@@ -94,7 +94,7 @@ jobs:
     with:
       module: sync
       module_id: anvillib-sync-processor
-      gradle_project: anvillib-sync-neoforge-26.1:anvillib-sync-processor-neoforge-26.1
+      gradle_project: anvillib-sync-neoforge-26.3:anvillib-sync-processor-neoforge-26.3
       module_dir: module.sync/processor
     secrets:
       maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}

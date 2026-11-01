@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.test.port;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.anvilcraft.lib.v2.registrum.client.gui.CreativeVariantPickerOverlay;
 import dev.anvilcraft.lib.v2.registrum.util.CreativeVariantPickerRegistry;
 import dev.anvilcraft.lib.v2.test.all.TestItemGroups;
@@ -20,13 +21,13 @@ public final class PortUiVerification {
         Minecraft minecraft = Minecraft.getInstance();
         CreativeVariantPickerRegistry.setVanillaColorVariantPickerEnabled(() -> true);
         screen = new CreativeModeInventoryScreen(minecraft.player, minecraft.level.enabledFeatures(), true);
-        minecraft.setScreen(screen);
+        minecraft.gui.setScreen(screen);
         CreativeModeTab tab = TestItemGroups.TEST_TAB.get();
         tab.buildContents(new CreativeModeTab.ItemDisplayParameters(minecraft.level.enabledFeatures(), true, minecraft.level.registryAccess()));
         var select = CreativeModeInventoryScreen.class.getDeclaredMethod("selectTab", CreativeModeTab.class);
         select.setAccessible(true);
         select.invoke(screen, tab);
-        source = screen.getMenu().slots.stream().filter(slot -> slot.getItem().is(Items.WHITE_WOOL)).findFirst().orElseThrow();
+        source = screen.getMenu().slots.stream().filter(slot -> slot.getItem().is(Items.WOOL.white())).findFirst().orElseThrow();
         screen.mouseClicked(sourceClick(), false);
         screen.mouseReleased(sourceClick());
         PortVerification.check(overlay() != null, "右键打开实际创造栏叠加层");
@@ -35,7 +36,7 @@ public final class PortUiVerification {
     }
 
     private static MouseButtonEvent sourceClick() {
-        return new MouseButtonEvent(screen.getGuiLeft() + source.x + 8, screen.getGuiTop() + source.y + 8, new MouseButtonInfo(1, 0));
+        return new MouseButtonEvent(screen.getLeftPos() + source.x + 8, screen.getTopPos() + source.y + 8, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_RIGHT, 0));
     }
 
     private static CreativeVariantPickerOverlay overlay() throws Exception {
@@ -49,13 +50,13 @@ public final class PortUiVerification {
         var topMethod = CreativeVariantPickerOverlay.class.getDeclaredMethod("top", int.class);
         leftMethod.setAccessible(true);
         topMethod.setAccessible(true);
-        int left = (int) leftMethod.invoke(overlay(), screen.getGuiLeft());
-        int top = (int) topMethod.invoke(overlay(), screen.getGuiTop());
+        int left = (int) leftMethod.invoke(overlay(), screen.getLeftPos());
+        int top = (int) topMethod.invoke(overlay(), screen.getTopPos());
         PortVerification.check(top >= 0 && top + 80 <= Minecraft.getInstance().getWindow().getGuiScaledHeight(), "叠加层不能超出小窗口");
-        var click = new MouseButtonEvent(left + 30, top + 12, new MouseButtonInfo(0, 0));
+        var click = new MouseButtonEvent(left + 30, top + 12, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
         PortVerification.check(screen.mouseClicked(click, false), "选择点击被叠加层接管");
         PortVerification.check(screen.mouseReleased(click), "选择后的松开事件被消费");
-        PortVerification.check(screen.getMenu().getCarried().is(Items.LIGHT_GRAY_WOOL), "选择结果进入真实创造栏携带栈");
+        PortVerification.check(screen.getMenu().getCarried().is(Items.WOOL.lightGray()), "选择结果进入真实创造栏携带栈");
         screen.mouseClicked(sourceClick(), false);
         screen.mouseReleased(sourceClick());
         PortVerification.check(overlay() == null, "再次右键源槽关闭叠加层");

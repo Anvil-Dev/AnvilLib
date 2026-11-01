@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.test.all;
 import dev.anvilcraft.lib.v2.registrum.util.entry.ItemEntry;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import dev.anvilcraft.lib.v2.test.item.TestItem;
+import dev.anvilcraft.lib.v2.test.data.TestDataGenerator;
 import net.minecraft.client.data.models.model.ItemModelUtils;
 import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.world.item.Items;
@@ -14,6 +15,8 @@ public class TestItems {
 
     public static final ItemEntry<TestItem> TEST_ITEM = AnvilLibTest.REGISTRUM
         .item("test_item", TestItem::new)
+        .burnTime(200)
+        .compostable(0.65f)
         .model(() -> (ctx, provider) -> provider.itemModelOutput.accept(
             ctx.get(),
             ItemModelUtils.plainModel(provider.createFlatItemModel(Items.CARROT, ModelTemplates.FLAT_ITEM))
@@ -21,5 +24,6 @@ public class TestItems {
         .register();
 
     public static void setupRegistration() {
+        TestDataGenerator.register();
     }
 }

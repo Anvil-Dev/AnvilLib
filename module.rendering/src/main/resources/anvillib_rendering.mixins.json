@@ -2,10 +2,9 @@
   "required": true,
   "minVersion": "0.8",
   "package": "dev.anvilcraft.lib.v2.rendering.mixins",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_25",
   "refmap": "anvillib.refmap.json",
-  "mixins": [
-  ],
+  "mixins": [],
   "client": [
     "GameRendererMixin",
     "GuiGraphicsExtractorMixin",
@@ -13,11 +12,6 @@
     "ItemStackRenderStateMixin",
     "MinecraftMixin",
     "RenderTypeMixin",
-    "accessors.CustomFeatureRendererStorageAccess",
-    "accessors.ModelFeatureRendererStorageAccess",
-    "accessors.ModelPartFeatureRendererStorageAccess",
-    "accessors.NameTagFeatureRendererStorageAccess",
-    "accessors.SubmitNodeCollectionAccess",
     "blaze3d.CommandEncoderMixin",
     "blaze3d.GpuDeviceMixin",
     "blaze3d.gl.DirectStateAccessMixin$Emulated",
@@ -29,18 +23,8 @@
     "blaze3d.gl.GlTextureMixin",
     "blaze3d.gl.GlProgramMixin",
     "blaze3d.gl.GlBackendMixin",
-    "features.BlockFeatureRendererMixin",
-    "features.CustomFeatureRendererMixin",
-    "features.ExtendedBlockFeatureRendererMixin",
-    "features.FlameFeatureRendererMixin",
-    "features.ItemFeatureRendererMixin",
-    "features.LeashFeatureRendererMixin",
-    "features.ModelFeatureRendererMixin",
-    "features.ModelPartFeatureRendererMixin",
-    "features.NameTagFeatureRendererMixin",
-    "features.ParticleFeatureRendererMixin",
-    "features.ShadowFeatureRendererMixin",
-    "features.TextFeatureRendererMixin"
+    "features.FeaturePhaseMixin",
+    "features.FeatureVertexOutputMixin"
   ],
   "injectors": {
     "defaultRequire": 1

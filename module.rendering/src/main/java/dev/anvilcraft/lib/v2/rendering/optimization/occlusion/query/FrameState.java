@@ -1,13 +1,16 @@
 package dev.anvilcraft.lib.v2.rendering.optimization.occlusion.query;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import java.util.Optional;
+import com.mojang.renderpearl.api.pipeline.IndexType;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALROptions;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
@@ -20,7 +23,7 @@ import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.DynamicUniformStorage;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.DynamicUniformStorage;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
@@ -82,11 +85,11 @@ public class FrameState implements AutoCloseable {
     @SuppressWarnings("DataFlowIssue")
     public void runQueries(CameraRenderState camera) {
         CommandEncoder commandEncoder = this.owner.getCommandEncoder();
-        RenderTarget target = Minecraft.getInstance().getMainRenderTarget();
+        RenderTarget target = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 
-        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
         GpuBuffer buffer = sequentialBuffer.getBuffer(6 * 6);
-        VertexFormat.IndexType type = sequentialBuffer.type();
+        IndexType type = sequentialBuffer.type();
 
         GpuDevice device = RenderSystem.getDevice();
 
@@ -129,20 +132,20 @@ public class FrameState implements AutoCloseable {
         try (RenderPass renderPass = commandEncoder.createRenderPass(
             () -> "Gpu Occlusion Query Draw Batch",
             target.getColorTextureView(),
-            OptionalInt.empty(),
+            Optional.empty(),
             target.getDepthTextureView(),
             OptionalDouble.empty()
         )) {
-            renderPass.setPipeline(ALRPipelines.OCCLUSION_QUERY);
+            renderPass.setPipeline(RenderSystem.getCompiledPipeline(ALRPipelines.OCCLUSION_QUERY));
 
             for (QueryInstance query : queries) {
                 if (query.isCameraInside()) continue;
                 renderPass.setUniform("Transforms", query.uniform());
-                renderPass.setVertexBuffer(0, query.vertexBuffer());
+                renderPass.setVertexBuffer(0, query.vertexBuffer().slice());
                 renderPass.setIndexBuffer(buffer, type);
 
                 query.queryObject().begin();
-                renderPass.drawIndexed(0, 0, 6 * 6, 1);
+                renderPass.drawIndexed(6 * 6, 1, 0, 0, 0);
                 query.queryObject().end();
             }
         }
@@ -151,7 +154,7 @@ public class FrameState implements AutoCloseable {
             this.owner.releaseInstance(query);
         }
 
-        dynamicStorage.endFrame();
+        // Renderpearl retires these transient uniform allocations after the frame fence.
 
         deviceExtension.alrPopDebugGroup();
     }

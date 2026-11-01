@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.font.screen.widget;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.anvilcraft.lib.v2.font.AnvilLibFont;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
@@ -194,7 +195,7 @@ public class Dropdown extends AbstractWidget {
     }
 
     private boolean handlePrimaryClick(double mouseX, double mouseY, int button) {
-        if (!this.active || !this.visible || button != 0) {
+        if (!this.active || !this.visible || button != InputConstants.MOUSE_BUTTON_LEFT) {
             return false;
         }
 

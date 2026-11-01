@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering;
 
 import dev.anvilcraft.lib.v2.rendering.bloom.BloomPostEffect;
+import dev.anvilcraft.lib.v2.rendering.foundation.FeatureRendering;
 import dev.anvilcraft.lib.v2.rendering.event.MainTargetResizeEvent;
 import dev.anvilcraft.lib.v2.rendering.glitch.GlitchPostEffect;
 import lombok.Getter;
@@ -21,29 +22,29 @@ public class ALRPostEffects {
     @Getter
     private static GlitchPostEffect glitchPostEffect;
 
+    private static RenderBuffers bloomBuffers;
+    private static FeatureRenderDispatcher bloomDispatcher;
+
     public static void createPostEffects() {
         bloomPostEffect = new BloomPostEffect();
         glitchPostEffect = new GlitchPostEffect();
+        bloomBuffers = new RenderBuffers(1);
+        bloomDispatcher = FeatureRendering.dispatcher(bloomBuffers);
     }
 
     public static void runBloomDraws(Matrix4fc mvMat) {
         try {
-            Minecraft minecraft = Minecraft.getInstance();
-            RenderBuffers renderBuffers = minecraft.renderBuffers();
-            FeatureRenderDispatcher frd = new FeatureRenderDispatcher(
-                bloomPostEffect.getSubmitNodeStorage(),
-                minecraft.getModelManager(),
-                renderBuffers.bufferSource(),
-                minecraft.getAtlasManager(),
-                renderBuffers.outlineBufferSource(),
-                renderBuffers.crumblingBufferSource(),
-                minecraft.font,
-                minecraft.gameRenderer.getGameRenderState()
-            );
-            bloomPostEffect.runBloomDraws(mvMat, frd);
-        } catch (Exception e) {
-            log.error("runBloomDraws boom!", e);
+            bloomPostEffect.runBloomDraws(mvMat, bloomDispatcher);
+        } finally {
+            bloomBuffers.endFrame();
         }
+    }
+
+    public static void close() {
+        if (bloomDispatcher != null) bloomDispatcher.close();
+        if (bloomBuffers != null) bloomBuffers.close();
+        if (bloomPostEffect != null) bloomPostEffect.close();
+        if (glitchPostEffect != null) glitchPostEffect.close();
     }
 
     @ApiStatus.Internal

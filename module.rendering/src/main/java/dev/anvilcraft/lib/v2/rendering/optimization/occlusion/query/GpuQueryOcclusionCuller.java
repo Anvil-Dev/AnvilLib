@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.optimization.occlusion.query;
 
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.device.GpuDevice;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.query.GpuQueryObject;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.ubo.FullTransformsUbo;
@@ -11,7 +11,7 @@ import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.OcclusionKey;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import lombok.Getter;
-import net.minecraft.client.renderer.DynamicUniformStorage;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.DynamicUniformStorage;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;

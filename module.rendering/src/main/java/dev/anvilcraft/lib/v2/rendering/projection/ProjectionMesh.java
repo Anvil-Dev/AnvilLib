@@ -1,10 +1,15 @@
 package dev.anvilcraft.lib.v2.rendering.projection;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
+import java.util.Optional;
+import com.mojang.renderpearl.api.pipeline.IndexType;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.StagedVertexBuffer;
+import net.minecraft.client.Minecraft;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -55,29 +60,24 @@ final class ProjectionMesh implements AutoCloseable {
             if (this.filteredIndexCount == 0) return;
         }
         var type = depthOnly ? ProjectionRenderTypes.BLOCK_DEPTH : this.type;
-        var target = type.outputTarget().getRenderTarget();
-        var color = RenderSystem.outputColorTextureOverride != null
-            ? RenderSystem.outputColorTextureOverride : target.getColorTextureView();
-        var depth = RenderSystem.outputDepthTextureOverride != null
-            ? RenderSystem.outputDepthTextureOverride : target.getDepthTextureView();
-        var transforms = RenderSystem.getDynamicUniforms().writeTransform(
-            new Matrix4f(RenderSystem.getModelViewMatrix()).mul(pose), new Vector4f(1), new Vector3f(), new Matrix4f());
-        var sequential = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+        var target = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+        var sequential = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
         var indices = sequential.getBuffer(this.indexCount);
-        try (var pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-            () -> "AnvilLib structure projection", color, OptionalInt.empty(), depth, OptionalDouble.empty())) {
-            pass.setPipeline(type.pipeline());
-            RenderSystem.bindDefaultUniforms(pass);
-            pass.setUniform("DynamicTransforms", transforms);
-            type.state.getTextures().forEach((name, texture) -> pass.bindTexture(name, texture.textureView(), texture.sampler()));
-            pass.setVertexBuffer(0, this.vertices);
-            if (visible == null) {
-                pass.setIndexBuffer(indices, sequential.type());
-                pass.drawIndexed(0, 0, this.indexCount, 1);
-            } else {
-                pass.setIndexBuffer(this.filteredIndices, VertexFormat.IndexType.INT);
-                pass.drawIndexed(0, 0, this.filteredIndexCount, 1);
+        var modelView = RenderSystem.getModelViewStack();
+        modelView.pushMatrix();
+        try {
+            modelView.mul(pose);
+            var prepared = type.prepare();
+            try (var pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                () -> "AnvilLib structure projection", target.getColorTextureView(), Optional.empty(),
+                target.getDepthTextureView(), OptionalDouble.empty())) {
+                prepared.drawFromBuffer(new StagedVertexBuffer.ExecuteInfo(this.vertices,
+                    visible == null ? indices : this.filteredIndices,
+                    visible == null ? sequential.type() : IndexType.INT,
+                    0, 0, visible == null ? this.indexCount : this.filteredIndexCount, PrimitiveTopology.QUADS), pass);
             }
+        } finally {
+            modelView.popMatrix();
         }
     }
 
@@ -111,7 +111,7 @@ final class ProjectionMesh implements AutoCloseable {
     }
 
     static void reverseWinding(MeshData mesh) {
-        if (mesh.drawState().mode() != VertexFormat.Mode.QUADS) return;
+        if (mesh.drawState().primitiveTopology() != PrimitiveTopology.QUADS) return;
         var vertices = mesh.vertexBuffer();
         int stride = mesh.drawState().format().getVertexSize();
         for (int vertex = 0; vertex < mesh.drawState().vertexCount(); vertex += 4) {

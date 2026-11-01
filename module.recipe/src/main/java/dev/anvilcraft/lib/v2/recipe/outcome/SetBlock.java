@@ -22,8 +22,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProvider;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -36,7 +36,7 @@ import net.minecraft.world.phys.Vec3;
  * @param chance 概率
  */
 @Slf4j
-public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberProvider chance) implements IRecipeOutcome<SetBlock> {
+public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, ContextFloatProvider chance) implements IRecipeOutcome<SetBlock> {
     /**
      * 构造一个新的设置方块配方结果
      *
@@ -112,8 +112,8 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
                 Vec3.CODEC
                     .fieldOf("offset")
                     .forGetter(SetBlock::offset),
-                CodecUtil.NUMBER_PROVIDER
-                    .optionalFieldOf("chance", ConstantValue.exactly(1.0f))
+                CodecUtil.FLOAT_NUMBER_PROVIDER
+                    .optionalFieldOf("chance", new ConstantValue(1.0f))
                     .forGetter(SetBlock::chance)
             ).apply(instance, SetBlock::new));
 
@@ -127,7 +127,7 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
             SetBlock::nbt,
             StreamCodecUtil.VEC3,
             SetBlock::offset,
-            StreamCodecUtil.NUMBER_PROVIDER,
+            StreamCodecUtil.FLOAT_NUMBER_PROVIDER,
             SetBlock::chance,
             SetBlock::new
         );
@@ -175,7 +175,7 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
         /**
          * 概率
          */
-        private NumberProvider chance = ConstantValue.exactly(1.0f);
+        private ContextFloatProvider chance = new ConstantValue(1.0f);
 
         /**
          * 设置偏移量
@@ -245,7 +245,7 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
          * @param chance 概率
          * @return 构建器实例
          */
-        public Builder chance(NumberProvider chance) {
+        public Builder chance(ContextFloatProvider chance) {
             this.chance = chance;
             return this;
         }
@@ -257,7 +257,7 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
          * @return 构建器实例
          */
         public Builder chance(float chance) {
-            return this.chance(ConstantValue.exactly(chance));
+            return this.chance(new ConstantValue(chance));
         }
 
         /**

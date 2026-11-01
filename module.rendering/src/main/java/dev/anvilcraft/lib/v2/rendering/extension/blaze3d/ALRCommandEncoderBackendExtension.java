@@ -2,7 +2,7 @@ package dev.anvilcraft.lib.v2.rendering.extension.blaze3d;
 
 import org.jetbrains.annotations.ApiStatus;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePass;
 import org.jetbrains.annotations.ApiStatus;
 

@@ -13,8 +13,10 @@
 
 package dev.anvilcraft.lib.v2.registrum.providers.loot;
 
+import net.minecraft.core.Holder;
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
-import net.minecraft.core.HolderLookup;
+import net.minecraft.data.loot.LootTableSubProvider;
+import net.minecraft.data.worldgen.BootstrapContextAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
@@ -26,7 +28,7 @@ import net.minecraft.world.level.storage.loot.entries.LootPoolEntryContainer;
 import net.minecraft.world.level.storage.loot.functions.FunctionUserBuilder;
 import net.minecraft.world.level.storage.loot.predicates.ConditionUserBuilder;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
 
 import java.util.Set;
 import java.util.function.Consumer;
@@ -39,7 +41,7 @@ public class RegistrumBlockLootTables extends BlockLootSubProvider implements Re
     private final Consumer<RegistrumBlockLootTables> callback;
 
     public RegistrumBlockLootTables(
-        HolderLookup.Provider provider,
+        LootTableSubProvider.Context provider,
         AbstractRegistrum<?> parent,
         Consumer<RegistrumBlockLootTables> callback
     ) {
@@ -58,8 +60,8 @@ public class RegistrumBlockLootTables extends BlockLootSubProvider implements Re
         return parent.getAll(Registries.BLOCK).stream().map(Supplier::get).collect(Collectors.toList());
     }
 
-    public HolderLookup.Provider getRegistries() {
-        return this.registries;
+    public BootstrapContextAccess getRegistries() {
+        return this.output;
     }
 
 
@@ -94,12 +96,12 @@ public class RegistrumBlockLootTables extends BlockLootSubProvider implements Re
     }
 
     @Override
-    public LootTable.Builder createSingleItemTable(ItemLike drop, NumberProvider count) {
+    public LootTable.Builder createSingleItemTable(ItemLike drop, Holder<ContextIntProvider> count) {
         return super.createSingleItemTable(drop, count);
     }
 
     @Override
-    public LootTable.Builder createSingleItemTableWithSilkTouch(Block original, ItemLike drop, NumberProvider count) {
+    public LootTable.Builder createSingleItemTableWithSilkTouch(Block original, ItemLike drop, Holder<ContextIntProvider> count) {
         return super.createSingleItemTableWithSilkTouch(original, drop, count);
     }
 
@@ -189,7 +191,7 @@ public class RegistrumBlockLootTables extends BlockLootSubProvider implements Re
     }
 
     @Override
-    public LootTable.Builder createMultifaceBlockDrops(Block block, LootItemCondition.Builder condition) {
+    public LootTable.Builder createMultifaceBlockDrops(Block block, Holder<LootItemCondition> condition) {
         return super.createMultifaceBlockDrops(block, condition);
     }
 

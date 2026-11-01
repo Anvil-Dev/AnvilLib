@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.test.wheel;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import dev.anvilcraft.lib.v2.wheel.api.WheelSelectionEffect;
 import dev.anvilcraft.lib.v2.wheel.client.input.WheelScreenController;
@@ -9,7 +10,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
-import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = AnvilLibTest.MOD_ID, value = Dist.CLIENT)
 public final class WheelTestClientHandler {
@@ -26,7 +26,7 @@ public final class WheelTestClientHandler {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Pre event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.screen != null) {
+        if (mc.player == null || mc.gui.screen() != null) {
             return;
         }
 
@@ -54,10 +54,10 @@ public final class WheelTestClientHandler {
             return;
         }
         // 长按模式下松开按键时轮盘 Screen 已打开，必须放行 RELEASE 事件才能触发关闭
-        if (mc.screen != null && event.getAction() != GLFW.GLFW_RELEASE) {
+        if (mc.gui.screen() != null && event.getAction() != InputConstants.RELEASE) {
             return;
         }
-        if (event.getAction() == GLFW.GLFW_PRESS) {
+        if (event.getAction() == InputConstants.PRESS) {
             if (holdDotKey && !holdDotKeyWasDown) {
                 CONTROLLER.onHoldKeyPressed(WheelDemoMenus.buildHoldDemo(8, WheelSelectionEffect.DOT));
                 holdDotKeyWasDown = true;
@@ -68,7 +68,7 @@ public final class WheelTestClientHandler {
             }
             return;
         }
-        if (event.getAction() == GLFW.GLFW_RELEASE) {
+        if (event.getAction() == InputConstants.RELEASE) {
             if (holdDotKey && holdDotKeyWasDown) {
                 CONTROLLER.onHoldKeyReleased();
                 holdDotKeyWasDown = false;

@@ -13,7 +13,8 @@ import dev.anvilcraft.lib.v2.rendering.gui.state.BlockStatePipRenderingState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.anvilcraft.lib.v2.rendering.foundation.FeatureGeometry;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
@@ -30,9 +31,6 @@ import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
 public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePipRenderingState> {
-    public BlockStatePipRenderer(MultiBufferSource.BufferSource bufferSource) {
-        super(bufferSource);
-    }
 
     @Override
     public Class<BlockStatePipRenderingState> getRenderStateClass() {
@@ -41,7 +39,7 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    protected void renderToTexture(BlockStatePipRenderingState renderState, PoseStack poseStack) {
+    protected void renderToTexture(BlockStatePipRenderingState renderState, PoseStack poseStack, SubmitNodeCollector collector) {
         BlockAndTintGetter level = renderState.level();
         BlockPos blockPos = renderState.blockPos();
         BlockEntity blockEntity = null;
@@ -60,7 +58,7 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
             wrappedLevel = new SimpleTintedEmptyLevelAccess();
         }
 
-        int guiScale = minecraft.gameRenderer.getGameRenderState().windowRenderState.guiScale;
+        int guiScale = minecraft.gameRenderer.gameRenderState().windowRenderState.guiScale;
         float width = (renderState.fx1() - renderState.fx0()) * guiScale;
         float height = (renderState.fy1() - renderState.fy0()) * guiScale;
         float scale = guiScale * renderState.scale();
@@ -77,14 +75,13 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
 
         poseStack.last().pose().mul(renderState.pose3D().pose());
         poseStack.last().normal().mul(renderState.pose3D().normal());
-        Minecraft.getInstance().gameRenderer.getLighting().setupFor(Lighting.Entry.ITEMS_FLAT);
+        Minecraft.getInstance().gameRenderer.lighting().setupFor(Lighting.Entry.ITEMS_FLAT);
         blockRenderer.tesselateBlock(
             (x, y, z, quad, instance) -> {
                 poseStack.pushPose();
                 poseStack.translate(x, y, z);
                 poseStack.translate(-0.5f, 0, -0.5f);
-                VertexConsumer buffer = this.bufferSource.getBuffer(quad.materialInfo().itemRenderType());
-                buffer.putBakedQuad(poseStack.last(), quad, instance);
+                FeatureGeometry.submitQuad(collector, poseStack, quad, instance);
                 poseStack.popPose();
             },
             0,
@@ -97,19 +94,7 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
             seed
         );
         if (blockEntity != null && blockEntityRenderer != null) {
-            RenderBuffers renderBuffers = minecraft.renderBuffers();
-            SubmitNodeStorage submitNodeStorage = new SubmitNodeStorage();
             GameRenderer gameRenderer = minecraft.gameRenderer;
-            FeatureRenderDispatcher frd = new FeatureRenderDispatcher(
-                submitNodeStorage,
-                minecraft.getModelManager(),
-                renderBuffers.bufferSource(),
-                minecraft.getAtlasManager(),
-                renderBuffers.outlineBufferSource(),
-                renderBuffers.crumblingBufferSource(),
-                minecraft.font,
-                gameRenderer.getGameRenderState()
-            );
             poseStack.pushPose();
             poseStack.translate(-0.5f, 0, -0.5f);
             BlockEntityRenderState blockEntityRenderState = blockEntityRenderer.createRenderState();
@@ -117,13 +102,11 @@ public class BlockStatePipRenderer extends PictureInPictureRenderer<BlockStatePi
             blockEntityRenderer.submit(
                 blockEntityRenderState,
                 poseStack,
-                submitNodeStorage,
-                gameRenderer.getGameRenderState().levelRenderState.cameraRenderState
+                collector,
+                gameRenderer.gameRenderState().levelRenderState.cameraRenderState
             );
-            frd.renderAllFeatures();
             poseStack.popPose();
         }
-        this.bufferSource.endBatch();
     }
 
     @Override

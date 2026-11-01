@@ -15,26 +15,29 @@ import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import net.minecraft.advancements.criterion.BlockPredicate;
-import net.minecraft.advancements.criterion.DamageSourcePredicate;
-import net.minecraft.advancements.criterion.DataComponentMatchers;
-import net.minecraft.advancements.criterion.DistancePredicate;
-import net.minecraft.advancements.criterion.EntityEquipmentPredicate;
-import net.minecraft.advancements.criterion.EntityFlagsPredicate;
-import net.minecraft.advancements.criterion.EntityPredicate;
-import net.minecraft.advancements.criterion.EntitySubPredicate;
-import net.minecraft.advancements.criterion.EntityTypePredicate;
-import net.minecraft.advancements.criterion.FluidPredicate;
-import net.minecraft.advancements.criterion.ItemPredicate;
-import net.minecraft.advancements.criterion.LightPredicate;
-import net.minecraft.advancements.criterion.LocationPredicate;
-import net.minecraft.advancements.criterion.MinMaxBounds;
-import net.minecraft.advancements.criterion.MobEffectsPredicate;
-import net.minecraft.advancements.criterion.MovementPredicate;
-import net.minecraft.advancements.criterion.NbtPredicate;
-import net.minecraft.advancements.criterion.SlotsPredicate;
-import net.minecraft.advancements.criterion.StatePropertiesPredicate;
-import net.minecraft.advancements.criterion.TagPredicate;
+import net.minecraft.advancements.predicates.BlockPredicate;
+import net.minecraft.advancements.predicates.DamageSourcePredicate;
+import net.minecraft.advancements.predicates.DataComponentMatchers;
+import net.minecraft.advancements.predicates.DistancePredicate;
+import net.minecraft.advancements.predicates.entity.EntityEquipmentPredicate;
+import net.minecraft.advancements.predicates.entity.EntityFlagsPredicate;
+import net.minecraft.advancements.predicates.entity.EntityPredicate;
+import net.minecraft.advancements.predicates.entity.EntitySubPredicate;
+import net.minecraft.advancements.predicates.entity.EntityLocationPredicate;
+import net.minecraft.advancements.predicates.entity.SteppingOnPredicate;
+import net.minecraft.advancements.predicates.entity.MovementAffectedByPredicate;
+import net.minecraft.advancements.predicates.entity.EntityTypePredicate;
+import net.minecraft.advancements.predicates.FluidPredicate;
+import net.minecraft.advancements.predicates.ItemPredicate;
+import net.minecraft.advancements.predicates.LightPredicate;
+import net.minecraft.advancements.predicates.LocationPredicate;
+import net.minecraft.advancements.predicates.MinMaxBounds;
+import net.minecraft.advancements.predicates.MobEffectsPredicate;
+import net.minecraft.advancements.predicates.entity.MovementPredicate;
+import net.minecraft.advancements.predicates.NbtPredicate;
+import net.minecraft.advancements.predicates.SlotsPredicate;
+import net.minecraft.advancements.predicates.StatePropertiesPredicate;
+import net.minecraft.advancements.predicates.TagPredicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.Vec3i;
@@ -57,11 +60,11 @@ import net.minecraft.world.inventory.SlotRanges;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.loot.providers.number.BinomialDistributionGenerator;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
-import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProvider;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProviders;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 
 import java.util.HashMap;
 import java.util.function.Function;
@@ -177,29 +180,11 @@ public abstract class StreamCodecUtil {
             buffer.writeLong(BlockPos.asLong(value.getX(), value.getY(), value.getZ()));
         }
     };
-    /**
-     * 紧凑 number-provider 编码中 {@link ConstantValue} 的类型标记。
-     */
-    private static final byte CONSTANT_TYPE = 1;
-    /**
-     * 紧凑 number-provider 编码中 {@link UniformGenerator} 的类型标记。
-     */
-    private static final byte UNIFORM_TYPE = 2;
-    /**
-     * 紧凑 number-provider 编码中 {@link BinomialDistributionGenerator} 的类型标记。
-     */
-    private static final byte BINOMIAL_TYPE = 3;
-    /**
-     * 不支持的 provider 类型写入的保底标记。
-     */
-    private static final byte UNKNOWN_TYPE = -1;
-    /**
-     * 常用 {@link NumberProvider} 变体的紧凑网络编解码器。
-     */
-    public static final StreamCodec<RegistryFriendlyByteBuf, NumberProvider> NUMBER_PROVIDER = StreamCodec.of(
-        StreamCodecUtil::numberProviderNetworkEncode,
-        StreamCodecUtil::numberProviderNetworkDecode
-    );
+    /** Registry-aware codecs preserve custom and nested provider types on the network. */
+    public static final StreamCodec<RegistryFriendlyByteBuf, ContextIntProvider> INT_NUMBER_PROVIDER =
+        ByteBufCodecs.fromCodecWithRegistries(ContextIntProviders.DIRECT_CODEC);
+    public static final StreamCodec<RegistryFriendlyByteBuf, ContextFloatProvider> FLOAT_NUMBER_PROVIDER =
+        ByteBufCodecs.fromCodecWithRegistries(ContextFloatProviders.DIRECT_CODEC);
     public static final StreamCodec<ByteBuf, ExtraCodecs.TagOrElementLocation> TAG_OR_ELEMENT_LOCATION = StreamCodec.composite(
         Identifier.STREAM_CODEC,
         ExtraCodecs.TagOrElementLocation::id,
@@ -207,53 +192,6 @@ public abstract class StreamCodecUtil {
         ExtraCodecs.TagOrElementLocation::tag,
         ExtraCodecs.TagOrElementLocation::new
     );
-
-    /**
-     * 将 {@link NumberProvider} 编码为带类型标记的二进制格式。
-     *
-     * @param buf            输出缓冲区
-     * @param numberProvider 待序列化的 provider
-     */
-    public static void numberProviderNetworkEncode(RegistryFriendlyByteBuf buf, NumberProvider numberProvider) {
-        switch (numberProvider) {
-            case ConstantValue constantValue -> {
-                buf.writeByte(CONSTANT_TYPE);
-                buf.writeFloat(constantValue.value());
-            }
-            case UniformGenerator uniformGenerator -> {
-                buf.writeByte(UNIFORM_TYPE);
-                StreamCodecUtil.numberProviderNetworkEncode(buf, uniformGenerator.min());
-                StreamCodecUtil.numberProviderNetworkEncode(buf, uniformGenerator.max());
-            }
-            case BinomialDistributionGenerator binomialDistributionGenerator -> {
-                buf.writeByte(BINOMIAL_TYPE);
-                StreamCodecUtil.numberProviderNetworkEncode(buf, binomialDistributionGenerator.n());
-                StreamCodecUtil.numberProviderNetworkEncode(buf, binomialDistributionGenerator.p());
-            }
-            default -> buf.writeByte(UNKNOWN_TYPE);
-        }
-    }
-
-    /**
-     * 从
-     * {@link #numberProviderNetworkEncode(RegistryFriendlyByteBuf, NumberProvider)}.
-     * 定义的格式中解码 {@link NumberProvider}。
-     *
-     * @param buf 输入缓冲区
-     * @return 解码后的 provider；未知标记返回 {@code ConstantValue.exactly(1)}
-     */
-    public static NumberProvider numberProviderNetworkDecode(RegistryFriendlyByteBuf buf) {
-        return switch (buf.readByte()) {
-            case CONSTANT_TYPE -> ConstantValue.exactly(buf.readFloat());
-            case UNIFORM_TYPE ->
-                new UniformGenerator(StreamCodecUtil.numberProviderNetworkDecode(buf), StreamCodecUtil.numberProviderNetworkDecode(buf));
-            case BINOMIAL_TYPE -> new BinomialDistributionGenerator(
-                StreamCodecUtil.numberProviderNetworkDecode(buf),
-                StreamCodecUtil.numberProviderNetworkDecode(buf)
-            );
-            default -> ConstantValue.exactly(1);
-        };
-    }
 
     public static final StreamCodec<RegistryFriendlyByteBuf, EntityTypePredicate> ENTITY_TYPE_PREDICATE = StreamCodec.composite(
         ByteBufCodecs.holderSet(Registries.ENTITY_TYPE),
@@ -332,15 +270,12 @@ public abstract class StreamCodecUtil {
         LocationPredicate::canSeeSky,
         LocationPredicate::new
     );
-    public static final StreamCodec<RegistryFriendlyByteBuf, EntityPredicate.LocationWrapper> LOCATION_WRAPPER = StreamCodec.composite(
-        ByteBufCodecs.optional(StreamCodecUtil.LOCATION_PREDICATE),
-        EntityPredicate.LocationWrapper::located,
-        ByteBufCodecs.optional(StreamCodecUtil.LOCATION_PREDICATE),
-        EntityPredicate.LocationWrapper::steppingOn,
-        ByteBufCodecs.optional(StreamCodecUtil.LOCATION_PREDICATE),
-        EntityPredicate.LocationWrapper::affectsMovement,
-        EntityPredicate.LocationWrapper::new
-    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, EntityLocationPredicate> ENTITY_LOCATION_PREDICATE =
+        entitySubPredicate(EntityLocationPredicate.CODEC);
+    public static final StreamCodec<RegistryFriendlyByteBuf, SteppingOnPredicate> STEPPING_ON_PREDICATE =
+        entitySubPredicate(SteppingOnPredicate.CODEC);
+    public static final StreamCodec<RegistryFriendlyByteBuf, MovementAffectedByPredicate> MOVEMENT_AFFECTED_BY_PREDICATE =
+        entitySubPredicate(MovementAffectedByPredicate.CODEC);
     public static final StreamCodec<RegistryFriendlyByteBuf, MobEffectsPredicate.MobEffectInstancePredicate> MOB_EFFECT_INSTANCE_PREDICATE =
         StreamCodec.composite(
             MinMaxBounds.Ints.STREAM_CODEC,
@@ -410,49 +345,18 @@ public abstract class StreamCodecUtil {
         EntityEquipmentPredicate::offhand,
         EntityEquipmentPredicate::new
     );
-    public static final StreamCodec<RegistryFriendlyByteBuf, EntitySubPredicate> ENTITY_SUB_PREDICATE = StreamCodecUtil.codec2Stream(
-        EntitySubPredicate.CODEC
-    );
+    /** Creates a stream codec for one registered entity predicate type. */
+    public static <T extends EntitySubPredicate> StreamCodec<RegistryFriendlyByteBuf, T> entitySubPredicate(Codec<T> type) {
+        return StreamCodecUtil.codec2Stream(type);
+    }
     public static final StreamCodec<RegistryFriendlyByteBuf, SlotsPredicate> SLOTS_PREDICATE = StreamCodec.composite(
         ByteBufCodecs.map(HashMap::new, StreamCodecUtil.codec2Stream(SlotRanges.CODEC), StreamCodecUtil.ITEM_PREDICATE),
         SlotsPredicate::slots,
         SlotsPredicate::new
     );
-    public static final StreamCodec<RegistryFriendlyByteBuf, EntityPredicate> ENTITY_PREDICATE = StreamCodec.recursive(parent -> StreamCodecUtil.composite(
-        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_TYPE_PREDICATE),
-        EntityPredicate::entityType,
-        ByteBufCodecs.optional(StreamCodecUtil.DISTANCE_PREDICATE),
-        EntityPredicate::distanceToPlayer,
-        ByteBufCodecs.optional(StreamCodecUtil.MOVEMENT_PREDICATE),
-        EntityPredicate::movement,
-        StreamCodecUtil.LOCATION_WRAPPER,
-        EntityPredicate::location,
-        ByteBufCodecs.optional(StreamCodecUtil.MOB_EFFECTS_PREDICATE),
-        EntityPredicate::effects,
-        ByteBufCodecs.optional(StreamCodecUtil.NBT_PREDICATE),
-        EntityPredicate::nbt,
-        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_FLAGS_PREDICATE),
-        EntityPredicate::flags,
-        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_EQUIPMENT_PREDICATE),
-        EntityPredicate::equipment,
-        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_SUB_PREDICATE),
-        EntityPredicate::subPredicate,
-        ByteBufCodecs.optional(ByteBufCodecs.VAR_INT),
-        EntityPredicate::periodicTick,
-        ByteBufCodecs.optional(parent),
-        EntityPredicate::vehicle,
-        ByteBufCodecs.optional(parent),
-        EntityPredicate::passenger,
-        ByteBufCodecs.optional(parent),
-        EntityPredicate::targetedEntity,
-        ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8),
-        EntityPredicate::team,
-        ByteBufCodecs.optional(StreamCodecUtil.SLOTS_PREDICATE),
-        EntityPredicate::slots,
-        DataComponentMatchers.STREAM_CODEC,
-        EntityPredicate::components,
-        EntityPredicate::new
-    ));
+    // Entity predicates now dispatch through ENTITY_SUB_PREDICATE_TYPE, including custom registered parts.
+    public static final StreamCodec<RegistryFriendlyByteBuf, EntityPredicate> ENTITY_PREDICATE =
+        StreamCodecUtil.codec2Stream(EntityPredicate.CODEC);
     public static final StreamCodec<RegistryFriendlyByteBuf, DamageSourcePredicate> DAMAGE_SOURCE_PREDICATE = StreamCodec.composite(
         StreamCodecUtil.tagPredicate(Registries.DAMAGE_TYPE).apply(ByteBufCodecs.list()),
         DamageSourcePredicate::tags,
@@ -465,9 +369,9 @@ public abstract class StreamCodecUtil {
         DamageSourcePredicate::new
     );
 
-    public static <T> StreamCodec<ByteBuf, TagPredicate<T>> tagPredicate(ResourceKey<? extends Registry<T>> registryKey) {
+    public static <T> StreamCodec<RegistryFriendlyByteBuf, TagPredicate<T>> tagPredicate(ResourceKey<? extends Registry<T>> registryKey) {
         return StreamCodec.composite(
-            TagKey.streamCodec(registryKey),
+            ByteBufCodecs.holderSet(registryKey),
             TagPredicate::tag,
             ByteBufCodecs.BOOL,
             TagPredicate::expected,

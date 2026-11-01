@@ -1,5 +1,6 @@
 package dev.anvilcraft.lib.v2.wheel.client.gui.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.anvilcraft.lib.v2.wheel.api.WheelActionContext;
 import dev.anvilcraft.lib.v2.wheel.api.WheelEntry;
 import dev.anvilcraft.lib.v2.wheel.api.WheelMenuModel;
@@ -62,7 +63,7 @@ public class WheelScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == 256) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             if (this.menuStack.size() > 1) {
                 this.menuStack.removeLast();
                 this.currentPageIndex = 0;
@@ -113,7 +114,7 @@ public class WheelScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
-        if (this.openMode == WheelOpenMode.TAP && event.button() == 0) {
+        if (this.openMode == WheelOpenMode.TAP && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             this.triggerSelectedOrClose();
             return true;
         }

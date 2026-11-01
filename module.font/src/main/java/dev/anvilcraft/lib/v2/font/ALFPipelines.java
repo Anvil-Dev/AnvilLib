@@ -1,11 +1,11 @@
 package dev.anvilcraft.lib.v2.font;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.shaders.UniformType;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
+import com.mojang.renderpearl.api.pipeline.BlendFunction;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.UniformType;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormatElement;
 import lombok.extern.slf4j.Slf4j;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -23,10 +23,10 @@ import org.jetbrains.annotations.ApiStatus;
 @Slf4j
 @EventBusSubscriber(modid = AnvilLibFont.MOD_ID, value = Dist.CLIENT)
 public final class ALFPipelines {
-    public static final VertexFormat SDF_TEXT_FORMAT = VertexFormat.builder()
-        .add("Position", VertexFormatElement.POSITION)
-        .add("Color", VertexFormatElement.COLOR)
-        .add("UV", VertexFormatElement.UV)
+    public static final VertexFormat SDF_TEXT_FORMAT = VertexFormat.builder(0)
+        .addAttribute("Position", com.mojang.renderpearl.api.GpuFormat.RGB32_FLOAT)
+        .addAttribute("Color", com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM)
+        .addAttribute("UV0", com.mojang.renderpearl.api.GpuFormat.RG32_FLOAT)
         .build();
 
     public static final RenderPipeline SDF_TEXT = RenderPipeline.builder()
@@ -34,10 +34,10 @@ public final class ALFPipelines {
         .withVertexShader(AnvilLibFont.of("core/sdf_text"))
         .withFragmentShader(AnvilLibFont.of("core/sdf_text"))
         .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-        .withVertexFormat(SDF_TEXT_FORMAT, VertexFormat.Mode.QUADS)
-        .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
-        .withUniform("Projection", UniformType.UNIFORM_BUFFER)
-        .withSampler("DiffuseSampler")
+        .withVertexBinding(0, SDF_TEXT_FORMAT).withPrimitiveTopology(com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS)
+        .withBindGroupLayout(com.mojang.renderpearl.api.pipeline.BindGroupLayout.builder().withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER).build())
+        .withBindGroupLayout(com.mojang.renderpearl.api.pipeline.BindGroupLayout.builder().withUniform("Projection", UniformType.UNIFORM_BUFFER).build())
+        .withBindGroupLayout(com.mojang.renderpearl.api.pipeline.BindGroupLayout.builder().withUniform("DiffuseSampler", UniformType.COMBINED_IMAGE_SAMPLER).build())
         .withCull(false)
         .build();
 

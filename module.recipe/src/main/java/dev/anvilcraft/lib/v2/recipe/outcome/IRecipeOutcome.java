@@ -7,8 +7,8 @@ import dev.anvilcraft.lib.v2.recipe.util.InWorldRecipeContext;
 import dev.anvilcraft.lib.v2.util.ISerializer;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProvider;
 
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
@@ -35,8 +35,8 @@ public interface IRecipeOutcome<O extends IRecipeOutcome<O>> extends Consumer<In
      *
      * @return 触发概率
      */
-    default NumberProvider chance() {
-        return ConstantValue.exactly(1.0f);
+    default ContextFloatProvider chance() {
+        return new ConstantValue(1.0f);
     }
 
     /**

@@ -14,8 +14,8 @@
 package dev.anvilcraft.lib.v2.registrum.providers.loot;
 
 import dev.anvilcraft.lib.v2.registrum.AbstractRegistrum;
-import net.minecraft.core.HolderGetter;
-import net.minecraft.core.HolderLookup;
+import net.minecraft.data.loot.LootTableSubProvider;
+import net.minecraft.data.worldgen.BootstrapContextAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.loot.EntityLootSubProvider;
 import net.minecraft.resources.ResourceKey;
@@ -34,7 +34,7 @@ public class RegistrumEntityLootTables extends EntityLootSubProvider implements 
     private final Consumer<RegistrumEntityLootTables> callback;
 
     public RegistrumEntityLootTables(
-        HolderLookup.Provider provider,
+        LootTableSubProvider.Context provider,
         AbstractRegistrum<?> parent,
         Consumer<RegistrumEntityLootTables> callback
     ) {
@@ -53,14 +53,14 @@ public class RegistrumEntityLootTables extends EntityLootSubProvider implements 
         return parent.getAll(Registries.ENTITY_TYPE).stream().map(Supplier::get);
     }
 
-    public HolderLookup.Provider getRegistries() {
-        return this.registries;
+    public BootstrapContextAccess getRegistries() {
+        return this.output;
     }
 
 
     @Override
-    public LootItemCondition.Builder killedByFrog(HolderGetter<EntityType<?>> entityTypes) {
-        return super.killedByFrog(entityTypes);
+    public LootItemCondition.Builder killedByFrog() {
+        return super.killedByFrog();
     }
 
     @Override

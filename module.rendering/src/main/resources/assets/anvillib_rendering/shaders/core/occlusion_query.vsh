@@ -1,4 +1,5 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
 layout(std140) uniform Transforms {
     mat4 ProjMat;
@@ -6,7 +7,7 @@ layout(std140) uniform Transforms {
     mat4 ModelViewMat;
 };
 
-in vec3 Position;
+layout(location = 0) in vec3 Position;
 
 void main() {
     gl_Position = ProjMat * CameraViewMat * ModelViewMat * vec4(Position, 1.0);

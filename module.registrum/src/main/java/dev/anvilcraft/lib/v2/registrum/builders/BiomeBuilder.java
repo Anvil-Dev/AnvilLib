@@ -16,17 +16,17 @@
 //import dev.anvilcraft.lib.v2.registrum.util.nullness.NonnullType;
 //
 //import net.minecraft.entity.EntityClassification;
-//import net.minecraft.entity.EntityType;
-//import net.minecraft.world.biome.Biome;
-//import net.minecraft.world.biome.Biome.SpawnListEntry;
+//import net.minecraft.world.entity.EntityType;
+//import net.minecraft.world.level.biome.Biome;
+//import net.minecraft.world.level.biome.Biome.SpawnListEntry;
 //import net.minecraft.world.gen.GenerationStage.Carving;
 //import net.minecraft.world.gen.GenerationStage.Decoration;
 //import net.minecraft.world.gen.carver.ConfiguredCarver;
 //import net.minecraft.world.gen.carver.EmptyCarverConfig;
 //import net.minecraft.world.gen.carver.ICarverConfig;
-//import net.minecraft.world.gen.carver.WorldCarver;
-//import net.minecraft.world.gen.feature.ConfiguredFeature;
-//import net.minecraft.world.gen.feature.Feature;
+//import net.minecraft.world.level.levelgen.carver.WorldCarver;
+//import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+//import net.minecraft.world.level.levelgen.feature.Feature;
 //import net.minecraft.world.gen.feature.IFeatureConfig;
 //import net.minecraft.world.gen.feature.NoFeatureConfig;
 //import net.minecraft.world.gen.placement.IPlacementConfig;

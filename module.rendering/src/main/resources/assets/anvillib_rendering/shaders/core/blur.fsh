@@ -1,6 +1,7 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-#moj_import<anvillib_rendering:util.glsl>
+#include<anvillib_rendering:util.glsl>
 
 layout(std140) uniform BlurParameters {
     vec2 BlurDir;
@@ -20,9 +21,9 @@ const float weight[7] = float[] (
     0.0080502373
 );
 
-in vec2 texCoord;
+layout(location = 0) in vec2 texCoord;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main() {
     vec2 texOffset = 1.0 / textureSize(DiffuseSampler, 0);

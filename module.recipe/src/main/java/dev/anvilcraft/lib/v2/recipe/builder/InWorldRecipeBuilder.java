@@ -18,8 +18,8 @@ import lombok.EqualsAndHashCode;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.AdvancementRewards;
-import net.minecraft.advancements.Criterion;
-import net.minecraft.advancements.criterion.RecipeUnlockedTrigger;
+import net.minecraft.advancements.triggers.Criterion;
+import net.minecraft.advancements.triggers.RecipeUnlockedTrigger;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -963,19 +963,20 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
 
     @Override
     public void save(RecipeOutput recipeOutput, ResourceKey<Recipe<?>> key) {
+        Identifier location = key.identifier();
+        ResourceKey<Recipe<?>> recipeKey = ResourceKey.create(
+            Registries.RECIPE,
+            Identifier.fromNamespaceAndPath(location.getNamespace(), this.group + "/" + location.getPath())
+        );
         Advancement.Builder builder = recipeOutput.advancement()
-            .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(key))
-            .rewards(AdvancementRewards.Builder.recipe(key))
+            .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(recipeOutput.lookup(Registries.RECIPE).getOrThrow(recipeKey)))
+            .rewards(AdvancementRewards.Builder.recipe(recipeKey))
             .requirements(AdvancementRequirements.Strategy.OR);
         Objects.requireNonNull(builder);
         this.criteria.forEach(builder::addCriterion);
         InWorldRecipe recipe = this.build();
-        Identifier location = key.identifier();
         recipeOutput.accept(
-            ResourceKey.create(
-                Registries.RECIPE,
-                Identifier.fromNamespaceAndPath(location.getNamespace(), this.group + "/" + location.getPath())
-            ),
+            recipeKey,
             recipe,
             builder.build(location.withPrefix("recipes/" + this.group + "/"))
         );

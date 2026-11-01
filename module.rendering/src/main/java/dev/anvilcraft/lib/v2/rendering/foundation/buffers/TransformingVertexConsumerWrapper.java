@@ -54,4 +54,8 @@ public class TransformingVertexConsumerWrapper implements VertexConsumer {
     public VertexConsumer setLineWidth(float width) {
         return delegate.setLineWidth(width);
     }
+    @Override
+    public VertexConsumer setUv3(float u, float v) {
+        return delegate.setUv3(u, v);
+    }
 }

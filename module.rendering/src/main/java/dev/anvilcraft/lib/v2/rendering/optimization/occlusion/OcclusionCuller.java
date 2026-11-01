@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.rendering.optimization.occlusion;
 
-import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.renderpearl.api.device.GpuDevice;
 import dev.anvilcraft.lib.v2.rendering.ALROptions;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.noop.NoOpOcclusionCuller;
 import net.minecraft.client.renderer.SubmitNodeCollector;

@@ -2,19 +2,8 @@ package dev.anvilcraft.lib.v2.rendering.gui.renderer;
 
 import org.jetbrains.annotations.ApiStatus;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
 import dev.anvilcraft.lib.v2.rendering.foundation.buffers.TransformingVertexConsumerWrapper;
 import dev.anvilcraft.lib.v2.rendering.foundation.fakeworld.SimpleTintedEmptyLevelAccess;
@@ -24,18 +13,20 @@ import dev.anvilcraft.lib.v2.rendering.util.Timer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.anvilcraft.lib.v2.rendering.foundation.FeatureGeometry;
+import dev.anvilcraft.lib.v2.rendering.foundation.buffers.EmptyVertexConsumer;
+import net.minecraft.client.renderer.state.gui.GuiRenderState;
+import net.minecraft.client.renderer.state.gui.BlitRenderState;
+import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.Sheets;
-import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
-import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -43,13 +34,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.OptionalInt;
 
 
 @ApiStatus.Internal
@@ -57,9 +42,6 @@ public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipR
 
     private final BlockAndTintGetter emptyTintedLevel = new SimpleTintedEmptyLevelAccess();
 
-    public StructurePipRenderer(MultiBufferSource.BufferSource bufferSource) {
-        super(bufferSource);
-    }
 
     @Override
     public Class<StructurePipRenderingState> getRenderStateClass() {
@@ -68,9 +50,9 @@ public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipR
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    protected void renderToTexture(StructurePipRenderingState renderState, PoseStack poseStack) {
+    protected void renderToTexture(StructurePipRenderingState renderState, PoseStack poseStack, SubmitNodeCollector collector) {
         Minecraft minecraft = Minecraft.getInstance();
-        int guiScale = minecraft.gameRenderer.getGameRenderState().windowRenderState.guiScale;
+        int guiScale = minecraft.gameRenderer.gameRenderState().windowRenderState.guiScale;
         int width = (renderState.x1() - renderState.x0()) * guiScale;
         int height = (renderState.y1() - renderState.y0()) * guiScale;
         float scale = guiScale * renderState.scale();
@@ -106,8 +88,7 @@ public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipR
                         poseStack.pushPose();
                         poseStack.translate(x, y, z);
                         poseStack.translate(-0.5f, -0.5f, -0.5f);
-                        VertexConsumer buffer = this.bufferSource.getBuffer(quad.materialInfo().itemRenderType());
-                        buffer.putBakedQuad(poseStack.last(), quad, instance);
+                        FeatureGeometry.submitQuad(collector, poseStack, quad, instance);
                         poseStack.popPose();
                     },
                     blockPos.getX(),
@@ -121,8 +102,6 @@ public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipR
                 );
             }
         }
-        bufferSource.endBatch();
-        Map<ChunkSectionLayer, VertexConsumer> bufferBuilderMap = new HashMap<>();
         poseStack.pushPose();
         poseStack.translate(-0.5f, -0.5f, -0.5f);
         for (BlockPos blockPos : BlockPos.betweenClosed(renderState.startPos(), renderState.endPos())) {
@@ -131,40 +110,18 @@ public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipR
             if (!fluidState.isEmpty()) {
                 poseStack.pushPose();
                 poseStack.translate(blockPos.getX(), blockPos.getY(), blockPos.getZ());
-                fluidRenderer.tesselate(
-                    emptyTintedLevel,
-                    BlockPos.ZERO,
-                    layer -> {
-                        VertexConsumer bufferBuilder = bufferBuilderMap.get(layer);
-                        if (bufferBuilder != null) {
-                            return bufferBuilder;
-                        }
-                        VertexConsumer consumer = createChunkSectionLayer(layer, poseStack);
-                        bufferBuilderMap.put(layer, consumer);
-                        return consumer;
-                    },
-                    blockState,
-                    fluidState
-                );
+                for (ChunkSectionLayer targetLayer : ChunkSectionLayer.values()) {
+                    collector.submitCustomGeometry(poseStack, renderTypeForLayer(targetLayer), (pose, buffer) ->
+                        fluidRenderer.tesselate(emptyTintedLevel, BlockPos.ZERO,
+                            layer -> layer == targetLayer ? new TransformingVertexConsumerWrapper(pose, buffer) : EmptyVertexConsumer.INSTANCE,
+                            blockState, fluidState));
+                }
                 poseStack.popPose();
             }
         }
 
-        bufferSource.endBatch();
 
-        RenderBuffers renderBuffers = minecraft.renderBuffers();
-        SubmitNodeStorage submitNodeStorage = new SubmitNodeStorage();
         GameRenderer gameRenderer = minecraft.gameRenderer;
-        FeatureRenderDispatcher frd = new FeatureRenderDispatcher(
-            submitNodeStorage,
-            minecraft.getModelManager(),
-            renderBuffers.bufferSource(),
-            minecraft.getAtlasManager(),
-            renderBuffers.outlineBufferSource(),
-            renderBuffers.crumblingBufferSource(),
-            minecraft.font,
-            gameRenderer.getGameRenderState()
-        );
         for (BlockPos blockPos : BlockPos.betweenClosed(renderState.startPos(), renderState.endPos())) {
             BlockEntity blockEntity = level.getBlockEntity(blockPos);
             if (blockEntity == null) continue;
@@ -183,83 +140,44 @@ public class StructurePipRenderer extends PictureInPictureRenderer<StructurePipR
             blockEntityRenderer.submit(
                 blockEntityRenderState,
                 poseStack,
-                submitNodeStorage,
-                gameRenderer.getGameRenderState().levelRenderState.cameraRenderState
+                collector,
+                gameRenderer.gameRenderState().levelRenderState.cameraRenderState
             );
             poseStack.popPose();
         }
         if (renderState.drawAdditionalCallback() != null) {
-            renderState.drawAdditionalCallback().accept(submitNodeStorage, poseStack);
+            renderState.drawAdditionalCallback().accept(collector, poseStack);
         }
-        frd.renderAllFeatures();
-        bufferSource.endBatch();
 
         poseStack.popPose();
         poseStack.popPose();
         if (!poseStack.isEmpty()) {
             throw new IllegalStateException("Pose stack not empty");
         }
-        if (renderState.glitched()) {
-            applyGlitchEffect(width, height);
-        }
     }
 
-    public void applyGlitchEffect(int width, int height) {
-        GlitchPostEffect glitchPostEffect = ALRPostEffects.getGlitchPostEffect();
-        GpuTextureView processed = glitchPostEffect.process(
-            RenderSystem.outputColorTextureOverride,
-            width,
-            height
-        );
-        float u1 = width / (glitchPostEffect.getGlitchOutputTarget().width * 1.0f);
-        float v1 = height / (glitchPostEffect.getGlitchOutputTarget().height * 1.0f);
-        Tesselator tesselator = Tesselator.getInstance();
-        VertexFormat format = DefaultVertexFormat.POSITION_TEX_COLOR;
-        BufferBuilder builder = tesselator.begin(VertexFormat.Mode.QUADS, format);
-
-        builder.addVertex(0, 0, 100).setUv(0, 0).setColor(-1);
-        builder.addVertex(0, height, 100).setUv(0, v1).setColor(-1);
-        builder.addVertex(width, height, 100).setUv(u1, v1).setColor(-1);
-        builder.addVertex(width, 0, 100).setUv(u1, 0).setColor(-1);
-
-        MeshData data = builder.buildOrThrow();
-        GpuBuffer buffer = format.uploadImmediateVertexBuffer(data.vertexBuffer());
-        int indexCount = data.drawState().indexCount();
-        data.close();
-        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
-        GpuBuffer indexBuffer = sequentialBuffer.getBuffer(indexCount);
-
-        CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-
-        GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms()
-            .writeTransform(
-                new Matrix4f(),
-                new Vector4f(1.0F, 1.0F, 1.0F, 1.0F),
-                new Vector3f(),
-                new Matrix4f()
-            );
-
-        try (RenderPass renderPass = commandEncoder.createRenderPass(
-            () -> "Immediate draw for blitGlitchEffect",
-            RenderSystem.outputColorTextureOverride,
-            OptionalInt.of(0)
-        )) {
-            renderPass.setPipeline(RenderPipelines.GUI_TEXTURED);
-            renderPass.bindTexture("Sampler0", processed, glitchPostEffect.getSampler());
-            renderPass.setVertexBuffer(0, buffer);
-            renderPass.setIndexBuffer(indexBuffer, sequentialBuffer.type());
-            renderPass.setUniform("DynamicTransforms", dynamicTransforms);
-            RenderSystem.bindDefaultUniforms(renderPass);
-            renderPass.drawIndexed(0, 0, indexCount, 1);
+    @Override
+    protected void blitTexture(StructurePipRenderingState state, GuiRenderState guiState) {
+        if (!state.glitched()) {
+            super.blitTexture(state, guiState);
+            return;
         }
+        int width = this.textureView.getWidth(0);
+        int height = this.textureView.getHeight(0);
+        GlitchPostEffect effect = ALRPostEffects.getGlitchPostEffect();
+        GpuTextureView processed = effect.process(this.textureView, width, height);
+        guiState.addBlitToCurrentLayer(new BlitRenderState(RenderPipelines.GUI_TEXTURED_PREMULTIPLIED_ALPHA,
+            TextureSetup.singleTexture(processed, effect.getSampler()), state.pose(),
+            state.x0(), state.y0(), state.x1(), state.y1(), 0,
+            width / (float) effect.getGlitchOutputTarget().width,
+            height / (float) effect.getGlitchOutputTarget().height, 0, -1, state.scissorArea(), null));
     }
 
-    public VertexConsumer createChunkSectionLayer(ChunkSectionLayer layer, PoseStack poseStack) {
-        RenderType renderType = switch (layer) {
-            case SOLID, CUTOUT -> Sheets.cutoutBlockSheet();
-            case TRANSLUCENT -> Sheets.translucentBlockSheet();
+    private static RenderType renderTypeForLayer(ChunkSectionLayer layer) {
+        return switch (layer) {
+            case SOLID, CUTOUT -> Sheets.cutoutBlockItemSheet();
+            case TRANSLUCENT -> Sheets.translucentBlockItemSheet();
         };
-        return new TransformingVertexConsumerWrapper(poseStack.last(), this.bufferSource.getBuffer(renderType));
     }
 
     @Override

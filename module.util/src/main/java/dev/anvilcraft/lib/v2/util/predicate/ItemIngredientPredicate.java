@@ -5,10 +5,10 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import net.minecraft.advancements.criterion.DataComponentMatchers;
+import net.minecraft.advancements.predicates.DataComponentMatchers;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.RegistryCodecs;
+import net.minecraft.core.registries.codec.RegistryCodecs;
 import net.minecraft.core.component.DataComponentExactPredicate;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.TypedDataComponent;
@@ -44,7 +44,7 @@ public record ItemIngredientPredicate(
      * ItemIngredientPredicate编解码器
      */
     public static final Codec<ItemIngredientPredicate> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-        RegistryCodecs.homogeneousList(Registries.ITEM).optionalFieldOf("items").forGetter(ItemIngredientPredicate::items),
+        RegistryCodecs.holderSet(Registries.ITEM).optionalFieldOf("items").forGetter(ItemIngredientPredicate::items),
         Codec.INT.optionalFieldOf("count", 1).forGetter(ItemIngredientPredicate::count),
         DataComponentMatchers.CODEC.codec().optionalFieldOf("components", DataComponentMatchers.ANY)
             .forGetter(ItemIngredientPredicate::components)

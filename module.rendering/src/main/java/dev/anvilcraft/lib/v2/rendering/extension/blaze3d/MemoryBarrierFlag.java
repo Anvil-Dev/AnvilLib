@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.rendering.extension.blaze3d;
 
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL44;
 
 public enum MemoryBarrierFlag {
     VERTEX_ATTRIB_ARRAY_BARRIER(GL42.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT),
@@ -17,6 +18,7 @@ public enum MemoryBarrierFlag {
     TRANSFORM_FEEDBACK_BARRIER(GL42.GL_TRANSFORM_FEEDBACK_BARRIER_BIT),
     ATOMIC_COUNTER_BARRIER(GL42.GL_ATOMIC_COUNTER_BARRIER_BIT),
     SHADER_STORAGE_BARRIER(GL43.GL_SHADER_STORAGE_BARRIER_BIT),
+    CLIENT_MAPPED_BUFFER_BARRIER(GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT),
     ALL_BARRIER(GL42.GL_ALL_BARRIER_BITS);
 
     private final int glEnum;

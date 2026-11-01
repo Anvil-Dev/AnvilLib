@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.rendering.optimization.occlusion;
 
-import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.renderpearl.api.device.GpuDevice;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz.HierarchicalZSupport;
@@ -16,7 +16,7 @@ public enum OcclusionMethod {
     GPU_QUERY {
         @Override
         public boolean isSupported(GpuDevice device) {
-            return true;
+            return device.getDeviceInfo().backendName().equals("OpenGL");
         }
 
         @Override
