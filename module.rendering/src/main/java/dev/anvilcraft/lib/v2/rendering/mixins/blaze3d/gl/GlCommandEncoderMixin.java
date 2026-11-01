@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.rendering.mixins.blaze3d.gl;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.opengl.GlBuffer;
 import com.mojang.blaze3d.opengl.GlDevice;
+import com.mojang.blaze3d.opengl.GlProgram;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderBackendExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceBackendExtension;
@@ -22,15 +23,21 @@ public class GlCommandEncoderMixin implements ALRCommandEncoderBackendExtension 
     @Final
     private GlDevice device;
 
+    @Shadow
+    private GlProgram lastProgram;
+
     @Override
     public void alrDispatchWorkgroups(int groupCountX, int groupCountY, int groupCountZ) {
         ARBComputeShader.glDispatchCompute(groupCountX, groupCountY, groupCountZ);
+        // Compute dispatch binds a different program outside the native render-pass cache.
+        this.lastProgram = null;
     }
 
     @Override
     public void alrDispatchWorkgroupsIndirect(GpuBufferSlice parameters) {
         GlStateManager._glBindBuffer(GL46.GL_DISPATCH_INDIRECT_BUFFER, ((GlBuffer) parameters.buffer()).handle);
         ARBComputeShader.glDispatchComputeIndirect(parameters.offset());
+        this.lastProgram = null;
     }
 
     @Override

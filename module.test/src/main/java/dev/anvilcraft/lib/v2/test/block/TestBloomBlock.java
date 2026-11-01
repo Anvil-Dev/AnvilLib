@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.test.block;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
 import com.mojang.serialization.MapCodec;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.block.tile.TestBloomTile;
@@ -18,7 +18,7 @@ import org.jspecify.annotations.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NullMarked
 public class TestBloomBlock extends BaseEntityBlock {
     public TestBloomBlock(Properties properties) {
         super(properties);

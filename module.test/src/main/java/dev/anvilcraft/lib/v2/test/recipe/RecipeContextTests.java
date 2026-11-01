@@ -119,7 +119,7 @@ final class RecipeContextTests {
     }
 
     private static InWorldRecipeContext emptyContext(GameTestHelper helper) {
-        return RecipeRegressionTests.context(helper, helper.absolutePos(new BlockPos(3, 2, 3)).getCenter());
+        return RecipeRegressionTests.context(helper, Vec3.atCenterOf(helper.absolutePos(new BlockPos(3, 2, 3))));
     }
 
     private static void expectFailure(GameTestHelper helper, Runnable action, String message) {

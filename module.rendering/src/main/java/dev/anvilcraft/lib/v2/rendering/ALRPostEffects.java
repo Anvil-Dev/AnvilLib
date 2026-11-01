@@ -1,11 +1,11 @@
 package dev.anvilcraft.lib.v2.rendering;
 
 import dev.anvilcraft.lib.v2.rendering.bloom.BloomPostEffect;
+import dev.anvilcraft.lib.v2.rendering.foundation.FeatureRendering;
 import dev.anvilcraft.lib.v2.rendering.event.MainTargetResizeEvent;
 import dev.anvilcraft.lib.v2.rendering.glitch.GlitchPostEffect;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,29 +20,23 @@ public class ALRPostEffects {
     private static BloomPostEffect bloomPostEffect;
     @Getter
     private static GlitchPostEffect glitchPostEffect;
+    private static RenderBuffers bloomRenderBuffers;
+    private static FeatureRenderDispatcher bloomFeatures;
 
     public static void createPostEffects() {
         bloomPostEffect = new BloomPostEffect();
         glitchPostEffect = new GlitchPostEffect();
+        bloomRenderBuffers = new RenderBuffers(1);
+        bloomFeatures = FeatureRendering.dispatcher(bloomRenderBuffers);
     }
 
     public static void runBloomDraws(Matrix4fc mvMat) {
         try {
-            Minecraft minecraft = Minecraft.getInstance();
-            RenderBuffers renderBuffers = minecraft.renderBuffers();
-            FeatureRenderDispatcher frd = new FeatureRenderDispatcher(
-                bloomPostEffect.getSubmitNodeStorage(),
-                minecraft.getModelManager(),
-                renderBuffers.bufferSource(),
-                minecraft.getAtlasManager(),
-                renderBuffers.outlineBufferSource(),
-                renderBuffers.crumblingBufferSource(),
-                minecraft.font,
-                minecraft.gameRenderer.getGameRenderState()
-            );
-            bloomPostEffect.runBloomDraws(mvMat, frd);
+            bloomPostEffect.runBloomDraws(mvMat, bloomFeatures);
         } catch (Exception e) {
             log.error("runBloomDraws boom!", e);
+        } finally {
+            bloomRenderBuffers.endFrame();
         }
     }
 

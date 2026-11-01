@@ -1,8 +1,8 @@
 # AnvilLib [中文](README.md) | **English**
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.1-green.svg)](https://minecraft.net/)
-[![Maven Central](https://img.shields.io/maven-central/v/dev.anvilcraft.lib/anvillib-neoforge-26.1)](https://central.sonatype.com/search?q=anvillib)
-[![NeoForge](https://img.shields.io/badge/NeoForge-26.1.x-orange.svg)](https://neoforged.net/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.2-green.svg)](https://minecraft.net/)
+[![Maven Central](https://img.shields.io/maven-central/v/dev.anvilcraft.lib/anvillib-neoforge-26.2)](https://central.sonatype.com/search?q=anvillib)
+[![NeoForge](https://img.shields.io/badge/NeoForge-26.2.x-orange.svg)](https://neoforged.net/)
 [![License](https://img.shields.io/badge/License-MIT%20License-blue.svg)](https://opensource.org/licenses/MIT)
 
 **AnvilLib** is a NeoForge mod library developed by [Anvil Dev](https://github.com/Anvil-Dev), providing Minecraft mod developers with a
@@ -65,6 +65,24 @@ public class MyModConfig {
 MyModConfig config = ConfigManager.register("my_mod", MyModConfig::new);
 ```
 
+**Sidebar configuration screen (26.2):**
+
+Add `screenStyle = ConfigScreenStyle.SIDEBAR` to `@Config` and register the
+configuration with `ConfigManager.register` as usual. First-level
+`@CollapsibleObject` groups become sidebar tabs, root values appear under
+“General”, and deeper groups open in a modal with back navigation.
+The `group` annotation parameter specifies the configuration directory.
+Enum values use dropdown menus with arrow-key selection, Enter to confirm, and Esc to cancel.
+
+Each file can independently select `DEFAULT` or `SIDEBAR`. When all editable
+files use `SIDEBAR`, the editor opens directly and prefers the client configuration.
+Mixed styles retain NeoForge's file selector. The sidebar screen also has a file
+dropdown when multiple files opt in. Tab switches and modal navigation retain edits.
+Switching files, pressing Done, or pressing Esc on the main editor saves the
+current file. Undo and reset affect the current page's direct entries; saving
+clears that file's undo history. NeoForge's server configuration editing
+restrictions continue to apply.
+
 ### Codec Module
 
 Provides practical helpers around Mojang `Codec` and `StreamCodec` to reduce boilerplate in
@@ -96,7 +114,7 @@ public record ExamplePayload(Item item, int count) {
 
 Provides slanted model outlines and precise crosshair picking, including parent models, reversed outline shells, weighted variants, multipart models, resource reloads and dynamic block entity parts.
 Enable a namespace with `CubeSelection.enableNamespace("your_mod")`; `registerTargetExclusion` registers, replaces or removes runtime exclusions by ID without discarding the model cache.
-Shared geometry, BVH raycasts and background outline work have bounded memory and work budgets. The 26.1 port uses `CuboidModelElement`, `BlockStateModel` and extracted outline render states.
+Shared geometry, BVH raycasts and background outline work have bounded memory and work budgets. The 26.2 port uses `CuboidModelElement`, `BlockStateModel` and extracted outline render states.
 
 ### RPC Module
 
@@ -284,7 +302,7 @@ controller.onHoldKeyReleased();
 
 ### Main Module
 
-`anvillib-neoforge-26.1` is the aggregate artifact. It bundles and re-exports:
+`anvillib-neoforge-26.2` is the aggregate artifact. It bundles and re-exports:
 
 - `config`
 - `integration`
@@ -295,7 +313,7 @@ controller.onHoldKeyReleased();
 - `registrum`
 - `wheel`
 
-`anvillib-test-neoforge-26.1` is a development/testing module and is not part of the aggregate runtime artifact.
+`anvillib-test-neoforge-26.2` is a development/testing module and is not part of the aggregate runtime artifact.
 
 ## Dependency Integration
 
@@ -308,18 +326,18 @@ repositories {
 
 dependencies {
     // Full library
-    implementation "dev.anvilcraft.lib:anvillib-neoforge-26.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-neoforge-26.2:2.0.0"
 
     // Or import individual modules as needed
-    implementation "dev.anvilcraft.lib:anvillib-config-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-codec-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-integration-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-math-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-network-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-26.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-26.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-config-neoforge-26.2:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-codec-neoforge-26.2:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-integration-neoforge-26.2:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-math-neoforge-26.2:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-network-neoforge-26.2:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-26.2:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-26.2:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-26.2:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-26.2:2.0.0"
 }
 ```
 
@@ -331,13 +349,13 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.anvilcraft.lib:anvillib-neoforge-26.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-neoforge-26.2:2.0.0")
 
     // Optional single-module example
-    implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-math-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-network-neoforge-26.1:2.0.0")
-    implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-26.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-26.2:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-math-neoforge-26.2:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-network-neoforge-26.2:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-26.2:2.0.0")
 }
 ```
 
@@ -360,8 +378,8 @@ gradlew.bat build
 ## Requirements
 
 - Java 25+
-- Minecraft 26.1
-- NeoForge 26.1.x
+- Minecraft 26.2
+- NeoForge 26.2.x
 
 ## License
 

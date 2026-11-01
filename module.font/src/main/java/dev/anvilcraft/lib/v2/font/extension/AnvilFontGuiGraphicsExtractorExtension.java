@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
 import java.awt.Font;
 
 @Beta
-public interface GuiGraphicsExtractorExtension {
+public interface AnvilFontGuiGraphicsExtractorExtension {
     default GuiGraphicsExtractor self() {
         return (GuiGraphicsExtractor) this;
     }

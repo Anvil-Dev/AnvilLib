@@ -121,3 +121,5 @@ run/
 
 module.rendering/libs
 ref/
+
+.temp/

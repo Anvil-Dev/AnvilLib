@@ -88,7 +88,7 @@ public class GuiTestScreen extends Screen {
         for (int ix = 0, x = startX; ix < 10; ix++, x += 16 + 2) {
             GuiRenderExtras.itemWithTransparency(
                 graphics,
-                Items.LIME_STAINED_GLASS.getDefaultInstance(),
+                Items.STAINED_GLASS.lime().getDefaultInstance(),
                 x,
                 startY + 16 * 1,
                 (ix + 1) / 10f

@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.test.client.tesr;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
 import com.mojang.math.Axis;
 import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
 import dev.anvilcraft.lib.v2.rendering.AnvilLibRendering;
@@ -30,8 +30,10 @@ import org.jspecify.annotations.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NullMarked
 public class TestBloomTESR implements BlockEntityRenderer<TestBloomTile, TestBloomTESR.TestBloomRenderState> {
+    public static int submittedFrames;
+
 
     public TestBloomTESR(BlockEntityRendererProvider.Context context) {
     }
@@ -60,6 +62,7 @@ public class TestBloomTESR implements BlockEntityRenderer<TestBloomTile, TestBlo
         SubmitNodeCollector submitNodeCollector,
         CameraRenderState cameraRenderState
     ) {
+        submittedFrames++;
         CompoundSubmitNodeStorage compoundSubmit = ALRPostEffects.getBloomPostEffect().createCompoundSubmitStorage(submitNodeCollector);
         Minecraft minecraft = Minecraft.getInstance();
         poseStack.pushPose();

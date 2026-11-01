@@ -33,8 +33,6 @@ public class GuiRendererMixin {
     @Unique
     private GuiElementRenderState anvillib$renderState = null;
     @Unique
-    private final Map<GuiRenderer.MeshToDraw, GuiElementRenderState> anvillib$renderStatesByMeshToDraw = new HashMap<>();
-    @Unique
     private final Map<GuiRenderer.Draw, GuiElementRenderState> anvillib$renderStatesByDraw = new HashMap<>();
 
     @Inject(
@@ -49,48 +47,15 @@ public class GuiRendererMixin {
         SdfGraphics.flush();
     }
 
-    @Inject(
-        method = "addElementToMesh",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/render/GuiRenderer;getBufferBuilder(Lcom/mojang/blaze3d/pipeline/RenderPipeline;)Lcom/mojang/blaze3d/vertex/BufferBuilder;"
-        )
-    )
+    @Inject(method = "addElementToMesh", at = @At("HEAD"))
     private void addElementToMesh(GuiElementRenderState elementState, CallbackInfo ci) {
         this.anvillib$renderState = elementState;
     }
 
-
-    @WrapOperation(
-        method = "recordMesh",
-        at = @At(
-            value = "INVOKE",
-            target = "Ljava/util/List;add(Ljava/lang/Object;)Z"
-        )
-    )
-    private <E> boolean recordMesh(List<E> instance, E e, Operation<Boolean> original) {
-        this.anvillib$renderStatesByMeshToDraw.put((GuiRenderer.MeshToDraw) e, this.anvillib$renderState);
-        return original.call(instance, e);
-    }
-
-    @WrapOperation(
-        method = "recordDraws",
-        at = @At(
-            value = "INVOKE",
-            target = "Ljava/util/List;add(Ljava/lang/Object;)Z"
-        )
-    )
-    private <E> boolean recordDraws(
-        List<E> instance,
-        E e,
-        Operation<Boolean> original,
-        @Local(name = "meshToDraw") GuiRenderer.MeshToDraw meshToDraw
-    ) {
-        this.anvillib$renderStatesByMeshToDraw.computeIfPresent(
-            meshToDraw,
-            (_, v) -> this.anvillib$renderStatesByDraw.put((GuiRenderer.Draw) e, v)
-        );
-        return original.call(instance, e);
+    @WrapOperation(method = "addElementToMesh", at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z"))
+    private <E> boolean recordDraw(List<E> instance, E draw, Operation<Boolean> original) {
+        this.anvillib$renderStatesByDraw.put((GuiRenderer.Draw) draw, this.anvillib$renderState);
+        return original.call(instance, draw);
     }
 
     @Inject(
@@ -102,8 +67,6 @@ public class GuiRendererMixin {
     private void executeDraw(
         GuiRenderer.Draw draw,
         RenderPass renderPass,
-        GpuBuffer indexBuffer,
-        VertexFormat.IndexType indexType,
         CallbackInfo ci
     ) {
         this.anvillib$renderStatesByDraw.computeIfPresent(
@@ -120,14 +83,13 @@ public class GuiRendererMixin {
         method = "executeDraw",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/pipeline/RenderPipeline;getVertexFormatMode()Lcom/mojang/blaze3d/vertex/VertexFormat$Mode;"
+            target = "Lcom/mojang/blaze3d/systems/RenderPass;setPipeline(Lcom/mojang/blaze3d/pipeline/RenderPipeline;)V",
+            shift = At.Shift.AFTER
         )
     )
     private void executeDrawAfterSetPipline(
         GuiRenderer.Draw draw,
         RenderPass renderPass,
-        GpuBuffer indexBuffer,
-        VertexFormat.IndexType indexType,
         CallbackInfo ci
     ) {
         this.anvillib$renderStatesByDraw.computeIfPresent(
@@ -144,7 +106,7 @@ public class GuiRendererMixin {
         method = "submitBlitFromItemAtlas",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/state/gui/BlitRenderState;<init>(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/client/gui/render/TextureSetup;Lorg/joml/Matrix3x2f;IIIIFFFFILnet/minecraft/client/gui/navigation/ScreenRectangle;Lnet/minecraft/client/gui/navigation/ScreenRectangle;)V"
+            target = "Lnet/minecraft/client/renderer/state/gui/BlitRenderState;<init>(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/client/gui/render/TextureSetup;Lorg/joml/Matrix3x2fc;IIIIFFFFILnet/minecraft/client/gui/navigation/ScreenRectangle;Lnet/minecraft/client/gui/navigation/ScreenRectangle;)V"
         ),
         index = 0
     )
@@ -163,7 +125,7 @@ public class GuiRendererMixin {
         method = "submitBlitFromItemAtlas",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/state/gui/BlitRenderState;<init>(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/client/gui/render/TextureSetup;Lorg/joml/Matrix3x2f;IIIIFFFFILnet/minecraft/client/gui/navigation/ScreenRectangle;Lnet/minecraft/client/gui/navigation/ScreenRectangle;)V"
+            target = "Lnet/minecraft/client/renderer/state/gui/BlitRenderState;<init>(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/client/gui/render/TextureSetup;Lorg/joml/Matrix3x2fc;IIIIFFFFILnet/minecraft/client/gui/navigation/ScreenRectangle;Lnet/minecraft/client/gui/navigation/ScreenRectangle;)V"
         ),
         index = 11
     )
@@ -183,8 +145,7 @@ public class GuiRendererMixin {
         method = "render",
         at = @At(value = "INVOKE", target = "Ljava/util/List;clear()V", ordinal = 0)
     )
-    public void render(GpuBufferSlice fogBuffer, CallbackInfo ci) {
+    public void render(CallbackInfo ci) {
         this.anvillib$renderStatesByDraw.clear();
-        this.anvillib$renderStatesByMeshToDraw.clear();
     }
 }

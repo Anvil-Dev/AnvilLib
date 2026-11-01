@@ -64,7 +64,7 @@ public class AnvilLibTestClient {
                 then(
                     literal("screen").
                         executes(_ -> {
-                            Minecraft.getInstance().setScreen(new GuiTestScreen());
+                            Minecraft.getInstance().gui.setScreen(new GuiTestScreen());
                             return 1;
                         })
                 ).

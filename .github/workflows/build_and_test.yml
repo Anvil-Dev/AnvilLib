@@ -61,7 +61,7 @@ jobs:
       NOT_DEV: ${{ secrets.maven_url != '' && secrets.maven_user != '' && secrets.maven_pass != '' }}
       CI_BUILD: ${{ inputs.ci_build }}
       PR_BUILD: ${{ inputs.pr_build }}
-      GRADLE_PROJECT: ${{ inputs.gradle_project != '' && inputs.gradle_project || format('{0}-neoforge-26.1', inputs.module_id) }}
+      GRADLE_PROJECT: ${{ inputs.gradle_project != '' && inputs.gradle_project || format('{0}-neoforge-26.2', inputs.module_id) }}
       MODULE_DIR: ${{ inputs.module_dir != '' && inputs.module_dir || format('module.{0}', inputs.module) }}
     steps:
       - name: checkout
@@ -133,7 +133,7 @@ jobs:
 
       - name: gametest
         if: ${{ inputs.ci_build && inputs.gametest }}
-        uses: Anvil-Dev/dedicated-server-launch-test@26.1-neoforge
+        uses: Anvil-Dev/dedicated-server-launch-test@26.2-neoforge
         with:
           mod: ${{ steps.version.outputs.artifact }}
 

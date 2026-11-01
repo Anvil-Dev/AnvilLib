@@ -25,7 +25,7 @@ public class SdfGraphicsLayer implements GuiLayer {
         this.timer += tracker.getGameTimeDeltaTicks();
 
         var minecraft = Minecraft.getInstance();
-        if (!(minecraft.screen instanceof ChatScreen)) return;
+        if (!(minecraft.gui.screen() instanceof ChatScreen)) return;
         int xMouse  = (int)minecraft.mouseHandler.getScaledXPos(minecraft.getWindow());
         int yMouse  = (int)minecraft.mouseHandler.getScaledYPos(minecraft.getWindow());
 
@@ -56,7 +56,7 @@ public class SdfGraphicsLayer implements GuiLayer {
         var mx  = 75 + Mth.sin(this.timer * 0.05f) * 25.0f;
         var my  = 75 + Mth.cos(this.timer * 0.05f) * 25.0f;
 
-        if (minecraft.screen != null) {
+        if (minecraft.gui.screen() != null) {
             sdf
                     .segment(min + 5, min + 5, mx + 5, my + 5)
                     .rotate(0)

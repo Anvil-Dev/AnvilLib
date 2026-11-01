@@ -163,7 +163,7 @@ public final class RecipeRegressionTests {
     }
 
     private static void commitIsIdempotent(GameTestHelper helper) {
-        Vec3 pos = helper.absolutePos(BASE).getCenter();
+        Vec3 pos = Vec3.atCenterOf(helper.absolutePos(BASE));
         InWorldRecipeContext context = context(helper, pos);
         int[] callbacks = {0};
         context.putAcceptor(AnvilLibTest.of("recipe_test_acceptor"), ignored -> callbacks[0]++);
@@ -206,7 +206,7 @@ public final class RecipeRegressionTests {
     }
 
     private static void sourceFilterAccountsExactly(GameTestHelper helper) {
-        Vec3 pos = helper.absolutePos(BASE).getCenter();
+        Vec3 pos = Vec3.atCenterOf(helper.absolutePos(BASE));
         ItemEntity processed = itemEntity(helper, pos, new ItemStack(Items.IRON_INGOT, 8));
         ItemEntity ordinary = itemEntity(helper, pos, new ItemStack(Items.IRON_INGOT, 64));
         ItemCache cache = new ItemCache(helper.getLevel());
@@ -241,7 +241,7 @@ public final class RecipeRegressionTests {
     }
 
     private static void disjointScansDiscoverGap(GameTestHelper helper) {
-        Vec3 left = helper.absolutePos(new BlockPos(1, 2, 3)).getCenter();
+        Vec3 left = Vec3.atCenterOf(helper.absolutePos(new BlockPos(1, 2, 3)));
         Vec3 middle = left.add(2, 0, 0);
         Vec3 right = left.add(4, 0, 0);
         itemEntity(helper, left, new ItemStack(Items.IRON_INGOT));
@@ -363,7 +363,7 @@ public final class RecipeRegressionTests {
     }
 
     static Vec3 addHandler(GameTestHelper helper, ResourceHandler<ItemResource> input, ResourceHandler<ItemResource> output) {
-        Vec3 pos = helper.absolutePos(BASE).getCenter();
+        Vec3 pos = Vec3.atCenterOf(helper.absolutePos(BASE));
         HandlerEntity entity = new HandlerEntity(helper.getLevel(), pos, input, output);
         helper.getLevel().addFreshEntity(entity);
         return entity.getBoundingBox().getCenter();

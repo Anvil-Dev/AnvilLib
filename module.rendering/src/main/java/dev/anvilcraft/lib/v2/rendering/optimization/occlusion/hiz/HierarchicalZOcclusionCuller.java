@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuFence;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
@@ -82,6 +83,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
     private int size = 0;
     private GpuBuffer inputBuffer;
     private GpuBuffer outputBuffer;
+    private @Nullable GpuFence readbackFence;
 
     public HierarchicalZOcclusionCuller(ALRGpuDeviceExtension device) {
         this.minecraft = Minecraft.getInstance();
@@ -93,7 +95,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
             OcclusionTestCB.SIZE
         );
 
-        RenderTarget mainRenderTarget = this.minecraft.getMainRenderTarget();
+        RenderTarget mainRenderTarget = this.minecraft.gameRenderer.mainRenderTarget();
 
         this.downsampler = new SinglePassDownsampler(
             minecraft,
@@ -138,13 +140,20 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
     }
 
     private void fetchResults() {
-        if (this.outputBuffer == null) return;
+        if (this.outputBuffer == null || this.readbackFence == null) return;
+        if (!this.readbackFence.awaitCompletion(0)) {
+            // Keep rendering conservatively when the GPU has not finished the previous frame.
+            this.results = null;
+            return;
+        }
+        this.readbackFence.close();
+        this.readbackFence = null;
         int size = this.previousFrameState.size();
         if (results == null || results.length < size) {
             results = new int[size];
         }
         CommandEncoder commandEncoder = this.gpuDevice.createCommandEncoder();
-        try (GpuBuffer.MappedView mappedView = commandEncoder.mapBuffer(outputBuffer, true, false)) {
+        try (com.mojang.blaze3d.buffers.GpuBufferSlice.MappedView mappedView = outputBuffer.slice().map(true, false)) {
             ByteBuffer data = mappedView.data();
             IntBuffer intBuffer = data.asIntBuffer();
             intBuffer.get(0, results, 0, size);
@@ -172,7 +181,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
 
     @Override
     public void processFeatures(CameraRenderState camera) {
-        RenderTarget mainRenderTarget = this.minecraft.getMainRenderTarget();
+        RenderTarget mainRenderTarget = this.minecraft.gameRenderer.mainRenderTarget();
         CommandEncoder commandEncoder = this.gpuDevice.createCommandEncoder();
         if (this.mipmapUpdateCd <= 0) {
             GpuTexture texture = this.depthTexConverter.runConvert(
@@ -226,7 +235,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
             downsampler.getFramebufferWidth(),
             downsampler.getFramebufferHeight()
         ));
-        this.testCB.setCameraPos(new Vector4f((float) camera.pos.x, (float) camera.pos.y, (float) camera.pos.z, 1));
+        this.testCB.setCameraPos(new Vector4f((float) camera.pos.x, (float) camera.pos.y, (float) camera.pos.z, this.gpuDevice.getDeviceInfo().isZZeroToOne() ? 1 : 0));
         this.testCB.getProjMat().set(camera.projectionMatrix);
         this.testCB.getCameraMat().set(camera.viewRotationMatrix);
 
@@ -240,8 +249,6 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
         this.inputSSBO.write(buffer);
         buffer.position(0);
 
-        // TODO check if mojang added coherent flag. UPDATE: seems not, pray for driver handles this correctly
-        ((ALRCommandEncoderExtension) commandEncoder).alrMemoryBarrier(MemoryBarrierFlag.BUFFER_UPDATE_BARRIER);
         this.stagingInputBuffer.copyToBuffer(
             commandEncoder,
             0,
@@ -274,8 +281,13 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
                 pass.bindArrayOfTexture(0, textures, true, false);
             }
             pass.dispatchWorkgroups(Math.ceilDiv(elementCount, 32), 1, 1);
-            pass.memoryBarrier(MemoryBarrierFlag.SHADER_IMAGE_ACCESS_BARRIER, MemoryBarrierFlag.SHADER_STORAGE_BARRIER);
+            pass.memoryBarrier(MemoryBarrierFlag.SHADER_STORAGE_BARRIER, MemoryBarrierFlag.BUFFER_UPDATE_BARRIER);
+            if (gpuDeviceExtension.alrhiCreateCapabilities().persistentMappedBuffer()) {
+                pass.memoryBarrier(MemoryBarrierFlag.CLIENT_MAPPED_BUFFER_BARRIER);
+            }
         }
+        if (readbackFence != null) readbackFence.close();
+        readbackFence = commandEncoder.createFence();
     }
 
     private void ensureBuffers(int elementCount) {
@@ -333,7 +345,7 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
         if (orDefault < 0) {
             return true;
         }
-        if (orDefault > results.length) {
+        if (orDefault >= results.length) {
             this.logger.warn("Trying to read invalid position {} as it exceeds results.length.", orDefault);
             return true;
         }
@@ -342,6 +354,8 @@ public class HierarchicalZOcclusionCuller implements OcclusionCuller {
 
     @Override
     public void close() throws Exception {
+        if (this.readbackFence != null) this.readbackFence.close();
+        this.stagingInputBuffer.close();
         this.testCBBuffer.close();
         if (this.inputBuffer != null) this.inputBuffer.close();
         if (this.outputBuffer != null) this.outputBuffer.close();

@@ -5,7 +5,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ContainerScreenEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 
 /** 在配方查看器的前景与提示框之前绘制创造栏分区。 */
 @EventBusSubscriber(modid = "anvillib_registrum", value = Dist.CLIENT)
@@ -14,19 +14,10 @@ public final class CreativeTabSectionRenderListener {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void renderSections(ContainerScreenEvent.Render.Foreground event) {
-        if (!(event.getContainerScreen() instanceof Renderer renderer)) return;
+    public static void renderSections(ScreenEvent.Render.Foreground event) {
+        if (!(event.getScreen() instanceof Renderer renderer)) return;
         GuiGraphicsExtractor graphics = event.getGuiGraphics();
-        graphics.pose().pushMatrix();
-        try {
-            graphics.pose().translate(
-                -event.getContainerScreen().getLeftPos(),
-                -event.getContainerScreen().getTopPos()
-            );
-            renderer.anvillib$renderSections(graphics, event.getMouseX(), event.getMouseY());
-        } finally {
-            graphics.pose().popMatrix();
-        }
+        renderer.anvillib$renderSections(graphics, event.getMouseX(), event.getMouseY());
     }
 
     public interface Renderer {

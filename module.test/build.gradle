@@ -1,26 +1,61 @@
 dependencies {
-    implementation project(":anvillib-cube-neoforge-26.1")
-    implementation project(":anvillib-codec-neoforge-26.1")
-    implementation project(":anvillib-collision-neoforge-26.1")
-    implementation project(":anvillib-config-neoforge-26.1")
-    implementation project(":anvillib-explosion-neoforge-26.1")
-    implementation project(":anvillib-font-neoforge-26.1")
-    interfaceInjectionData(implementation project(":anvillib-font-neoforge-26.1"))
-    implementation project(":anvillib-integration-neoforge-26.1")
-    interfaceInjectionData(implementation project(":anvillib-moveable-entity-block-neoforge-26.1"))
-    implementation project(":anvillib-multiblock-neoforge-26.1")
-    implementation project(":anvillib-network-neoforge-26.1")
-    interfaceInjectionData(implementation project(":anvillib-recipe-neoforge-26.1"))
-    implementation project(":anvillib-registrum-neoforge-26.1")
-    implementation project(":anvillib-rendering-neoforge-26.1")
-    implementation project(":anvillib-rpc-neoforge-26.1")
-    implementation project(":anvillib-space-select-neoforge-26.1")
-    implementation project(":anvillib-sync-neoforge-26.1")
-    implementation project(":anvillib-util-neoforge-26.1")
-    implementation project(":anvillib-wheel-neoforge-26.1")
+    implementation project(":anvillib-cube-neoforge-26.2")
+    implementation project(":anvillib-codec-neoforge-26.2")
+    implementation project(":anvillib-collision-neoforge-26.2")
+    implementation project(":anvillib-config-neoforge-26.2")
+    implementation project(":anvillib-explosion-neoforge-26.2")
+    implementation project(":anvillib-font-neoforge-26.2")
+    interfaceInjectionData(implementation project(":anvillib-font-neoforge-26.2"))
+    implementation project(":anvillib-integration-neoforge-26.2")
+    interfaceInjectionData(implementation project(":anvillib-moveable-entity-block-neoforge-26.2"))
+    implementation project(":anvillib-multiblock-neoforge-26.2")
+    implementation project(":anvillib-network-neoforge-26.2")
+    interfaceInjectionData(implementation project(":anvillib-recipe-neoforge-26.2"))
+    implementation project(":anvillib-registrum-neoforge-26.2")
+    implementation project(":anvillib-rendering-neoforge-26.2")
+    implementation project(":anvillib-rpc-neoforge-26.2")
+    implementation project(":anvillib-space-select-neoforge-26.2")
+    implementation project(":anvillib-sync-neoforge-26.2")
+    implementation project(":anvillib-util-neoforge-26.2")
+    implementation project(":anvillib-wheel-neoforge-26.2")
 
-    if (!providers.gradleProperty('portSmoke').isPresent() && !providers.gradleProperty('recipeTests').isPresent()) {
-        runtimeOnly("dev.dubhe:anvilcraft-neoforge-26.1.2:1.6.0+snapshot.2284"){ transitive = false }
+    // 可选的整包兼容测试由调用方提供对应游戏版本的 Maven 坐标。
+    providers.gradleProperty('anvilcraftTestDependency').orNull?.with { coordinate ->
+        runtimeOnly(coordinate) { transitive = false }
+    }
+}
+
+if (providers.gradleProperty('configUiDemo').isPresent()) {
+    neoForge.runs.client {
+        gameDirectory = layout.buildDirectory.dir('config-ui-run')
+    }
+}
+
+if (providers.gradleProperty('configUiTest').isPresent()) {
+    neoForge.runs.client {
+        systemProperty 'anvillib.configUiTest', 'true'
+        gameDirectory = layout.buildDirectory.dir('config-ui-test-run')
+    }
+    def uiResult = layout.buildDirectory.file('config-ui-test-run/config-ui-result.txt')
+    tasks.named('runClient') {
+        doFirst { uiResult.get().asFile.delete() }
+        doLast {
+            if (!uiResult.get().asFile.isFile() || !uiResult.get().asFile.text.startsWith('PASS ')) {
+                throw new GradleException('Config UI verification failed; inspect config-ui-result.txt and the client log')
+            }
+        }
+    }
+    neoForge.runs.server {
+        gameDirectory = layout.buildDirectory.dir('config-server-run')
+    }
+    neoForge.runs {
+        configGameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'anvillib.configServerTest', 'true'
+            gameDirectory = layout.buildDirectory.dir('config-server-run')
+            programArguments.addAll '--tests', 'anvillib_test:config_server_registration'
+        }
     }
 }
 
@@ -42,11 +77,18 @@ if (providers.gradleProperty('portSmoke').isPresent()) {
         gameDirectory = layout.buildDirectory.dir('port-smoke-run')
     }
     def result = layout.buildDirectory.file('port-smoke-run/port-smoke-result.txt')
+    def clientLog = layout.buildDirectory.file('port-smoke-run/logs/latest.log')
     tasks.named('runClient') {
         doFirst { result.get().asFile.delete() }
         doLast {
             if (!result.get().asFile.isFile() || !result.get().asFile.text.startsWith('PASS ')) {
                 throw new GradleException('Port smoke verification failed; inspect the client log and port-smoke-result.txt')
+            }
+            if (clientLog.get().asFile.readLines().any { line ->
+                line.contains('runBloomDraws boom!') || line.contains('ALRPostEffects BloomPostEffect')
+                    || line.contains('Could not compile') || (line.contains('OpenGL debug message:') && line.contains('type=ERROR'))
+            }) {
+                throw new GradleException('Rendering reported an error during the port smoke test; inspect latest.log')
             }
         }
     }

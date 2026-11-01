@@ -20,7 +20,6 @@ import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 import org.jetbrains.annotations.ApiStatus;
 
 @Slf4j
@@ -48,7 +47,7 @@ public class AnvilLibRendering {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void on(SubmitCustomGeometryEvent event) {
+    public static void cullAfterOpaqueTerrain(RenderLevelStageEvent.AfterOpaqueBlocks event) {
         ALROptimizations.getOcclusionCuller().processFeatures(event.getLevelRenderState().cameraRenderState);
     }
 

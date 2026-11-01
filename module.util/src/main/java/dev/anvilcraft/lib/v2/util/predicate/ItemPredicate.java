@@ -2,8 +2,8 @@ package dev.anvilcraft.lib.v2.util.predicate;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.advancements.criterion.DataComponentMatchers;
-import net.minecraft.advancements.criterion.MinMaxBounds;
+import net.minecraft.advancements.predicates.DataComponentMatchers;
+import net.minecraft.advancements.predicates.MinMaxBounds;
 import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;

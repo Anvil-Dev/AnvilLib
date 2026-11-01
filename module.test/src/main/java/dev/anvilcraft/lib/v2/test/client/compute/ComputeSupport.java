@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.test.client.compute;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.GpuFence;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
@@ -10,7 +11,7 @@ import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.textures.TextureFormat;
+import com.mojang.blaze3d.GpuFormat;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRCommandEncoderExtension;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.MemoryBarrierFlag;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.ALRComputeCapabilities;
@@ -25,6 +26,7 @@ import dev.anvilcraft.lib.v2.rendering.foundation.buffers.object.ShaderBufferObj
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.system.MemoryStack;
+import org.joml.Vector4f;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -73,7 +75,7 @@ public class ComputeSupport {
     private GpuTexture outputTexture = device.createTexture(
         "Test Compute Output Texture",
         GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
-        TextureFormat.RGBA8,
+        GpuFormat.RGBA8_UNORM,
         854, 480,
         1,
         1
@@ -125,23 +127,26 @@ public class ComputeSupport {
                 MemoryBarrierFlag.ATOMIC_COUNTER_BARRIER,
                 MemoryBarrierFlag.BUFFER_UPDATE_BARRIER
             );
+            if (dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRHICapabilities.getInstance().persistentMappedBuffer()) {
+                pass.memoryBarrier(MemoryBarrierFlag.CLIENT_MAPPED_BUFFER_BARRIER);
+            }
         }
         try (GpuFence fence = commandEncoder.createFence()) {
+            commandEncoder.submit();
             fence.awaitCompletion(Long.MAX_VALUE);
         }
         float[] result = new float[input.length];
-        GpuBuffer.MappedView mappedView = commandEncoder.mapBuffer(addOutputSSBO, true, false);
-        ByteBuffer data = mappedView.data();
-        for (int i = 0; i < input.length; i++) {
-            result[i] = data.getFloat();
+        try (GpuBufferSlice.MappedView mappedView = addOutputSSBO.map(true, false)) {
+            ByteBuffer data = mappedView.data();
+            for (int i = 0; i < input.length; i++) {
+                result[i] = data.getFloat();
+            }
         }
-
-        GpuBuffer.MappedView mappedCounterBuffer = commandEncoder.mapBuffer(addOutputCounter, true, false);
-        ByteBuffer counterData = mappedCounterBuffer.data();
-
-        int anInt = counterData.getInt();
-        if (anInt != input.length) {
-            System.out.printf("Compute counter does not match with input size: %d/%d%n", anInt, input.length);
+        try (GpuBufferSlice.MappedView mappedCounterBuffer = addOutputCounter.map(true, false)) {
+            int count = mappedCounterBuffer.data().getInt();
+            if (count != input.length) {
+                throw new AssertionError("Compute counter does not match with input size: " + count + "/" + input.length);
+            }
         }
         return result;
     }
@@ -152,7 +157,7 @@ public class ComputeSupport {
         outputTexture = device.createTexture(
             "Test Compute Output Texture",
             GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
-            TextureFormat.RGBA8,
+            GpuFormat.RGBA8_UNORM,
             width, height,
             1,
             1
@@ -161,7 +166,7 @@ public class ComputeSupport {
     }
 
     public GpuTextureView computeBlur() {
-        GpuTexture colorTexture = Minecraft.getInstance().getMainRenderTarget().getColorTexture();
+        GpuTexture colorTexture = Minecraft.getInstance().gameRenderer.mainRenderTarget().getColorTexture();
         int width = colorTexture.getWidth(0);
         int height = colorTexture.getHeight(0);
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
@@ -169,11 +174,11 @@ public class ComputeSupport {
         blurParam.height = height;
         ALRCommandEncoderExtension commandEncoderExtension = ALRCommandEncoderExtension.of(commandEncoder);
         blurParam.upload(commandEncoder, blurParamUBO.slice());
-        commandEncoder.clearColorTexture(outputTexture, 0);
+        commandEncoder.clearColorTexture(outputTexture, new Vector4f());
 
         try (ALRComputePass pass = commandEncoderExtension.alrCreateComputePass()) {
             pass.setPipeline(TestPipelines.BLUR);
-            pass.bindShaderStorage(0, addInputSSBO.slice());
+            pass.bindUniformBlock(0, blurParamUBO.slice());
             pass.bindTexture(1, new TextureBinding.SamplerAndTexture(theSampler, colorTexture));
             pass.bindImage(2, outputTexture, false, true);
 

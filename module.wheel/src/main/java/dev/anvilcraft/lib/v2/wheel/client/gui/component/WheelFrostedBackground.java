@@ -44,7 +44,7 @@ public final class WheelFrostedBackground implements AutoCloseable {
      * @return 可直接用于 GUI 元素渲染的 TextureSetup
      */
     public TextureSetup capture() {
-        RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
+        RenderTarget mainTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
         this.guardSize(mainTarget);
         GpuTexture blurred = this.blur.process(mainTarget.getColorTexture());
         if (this.blurredTextureView == null || this.blurredTexture != blurred) {

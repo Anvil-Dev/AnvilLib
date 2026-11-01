@@ -9,7 +9,9 @@ import com.mojang.blaze3d.systems.ScissorState;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.IndexType;
+import net.minecraft.client.renderer.StagedVertexBuffer;
+import java.util.Optional;
 import dev.anvilcraft.lib.v2.rendering.ALRPostEffects;
 import dev.anvilcraft.lib.v2.rendering.extension.ALRRenderTypeExtension;
 import dev.anvilcraft.lib.v2.rendering.foundation.ALRMeshSorting;
@@ -180,7 +182,7 @@ public class CachedRenderingChunk implements VertexBufferHost {
     private void renderInternal(Collection<RenderType> renderTypes, boolean translucent) {
         if (isEmpty) return;
 
-        Vec3 cameraPosition = minecraft.gameRenderer.getMainCamera().position();
+        Vec3 cameraPosition = minecraft.gameRenderer.mainCamera().position();
         int renderDistance = Minecraft.getInstance().options.getEffectiveRenderDistance() * 16;
 
         if (cameraPosition.distanceTo(new Vec3(
@@ -227,70 +229,29 @@ public class CachedRenderingChunk implements VertexBufferHost {
         if (indexCount <= 0) return;
 
         Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
-        Consumer<Matrix4fStack> modelViewModifier = renderType.state.layeringTransform.getModifier();
-
         modelViewStack.pushMatrix();
-
-        if (modelViewModifier != null) {
-            modelViewModifier.accept(modelViewStack);
-        }
-
-        modelViewStack.translate(
-            -(float) cameraPosition.x + chunkPos.getMinBlockX(),
-            -(float) cameraPosition.y,
-            -(float) cameraPosition.z + chunkPos.getMinBlockZ()
-        );
-
-        GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
-            RenderSystem.getModelViewMatrix(),
-            new Vector4f(1.0F, 1.0F, 1.0F, 1.0F),
-            new Vector3f(),
-            renderType.state.textureTransform.getMatrix()
-        );
-        Map<String, RenderSetup.TextureAndSampler> textures = renderType.state.getTextures();
-
-        IndexGenerationResult indexGenerationResult = getIndexBuffer(renderType, cameraPosition, sortState, indexCount);
-
-        RenderTarget renderTarget = renderType.state.outputTarget.getRenderTarget();
-        GpuTextureView colorTexture = RenderSystem.outputColorTextureOverride != null ? RenderSystem.outputColorTextureOverride : renderTarget.getColorTextureView();
-        GpuTextureView depthTexture = renderTarget.useDepth
-            ? (RenderSystem.outputDepthTextureOverride != null
-               ? RenderSystem.outputDepthTextureOverride
-               : renderTarget.getDepthTextureView()
-        ) : null;
-
-        //noinspection DataFlowIssue
-        try (RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-            () -> "Immediate draw for " + renderType,
-            colorTexture,
-            OptionalInt.empty(),
-            depthTexture,
-            OptionalDouble.empty()
-        )) {
-            renderPass.setPipeline(renderType.state.pipeline);
-            ScissorState scissorState = RenderSystem.getScissorStateForRenderTypeDraws();
-            if (scissorState.enabled()) {
-                renderPass.enableScissor(
-                    scissorState.x(),
-                    scissorState.y(),
-                    scissorState.width(),
-                    scissorState.height()
-                );
+        try {
+            modelViewStack.translate(
+                -(float) cameraPosition.x + chunkPos.getMinBlockX(),
+                -(float) cameraPosition.y,
+                -(float) cameraPosition.z + chunkPos.getMinBlockZ());
+            IndexGenerationResult indices = getIndexBuffer(renderType, cameraPosition, sortState, indexCount);
+            RenderTarget target = ALRPostEffects.getBloomPostEffect().isDrawingBloom()
+                ? ALRPostEffects.getBloomPostEffect().getBloomInputTarget() : minecraft.gameRenderer.mainRenderTarget();
+            var prepared = renderType.prepare();
+            var previousColor = RenderSystem.outputColorTextureOverride;
+            var previousDepth = RenderSystem.outputDepthTextureOverride;
+            try {
+                RenderSystem.outputColorTextureOverride = target.getColorTextureView();
+                RenderSystem.outputDepthTextureOverride = target.getDepthTextureView();
+                prepared.drawFromBuffer(vertexBuffer, indices.indices(), indices.indexType(), 0, 0, indexCount);
+            } finally {
+                RenderSystem.outputColorTextureOverride = previousColor;
+                RenderSystem.outputDepthTextureOverride = previousDepth;
             }
-
-            RenderSystem.bindDefaultUniforms(renderPass);
-            renderPass.setUniform("DynamicTransforms", dynamicTransforms);
-            renderPass.setVertexBuffer(0, vertexBuffer);
-
-            for (Map.Entry<String, RenderSetup.TextureAndSampler> entry : textures.entrySet()) {
-                renderPass.bindTexture(entry.getKey(), entry.getValue().textureView(), entry.getValue().sampler());
-            }
-
-            renderPass.setIndexBuffer(indexGenerationResult.indices(), indexGenerationResult.indexType());
-            renderPass.drawIndexed(0, 0, indexCount, 1);
+        } finally {
+            modelViewStack.popMatrix();
         }
-
-        modelViewStack.popMatrix();
     }
 
     private CachedRenderingChunk.IndexGenerationResult getIndexBuffer(
@@ -299,10 +260,10 @@ public class CachedRenderingChunk implements VertexBufferHost {
         MeshData.@Nullable SortState sortState,
         int indexCount
     ) {
-        VertexFormat.IndexType indexType;
+        IndexType indexType;
         GpuBuffer indices;
         if (sortState == null) {
-            RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.mode());
+            RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.primitiveTopology());
             indices = autoIndices.getBuffer(indexCount);
             indexType = autoIndices.type();
         } else {
@@ -330,7 +291,7 @@ public class CachedRenderingChunk implements VertexBufferHost {
                     result.close();
                     builder.clear();
                 } else {
-                    RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.mode());
+                    RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.primitiveTopology());
                     indices = autoIndices.getBuffer(indexCount);
                     indexType = autoIndices.type();
                 }
@@ -339,7 +300,7 @@ public class CachedRenderingChunk implements VertexBufferHost {
                     indices = getIndexBuffer(renderType, (long) sortState.indexType().bytes * indexCount);
                     indexType = sortState.indexType();
                 } else {
-                    RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.mode());
+                    RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(renderType.primitiveTopology());
                     indices = autoIndices.getBuffer(indexCount);
                     indexType = autoIndices.type();
                 }
@@ -380,6 +341,6 @@ public class CachedRenderingChunk implements VertexBufferHost {
         this.isFreshMesh = true;
     }
 
-    private record IndexGenerationResult(GpuBuffer indices, VertexFormat.IndexType indexType) {
+    private record IndexGenerationResult(GpuBuffer indices, IndexType indexType) {
     }
 }

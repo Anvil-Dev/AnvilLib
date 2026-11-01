@@ -1,7 +1,8 @@
 package dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.gl;
 
 import com.mojang.blaze3d.opengl.GlTexture;
-import com.mojang.blaze3d.textures.TextureFormat;
+import com.mojang.blaze3d.opengl.FrameBufferCache;
+import com.mojang.blaze3d.GpuFormat;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ExtendedTextureFormat;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.texture.ExtendedGpuTexture;
 import lombok.Getter;
@@ -22,19 +23,21 @@ public class GlExtendedTexture extends GlTexture implements ExtendedGpuTexture {
         int height,
         int depthOrLayers,
         int mipLevels,
-        int id
+        int id,
+        FrameBufferCache frameBufferCache
     ) {
         // use RGBA8 here hopefully make most of blaze3d code work as they don't care pixel size of actual format
         // as we are not using this as a framebuffer attachment
         super(
             usage,
             label,
-            TextureFormat.RGBA8,
+            GpuFormat.RGBA8_UNORM,
             width,
             height,
             depthOrLayers,
             mipLevels,
-            id
+            id,
+            frameBufferCache
         );
         this.actualFormat = format;
     }

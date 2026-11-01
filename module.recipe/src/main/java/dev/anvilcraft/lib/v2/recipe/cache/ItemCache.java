@@ -299,7 +299,7 @@ public class ItemCache {
     ) {
         Set<ICacheElement> input = new LinkedHashSet<>();
         Set<ICacheElement> output = new LinkedHashSet<>();
-        Vec3 elementPos = entity.getBlockPos().getCenter();
+        Vec3 elementPos = Vec3.atCenterOf(entity.getBlockPos());
         Vec3 elementRange = new Vec3(1, 1, 1);
         Predicate<BlockEntity> inTag;
         Iterable<Holder<BlockEntityType<?>>> tagOrEmpty = BuiltInRegistries.BLOCK_ENTITY_TYPE.getTagOrEmpty(LibBlockEntityTags.ITEM_CACHE);

@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.TextureFormat;
+import com.mojang.blaze3d.GpuFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
@@ -35,17 +35,19 @@ public final class SdfAtlasTexture {
         // with respect to the glyph creation thread, which also synchronizes
         // on page for placeGlyph / fillPaddingForCell.
         NativeImage nativeImage;
+        PageEntry entry = CACHE.get(key);
         int version;
         synchronized (page) {
             version = page.version.get();
+            if (entry != null && entry.version == version) return entry.id;
             nativeImage = toNativeImage(page.image);
             page.dirty = false;
         }
 
-        PageEntry entry = CACHE.get(key);
-        if (entry != null && entry.version == version) return entry.id;
-
-        SdfTexture texture = new SdfTexture(nativeImage);
+        SdfTexture texture;
+        try (nativeImage) {
+            texture = new SdfTexture(nativeImage);
+        }
         Minecraft.getInstance().getTextureManager().register(id, texture);
 
         if (entry != null) entry.texture.close();
@@ -78,7 +80,7 @@ public final class SdfAtlasTexture {
         SdfTexture(NativeImage image) {
             GpuDevice device = RenderSystem.getDevice();
             this.texture = device.createTexture(
-                () -> "AnvilLib SDF Atlas", 5, TextureFormat.RED8,
+                () -> "AnvilLib SDF Atlas", 5, GpuFormat.R8_UNORM,
                 image.getWidth(), image.getHeight(), 1, 1
             );
             device.createCommandEncoder().writeToTexture(this.texture, image);
@@ -88,11 +90,12 @@ public final class SdfAtlasTexture {
     }
 
     static NativeImage toNativeImage(BufferedImage image) {
-        NativeImage ni = new NativeImage(NativeImage.Format.RGBA, image.getWidth(), image.getHeight(), false);
+        NativeImage ni = new NativeImage(NativeImage.Format.LUMINANCE, image.getWidth(), image.getHeight(), false);
+        var pixels = ni.getPixelBytes();
         for (int y = 0; y < image.getHeight(); y++) {
             for (int x = 0; x < image.getWidth(); x++) {
                 int gray = image.getRGB(x, y) & 0xFF;
-                ni.setPixel(x, y, (0xFF << 24) | (gray << 16) | (gray << 8) | gray);
+                pixels.put(x + y * image.getWidth(), (byte) gray);
             }
         }
         return ni;

@@ -62,7 +62,7 @@ public class AnvilLibExplosion {
 
     private static void registerMelting(MinecraftServer server) {
         AnvilLibExplosion.MELTING_CACHE.clear();
-        BuiltInRegistries.BLOCK.get(BlockTags.LOGS_THAT_BURN).ifPresent(block -> {
+        BuiltInRegistries.BLOCK.get(net.minecraft.tags.BlockItemTags.LOGS_THAT_BURN.block()).ifPresent(block -> {
             for (Holder<Block> blockHolder : block) {
                 AnvilLibExplosion.MELTING_CACHE.put(blockHolder.value(), Blocks.COAL_BLOCK);
             }

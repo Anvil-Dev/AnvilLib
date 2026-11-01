@@ -1,7 +1,7 @@
 package dev.anvilcraft.lib.v2.test.client.tesr;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
 import dev.anvilcraft.lib.v2.rendering.ALROptimizations;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.OcclusionCuller;
 import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.OcclusionKey;
@@ -25,8 +25,10 @@ import org.jspecify.annotations.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NullMarked
 public class TestOcclusionTESR implements BlockEntityRenderer<TestOcclusionTile, TestOcclusionTESR.RenderState> {
+    public static int submittedFrames;
+
 
     public TestOcclusionTESR(BlockEntityRendererProvider.Context ignored) {
     }
@@ -56,6 +58,7 @@ public class TestOcclusionTESR implements BlockEntityRenderer<TestOcclusionTile,
         SubmitNodeCollector submitNodeCollector,
         CameraRenderState cameraRenderState
     ) {
+        submittedFrames++;
         OcclusionCuller occlusionCuller = ALROptimizations.getOcclusionCuller();
         OcclusionSubmitNodeStorage wrapped = occlusionCuller.wrapSubmitNodeStorage(submitNodeCollector);
         Minecraft minecraft = Minecraft.getInstance();

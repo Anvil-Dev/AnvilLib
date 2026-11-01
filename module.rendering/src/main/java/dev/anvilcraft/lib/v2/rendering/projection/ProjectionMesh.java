@@ -55,29 +55,18 @@ final class ProjectionMesh implements AutoCloseable {
             if (this.filteredIndexCount == 0) return;
         }
         var type = depthOnly ? ProjectionRenderTypes.BLOCK_DEPTH : this.type;
-        var target = type.outputTarget().getRenderTarget();
-        var color = RenderSystem.outputColorTextureOverride != null
-            ? RenderSystem.outputColorTextureOverride : target.getColorTextureView();
-        var depth = RenderSystem.outputDepthTextureOverride != null
-            ? RenderSystem.outputDepthTextureOverride : target.getDepthTextureView();
-        var transforms = RenderSystem.getDynamicUniforms().writeTransform(
-            new Matrix4f(RenderSystem.getModelViewMatrix()).mul(pose), new Vector4f(1), new Vector3f(), new Matrix4f());
-        var sequential = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
-        var indices = sequential.getBuffer(this.indexCount);
-        try (var pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-            () -> "AnvilLib structure projection", color, OptionalInt.empty(), depth, OptionalDouble.empty())) {
-            pass.setPipeline(type.pipeline());
-            RenderSystem.bindDefaultUniforms(pass);
-            pass.setUniform("DynamicTransforms", transforms);
-            type.state.getTextures().forEach((name, texture) -> pass.bindTexture(name, texture.textureView(), texture.sampler()));
-            pass.setVertexBuffer(0, this.vertices);
-            if (visible == null) {
-                pass.setIndexBuffer(indices, sequential.type());
-                pass.drawIndexed(0, 0, this.indexCount, 1);
-            } else {
-                pass.setIndexBuffer(this.filteredIndices, VertexFormat.IndexType.INT);
-                pass.drawIndexed(0, 0, this.filteredIndexCount, 1);
-            }
+        var modelView = RenderSystem.getModelViewStack();
+        modelView.pushMatrix();
+        try {
+            modelView.mul(pose);
+            var prepared = type.prepare();
+            var sequential = RenderSystem.getSequentialBuffer(com.mojang.blaze3d.PrimitiveTopology.QUADS);
+            prepared.drawFromBuffer(this.vertices,
+                visible == null ? sequential.getBuffer(this.indexCount) : this.filteredIndices,
+                visible == null ? sequential.type() : com.mojang.blaze3d.IndexType.INT,
+                0, 0, visible == null ? this.indexCount : this.filteredIndexCount);
+        } finally {
+            modelView.popMatrix();
         }
     }
 
@@ -111,7 +100,7 @@ final class ProjectionMesh implements AutoCloseable {
     }
 
     static void reverseWinding(MeshData mesh) {
-        if (mesh.drawState().mode() != VertexFormat.Mode.QUADS) return;
+        if (mesh.drawState().primitiveTopology() != com.mojang.blaze3d.PrimitiveTopology.QUADS) return;
         var vertices = mesh.vertexBuffer();
         int stride = mesh.drawState().format().getVertexSize();
         for (int vertex = 0; vertex < mesh.drawState().vertexCount(); vertex += 4) {

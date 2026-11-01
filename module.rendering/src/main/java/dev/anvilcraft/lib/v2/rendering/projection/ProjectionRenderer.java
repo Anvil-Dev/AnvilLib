@@ -59,7 +59,7 @@ public final class ProjectionRenderer implements AutoCloseable {
         this.entities.addAll(view.entities());
         var mc = Minecraft.getInstance();
         try (ByteBufferBuilder memory = new ByteBufferBuilder(2_097_152)) {
-            var buffer = new BufferBuilder(memory, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+            var buffer = new BufferBuilder(memory, com.mojang.blaze3d.PrimitiveTopology.QUADS, DefaultVertexFormat.BLOCK);
             VertexConsumer vertices = new GhostConsumer(buffer, BlockPos.ZERO, alpha, vertexCount);
             var pose = new PoseStack();
             var renderer = new ModelBlockRenderer(true, true, mc.getBlockColors());

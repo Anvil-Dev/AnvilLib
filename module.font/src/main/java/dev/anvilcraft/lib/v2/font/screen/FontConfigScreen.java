@@ -54,7 +54,7 @@ public class FontConfigScreen extends Screen {
         this.testBtn = Button
             .builder(
                 Component.translatable("screen.anvillib_font.config.test"),
-                (_) -> this.minecraft.setScreen(new FontTestScreen(this))
+                (_) -> this.minecraft.gui.setScreen(new FontTestScreen(this))
             )
             .size(btnWidth, 20)
             .pos(btnX, btnY)
@@ -172,6 +172,6 @@ public class FontConfigScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(this.lastScreen);
+        this.minecraft.gui.setScreen(this.lastScreen);
     }
 }

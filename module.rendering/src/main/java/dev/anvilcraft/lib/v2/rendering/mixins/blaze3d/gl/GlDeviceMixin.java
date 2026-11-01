@@ -4,6 +4,7 @@ import com.mojang.blaze3d.GpuOutOfMemoryException;
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlDebugLabel;
 import com.mojang.blaze3d.opengl.GlDevice;
+import com.mojang.blaze3d.opengl.FrameBufferCache;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
 import com.mojang.blaze3d.textures.GpuTexture;
@@ -54,8 +55,9 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
     @Final
     private GlDebugLabel debugLabels;
 
+
     @Shadow
-    public abstract String getRenderer();
+    public abstract FrameBufferCache frameBufferCache();
 
     @Unique
     private ALRHICapabilities alr$capabilities = null;
@@ -156,7 +158,7 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
         boolean windowsIntelGraphics = vendor != null && vendor.toLowerCase(Locale.ROOT).contains("intel");
         LOGGER.info(
             "Windows graphics info: renderer='{}', vendor='{}', windowsIntelGraphics={}",
-            this.getRenderer(),
+            ((GlDevice) (Object) this).getDeviceInfo().name(),
             vendor,
             windowsIntelGraphics
         );
@@ -239,7 +241,8 @@ public abstract class GlDeviceMixin implements ALRGpuDeviceBackendExtension {
                 height,
                 depthOrLayers,
                 mipLevels,
-                id
+                id,
+                frameBufferCache()
             );
             this.debugLabels.applyLabel(texture);
             return texture;

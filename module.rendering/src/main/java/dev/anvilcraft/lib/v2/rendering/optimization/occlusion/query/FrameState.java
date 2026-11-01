@@ -82,11 +82,11 @@ public class FrameState implements AutoCloseable {
     @SuppressWarnings("DataFlowIssue")
     public void runQueries(CameraRenderState camera) {
         CommandEncoder commandEncoder = this.owner.getCommandEncoder();
-        RenderTarget target = Minecraft.getInstance().getMainRenderTarget();
+        RenderTarget target = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 
-        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+        RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(com.mojang.blaze3d.PrimitiveTopology.QUADS);
         GpuBuffer buffer = sequentialBuffer.getBuffer(6 * 6);
-        VertexFormat.IndexType type = sequentialBuffer.type();
+        com.mojang.blaze3d.IndexType type = sequentialBuffer.type();
 
         GpuDevice device = RenderSystem.getDevice();
 
@@ -129,7 +129,7 @@ public class FrameState implements AutoCloseable {
         try (RenderPass renderPass = commandEncoder.createRenderPass(
             () -> "Gpu Occlusion Query Draw Batch",
             target.getColorTextureView(),
-            OptionalInt.empty(),
+            java.util.Optional.empty(),
             target.getDepthTextureView(),
             OptionalDouble.empty()
         )) {
@@ -138,11 +138,11 @@ public class FrameState implements AutoCloseable {
             for (QueryInstance query : queries) {
                 if (query.isCameraInside()) continue;
                 renderPass.setUniform("Transforms", query.uniform());
-                renderPass.setVertexBuffer(0, query.vertexBuffer());
+                renderPass.setVertexBuffer(0, query.vertexBuffer().slice());
                 renderPass.setIndexBuffer(buffer, type);
 
                 query.queryObject().begin();
-                renderPass.drawIndexed(0, 0, 6 * 6, 1);
+                renderPass.drawIndexed(6 * 6, 1, 0, 0, 0);
                 query.queryObject().end();
             }
         }

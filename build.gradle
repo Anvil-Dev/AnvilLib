@@ -119,7 +119,7 @@ tasks.register("createModule", CreateModuleTask)
 
 subprojects {
     if (it.name == "renderdoc-loader-internal") return
-    if (it.name == "anvillib-sync-processor-neoforge-26.1") return
+    if (it.name == "anvillib-sync-processor-neoforge-26.2") return
     apply plugin: 'java'
     apply plugin: 'java-library'
     apply plugin: 'eclipse'
@@ -133,7 +133,7 @@ subprojects {
     apply plugin: 'dev.anvilcraft.resource.foeniculum'
 
     apply from: rootProject.file("module.gradle")
-    if (it.name != "anvillib-test-neoforge-26.1") {
+    if (it.name != "anvillib-test-neoforge-26.2") {
         apply from: rootProject.file("gradle/scripts/roseau.gradle")
         apply from: rootProject.file("gradle/scripts/toml.gradle")
     }

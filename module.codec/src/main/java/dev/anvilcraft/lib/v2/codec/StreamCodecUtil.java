@@ -15,26 +15,29 @@ import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import net.minecraft.advancements.criterion.BlockPredicate;
-import net.minecraft.advancements.criterion.DamageSourcePredicate;
-import net.minecraft.advancements.criterion.DataComponentMatchers;
-import net.minecraft.advancements.criterion.DistancePredicate;
-import net.minecraft.advancements.criterion.EntityEquipmentPredicate;
-import net.minecraft.advancements.criterion.EntityFlagsPredicate;
-import net.minecraft.advancements.criterion.EntityPredicate;
-import net.minecraft.advancements.criterion.EntitySubPredicate;
-import net.minecraft.advancements.criterion.EntityTypePredicate;
-import net.minecraft.advancements.criterion.FluidPredicate;
-import net.minecraft.advancements.criterion.ItemPredicate;
-import net.minecraft.advancements.criterion.LightPredicate;
-import net.minecraft.advancements.criterion.LocationPredicate;
-import net.minecraft.advancements.criterion.MinMaxBounds;
-import net.minecraft.advancements.criterion.MobEffectsPredicate;
-import net.minecraft.advancements.criterion.MovementPredicate;
-import net.minecraft.advancements.criterion.NbtPredicate;
-import net.minecraft.advancements.criterion.SlotsPredicate;
-import net.minecraft.advancements.criterion.StatePropertiesPredicate;
-import net.minecraft.advancements.criterion.TagPredicate;
+import net.minecraft.advancements.predicates.BlockPredicate;
+import net.minecraft.advancements.predicates.DamageSourcePredicate;
+import net.minecraft.advancements.predicates.DataComponentMatchers;
+import net.minecraft.advancements.predicates.DistancePredicate;
+import net.minecraft.advancements.predicates.entity.EntityEquipmentPredicate;
+import net.minecraft.advancements.predicates.entity.EntityFlagsPredicate;
+import net.minecraft.advancements.predicates.entity.EntityPredicate;
+import net.minecraft.advancements.predicates.entity.EntitySubPredicate;
+import net.minecraft.advancements.predicates.entity.EntityLocationPredicate;
+import net.minecraft.advancements.predicates.entity.SteppingOnPredicate;
+import net.minecraft.advancements.predicates.entity.MovementAffectedByPredicate;
+import net.minecraft.advancements.predicates.entity.EntityTypePredicate;
+import net.minecraft.advancements.predicates.FluidPredicate;
+import net.minecraft.advancements.predicates.ItemPredicate;
+import net.minecraft.advancements.predicates.LightPredicate;
+import net.minecraft.advancements.predicates.LocationPredicate;
+import net.minecraft.advancements.predicates.MinMaxBounds;
+import net.minecraft.advancements.predicates.MobEffectsPredicate;
+import net.minecraft.advancements.predicates.entity.MovementPredicate;
+import net.minecraft.advancements.predicates.NbtPredicate;
+import net.minecraft.advancements.predicates.SlotsPredicate;
+import net.minecraft.advancements.predicates.StatePropertiesPredicate;
+import net.minecraft.advancements.predicates.TagPredicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.Vec3i;
@@ -332,15 +335,12 @@ public abstract class StreamCodecUtil {
         LocationPredicate::canSeeSky,
         LocationPredicate::new
     );
-    public static final StreamCodec<RegistryFriendlyByteBuf, EntityPredicate.LocationWrapper> LOCATION_WRAPPER = StreamCodec.composite(
-        ByteBufCodecs.optional(StreamCodecUtil.LOCATION_PREDICATE),
-        EntityPredicate.LocationWrapper::located,
-        ByteBufCodecs.optional(StreamCodecUtil.LOCATION_PREDICATE),
-        EntityPredicate.LocationWrapper::steppingOn,
-        ByteBufCodecs.optional(StreamCodecUtil.LOCATION_PREDICATE),
-        EntityPredicate.LocationWrapper::affectsMovement,
-        EntityPredicate.LocationWrapper::new
-    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, EntityLocationPredicate> ENTITY_LOCATION_PREDICATE =
+        entitySubPredicate(EntityLocationPredicate.CODEC);
+    public static final StreamCodec<RegistryFriendlyByteBuf, SteppingOnPredicate> STEPPING_ON_PREDICATE =
+        entitySubPredicate(SteppingOnPredicate.CODEC);
+    public static final StreamCodec<RegistryFriendlyByteBuf, MovementAffectedByPredicate> MOVEMENT_AFFECTED_BY_PREDICATE =
+        entitySubPredicate(MovementAffectedByPredicate.CODEC);
     public static final StreamCodec<RegistryFriendlyByteBuf, MobEffectsPredicate.MobEffectInstancePredicate> MOB_EFFECT_INSTANCE_PREDICATE =
         StreamCodec.composite(
             MinMaxBounds.Ints.STREAM_CODEC,
@@ -410,49 +410,18 @@ public abstract class StreamCodecUtil {
         EntityEquipmentPredicate::offhand,
         EntityEquipmentPredicate::new
     );
-    public static final StreamCodec<RegistryFriendlyByteBuf, EntitySubPredicate> ENTITY_SUB_PREDICATE = StreamCodecUtil.codec2Stream(
-        EntitySubPredicate.CODEC
-    );
+    /** Creates a stream codec for one registered entity predicate type. */
+    public static <T extends EntitySubPredicate> StreamCodec<RegistryFriendlyByteBuf, T> entitySubPredicate(Codec<T> type) {
+        return StreamCodecUtil.codec2Stream(type);
+    }
     public static final StreamCodec<RegistryFriendlyByteBuf, SlotsPredicate> SLOTS_PREDICATE = StreamCodec.composite(
         ByteBufCodecs.map(HashMap::new, StreamCodecUtil.codec2Stream(SlotRanges.CODEC), StreamCodecUtil.ITEM_PREDICATE),
         SlotsPredicate::slots,
         SlotsPredicate::new
     );
-    public static final StreamCodec<RegistryFriendlyByteBuf, EntityPredicate> ENTITY_PREDICATE = StreamCodec.recursive(parent -> StreamCodecUtil.composite(
-        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_TYPE_PREDICATE),
-        EntityPredicate::entityType,
-        ByteBufCodecs.optional(StreamCodecUtil.DISTANCE_PREDICATE),
-        EntityPredicate::distanceToPlayer,
-        ByteBufCodecs.optional(StreamCodecUtil.MOVEMENT_PREDICATE),
-        EntityPredicate::movement,
-        StreamCodecUtil.LOCATION_WRAPPER,
-        EntityPredicate::location,
-        ByteBufCodecs.optional(StreamCodecUtil.MOB_EFFECTS_PREDICATE),
-        EntityPredicate::effects,
-        ByteBufCodecs.optional(StreamCodecUtil.NBT_PREDICATE),
-        EntityPredicate::nbt,
-        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_FLAGS_PREDICATE),
-        EntityPredicate::flags,
-        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_EQUIPMENT_PREDICATE),
-        EntityPredicate::equipment,
-        ByteBufCodecs.optional(StreamCodecUtil.ENTITY_SUB_PREDICATE),
-        EntityPredicate::subPredicate,
-        ByteBufCodecs.optional(ByteBufCodecs.VAR_INT),
-        EntityPredicate::periodicTick,
-        ByteBufCodecs.optional(parent),
-        EntityPredicate::vehicle,
-        ByteBufCodecs.optional(parent),
-        EntityPredicate::passenger,
-        ByteBufCodecs.optional(parent),
-        EntityPredicate::targetedEntity,
-        ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8),
-        EntityPredicate::team,
-        ByteBufCodecs.optional(StreamCodecUtil.SLOTS_PREDICATE),
-        EntityPredicate::slots,
-        DataComponentMatchers.STREAM_CODEC,
-        EntityPredicate::components,
-        EntityPredicate::new
-    ));
+    // Entity predicates now dispatch through ENTITY_SUB_PREDICATE_TYPE, including custom registered parts.
+    public static final StreamCodec<RegistryFriendlyByteBuf, EntityPredicate> ENTITY_PREDICATE =
+        StreamCodecUtil.codec2Stream(EntityPredicate.CODEC);
     public static final StreamCodec<RegistryFriendlyByteBuf, DamageSourcePredicate> DAMAGE_SOURCE_PREDICATE = StreamCodec.composite(
         StreamCodecUtil.tagPredicate(Registries.DAMAGE_TYPE).apply(ByteBufCodecs.list()),
         DamageSourcePredicate::tags,

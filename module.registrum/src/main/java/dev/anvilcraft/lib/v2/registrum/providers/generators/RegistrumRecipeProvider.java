@@ -18,12 +18,12 @@ import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
 import dev.anvilcraft.lib.v2.registrum.util.DataIngredient;
 import dev.anvilcraft.lib.v2.util.nullness.NonNullSupplier;
 import lombok.experimental.Delegate;
-import net.minecraft.advancements.Criterion;
-import net.minecraft.advancements.criterion.BredAnimalsTrigger;
-import net.minecraft.advancements.criterion.EnterBlockTrigger;
-import net.minecraft.advancements.criterion.InventoryChangeTrigger;
-import net.minecraft.advancements.criterion.ItemPredicate;
-import net.minecraft.advancements.criterion.MinMaxBounds;
+import net.minecraft.advancements.triggers.Criterion;
+import net.minecraft.advancements.triggers.BredAnimalsTrigger;
+import net.minecraft.advancements.triggers.EnterBlockTrigger;
+import net.minecraft.advancements.triggers.InventoryChangeTrigger;
+import net.minecraft.advancements.predicates.ItemPredicate;
+import net.minecraft.advancements.predicates.MinMaxBounds;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderLookup;
@@ -649,9 +649,9 @@ public class RegistrumRecipeProvider extends RecipeProvider implements RecipeOut
         return super.signBuilder(p_176727_, p_176728_);
     }
 
-    @Override
-    public void hangingSign(ItemLike p_252355_, ItemLike p_250437_) {
-        super.hangingSign(p_252355_, p_250437_);
+    public void hangingSign(ItemLike result, ItemLike ingredient) {
+        this.hangingSignBuilder(result, Ingredient.of(ingredient))
+            .unlockedBy(getHasName(ingredient), has(ingredient)).save(this);
     }
 
     @Override

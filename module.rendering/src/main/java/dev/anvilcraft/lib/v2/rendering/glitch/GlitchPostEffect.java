@@ -14,7 +14,7 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.anvilcraft.lib.v2.rendering.ALRPipelines;
 import dev.anvilcraft.lib.v2.rendering.bloom.TransformsUbo;
@@ -32,7 +32,7 @@ public class GlitchPostEffect {
     public static final int UNIFORM_TRANSFORM_SIZE = TransformsUbo.DEFINITION.size(BufferLayout.STD140);
 
     @Getter
-    private final RenderTarget glitchOutputTarget = new TextureTarget("Glitch Result", 854, 480, false);
+    private final RenderTarget glitchOutputTarget = new TextureTarget("Glitch Result", 854, 480, false, com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
 
     private final GpuDevice device = RenderSystem.getDevice();
 
@@ -84,8 +84,8 @@ public class GlitchPostEffect {
         if (lastHeight != height || lastWidth != width) {
             this.lastWidth = width;
             this.lastHeight = height;
-            Tesselator tesselator = Tesselator.getInstance();
-            BufferBuilder builder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+            ByteBufferBuilder meshBuffer = new ByteBufferBuilder(1024);
+            BufferBuilder builder = new BufferBuilder(meshBuffer, com.mojang.blaze3d.PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX);
 
             builder.addVertex(0, 0, 100).setUv(0, 1);
             builder.addVertex(0, height, 100).setUv(0, 0);
@@ -96,6 +96,7 @@ public class GlitchPostEffect {
             commandEncoder.writeToBuffer(vertexBuffer.slice(), data.vertexBuffer());
             this.indexCount = data.drawState().indexCount();
             data.close();
+        meshBuffer.close();
         }
 
         transform.getProjMat().setOrtho(
@@ -104,7 +105,8 @@ public class GlitchPostEffect {
             0,
             glitchOutputTarget.height,
             -10000,
-            10000
+            10000,
+            device.getDeviceInfo().isZZeroToOne()
         );
         glitchParameters.getInSize().set(width, height);
         float uGameTime = (float) (gameTime % 24000L) + deltaTracker.getGameTimeDeltaPartialTick(false);
@@ -113,20 +115,20 @@ public class GlitchPostEffect {
 
         transform.upload(commandEncoder, transformUBO.slice());
         glitchParameters.upload(commandEncoder, glitchParameterUBO.slice());
-        RenderSystem.AutoStorageIndexBuffer buffer = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+        RenderSystem.AutoStorageIndexBuffer buffer = RenderSystem.getSequentialBuffer(com.mojang.blaze3d.PrimitiveTopology.QUADS);
         GpuBuffer indexBuffer = buffer.getBuffer(indexCount);
         try (RenderPass pass = commandEncoder.createRenderPass(
             () -> "Glitch Post Pass",
             glitchOutputTarget.getColorTextureView(),
-            OptionalInt.of(0)
+            java.util.Optional.of(new org.joml.Vector4f())
         )) {
             pass.setPipeline(ALRPipelines.GLITCH);
             pass.setUniform("Transforms", transformUBO);
             pass.setUniform("GlitchParameters", glitchParameterUBO);
             pass.bindTexture("DiffuseSampler", input, sampler);
-            pass.setVertexBuffer(0, vertexBuffer);
+            pass.setVertexBuffer(0, vertexBuffer.slice());
             pass.setIndexBuffer(indexBuffer, buffer.type());
-            pass.drawIndexed(0, 0, indexCount, 1);
+            pass.drawIndexed(indexCount, 1, 0, 0, 0);
         }
         return glitchOutputTarget.getColorTextureView();
     }

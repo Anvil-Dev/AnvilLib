@@ -24,7 +24,7 @@ final class ProjectionOverlay implements AutoCloseable {
         if (!this.wrongStates.equals(states) || !this.wrongBlocks.equals(blocks)) {
             this.close();
             try (var memory = new ByteBufferBuilder(786432)) {
-                var buffer = new BufferBuilder(memory, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+                var buffer = new BufferBuilder(memory, com.mojang.blaze3d.PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
                 for (int index = states.nextSetBit(0); index >= 0; index = states.nextSetBit(index + 1)) {
                     box(buffer, positions.get(index), WRONG_STATE_COLOR);
                 }

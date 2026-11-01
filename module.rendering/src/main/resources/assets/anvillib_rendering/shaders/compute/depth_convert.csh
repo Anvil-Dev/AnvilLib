@@ -26,7 +26,8 @@ void main() {
     if (idx.x >= uSrcWidth || idx.y >= uSrcHeight) {
         result = vec4(uPadValue, 0, 0, 1);
     } else {
-        result = texelFetch(Input, idx, 0);
+        // Minecraft uses reversed depth; keep the Hi-Z pyramid in conventional depth.
+        result = vec4(1.0 - texelFetch(Input, idx, 0).r, 0.0, 0.0, 1.0);
     }
     imageStore(Output, idx, vec4(result.r, 0.0, 0.0, 1.0));
 }

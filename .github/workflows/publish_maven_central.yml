@@ -41,7 +41,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     env:
-      GRADLE_PROJECT: ${{ inputs.gradle_project != '' && inputs.gradle_project || format('{0}-neoforge-26.1', inputs.module_id) }}
+      GRADLE_PROJECT: ${{ inputs.gradle_project != '' && inputs.gradle_project || format('{0}-neoforge-26.2', inputs.module_id) }}
       MODULE_DIR: ${{ inputs.module_dir != '' && inputs.module_dir || format('module.{0}', inputs.module) }}
     steps:
       - name: Checkout repository

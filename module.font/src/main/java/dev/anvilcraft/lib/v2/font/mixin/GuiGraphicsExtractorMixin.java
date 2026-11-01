@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.font.mixin;
 
-import dev.anvilcraft.lib.v2.font.extension.GuiGraphicsExtractorExtension;
+import dev.anvilcraft.lib.v2.font.extension.AnvilFontGuiGraphicsExtractorExtension;
 import dev.anvilcraft.lib.v2.font.sdf.SdfTextRenderer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.jetbrains.annotations.ApiStatus;
@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Unique;
 
 @ApiStatus.Internal
 @Mixin(GuiGraphicsExtractor.class)
-public abstract class GuiGraphicsExtractorMixin implements GuiGraphicsExtractorExtension {
+public abstract class GuiGraphicsExtractorMixin implements AnvilFontGuiGraphicsExtractorExtension {
     @Unique
     SdfTextRenderer anvillib$textRenderer = new SdfTextRenderer();
 

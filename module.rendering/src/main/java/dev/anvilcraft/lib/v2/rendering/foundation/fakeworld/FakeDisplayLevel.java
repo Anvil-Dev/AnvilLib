@@ -1,6 +1,6 @@
 package dev.anvilcraft.lib.v2.rendering.foundation.fakeworld;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
@@ -58,7 +58,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NullMarked
 public class FakeDisplayLevel extends Level implements BlockAndTintGetter {
     private final TransientEntitySectionManager<Entity> entityStorage = new TransientEntitySectionManager<>(Entity.class, new EntityCallbacks());
 

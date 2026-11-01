@@ -110,7 +110,7 @@ public final class RecipeOutputSelectionTests {
     }
 
     private static Vec3 position(GameTestHelper helper) {
-        return helper.absolutePos(new BlockPos(3, 2, 3)).getCenter();
+        return Vec3.atCenterOf(helper.absolutePos(new BlockPos(3, 2, 3)));
     }
 
     private static ItemEntity addItem(GameTestHelper helper, Vec3 pos, int count) {

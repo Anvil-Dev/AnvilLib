@@ -106,7 +106,7 @@ public class SinglePassDownsampler {
 
         this.spdGlobalAtomicCounterBuffer = gpuDevice.createBuffer(
             () -> "SPD Global Atomic Counter",
-            GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_MAP_READ | GpuBuffer.USAGE_MAP_WRITE | GpuBufferConstants.USAGE_SHADER_STORAGE,
+            GpuBuffer.USAGE_COPY_DST | GpuBufferConstants.USAGE_SHADER_STORAGE,
             SPD_GLOBAL_ATOMIC_COUNTER_SIZE
         );
 

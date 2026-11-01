@@ -1,6 +1,9 @@
 package dev.anvilcraft.lib.v2.rendering;
 
 import dev.anvilcraft.lib.v2.rendering.event.RegisterComputePipelinesEvent;
+import com.mojang.blaze3d.systems.RenderSystem;
+import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.ALRGpuDeviceExtension;
+import dev.anvilcraft.lib.v2.rendering.optimization.occlusion.hiz.HierarchicalZSupport;
 import dev.anvilcraft.lib.v2.rendering.extension.blaze3d.compute.pipeline.ALRComputePipeline;
 import net.minecraft.client.renderer.ShaderDefines;
 import net.neoforged.api.distmarker.Dist;
@@ -105,13 +108,18 @@ public class ALRComputePipelines {
 
     @SubscribeEvent
     public static void on(RegisterComputePipelinesEvent event) {
-        event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS);
-        event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS_BINDLESS);
-        event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS_BINDLESS_NO_LDS);
-        event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS_NO_LDS);
-
+        ALRGpuDeviceExtension device = (ALRGpuDeviceExtension) RenderSystem.getDevice();
+        boolean subgroup = device.alrhiCreateCapabilities().shaderSubgroup();
         event.registerPipeline(DEPTH_CONVERT);
-        event.registerPipeline(HIZ_OCCLUSION_TEST);
-        event.registerPipeline(HIZ_OCCLUSION_TEST_BINDLESS);
+        // Image array layouts must fit the hardware even when their dispatch path is unused.
+        if (HierarchicalZSupport.hasEnoughImageUnits(device)) {
+            event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS_NO_LDS);
+            if (subgroup) event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS);
+            event.registerPipeline(HIZ_OCCLUSION_TEST);
+        } else if (HierarchicalZSupport.useBindlessTexturing(device)) {
+            event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS_BINDLESS_NO_LDS);
+            if (subgroup) event.registerPipeline(FFX_SPD_DOWNSAMPLE_PASS_BINDLESS);
+            event.registerPipeline(HIZ_OCCLUSION_TEST_BINDLESS);
+        }
     }
 }

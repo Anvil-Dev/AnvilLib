@@ -20,13 +20,13 @@ public final class PortUiVerification {
         Minecraft minecraft = Minecraft.getInstance();
         CreativeVariantPickerRegistry.setVanillaColorVariantPickerEnabled(() -> true);
         screen = new CreativeModeInventoryScreen(minecraft.player, minecraft.level.enabledFeatures(), true);
-        minecraft.setScreen(screen);
+        minecraft.gui.setScreen(screen);
         CreativeModeTab tab = TestItemGroups.TEST_TAB.get();
         tab.buildContents(new CreativeModeTab.ItemDisplayParameters(minecraft.level.enabledFeatures(), true, minecraft.level.registryAccess()));
         var select = CreativeModeInventoryScreen.class.getDeclaredMethod("selectTab", CreativeModeTab.class);
         select.setAccessible(true);
         select.invoke(screen, tab);
-        source = screen.getMenu().slots.stream().filter(slot -> slot.getItem().is(Items.WHITE_WOOL)).findFirst().orElseThrow();
+        source = screen.getMenu().slots.stream().filter(slot -> slot.getItem().is(Items.WOOL.white())).findFirst().orElseThrow();
         screen.mouseClicked(sourceClick(), false);
         screen.mouseReleased(sourceClick());
         PortVerification.check(overlay() != null, "右键打开实际创造栏叠加层");
@@ -55,7 +55,7 @@ public final class PortUiVerification {
         var click = new MouseButtonEvent(left + 30, top + 12, new MouseButtonInfo(0, 0));
         PortVerification.check(screen.mouseClicked(click, false), "选择点击被叠加层接管");
         PortVerification.check(screen.mouseReleased(click), "选择后的松开事件被消费");
-        PortVerification.check(screen.getMenu().getCarried().is(Items.LIGHT_GRAY_WOOL), "选择结果进入真实创造栏携带栈");
+        PortVerification.check(screen.getMenu().getCarried().is(Items.WOOL.lightGray()), "选择结果进入真实创造栏携带栈");
         screen.mouseClicked(sourceClick(), false);
         screen.mouseReleased(sourceClick());
         PortVerification.check(overlay() == null, "再次右键源槽关闭叠加层");

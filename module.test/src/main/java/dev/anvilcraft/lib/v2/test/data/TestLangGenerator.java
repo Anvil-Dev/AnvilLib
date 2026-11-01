@@ -3,6 +3,7 @@ package dev.anvilcraft.lib.v2.test.data;
 import dev.anvilcraft.lib.v2.config.ConfigData;
 import dev.anvilcraft.lib.v2.registrum.providers.RegistrumLangProvider;
 import dev.anvilcraft.lib.v2.test.AnvilLibTestConfig;
+import dev.anvilcraft.lib.v2.test.config.ConfigUiExamples;
 
 public class TestLangGenerator {
     public static void accept(RegistrumLangProvider provider) {
@@ -12,5 +13,8 @@ public class TestLangGenerator {
         provider.add("key.anvillib_test.wheel_tap_annular", "Wheel Tap (Annular)");
         provider.add("key.anvillib_test.wheel_hold_annular", "Wheel Hold (Annular)");
         ConfigData.readConfigClass(provider, AnvilLibTestConfig.class);
+        ConfigData.readConfigClass(provider, ConfigUiExamples.Client.class);
+        ConfigData.readConfigClass(provider, ConfigUiExamples.Legacy.class);
+        ConfigData.readConfigClass(provider, ConfigUiExamples.Server.class);
     }
 }
