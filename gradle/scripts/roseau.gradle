@@ -10,7 +10,7 @@ dependencies {
 // Gradle 解析成本地工程组件（'default' 配置缺失），故借根工程仓库规避自引用。
 def ensureRootRepositories = {
     if (!rootProject.repositories.any { it instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository && it.url.toString().contains('server.cjsah.net') }) {
-        rootProject.repositories.maven { it.url = 'https://server.cjsah.net:1002/maven/' }
+        rootProject.repositories.maven { it.url = 'https://server.cjsah.net:1002/maven/releases/' }
     }
     if (!rootProject.repositories.any { it instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository && it.url.toString().startsWith('file:') }) {
         rootProject.repositories.mavenLocal()
@@ -25,7 +25,7 @@ def roseauBaselineVersion = project.findProperty('roseauBaselineVersion') ?: {
     def artifact = project.name
     def repos = [
             'https://repo1.maven.org/maven2',
-            'https://server.cjsah.net:1002/maven',
+            'https://server.cjsah.net:1002/maven/releases',
     ]
     for (repoUrl in repos) {
         try {
