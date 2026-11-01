@@ -16,7 +16,7 @@ def roseauBaselineVersion = project.findProperty('roseauBaselineVersion') ?: {
     def artifact = project.name
     def repos = [
             'https://repo1.maven.org/maven2',
-            'https://server.cjsah.net:1002/maven',
+            'https://server.cjsah.net:1002/maven/releases',
     ]
     for (repoUrl in repos) {
         try {
