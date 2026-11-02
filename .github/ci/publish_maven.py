@@ -1,5 +1,6 @@
-"""Upload the staged Gradle publications to the internal Maven HTTP repository."""
+"""Verify staged Gradle publications and optionally upload a snapshot to internal Maven."""
 
+import argparse
 import base64
 import hashlib
 import json
@@ -48,12 +49,19 @@ def metadata(previous, artifact, version):
 
 def publications(staging, main, version, modules):
     suffix = main.removeprefix("anvillib-")
-    names = [f"anvillib-{m}-{suffix}" for m in ["sync-processor", *modules]] + [main]
+
+    def artifact(module):
+        return f"anvillib-{module}-{suffix}"
+
+    children = {artifact(m["module"]): {artifact(n) for n in m["needs"]} for m in modules}
+    processor = artifact("sync-processor")
+    expected = {processor: set(), **children, main: set(children)}
+    expected[artifact("sync")].add(processor)
     group_dir = staging / GROUP.replace(".", "/")
-    if {p.name for p in group_dir.iterdir()} != set(names):
+    if {p.name for p in group_dir.iterdir()} != set(expected):
         raise ValueError("Incomplete set of staged CI publications")
     result = []
-    for name in names:
+    for name, required_deps in expected.items():
         folder = group_dir / name / version
         prefix = f"{name}-{version}"
         required = {prefix + s for s in (".pom", ".jar", ".module", "-sources.jar", "-javadoc.jar",
@@ -66,13 +74,24 @@ def publications(staging, main, version, modules):
         pom = ET.parse(folder / (prefix + ".pom")).getroot()
         if tuple(pom.findtext("m:" + k, namespaces=ns) for k in ("groupId", "artifactId", "version")) != (GROUP, name, version):
             raise ValueError(f"Unexpected coordinates in {name}")
+        internal = {}
         for dep in pom.findall("m:dependencies/m:dependency", ns):
-            if dep.findtext("m:groupId", namespaces=ns) == GROUP and (
-                dep.findtext("m:artifactId", namespaces=ns) not in names
-                or dep.findtext("m:version", namespaces=ns) != version
-                or dep.findtext("m:scope", "compile", ns) != "compile"
-            ):
-                raise ValueError(f"Invalid internal dependency in {name}")
+            if dep.findtext("m:groupId", namespaces=ns) != GROUP:
+                continue
+            child = dep.findtext("m:artifactId", namespaces=ns)
+            if (child not in expected or dep.findtext("m:version", namespaces=ns) != version
+                    or dep.findtext("m:scope", "compile", ns) != "compile"):
+                raise ValueError(f"Invalid internal dependency {name} -> {child}")
+            internal[child] = version
+        if not required_deps <= internal.keys():
+            raise ValueError(f"Missing API dependencies in {name}: {required_deps - internal.keys()}")
+        module = json.loads((folder / (prefix + ".module")).read_bytes())
+        variants = {v["name"]: v for v in module["variants"]}
+        for variant in ("apiElements", "runtimeElements"):
+            deps = {d["module"]: d["version"]["requires"]
+                    for d in variants[variant].get("dependencies", []) if d["group"] == GROUP}
+            if deps != internal:
+                raise ValueError(f"{name} {variant} dependencies differ from its POM: {deps} vs {internal}")
         result.append((name, files))
     return result
 
@@ -128,7 +147,14 @@ def publish(staging, main, version, modules):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--upload", action="store_true", help="upload the verified snapshot to internal Maven")
+    args = parser.parse_args()
     build = Path("build/ci")
     outputs = dict(line.split("=", 1) for line in (build / "outputs").read_text().splitlines())
-    modules = [m["module"] for m in json.loads(Path(".github/modules.json").read_text())]
-    publish(build / "maven", outputs["main_id"], outputs["version"], modules)
+    modules = json.loads(Path(".github/modules.json").read_text())
+    if args.upload:
+        publish(build / "maven", outputs["main_id"], outputs["version"], modules)
+    else:
+        items = publications(build / "maven", outputs["main_id"], outputs["version"], modules)
+        print(f"Verified {len(items)} Maven publications at {outputs['version']}")
