@@ -59,7 +59,7 @@ publishMods {
 
     curseforge {
         accessToken = System.getenv("CURSEFORGE_TOKEN")
-        projectId = "1484302"
+        projectId = project.curseforge_project_id
         clientRequired = true
         serverRequired = true
         minecraftVersions.add(libs.versions.minecraft.get())
@@ -67,7 +67,7 @@ publishMods {
 
     modrinth {
         accessToken = System.getenv("MODRINTH_TOKEN")
-        projectId = "nKAcAL9b"
+        projectId = project.modrinth_project_id
         minecraftVersions.add(libs.versions.minecraft.get())
     }
 }
