@@ -52,6 +52,12 @@ public final class RecipeRegressionTests {
     private static final Vec3 RANGE = new Vec3(0.75, 0.75, 0.75);
     private static final ResourceLocation COMPONENT_PATH = AnvilLibTest.of("recipe_test_component");
     private static final Map<String, Consumer<GameTestHelper>> TESTS = Map.ofEntries(
+        Map.entry("recipe_block_copy_consumed_state", RecipeBlockStateTests::copyConsumedState),
+        Map.entry("recipe_block_mapping_precedence", RecipeBlockStateTests::mappingPrecedence),
+        Map.entry("recipe_block_batch_snapshots", RecipeBlockStateTests::batchSnapshots),
+        Map.entry("recipe_block_double_conversion", RecipeBlockStateTests::doubleBlock),
+        Map.entry("recipe_block_legacy_codecs", RecipeBlockStateTests::legacyAndCodecs),
+        Map.entry("recipe_block_invalid_mappings", RecipeBlockStateTests::invalidMappings),
         Map.entry("recipe_failed_allocation_rolls_back", RecipeRegressionTests::failedAllocationRollsBack),
         Map.entry("recipe_shared_handler_catalyst", RecipeRegressionTests::sharedHandlerCatalyst),
         Map.entry("recipe_separate_handler_catalyst", RecipeRegressionTests::separateHandlerCatalyst),
