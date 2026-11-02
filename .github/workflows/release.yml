@@ -1,180 +1,183 @@
-name: Release for Mod
-# 发布到 Maven Central 的唯一入口：发布 Release 事件。
-# 推送 dev/** 分支由 ci.yml 负责构建与测试，不做任何 Maven Central 发布。
-# 制品版本取自 gradle.properties 的 mod_version，发布前必须确认已推进该版本号：
-# Maven Central 的版本一经发布不可撤回，重复使用同一版本号会导致部署失败。
+name: Release AnvilLib
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and verify all seven releases without publishing
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+concurrency:
+  group: anvillib-coordinated-release
+  cancel-in-progress: false
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  CI_BUILD: 'false'
+  PR_BUILD: 'false'
+  NOT_DEV: 'false'
+  DRY_RUN: ${{ inputs.dry_run }}
 
 jobs:
   prepare:
+    if: github.ref == 'refs/heads/dev/26.1'
     runs-on: ubuntu-latest
+    permissions: { contents: read, actions: read }
     outputs:
-      level_0: ${{ steps.matrix.outputs.level_0 }}
-      level_1: ${{ steps.matrix.outputs.level_1 }}
-      level_2: ${{ steps.matrix.outputs.level_2 }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      version: ${{ steps.plan.outputs.version }}
+      tag: ${{ steps.plan.outputs.tag }}
     steps:
       - uses: actions/checkout@v6
-      - id: matrix
-        run: node .github/workflows/generate-matrix.js
+        with: { persist-credentials: false }
+      - name: Check release recovery and publication gates
+        run: python3 -m unittest discover -s .github/release
+      - id: plan
+        run: python3 .github/release/release.py prepare
+      - uses: actions/upload-artifact@v7
+        if: steps.plan.outputs.new == 'true'
+        with:
+          name: source-plan
+          path: release-plan.json
+          if-no-files-found: error
 
-  # ── Build (topological levels) ──────────────────────────────────
-
-  processor-build:
-    needs: [prepare]
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: sync
-      module_id: anvillib-sync-processor
-      mod_id: anvillib_sync_processor
-      ci_build: false
-      pr_build: false
-      gradle_project: anvillib-sync-neoforge-26.1:anvillib-sync-processor-neoforge-26.1
-      module_dir: module.sync/processor
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-
-  build-l0:
-    needs: [prepare]
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions: { contents: read, actions: read }
     strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-      mod_id: ${{ matrix.mod_id }}
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    env:
+      LINE: ${{ matrix.line }}
+      SOURCE_SHA: ${{ matrix.sha }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with: { path: control, persist-credentials: false }
+      - id: cache
+        working-directory: control/.github/release
+        run: python3 -c 'import os; from common import artifact, output; output("built", bool(artifact("build-" + os.environ["LINE"])))'
+      - uses: actions/checkout@v6
+        if: steps.cache.outputs.built != 'True'
+        with:
+          ref: ${{ matrix.sha }}
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        if: steps.cache.outputs.built != 'True'
+        with:
+          distribution: zulu
+          java-version: ${{ matrix.java }}
+      - uses: gradle/actions/setup-gradle@v6
+        if: steps.cache.outputs.built != 'True'
+      - name: Stage and verify local publications
+        if: steps.cache.outputs.built != 'True'
+        run: |
+          (cd source && bash gradlew -PanvillibRelease stageRelease --no-configuration-cache)
+          python3 control/.github/release/artifacts.py source "$LINE" "$SOURCE_SHA" "$RELEASE_VERSION" source/build/release/dist
+      - uses: actions/upload-artifact@v7
+        if: steps.cache.outputs.built != 'True'
+        with:
+          name: build-${{ matrix.line }}
+          path: source/build/release/
+          if-no-files-found: error
 
-  build-l1:
-    needs: [prepare, build-l0]
+  seal:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions: { contents: write, actions: read }
+    steps:
+      - uses: actions/checkout@v6
+        with: { persist-credentials: false }
+      - uses: actions/download-artifact@v8
+        with: { name: source-plan }
+      - uses: actions/download-artifact@v8
+        with: { pattern: 'build-*', path: bundles }
+      - run: python3 .github/release/release.py seal
+
+  central:
+    needs: [prepare, seal]
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    permissions: { actions: read, contents: read, statuses: write }
     strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-      mod_id: ${{ matrix.mod_id }}
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
+      LINE: ${{ matrix.line }}
+    steps:
+      - uses: actions/checkout@v6
+        with: { path: control, persist-credentials: false }
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.sha }}
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: ${{ matrix.java }}
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: build-${{ matrix.line }}
+          path: built
+      - name: Deploy and wait for PUBLISHED
+        env:
+          JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          JRELEASER_MAVENCENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          JRELEASER_GPG_SECRET_KEY: ${{ secrets.SIGNING_KEY }}
+          JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.SIGNING_PUBLIC_KEY }}
+          JRELEASER_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+        run: python3 control/.github/release/central.py "$TAG" "$LINE" source built/staging
 
-  build-l2:
-    needs: [prepare, build-l1, processor-build]
+  mod-sites:
+    needs: [prepare, seal]
+    if: ${{ !inputs.dry_run }}
+    permissions: { actions: read, contents: read, statuses: write }
     strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
-    uses: ./.github/workflows/build_and_test.yml
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+        platform: [modrinth, curseforge]
+    uses: ./.github/workflows/mod_site.yml
     with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-      mod_id: ${{ matrix.mod_id }}
-      ci_build: false
-      pr_build: false
+      tag: ${{ needs.prepare.outputs.tag }}
+      line: ${{ matrix.target.line }}
+      platform: ${{ matrix.platform }}
     secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
+      MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+      CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
 
-  # ── Maven Central deploy ────────────────────────────────────────
+  publish:
+    needs: [prepare, seal, central]
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with: { persist-credentials: false }
+      - run: python3 .github/release/release.py publish "$TAG"
 
-  processor-deploy:
-    needs: [processor-build]
-    uses: ./.github/workflows/publish_maven_central.yml
-    with:
-      module: sync
-      module_id: anvillib-sync-processor
-      gradle_project: anvillib-sync-neoforge-26.1:anvillib-sync-processor-neoforge-26.1
-      module_dir: module.sync/processor
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-
-  deploy-l0:
-    needs: [prepare, build-l0]
+  bump:
+    needs: [prepare, publish]
+    runs-on: ubuntu-latest
+    permissions: { contents: write, pull-requests: write }
     strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
-    uses: ./.github/workflows/publish_maven_central.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-
-  deploy-l1:
-    needs: [prepare, build-l1]
-    strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
-    uses: ./.github/workflows/publish_maven_central.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-
-  deploy-l2:
-    needs: [prepare, build-l2]
-    strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
-    uses: ./.github/workflows/publish_maven_central.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
-
-  # ── Main (aggregator) ───────────────────────────────────────────
-
-  main:
-    needs: [build-l2]
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: main
-      module_id: anvillib
-      mod_id: anvillib
-      ci_build: false
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-
-  main-maven-central-deploy:
-    # 汇总模块的 pom 依赖各子模块，必须等子模块全部落到 Maven Central 之后再发布，
-    # 否则消费者在这段窗口里会解析到依赖尚未就绪的 pom。
-    needs: [main, processor-deploy, deploy-l0, deploy-l1, deploy-l2]
-    uses: ./.github/workflows/publish_maven_central.yml
-    with:
-      module: main
-      module_id: anvillib
-    secrets:
-      maven_central_username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      maven_central_password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      signing_key: ${{ secrets.SIGNING_KEY }}
-      signing_public_key: ${{ secrets.SIGNING_PUBLIC_KEY }}
-      signing_password: ${{ secrets.SIGNING_PASSWORD }}
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
+      LINE: ${{ matrix.line }}
+    steps:
+      - uses: actions/checkout@v6
+        with: { persist-credentials: false }
+      - run: python3 .github/release/release.py bump "$TAG" "$LINE"

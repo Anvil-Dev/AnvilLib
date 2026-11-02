@@ -248,6 +248,8 @@ publishing {
     }
 }
 
+def centralStaging = providers.gradleProperty('anvillibCentralStaging').getOrElse('build/staging-deploy')
+
 jreleaser {
     signing {
         active = 'ALWAYS'
@@ -260,7 +262,7 @@ jreleaser {
                 sonatype {
                     active = 'ALWAYS'
                     url = 'https://central.sonatype.com/api/v1/publisher'
-                    stagingRepository('build/staging-deploy')
+                    stagingRepository(centralStaging)
                 }
             }
         }
