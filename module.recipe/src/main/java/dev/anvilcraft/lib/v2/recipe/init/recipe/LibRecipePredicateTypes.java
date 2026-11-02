@@ -3,6 +3,8 @@ package dev.anvilcraft.lib.v2.recipe.init.recipe;
 import dev.anvilcraft.lib.v2.recipe.AnvilLibRecipe;
 import dev.anvilcraft.lib.v2.recipe.init.LibRegistries;
 import dev.anvilcraft.lib.v2.recipe.predicate.IRecipePredicate;
+import dev.anvilcraft.lib.v2.recipe.predicate.entity.HasEntity;
+import dev.anvilcraft.lib.v2.recipe.predicate.entity.HasEntityIngredient;
 import dev.anvilcraft.lib.v2.recipe.predicate.block.HasBlock;
 import dev.anvilcraft.lib.v2.recipe.predicate.block.HasBlockIngredient;
 import dev.anvilcraft.lib.v2.recipe.predicate.item.HasItem;
@@ -13,6 +15,11 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class LibRecipePredicateTypes {
     public static final DeferredRegister<IRecipePredicate.Type<?>> PREDICATE_TYPE = DeferredRegister
         .create(LibRegistries.PREDICATE_TYPE_REGISTRY, AnvilLibRecipe.MOD_ID);
+
+    public static final DeferredHolder<IRecipePredicate.Type<?>, HasEntity.Type> HAS_ENTITY =
+        PREDICATE_TYPE.register("has_entity", HasEntity.Type::new);
+    public static final DeferredHolder<IRecipePredicate.Type<?>, HasEntityIngredient.Type> HAS_ENTITY_INGREDIENT =
+        PREDICATE_TYPE.register("has_entity_ingredient", HasEntityIngredient.Type::new);
 
     public static final DeferredHolder<IRecipePredicate.Type<?>, HasItem.Type> HAS_ITEM = PREDICATE_TYPE.register(
         "has_item",
