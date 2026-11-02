@@ -1,9 +1,9 @@
 [versions]
 foeniculum = "0.1.0-dev.7"
 minecraft = "1.21.1"
-neoForge = "21.1.226"
-modDevGradle = "2.0.78"
-lombok = "8.7.1"
+neoForge = "21.1.238"
+modDevGradle = "2.0.147"
+lombok = "9.2.0"
 machete = "2.0.1"
 
 [libraries]

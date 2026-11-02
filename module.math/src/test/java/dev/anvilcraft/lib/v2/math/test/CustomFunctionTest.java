@@ -325,14 +325,12 @@ class CustomFunctionTest {
     @Test
     @DisplayName("函数体直接引用自身时报错，而不是栈溢出")
     void selfReferenceIsCaught() {
-        // 占位函数先注册，拿到引用后再把函数体换成对自身的调用
-        CustomFunction placeholder = CustomFunction.named(List.of("a"), NamedFunction.call("a"));
-        Holder<IFunction> self = MathTestBootstrap.registerFunction("self", placeholder);
+        Holder<IFunction> self = MathTestBootstrap.functionReference("self");
         CustomFunction recursive = CustomFunction.named(
             List.of("a"),
             FunctionExpression.of(self, NamedFunction.call("a"))
         );
-        MathTestBootstrap.replaceFunction("self", recursive);
+        MathTestBootstrap.registerFunction("self", recursive);
 
         FunctionExpression call = FunctionExpression.of(self, ConstantFunction.of(1).call());
         assertThrows(IllegalStateException.class, () -> call.evaluate(Arguments.of()));
@@ -341,15 +339,13 @@ class CustomFunctionTest {
     @Test
     @DisplayName("互相引用的两个函数也会被拦下")
     void mutualReferenceIsCaught() {
-        CustomFunction placeholderA = CustomFunction.named(List.of("a"), NamedFunction.call("a"));
-        CustomFunction placeholderB = CustomFunction.named(List.of("a"), NamedFunction.call("a"));
-        Holder<IFunction> first = MathTestBootstrap.registerFunction("first", placeholderA);
-        Holder<IFunction> second = MathTestBootstrap.registerFunction("second", placeholderB);
-        MathTestBootstrap.replaceFunction(
+        Holder<IFunction> first = MathTestBootstrap.functionReference("first");
+        Holder<IFunction> second = MathTestBootstrap.functionReference("second");
+        MathTestBootstrap.registerFunction(
             "first",
             CustomFunction.named(List.of("a"), FunctionExpression.of(second, NamedFunction.call("a")))
         );
-        MathTestBootstrap.replaceFunction(
+        MathTestBootstrap.registerFunction(
             "second",
             CustomFunction.named(List.of("a"), FunctionExpression.of(first, NamedFunction.call("a")))
         );

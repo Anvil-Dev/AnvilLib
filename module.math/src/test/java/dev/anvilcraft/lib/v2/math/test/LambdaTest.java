@@ -175,21 +175,14 @@ class LambdaTest {
     @Test
     @DisplayName("两个注册的 lambda 互相按名调用时被深度守卫拦下")
     void mutualLambdaReferenceIsCaught() {
-        // lambda 与自定义函数一样能被注册进注册表并按名调用，这条环完全绕过 CustomFunction，
-        // 因此深度守卫必须放在共用位置，而不是只挂在 CustomFunction 上
-        Holder<IFunction> first = MathTestBootstrap.registerFunction(
-            "lambda-first",
-            LambdaFunction.named(List.of("a"), NamedFunction.call("a"))
-        );
-        Holder<IFunction> second = MathTestBootstrap.registerFunction(
-            "lambda-second",
-            LambdaFunction.named(List.of("a"), NamedFunction.call("a"))
-        );
-        MathTestBootstrap.replaceFunction(
+        // 互相调用的 lambda 需要由共用调用深度检查拦截。
+        Holder<IFunction> first = MathTestBootstrap.functionReference("lambda-first");
+        Holder<IFunction> second = MathTestBootstrap.functionReference("lambda-second");
+        MathTestBootstrap.registerFunction(
             "lambda-first",
             LambdaFunction.named(List.of("a"), FunctionExpression.of(second, NamedFunction.call("a")))
         );
-        MathTestBootstrap.replaceFunction(
+        MathTestBootstrap.registerFunction(
             "lambda-second",
             LambdaFunction.named(List.of("a"), FunctionExpression.of(first, NamedFunction.call("a")))
         );
