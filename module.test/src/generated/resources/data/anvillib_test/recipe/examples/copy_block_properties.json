@@ -1,0 +1,36 @@
+{
+  "type": "anvillib_recipe:in_world_recipe",
+  "compatible": true,
+  "conflicting": [],
+  "icon": {
+    "count": 1,
+    "id": "minecraft:anvil"
+  },
+  "non_conflicting": [
+    {
+      "type": "anvillib_recipe:has_block_ingredient",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "predicate": {
+        "blocks": "minecraft:cut_copper_stairs"
+      }
+    }
+  ],
+  "outcomes": [
+    {
+      "type": "anvillib_recipe:set_block",
+      "block": "minecraft:waxed_cut_copper_stairs",
+      "copy_properties": true,
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "priority": 3,
+  "trigger": "anvillib_recipe:item_into_block"
+}
