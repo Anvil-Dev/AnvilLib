@@ -1,0 +1,58 @@
+apply from: rootProject.file('gradle/scripts/publication-projects.gradle')
+
+if (System.getenv('CI_BUILD') != 'true' || !(System.getenv('GITHUB_RUN_NUMBER') ==~ /[0-9]+/) ||
+        !(System.getenv('PR_BUILD') in ['true', 'false'])) {
+    throw new GradleException('ciBuild requires CI_BUILD=true, PR_BUILD=true/false and GITHUB_RUN_NUMBER')
+}
+
+def prBuild = System.getenv('PR_BUILD') == 'true'
+def main = anvillibPublicationProjects.find { it.projectDir == rootProject.file('module.main') }
+def stage = tasks.register('ciBuild', Sync) {
+    group = 'build'
+    description = 'Build and stage every CI artifact from the current checkout'
+    into(layout.buildDirectory.dir('ci'))
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+}
+
+anvillibPublicationProjects.each { target ->
+    target.afterEvaluate {
+        def jar = target.tasks.named('jar', Jar).flatMap { it.archiveFile }
+        stage.configure {
+            dependsOn("${target.path}:build")
+            from(jar) { into('jars') }
+            if (!prBuild) {
+                dependsOn("${target.path}:publishMavenJavaPublicationToStagingRepository")
+                from(target.layout.buildDirectory.dir('staging-deploy')) {
+                    into('maven')
+                    include("dev/anvilcraft/lib/${target.name}/${target.version}/**")
+                    exclude('**/*.asc', '**/*.asc.*')
+                }
+            } else if (target.projectDir.name != 'processor') {
+                dependsOn("${target.path}:roseauCheck")
+            }
+        }
+    }
+}
+
+main.afterEvaluate {
+    def jar = main.tasks.named('jar', Jar).get().archiveFileName.get()
+    def outputs = [
+        version: main.version.toString(),
+        main_id: main.name,
+        main_jar: "build/ci/jars/$jar",
+        sources_jar: rootProject.relativePath(main.tasks.named('sourcesJar', Jar).get().archiveFile.get().asFile).replace('\\', '/'),
+        javadoc_jar: rootProject.relativePath(main.tasks.named('javadocJar', Jar).get().archiveFile.get().asFile).replace('\\', '/'),
+        minecraft: libs.versions.minecraft.get(),
+        neoforge: libs.versions.neoForge.get(),
+        modrinth_id: main.modrinth_project_id,
+        curseforge_id: main.curseforge_project_id
+    ]
+    stage.configure {
+        inputs.properties(outputs)
+        doLast {
+            new File(destinationDir, 'outputs').withWriter('UTF-8') { writer ->
+                outputs.each { key, value -> writer.println("$key=$value") }
+            }
+        }
+    }
+}
