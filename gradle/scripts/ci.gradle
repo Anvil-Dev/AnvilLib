@@ -20,14 +20,13 @@ anvillibPublicationProjects.each { target ->
         stage.configure {
             dependsOn("${target.path}:build")
             from(jar) { into('jars') }
-            if (!prBuild) {
-                dependsOn("${target.path}:publishMavenJavaPublicationToStagingRepository")
-                from(target.layout.buildDirectory.dir('staging-deploy')) {
-                    into('maven')
-                    include("dev/anvilcraft/lib/${target.name}/${target.version}/**")
-                    exclude('**/*.asc', '**/*.asc.*')
-                }
-            } else if (target.projectDir.name != 'processor') {
+            dependsOn("${target.path}:publishMavenJavaPublicationToStagingRepository")
+            from(target.layout.buildDirectory.dir('staging-deploy')) {
+                into('maven')
+                include("dev/anvilcraft/lib/${target.name}/${target.version}/**")
+                exclude('**/*.asc', '**/*.asc.*')
+            }
+            if (prBuild && target.projectDir.name != 'processor') {
                 dependsOn("${target.path}:roseauCheck")
             }
         }
