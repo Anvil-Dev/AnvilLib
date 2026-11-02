@@ -8,6 +8,7 @@ import dev.anvilcraft.lib.v2.test.all.TestItemGroups;
 import dev.anvilcraft.lib.v2.test.all.TestItems;
 import dev.anvilcraft.lib.v2.test.all.TestTiles;
 import dev.anvilcraft.lib.v2.test.data.TestLangGenerator;
+import dev.anvilcraft.lib.v2.test.data.TestRecipeGenerator;
 import dev.anvilcraft.lib.v2.test.config.ConfigUiExamples;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
@@ -35,5 +36,6 @@ public class AnvilLibTest {
 
     public void setupDataGeneration(){
         REGISTRUM.addDataGenerator(ProviderType.LANG, TestLangGenerator::accept);
+        REGISTRUM.addDataGenerator(ProviderType.RECIPE, TestRecipeGenerator::accept);
     }
 }

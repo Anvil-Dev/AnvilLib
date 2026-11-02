@@ -1,0 +1,45 @@
+{
+  "type": "anvillib_recipe:in_world_recipe",
+  "compatible": true,
+  "conflicting": [],
+  "icon": {
+    "id": "minecraft:anvil"
+  },
+  "non_conflicting": [
+    {
+      "type": "anvillib_recipe:has_block_ingredient",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "predicate": {
+        "blocks": "minecraft:oak_stairs"
+      }
+    }
+  ],
+  "outcomes": [
+    {
+      "type": "anvillib_recipe:set_block",
+      "block": "minecraft:oak_log",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "property_mappings": {
+        "axis": {
+          "source": "facing",
+          "values": {
+            "east": "x",
+            "north": "z",
+            "south": "z",
+            "west": "x"
+          }
+        }
+      }
+    }
+  ],
+  "priority": 3,
+  "trigger": "anvillib_recipe:item_into_block"
+}
