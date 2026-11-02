@@ -1,0 +1,39 @@
+import groovy.json.JsonSlurper
+
+// Formal builds use Foeniculum's local project graph, including the sync processor.
+if (System.getenv('CI_BUILD') != 'false' || System.getenv('NOT_DEV') == 'true') {
+    throw new GradleException('stageRelease requires CI_BUILD=false and local project dependencies')
+}
+
+def moduleDirs = new JsonSlurper().parse(rootProject.file('.github/modules.json')).collect {
+    rootProject.file("module.${it.module}")
+}
+moduleDirs += [rootProject.file('module.sync/processor'), rootProject.file('module.main')]
+
+def stage = tasks.register('stageRelease', Sync) {
+    group = 'publishing'
+    description = 'Stage all release publications from this Minecraft checkout'
+    into(layout.buildDirectory.dir('release/staging'))
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+}
+
+moduleDirs.each { dir ->
+    def target = subprojects.find { it.projectDir == dir }
+    if (target == null) throw new GradleException("No Gradle project for ${dir}")
+
+    // The production Maven declarations use api. Keep that scope for the
+    // same-checkout equivalents, even on branches using implementation locally.
+    target.pluginManager.withPlugin('java-library') {
+        def api = target.configurations.named('api')
+        target.configurations.named('implementation').get().dependencies.withType(ProjectDependency).all {
+            api.get().dependencies.add(it.copy())
+        }
+    }
+
+    stage.configure {
+        dependsOn("${target.path}:check", "${target.path}:publishMavenJavaPublicationToStagingRepository")
+        from(target.layout.buildDirectory.dir('staging-deploy')) {
+            include("dev/anvilcraft/lib/${target.name}/${rootProject.version}/**")
+        }
+    }
+}
