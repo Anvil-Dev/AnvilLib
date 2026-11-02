@@ -214,6 +214,8 @@ public class InWorldRecipeContext implements RecipeInput {
         this.assertPlanning();
         Object tags = this.data.get(TagCache.TAG_CACHE.location());
         if (tags instanceof TagCache cache) cache.tags.clear();
+        Object blocks = this.data.get(BlockCache.BLOCK_CACHE.location());
+        if (blocks instanceof BlockCache cache) cache.beginBatch();
         this.batchId++;
     }
 
