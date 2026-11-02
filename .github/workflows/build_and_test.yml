@@ -105,6 +105,7 @@ jobs:
         uses: Kira-NT/mc-publish@c23376546a97f5ba7984e94445da359459b14419 # v3.3.2
         continue-on-error: true
         with:
+          fail-mode: skip
           modrinth-id: ${{ steps.build.outputs.modrinth_id }}
           modrinth-token: ${{ secrets.modrinth_token }}
           modrinth-featured: false
