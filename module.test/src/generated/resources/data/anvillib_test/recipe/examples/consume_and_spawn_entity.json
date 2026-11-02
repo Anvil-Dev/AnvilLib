@@ -1,0 +1,35 @@
+{
+  "type": "anvillib_recipe:in_world_recipe",
+  "compatible": false,
+  "conflicting": [
+    {
+      "type": "anvillib_recipe:has_entity_ingredient",
+      "experience_multiplier": 0.5,
+      "predicate": {
+        "type": "minecraft:pig"
+      },
+      "range": [
+        4.0,
+        4.0,
+        4.0
+      ]
+    }
+  ],
+  "icon": {
+    "id": "minecraft:anvil"
+  },
+  "non_conflicting": [],
+  "outcomes": [
+    {
+      "type": "anvillib_recipe:spawn_entity",
+      "entity": "minecraft:cow",
+      "offset": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    }
+  ],
+  "priority": 3,
+  "trigger": "anvillib_recipe:item_into_block"
+}

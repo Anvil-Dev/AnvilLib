@@ -1,0 +1,30 @@
+{
+  "type": "anvillib_recipe:in_world_recipe",
+  "compatible": true,
+  "conflicting": [],
+  "icon": {
+    "id": "minecraft:anvil"
+  },
+  "non_conflicting": [
+    {
+      "type": "anvillib_recipe:has_entity",
+      "predicate": {
+        "type": "minecraft:armor_stand"
+      },
+      "range": [
+        4.0,
+        4.0,
+        4.0
+      ]
+    }
+  ],
+  "outcomes": [
+    {
+      "type": "anvillib_recipe:spawn_entity",
+      "count": 2,
+      "entity": "minecraft:pig"
+    }
+  ],
+  "priority": 3,
+  "trigger": "anvillib_recipe:item_into_block"
+}
