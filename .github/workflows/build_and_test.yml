@@ -55,6 +55,9 @@ jobs:
           bash gradlew -PanvillibCi ciBuild --no-configuration-cache --max-workers=2 -Porg.gradle.java.installations.fromEnv=JAVA_HOME_25_X64
           cat build/ci/outputs >> "$GITHUB_OUTPUT"
 
+      - name: Verify Maven coordinates and internal dependencies
+        run: python3 .github/ci/publish_maven.py
+
       - name: Capture module JARs
         uses: actions/upload-artifact@v7
         with:
@@ -94,7 +97,7 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.maven_pass }}
         run: |
           if [[ -n "$MAVEN_URL" && -n "$MAVEN_USERNAME" && -n "$MAVEN_PASSWORD" ]]; then
-            python3 .github/ci/publish_maven.py
+            python3 .github/ci/publish_maven.py --upload
           fi
 
       - name: Upload Beta snapshot to Modrinth and CurseForge

@@ -48,6 +48,8 @@ jobs:
             echo "::warning::Could not find PR number for branch=$HEAD_BRANCH sha=$HEAD_SHA"
           fi
           echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          author=$(gh api user --jq .login)
+          echo "comment_author=$author" >> "$GITHUB_OUTPUT"
         env:
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
@@ -127,7 +129,7 @@ jobs:
         with:
           token: ${{ secrets.PAT_TOKEN }}
           issue-number: ${{ steps.pr.outputs.number }}
-          comment-author: anvil-craft
+          comment-author: ${{ steps.pr.outputs.comment_author }}
           body-includes: Roseau API Breaking Change Report
 
       - name: Create or update PR comment
