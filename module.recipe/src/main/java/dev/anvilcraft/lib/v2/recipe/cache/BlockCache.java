@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import javax.annotation.Nullable;
 
 /**
@@ -66,6 +67,39 @@ public class BlockCache {
     private final HashMap<BlockPos, BlockEntity> cacheEntity = new HashMap<>();
 
     private final Set<BlockPos> deferredNeighborUpdates = new HashSet<>();
+    private final Map<BlockPos, BlockState> batchSources = new HashMap<>();
+
+    /** 新批次以当前模拟世界为输入，不能一直使用最初的真实世界状态。 */
+    public void beginBatch() {
+        this.batchSources.clear();
+    }
+
+    public BlockState getSourceState(BlockPos pos) {
+        return this.batchSources.computeIfAbsent(pos.immutable(), this::getBlockState);
+    }
+
+    /** 原料即使已经移除，仍按本批次输入状态转换；双格方块逐半处理。 */
+    public List<BlockPos> transformBlock(BlockPos pos, UnaryOperator<BlockState> transform) {
+        BlockState source = this.getSourceState(pos);
+        BlockState target = transform.apply(source);
+        if (source.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
+            && target.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) {
+            DoubleBlockHalf half = source.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF);
+            DoubleBlockHalf opposite = half == DoubleBlockHalf.LOWER ? DoubleBlockHalf.UPPER : DoubleBlockHalf.LOWER;
+            BlockPos other = half == DoubleBlockHalf.LOWER ? pos.above() : pos.below();
+            BlockState otherSource = this.getSourceState(other);
+            if (otherSource.is(source.getBlock()) && otherSource.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
+                && otherSource.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == opposite) {
+                this.deferredNeighborUpdates.add(pos);
+                this.deferredNeighborUpdates.add(other);
+                this.setSingleBlock(pos, target.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, half));
+                this.setSingleBlock(other, transform.apply(otherSource).setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, opposite));
+                return List.of(pos, other);
+            }
+        }
+        this.setBlock(pos, target);
+        return List.of(pos);
+    }
 
     /**
      * 世界访问器
@@ -156,6 +190,7 @@ public class BlockCache {
     }
 
     private void setSingleBlock(BlockPos pos, BlockState state) {
+        this.getSourceState(pos);
         this.getBlockState(pos);
         this.simulated.put(pos, state);
         if (state.getBlock() instanceof EntityBlock entityBlock) {
