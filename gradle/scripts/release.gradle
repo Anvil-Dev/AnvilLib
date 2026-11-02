@@ -34,6 +34,7 @@ moduleDirs.each { dir ->
         dependsOn("${target.path}:check", "${target.path}:publishMavenJavaPublicationToStagingRepository")
         from(target.layout.buildDirectory.dir('staging-deploy')) {
             include("dev/anvilcraft/lib/${target.name}/${rootProject.version}/**")
+            exclude('**/*.asc', '**/*.asc.*') // JReleaser signs the verified bundle.
         }
     }
 }
