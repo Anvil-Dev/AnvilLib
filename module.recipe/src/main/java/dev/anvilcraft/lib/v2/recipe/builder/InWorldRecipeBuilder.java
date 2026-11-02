@@ -1,5 +1,9 @@
 package dev.anvilcraft.lib.v2.recipe.builder;
 
+import dev.anvilcraft.lib.v2.recipe.outcome.SpawnEntity;
+import dev.anvilcraft.lib.v2.recipe.predicate.entity.HasEntity;
+import dev.anvilcraft.lib.v2.recipe.predicate.entity.HasEntityIngredient;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import dev.anvilcraft.lib.v2.recipe.AnvilLibRecipe;
@@ -183,6 +187,24 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
             this.nonConflicting.add(predicate);
         }
         return this.self();
+    }
+
+    public T hasEntity(Consumer<HasEntity.Builder> consumer) {
+        HasEntity.Builder builder = HasEntity.builder().offset(this.offset);
+        consumer.accept(builder);
+        return this.with(builder.build());
+    }
+
+    public T hasEntityIngredient(Consumer<HasEntityIngredient.Builder> consumer) {
+        HasEntityIngredient.Builder builder = HasEntityIngredient.builder().offset(this.offset);
+        consumer.accept(builder);
+        return this.with(builder.build());
+    }
+
+    public T spawnEntity(Consumer<SpawnEntity.Builder> consumer) {
+        SpawnEntity.Builder builder = SpawnEntity.builder().offset(this.offset);
+        consumer.accept(builder);
+        return this.out(builder.build());
     }
 
     /**

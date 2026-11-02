@@ -113,7 +113,7 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
         List<ItemConsumption> consumed = new ArrayList<>();
         for (ICacheElement element : this.elements) {
             if (count == 0) break;
-            if (!this.sourceFilter.test(element)) continue;
+            if (!this.cache.isAvailable(element) || !this.sourceFilter.test(element)) continue;
             ItemConsumption consumption = element.consume(count);
             count -= consumption.count();
             consumed.add(consumption);
@@ -157,6 +157,7 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
         this.cache.ensureOpen();
         Set<ICacheElement> elements = new LinkedHashSet<>();
         for (ICacheElement element : this.elements) {
+            if (!this.cache.isAvailable(element)) continue;
             int previousCount = stack.getCount();
             ItemStack remaining = element.grow(stack, false);
             if (remaining.getCount() < previousCount) {
@@ -239,7 +240,7 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
      */
     @Override
     public int getCount() {
-        long count = this.elements.stream().filter(this.sourceFilter).mapToLong(ICacheElement::getCount).sum();
+        long count = this.elements.stream().filter(this.cache::isAvailable).filter(this.sourceFilter).mapToLong(ICacheElement::getCount).sum();
         return (int) Math.min(Integer.MAX_VALUE, count);
     }
 
@@ -263,7 +264,7 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
 
     @Override
     public void apply(Consumer<ItemStack> consumer) {
-        this.elements.stream().filter(this.sourceFilter).forEach(element -> element.apply(consumer));
+        this.elements.stream().filter(this.cache::isAvailable).filter(this.sourceFilter).forEach(element -> element.apply(consumer));
     }
 
     @Override
@@ -293,7 +294,7 @@ public class ICacheInputOutputImpl implements ICacheInput, ICacheOutput {
     @Override
     public Optional<Map<ICacheElement, Integer>> availableElements() {
         Map<ICacheElement, Integer> available = new IdentityHashMap<>();
-        this.elements.stream().filter(this.sourceFilter).forEach(element -> available.put(element, element.getCount()));
+        this.elements.stream().filter(this.cache::isAvailable).filter(this.sourceFilter).forEach(element -> available.put(element, element.getCount()));
         return Optional.of(Collections.unmodifiableMap(available));
     }
 }

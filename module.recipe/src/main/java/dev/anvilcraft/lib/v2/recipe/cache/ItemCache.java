@@ -111,6 +111,42 @@ public class ItemCache {
     private final Map<ICacheElement, List<Range>> elementRanges = new IdentityHashMap<>();
     private final List<Range> scannedRanges = new ArrayList<>();
     private boolean committed;
+    private EntityCache entities;
+    private final Map<ICacheElement, Set<Entity>> entityOwners = new IdentityHashMap<>();
+    private final Map<ICacheElement, Integer> itemUses = new IdentityHashMap<>();
+
+    void connectEntities(EntityCache entities) {
+        this.entities = entities;
+    }
+
+    private void associateOwner(Entity owner, Collection<ICacheElement> elements) {
+        for (ICacheElement element : elements) {
+            this.entityOwners.computeIfAbsent(element, ignored -> Collections.newSetFromMap(new IdentityHashMap<>())).add(owner);
+        }
+    }
+
+    boolean canConsumeEntity(Entity entity) {
+        Map.Entry<Set<ICacheElement>, Set<ICacheElement>> entry = toElement(this, entity);
+        this.associateOwner(entity, entry.getKey());
+        this.associateOwner(entity, entry.getValue());
+        return this.entityOwners.entrySet().stream().filter(owner -> owner.getValue().contains(entity))
+            .noneMatch(owner -> this.itemUses.getOrDefault(owner.getKey(), 0) > 0 || !this.isAvailable(owner.getKey()));
+    }
+
+    public boolean isAvailable(ICacheElement element) {
+        Set<Entity> owners = this.entityOwners.get(element);
+        return this.entities == null || owners == null || owners.stream().noneMatch(this.entities::isReserved);
+    }
+
+    /** 保留到上下文提交；匹配回滚和催化剂归还会释放相应使用记录。 */
+    public void reserveItem(ICacheElement element) {
+        if (!this.isAvailable(element)) throw new IllegalStateException("The owning entity is reserved by a recipe");
+        this.itemUses.merge(element, 1, Integer::sum);
+    }
+
+    public void releaseItem(ICacheElement element) {
+        this.itemUses.computeIfPresent(element, (key, count) -> count == 1 ? null : count - 1);
+    }
 
     private record InputKey(Predicate<ItemStack> item, Predicate<ICacheElement> source) {
     }
@@ -341,6 +377,8 @@ public class ItemCache {
         List<Entity> entities = this.level.getEntities(EntityTypeTest.forClass(Entity.class), newRange.toAABB(), (entity) -> true);
         for (Entity entity : entities) {
             Map.Entry<Set<ICacheElement>, Set<ICacheElement>> entry = ItemCache.toElement(this, entity);
+            this.associateOwner(entity, entry.getKey());
+            this.associateOwner(entity, entry.getValue());
             this.inputs.addAll(entry.getKey());
             this.outputs.addAll(entry.getValue());
         }
@@ -488,6 +526,7 @@ public class ItemCache {
         this.grow(pos, range);
         Set<ICacheElement> outputs = new LinkedHashSet<>();
         for (ICacheElement output : this.outputs) {
+            if (!this.isAvailable(output)) continue;
             if (!this.matchesRange(output, range1, true)) continue;
             if (!output.is(stack)) continue;
             if (!sourceFilter.test(output)) continue;

@@ -25,3 +25,25 @@ SetBlock.builder()
 AnvilCraft 的涂抹封装接入时，应在它创建结果 `SetBlock` 的位置启用 `copyProperties()`；原有 `SetBlock.fromState(...)` 和四参数构造器保持旧行为。库升级本身不会自动改变现有涂抹配方。
 
 测试模块的 `TestRecipeGenerator` 提供可生成的继承和映射示例。新增字段支持 JSON 与网络编解码；客户端和服务端须使用匹配版本。
+
+## 实体条件与结果
+
+```java
+InWorldRecipeBuilder.incompatible(trigger)
+    .hasEntity(check -> check.of(EntityTypes.COW).range(4))
+    .hasEntityIngredient(input -> input.of(EntityTypes.PIG).range(4).count(2)
+        .experienceMultiplier(1.5f).dropItems(true))
+    .spawnEntity(output -> output.entity(EntityTypes.CHICKEN).offset(0, 1, 0).count(2));
+```
+
+- `has_entity`：只读检测。JSON 字段为 `predicate`（原版 EntityPredicate）、`offset`（默认零）、`range`（默认三个轴均为 1）和 `count`（默认至少 1，支持原版数量区间）。Builder 的 `count(int)` 表示至少指定数量，精确或上界条件用 `count(MinMaxBounds.Ints)`。
+- `has_entity_ingredient`：使用相同范围和谓词，`count` 为要消耗的正整数（默认 1）。`experience_multiplier` 默认 0，必须为有限非负数；`drop_items` 默认 false。
+- `spawn_entity`：`entity` 为实体类型，`nbt` 默认空，`offset` 默认零，`count` 与 `chance` 为 NumberProvider，默认 1。生成数量沿用 SpawnItem 的 0–99 范围。
+
+范围表示以「上下文位置 + 偏移」为中心的包围盒尺寸。使用 `predicate(builder -> ...)` 配置原版类型、标签、NBT 等组合条件，或直接传入构建好的 EntityPredicate；该方法替换先前条件。实体按距离和 UUID 稳定选择。玩家可被只读检测，但不能作为原料或生成结果。
+
+匹配只预留实体；失败会归还占用，组装不修改真实世界。物品堆或实体物品栏一旦被占用，该实体不能再作为整只原料；反向也一样。只读存在条件不会占用资源。生成实体和奖励在资源提交成功后才出现，不参与同一上下文的后续匹配。
+
+消耗直接移除实体，不触发伤害、死亡或击杀成就。开启物品掉落时，生物使用原生掉落生成流程（包含装备及 LivingDropsEvent），非生物保留其原有移除掉落，例如容器内容物；不会伪造玩家击杀条件。经验为生物经验奖励在无攻击者条件下乘倍率并向下取整，非生物为零，物品和经验可分别开启。奖励遵守 mob/entity drops 游戏规则，默认也会抑制容器移除时的自动掉落。
+
+实体生成支持乘客 NBT，类型和根实体落点由配方决定，UUID 总是重新生成。未指定 NBT 的生物经过原生生成初始化。提交前失效的实体会使提交失败；沿用现有提交失败语义，不尝试回滚已经完成的其他世界修改。
