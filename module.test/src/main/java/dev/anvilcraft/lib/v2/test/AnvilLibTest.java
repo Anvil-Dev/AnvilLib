@@ -1,6 +1,8 @@
 package dev.anvilcraft.lib.v2.test;
 
 import dev.anvilcraft.lib.v2.config.ConfigManager;
+import dev.anvilcraft.lib.v2.registrum.providers.ProviderType;
+import dev.anvilcraft.lib.v2.test.data.TestRecipeGenerator;
 import dev.anvilcraft.lib.v2.test.config.ConfigUiExamples;
 import dev.anvilcraft.lib.v2.registrum.Registrum;
 import dev.anvilcraft.lib.v2.test.multiblock.init.LibBlocks;
@@ -19,6 +21,7 @@ public class AnvilLibTest {
 
     public AnvilLibTest(IEventBus bus, ModContainer container) {
         ConfigUiExamples.register();
+        REGISTRUM.addDataGenerator(ProviderType.RECIPE, TestRecipeGenerator::accept);
         dev.anvilcraft.lib.v2.test.all.TestItemGroups.setupRegistration();
         LibBlocks.init();
         LibItemGroups.init(bus);
