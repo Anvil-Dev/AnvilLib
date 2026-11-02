@@ -7,12 +7,16 @@ import dev.anvilcraft.lib.v2.recipe.outcome.IRecipeOutcome;
 import dev.anvilcraft.lib.v2.recipe.outcome.ProduceExplosion;
 import dev.anvilcraft.lib.v2.recipe.outcome.SetBlock;
 import dev.anvilcraft.lib.v2.recipe.outcome.SpawnItem;
+import dev.anvilcraft.lib.v2.recipe.outcome.SpawnEntity;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class LibRecipeOutcomeTypes {
     public static final DeferredRegister<IRecipeOutcome.Type<?>> OUTCOME_TYPE = DeferredRegister
         .create(LibRegistries.OUTCOME_TYPE_REGISTRY, AnvilLibRecipe.MOD_ID);
+
+    public static final DeferredHolder<IRecipeOutcome.Type<?>, SpawnEntity.Type> SPAWN_ENTITY =
+        OUTCOME_TYPE.register("spawn_entity", SpawnEntity.Type::new);
 
     public static final DeferredHolder<IRecipeOutcome.Type<?>, SpawnItem.Type> SPAWN_ITEM = OUTCOME_TYPE
         .register("spawn_item", SpawnItem.Type::new);
