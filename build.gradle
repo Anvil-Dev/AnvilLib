@@ -9,7 +9,11 @@ plugins {
 }
 
 group = 'dev.anvilcraft.lib'
-version = '2.0.0'
+version = mod_version
+
+if (providers.gradleProperty('anvillibRelease').isPresent()) {
+    apply from: rootProject.file('gradle/scripts/release.gradle')
+}
 
 repositories {
     mavenCentral()
