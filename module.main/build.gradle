@@ -289,6 +289,8 @@ publishing {
     }
 }
 
+def centralStaging = providers.gradleProperty('anvillibCentralStaging').getOrElse('build/staging-deploy')
+
 jreleaser {
     signing {
         active = 'ALWAYS'
@@ -301,7 +303,7 @@ jreleaser {
                 sonatype {
                     active = 'ALWAYS'
                     url = 'https://central.sonatype.com/api/v1/publisher'
-                    stagingRepository('build/staging-deploy')
+                    stagingRepository(centralStaging)
                 }
             }
         }
@@ -336,7 +338,7 @@ publishMods {
 
     curseforge {
         accessToken = System.getenv("CURSEFORGE_TOKEN")
-        projectId = "1484302"
+        projectId = project.curseforge_project_id
         minecraftVersions.add(libs.versions.minecraft.get())
         clientRequired = true
         serverRequired = true
@@ -344,7 +346,7 @@ publishMods {
 
     modrinth {
         accessToken = System.getenv("MODRINTH_TOKEN")
-        projectId = "nKAcAL9b"
+        projectId = project.modrinth_project_id
         minecraftVersions.add(libs.versions.minecraft.get())
     }
 }
