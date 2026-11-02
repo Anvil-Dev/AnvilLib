@@ -71,6 +71,7 @@ public abstract class AbstractCacheElement implements ICacheElement {
     public int shrink(int count) {
         if (count < 0) throw new IllegalArgumentException("Cannot consume a negative item count");
         int shrink = Math.min(this.simulate.getCount(), count);
+        if (shrink > 0) this.cache.reserveItem(this);
         CacheOperation operation = new CacheOperation(shrink);
         this.shrinkSnapshots.put(operation, this.simulate.copyWithCount(shrink));
         this.simulate.shrink(shrink);
@@ -91,6 +92,7 @@ public abstract class AbstractCacheElement implements ICacheElement {
         ItemStack stack = this.shrinkSnapshots.get(operation);
         if (stack == null) throw new IllegalStateException("The item reservation is no longer available");
         if (!this.releasedReservations.add(operation)) return;
+        if (operation.amount() > 0) this.cache.releaseItem(this);
         this.restoreStack(stack);
     }
 
@@ -123,6 +125,7 @@ public abstract class AbstractCacheElement implements ICacheElement {
         int simulateCount = this.simulate.getCount();
         int grownCount = Math.max(0, Math.min(this.getCapacity(stack) - simulateCount, growCount));
         if (grownCount == 0) return copy;
+        this.cache.reserveItem(this);
         int remainingCount = growCount - grownCount;
         if (remainingCount > 0) {
             copy.setCount(remainingCount);
@@ -151,6 +154,7 @@ public abstract class AbstractCacheElement implements ICacheElement {
         CacheOperation operation = this.growSimulateStack.pop();
         ItemStack copy = this.growSnapshots.remove(operation);
         this.simulate.shrink(operation.amount());
+        if (operation.amount() > 0) this.cache.releaseItem(this);
         this.dirty |= operation.amount() > 0;
         return copy;
     }
@@ -165,6 +169,7 @@ public abstract class AbstractCacheElement implements ICacheElement {
         CacheOperation operation = this.shrinkSimulateStack.pop();
         ItemStack stack = this.shrinkSnapshots.remove(operation);
         if (this.releasedReservations.remove(operation)) return 0;
+        if (operation.amount() > 0) this.cache.releaseItem(this);
         this.restoreStack(stack);
         return operation.amount();
     }
