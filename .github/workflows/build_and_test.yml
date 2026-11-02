@@ -123,25 +123,11 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.maven_pass }}
         continue-on-error: true
 
-      - name: capture maven artifacts
-        if: ${{ !inputs.ci_build && !inputs.pr_build }}
-        uses: actions/upload-artifact@v4.3.3
-        with:
-          name: "${{ inputs.module_id }}-deploy"
-          path: ${{ env.MODULE_DIR }}/build/staging-deploy/
-
       - name: gametest
         if: ${{ inputs.ci_build && inputs.gametest }}
         uses: Anvil-Dev/dedicated-server-launch-test@1.21.4-neoforge
         with:
           mod: ${{ steps.version.outputs.artifact }}
-
-      - name: Upload Release Jar
-        if: ${{ !inputs.ci_build && !inputs.pr_build }}
-        uses: softprops/action-gh-release@v0.1.15
-        with:
-          files: |
-            ${{ steps.version.outputs.artifact }}
 
       - name: Upload MCMOD
         if: ${{ inputs.module == 'main' && !inputs.pr_build }}
