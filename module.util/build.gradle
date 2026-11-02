@@ -274,15 +274,23 @@ machete {
 
 sourceSets {
     test {
+        java.exclude 'dev/anvilcraft/lib/v2/util/ShapeUtilJoinTimingTest.java'
         compileClasspath += sourceSets.main.compileClasspath
         runtimeClasspath += sourceSets.main.compileClasspath
+    }
+    shapeTiming {
+        java.srcDir 'src/test/java'
+        java.include 'dev/anvilcraft/lib/v2/util/ShapeUtilJoinTimingTest.java'
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath + sourceSets.main.compileClasspath
     }
 }
 
 tasks.register('runShapeUtilJoinTimingTest', JavaExec) {
     group = 'verification'
     description = 'Runs ShapeUtil join timing checks for connected AABBs.'
-    classpath = sourceSets.test.runtimeClasspath + sourceSets.main.compileClasspath
+    dependsOn tasks.named('shapeTimingClasses')
+    classpath = sourceSets.shapeTiming.runtimeClasspath
     mainClass = 'dev.anvilcraft.lib.v2.util.ShapeUtilJoinTimingTest'
 }
 

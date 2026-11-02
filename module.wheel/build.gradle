@@ -265,3 +265,7 @@ machete {
     // disable machete locally for faster builds
     enabled = false
 }
+
+lombok {
+    version = "1.18.34"
+}

@@ -266,16 +266,25 @@ lombok {
     version = "1.18.34"
 }
 
-sourceSets.test {
-    compileClasspath += sourceSets.main.compileClasspath
-    runtimeClasspath += sourceSets.main.runtimeClasspath
+sourceSets {
+    test {
+        java.exclude 'dev/anvilcraft/lib/v2/font/sdf/FontRegressionTest.java'
+        compileClasspath += sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.runtimeClasspath
+    }
+    fontRegression {
+        java.srcDir 'src/test/java'
+        java.include 'dev/anvilcraft/lib/v2/font/sdf/FontRegressionTest.java'
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
 }
 
 tasks.register('fontRegressionTest', JavaExec) {
     group = 'verification'
     description = 'Checks SDF measurement, styled wrapping and Unicode boundaries without starting Minecraft.'
-    dependsOn testClasses
-    classpath = sourceSets.test.runtimeClasspath
+    dependsOn tasks.named('fontRegressionClasses')
+    classpath = sourceSets.fontRegression.runtimeClasspath
     mainClass = 'dev.anvilcraft.lib.v2.font.sdf.FontRegressionTest'
 }
 

@@ -157,21 +157,31 @@ public final class MathTestBootstrap {
     }
 
     /**
-     * 按完整资源位置注册函数，用于 {@code mymod:xxx} 这类非 anvillib 命名空间的名字。
+     * 按完整资源位置注册函数，替换同名函数时重建注册表以避免重复注册。
+     * 替换后必须重新获取函数引用和编解码上下文，保持它们属于同一注册表。
      */
     public static Holder.Reference<IFunction> registerFunction(ResourceLocation id, IFunction function) {
-        return MathTestBootstrap.functions().register(
-            ResourceKey.create(LibRegistries.FUNCTION_KEY, id),
-            function,
-            RegistrationInfo.BUILT_IN
-        );
+        MappedRegistry<IFunction> registry = MathTestBootstrap.functions();
+        ResourceKey<IFunction> key = ResourceKey.create(LibRegistries.FUNCTION_KEY, id);
+        if (registry.containsKey(id)) {
+            MappedRegistry<IFunction> replacement = new MappedRegistry<>(LibRegistries.FUNCTION_KEY, Lifecycle.stable());
+            for (var entry : registry.entrySet()) {
+                if (!entry.getKey().equals(key)) {
+                    replacement.register(entry.getKey(), entry.getValue(), RegistrationInfo.BUILT_IN);
+                }
+            }
+            MathTestBootstrap.functions = replacement;
+            registry = replacement;
+        }
+        return registry.register(key, function, RegistrationInfo.BUILT_IN);
     }
 
     /**
-     * 替换注册表里已有的函数，用于构造自引用与互相引用。
+     * 取得尚未绑定的函数引用，使递归函数可以在构造完成后只注册一次。
      */
-    public static void replaceFunction(String name, IFunction function) {
-        MathTestBootstrap.registerFunction(name, function);
+    public static Holder.Reference<IFunction> functionReference(String name) {
+        return MathTestBootstrap.functions().createRegistrationLookup()
+            .getOrThrow(ResourceKey.create(LibRegistries.FUNCTION_KEY, AnvilLibMath.of(name)));
     }
 
     /**
