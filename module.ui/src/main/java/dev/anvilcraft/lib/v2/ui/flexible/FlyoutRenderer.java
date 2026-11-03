@@ -1,16 +1,9 @@
 package dev.anvilcraft.lib.v2.ui.flexible;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import org.joml.Matrix4f;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -100,9 +93,9 @@ public class FlyoutRenderer extends ButtonRenderer {
         /**
          * 按原始像素尺寸绘制指针贴图。
          *
-         * <p>指针贴图是普通纹理而非九宫格切图，无法走 {@code blitSprite}，只能自己铺一个四边形。
-         * 朝右的指针没有独立贴图，由朝左的贴图水平镜像得到：镜像只需把左右两列的 U 坐标对调，
-         * 顶点绕序保持不变，因此不必改动背面剔除状态，也不会与同批次的其他 GUI 元素相互影响。
+         * <p>指针贴图是普通纹理而非九宫格切图，无法走 {@code blitSprite}，改用按普通纹理铺一次的
+         * {@code blit}。朝右的指针没有独立贴图，由朝左的贴图水平镜像得到：把姿态原点平移到右边界再沿
+         * X 轴取负，等价于对调左右两列的 U 坐标，顶点绕序保持不变，因此不必改动背面剔除状态。
          */
         private void blitPointer(
             GuiGraphics graphics,
@@ -113,43 +106,27 @@ public class FlyoutRenderer extends ButtonRenderer {
             int height,
             boolean mirrored
         ) {
-            float uLeft = mirrored ? 1.0F : 0.0F;
-            float uRight = mirrored ? 0.0F : 1.0F;
-            RenderSystem.setShaderTexture(0, texture);
-            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-            RenderSystem.enableBlend();
-            Matrix4f pose = graphics.pose().last().pose();
-            BufferBuilder buffer = Tesselator.getInstance()
-                .begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-            buffer.addVertex(pose, (float) x, (float) y, 0.0F)
-                .setUv(uLeft, 0.0F)
-                .setColor(1.0F, 1.0F, 1.0F, 1.0F);
-            buffer.addVertex(pose, (float) x, (float) (y + height), 0.0F)
-                .setUv(uLeft, 1.0F)
-                .setColor(1.0F, 1.0F, 1.0F, 1.0F);
-            buffer.addVertex(pose, (float) (x + width), (float) (y + height), 0.0F)
-                .setUv(uRight, 1.0F)
-                .setColor(1.0F, 1.0F, 1.0F, 1.0F);
-            buffer.addVertex(pose, (float) (x + width), (float) y, 0.0F)
-                .setUv(uRight, 0.0F)
-                .setColor(1.0F, 1.0F, 1.0F, 1.0F);
-            BufferUploader.drawWithShader(buffer.buildOrThrow());
-            RenderSystem.disableBlend();
+            if (!mirrored) {
+                graphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+                return;
+            }
+            PoseStack pose = graphics.pose();
+            pose.pushPose();
+            pose.translate(x + width, y, 0.0F);
+            pose.scale(-1.0F, 1.0F, 1.0F);
+            graphics.blit(texture, 0, 0, 0.0F, 0.0F, width, height, width, height);
+            pose.popPose();
         }
 
         @Override
         protected String validate(String missing) {
-            String result = super.validate(missing);
-            String absent = "";
             if (this.pointerDirection == null && this.pointerPercent != null) {
-                absent = "pointerDirection";
-            } else if (this.pointerDirection != null && this.pointerPercent == null) {
-                absent = "pointerPercent";
+                return "pointerDirection";
             }
-            if (absent.isEmpty()) {
-                return result;
+            if (this.pointerDirection != null && this.pointerPercent == null) {
+                return "pointerPercent";
             }
-            return result.isEmpty() ? absent : result + ", " + absent;
+            return "";
         }
     }
 }

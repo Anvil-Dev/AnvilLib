@@ -152,7 +152,9 @@
   "itemGroup.anvillib_test.tab": "Test Tab",
   "key.anvillib_test.flexible_screen": "Flexible Control Screen",
   "key.anvillib_test.wheel_hold": "Wheel Hold",
+  "key.anvillib_test.wheel_hold_annular": "Wheel Hold (Annular Sector)",
   "key.anvillib_test.wheel_tap": "Wheel Tap",
+  "key.anvillib_test.wheel_tap_annular": "Wheel Tap (Annular Sector)",
   "key.categories.anvillib_test.flexible": "AnvilLib Test-Flexible",
   "key.categories.anvillib_test.wheel": "AnvilLib Test-Wheel"
 }

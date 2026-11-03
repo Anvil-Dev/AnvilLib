@@ -7,5 +7,7 @@ public class WheelLang {
         provider.add("key.categories.anvillib_test.wheel", "AnvilLib Test-Wheel");
         provider.add("key.anvillib_test.wheel_tap", "Wheel Tap");
         provider.add("key.anvillib_test.wheel_hold", "Wheel Hold");
+        provider.add("key.anvillib_test.wheel_tap_annular", "Wheel Tap (Annular Sector)");
+        provider.add("key.anvillib_test.wheel_hold_annular", "Wheel Hold (Annular Sector)");
     }
 }

@@ -10,7 +10,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import org.joml.Vector2i;
-import org.joml.Vector4i;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -41,11 +40,11 @@ public final class FlexibleSprites {
     private static final Map<ResourceLocation, Vector2i> POINTER_SIZES = new HashMap<>();
 
     static {
-        Vector4i nonShaded = new Vector4i(2, 2, 2, 2);
-        Vector4i shaded1px = new Vector4i(2, 2, 2, 3);
-        Vector4i shaded2px = new Vector4i(2, 2, 2, 4);
-        Vector4i pressed1px = new Vector4i(2, 3, 2, 2);
-        Vector4i pressed2px = new Vector4i(2, 3, 2, 3);
+        int[] nonShaded = {2, 2, 2, 2};
+        int[] shaded1px = {2, 2, 2, 3};
+        int[] shaded2px = {2, 2, 2, 4};
+        int[] pressed1px = {2, 3, 2, 2};
+        int[] pressed2px = {2, 3, 2, 3};
 
         for (var objs : FlattenLoop.loop(
             SpriteTheme.values(), SpriteStyle.values(), SpriteType.values(), SpriteVariant.values()
@@ -59,14 +58,14 @@ public final class FlexibleSprites {
             String stylePrefix = style.getPath().isEmpty() ? "" : style.getPath() + "_";
             String variantSuffix = variant.getPath().isEmpty() ? "" : "_" + variant.getPath();
             String path = themePrefix + stylePrefix + type.getPath() + variantSuffix;
-            Vector4i padding = switch (type) {
+            int[] padding = switch (type) {
                 case NON_SHADED -> nonShaded;
                 case SHADED_1PX -> variant == SpriteVariant.PRESSED ? pressed1px : shaded1px;
                 case SHADED_2PX -> variant == SpriteVariant.PRESSED ? pressed2px : shaded2px;
             };
             FlexibleSprites.SPRITES.put(
                 FlexibleSprites.toSpriteFlags(theme, style, type, variant),
-                new SpriteInfo(AnvilLibUi.of("flex_button/" + path), padding)
+                new SpriteInfo(AnvilLibUi.of("flex_button/" + path), padding[0], padding[1], padding[2], padding[3])
             );
         }
     }
@@ -175,23 +174,16 @@ public final class FlexibleSprites {
 
     /**
      * 本体贴图的解析结果，四个方向的边距即控件自身边框带（阴影会加厚对应方向）。
+     *
+     * <p>边距以不可变的 {@code int} 保存，避免调用方透过共享的向量对象改坏全局查找表。
      */
-    public record SpriteInfo(ResourceLocation sprite, Vector4i padding) {
-        public int leftPadding() {
-            return this.padding.x;
-        }
-
-        public int topPadding() {
-            return this.padding.y;
-        }
-
-        public int rightPadding() {
-            return this.padding.z;
-        }
-
-        public int bottomPadding() {
-            return this.padding.w;
-        }
+    public record SpriteInfo(
+        ResourceLocation sprite,
+        int leftPadding,
+        int topPadding,
+        int rightPadding,
+        int bottomPadding
+    ) {
     }
 
     /**
