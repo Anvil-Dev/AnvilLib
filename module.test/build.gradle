@@ -16,6 +16,7 @@ dependencies {
     implementation project(":anvillib-rpc-neoforge-1.21.8")
     implementation project(":anvillib-space-select-neoforge-1.21.8")
     implementation project(":anvillib-sync-neoforge-1.21.8")
+    implementation project(":anvillib-ui-neoforge-1.21.8")
     implementation project(":anvillib-util-neoforge-1.21.8")
     implementation project(":anvillib-wheel-neoforge-1.21.8")
 
@@ -33,6 +34,33 @@ if (providers.gradleProperty('portSmoke').isPresent()) {
         doLast {
             if (!result.get().asFile.isFile() || !result.get().asFile.text.startsWith('PASS ')) {
                 throw new GradleException('Port smoke verification failed; inspect the client log and port-smoke-result.txt')
+            }
+        }
+    }
+}
+
+if (providers.gradleProperty('flattenLoopTest').isPresent()) {
+    neoForge.runs {
+        flattenLoopGameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'anvillib.flattenLoopTests', 'true'
+            gameDirectory = layout.buildDirectory.dir('flatten-loop-test-run')
+        }
+    }
+}
+
+if (providers.gradleProperty('flexibleUiTest').isPresent()) {
+    neoForge.runs.client {
+        systemProperty 'anvillib.flexibleUiTest', 'true'
+        gameDirectory = layout.buildDirectory.dir('flexible-test-run')
+    }
+    def flexibleResult = layout.buildDirectory.file('flexible-test-run/flexible-result.txt')
+    tasks.named('runClient') {
+        doFirst { flexibleResult.get().asFile.delete() }
+        doLast {
+            if (!flexibleResult.get().asFile.isFile() || !flexibleResult.get().asFile.text.startsWith('PASS ')) {
+                throw new GradleException('Flexible control verification failed; inspect flexible-result.txt and the client log')
             }
         }
     }
