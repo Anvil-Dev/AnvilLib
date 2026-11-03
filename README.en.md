@@ -24,6 +24,7 @@ AnvilLib adopts a modular design and includes the following functional modules:
 | **Moveable Entity Block** | Support for block entities movable by pistons     |
 | **Multiblock**            | Dynamic multiblock system                         |
 | **Registrum**             | Simplified registration system                    |
+| **UI**                    | Flexible widgets rendered from nine-slice sprites |
 | **Util**                  | Shareable utilities                               |
 | **Wheel**                 | Radial wheel menu client API                      |
 | **Collision** | AABB and triangle collision queries |
@@ -369,6 +370,36 @@ controller.onHoldKeyPressed(model);
 controller.onHoldKeyReleased();
 ```
 
+### UI Module
+
+Provides flexible widgets rendered from nine-slice sprites: theme, style, shadow and
+interaction variant combine freely, sizes can follow the label, and flyouts can carry a pointer
+on any edge.
+
+**Key Features:**
+
+- Theme (light/dark), style (three-dimensional/flat), shadow (none/1px/2px) and variant (normal/highlighted/pressed) combine freely
+- `flexSize` derives the widget size from the label and the sprite padding
+- `basedOnMouse` picks the variant from hover and press state
+- `FlyoutRenderer` draws a pointer on any edge, positioned by a percentage
+- Sprites live under `textures/gui` in the `anvillib_ui` namespace
+
+**Usage Example:**
+
+```java
+ButtonRenderer button = new ButtonRenderer();
+button.shaded1px().basedOnMouse();
+
+try (ButtonRenderer.Scope scope = button.open()) {
+    scope.graphics(graphics).font(font).pos(x, y).mousePos(mouseX, mouseY)
+        .literal("Confirm").flexSize(3);
+    scope.render();
+}
+// Sync the press origin on mouse press/release
+button.onPress(mouseX, mouseY);
+button.onRelease();
+```
+
 ### Main Module
 
 `anvillib-neoforge-1.21.11` is the aggregate artifact. It bundles and re-exports:
@@ -408,6 +439,7 @@ dependencies {
     implementation "dev.anvilcraft.lib:anvillib-network-neoforge-1.21.11:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.11:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.11:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-ui-neoforge-1.21.11:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-util-neoforge-1.21.11:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.11:2.0.0"
 }
@@ -433,6 +465,7 @@ dependencies {
     implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.11:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.11:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.11:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-ui-neoforge-1.21.11:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.11:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.11:2.0.0")
 }

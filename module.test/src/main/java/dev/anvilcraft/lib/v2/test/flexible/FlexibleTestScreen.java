@@ -1,0 +1,311 @@
+package dev.anvilcraft.lib.v2.test.flexible;
+
+import com.mojang.logging.LogUtils;
+import dev.anvilcraft.lib.v2.ui.flexible.ButtonRenderer;
+import dev.anvilcraft.lib.v2.ui.flexible.FlexibleSprites;
+import dev.anvilcraft.lib.v2.ui.flexible.FlyoutRenderer;
+import dev.anvilcraft.lib.v2.ui.flexible.PointerDirection;
+import dev.anvilcraft.lib.v2.ui.flexible.SpriteStyle;
+import dev.anvilcraft.lib.v2.ui.flexible.SpriteTheme;
+import dev.anvilcraft.lib.v2.ui.flexible.SpriteType;
+import dev.anvilcraft.lib.v2.ui.flexible.SpriteVariant;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.metadata.gui.GuiMetadataSection;
+import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling;
+import net.minecraft.data.AtlasIds;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
+import org.slf4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 柔性控件的游戏内回归屏幕。
+ *
+ * <p>打开时按主题、样式、类型、变体四维组合逐项核对本体贴图：切图必须落在 {@code anvillib_ui} 命名空间下、
+ * 能从 {@code minecraft:gui} 图集取到，且九宫格边框必须与 {@link FlexibleSprites} 登记的内边距逐边相等；
+ * 随后核对四个方向的指针贴图尺寸、镜像标记与命名空间，并验证 {@code flexSize} 的尺寸算式与 {@code contains} 的边界判定。
+ *
+ * <p>核对完成后屏幕把全部组合绘制成按钮网格，并用四个方向的浮窗展示指针贴图，便于肉眼确认外观。
+ */
+public final class FlexibleTestScreen extends Screen {
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final int COLUMNS = 6;
+    private static final int CELL_WIDTH = 108;
+    private static final int CELL_HEIGHT = 24;
+    private static final int GRID_TOP = 34;
+    private static final int BODY_WIDTH = 100;
+    private static final int BODY_HEIGHT = 20;
+    private static final int FLEX_PADDING = 3;
+
+    private final List<ButtonRenderer> bodies = new ArrayList<>();
+    private final List<String> labels = new ArrayList<>();
+    private final List<String> failures = new ArrayList<>();
+    private int checks;
+
+    public FlexibleTestScreen() {
+        super(Component.literal("AnvilLib flexible controls"));
+        for (SpriteTheme theme : SpriteTheme.values()) {
+            for (SpriteStyle style : SpriteStyle.values()) {
+                for (SpriteType type : SpriteType.values()) {
+                    for (SpriteVariant variant : SpriteVariant.values()) {
+                        this.bodies.add(FlexibleTestScreen.create(theme, style, type, variant));
+                        this.labels.add("%s %s %s %s".formatted(theme, style, type, variant));
+                    }
+                }
+            }
+        }
+    }
+
+    private static ButtonRenderer create(
+        SpriteTheme theme,
+        SpriteStyle style,
+        SpriteType type,
+        SpriteVariant variant
+    ) {
+        ButtonRenderer renderer = new ButtonRenderer();
+        if (theme == SpriteTheme.DARK) {
+            renderer.dark();
+        }
+        if (style == SpriteStyle.FLAT) {
+            renderer.flat();
+        }
+        switch (type) {
+            case SHADED_1PX -> renderer.shaded1px();
+            case SHADED_2PX -> renderer.shaded2px();
+            case NON_SHADED -> {
+            }
+        }
+        switch (variant) {
+            case HIGHLIGHTED -> renderer.highlighted();
+            case PRESSED -> renderer.pressed();
+            case NORMAL -> {
+            }
+        }
+        return renderer;
+    }
+
+    @Override
+    protected void init() {
+        this.failures.clear();
+        this.checks = 0;
+        this.verifyBodies();
+        this.verifyPointers();
+        this.verifyFlexSize();
+        this.verifyContains();
+        if (this.failures.isEmpty()) {
+            LOGGER.info("FLEXIBLE_TEST ALL PASS: {} checks", this.checks);
+        } else {
+            LOGGER.error("FLEXIBLE_TEST FAILED: {} of {} checks failed, details: {}", this.failures.size(), this.checks, this.failures);
+        }
+    }
+
+    private void verifyBodies() {
+        TextureAtlas sprites = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.GUI);
+        for (SpriteTheme theme : SpriteTheme.values()) {
+            for (SpriteStyle style : SpriteStyle.values()) {
+                for (SpriteType type : SpriteType.values()) {
+                    for (SpriteVariant variant : SpriteVariant.values()) {
+                        this.verifyBody(sprites, FlexibleTestScreen.create(theme, style, type, variant));
+                    }
+                }
+            }
+        }
+    }
+
+    private void verifyBody(TextureAtlas sprites, ButtonRenderer renderer) {
+        ButtonRenderer.Scope scope = renderer.open();
+        FlexibleSprites.SpriteInfo info = FlexibleSprites.pickSprite(
+            renderer.getTheme(), renderer.getStyle(), renderer.getType(), renderer.variantOf(scope)
+        );
+        String label = info.sprite().toString();
+        this.check(
+            info.sprite().getNamespace().equals("anvillib_ui"),
+            label + " 必须位于 anvillib_ui 命名空间"
+        );
+        TextureAtlasSprite sprite = sprites.getSprite(info.sprite());
+        this.check(
+            sprite.contents().name().equals(info.sprite()),
+            label + " 必须能在 minecraft:gui 图集中解析，实际解析到 " + sprite.contents().name()
+        );
+        GuiSpriteScaling scaling = sprite.contents()
+            .getAdditionalMetadata(GuiMetadataSection.TYPE)
+            .orElse(GuiMetadataSection.DEFAULT)
+            .scaling();
+        if (scaling instanceof GuiSpriteScaling.NineSlice slice) {
+            GuiSpriteScaling.NineSlice.Border border = slice.border();
+            this.check(
+                border.left() == info.leftPadding()
+                    && border.top() == info.topPadding()
+                    && border.right() == info.rightPadding()
+                    && border.bottom() == info.bottomPadding(),
+                label + " 的九宫格边框必须与登记内边距一致，贴图为 " + border + "，登记为 " + info.padding()
+            );
+        } else {
+            this.check(false, label + " 必须声明 nine_slice 缩放，实际为 " + scaling);
+        }
+    }
+
+    private void verifyPointers() {
+        for (SpriteTheme theme : SpriteTheme.values()) {
+            for (SpriteStyle style : SpriteStyle.values()) {
+                for (SpriteType type : SpriteType.values()) {
+                    for (SpriteVariant variant : SpriteVariant.values()) {
+                        for (PointerDirection direction : PointerDirection.values()) {
+                            this.verifyPointer(theme, style, type, variant, direction);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void verifyPointer(
+        SpriteTheme theme,
+        SpriteStyle style,
+        SpriteType type,
+        SpriteVariant variant,
+        PointerDirection direction
+    ) {
+        String label = "%s/%s/%s/%s 朝 %s 的指针".formatted(theme, style, type, variant, direction);
+        FlexibleSprites.PointerSprite pointer = FlexibleSprites.pickPointer(theme, style, type, variant, direction);
+        if (pointer == null) {
+            this.check(false, label + "必须存在");
+            return;
+        }
+        this.check(pointer.width() > 0 && pointer.height() > 0, label + "必须具有正的像素尺寸");
+        this.check(
+            pointer.mirrored() == (direction == PointerDirection.RIGHT),
+            label + "的镜像标记必须与朝向一致"
+        );
+        Identifier texture = pointer.texture();
+        this.check(
+            texture.getNamespace().equals("anvillib_ui"),
+            label + "必须位于 anvillib_ui 命名空间，实际为 " + texture
+        );
+    }
+
+    private void verifyFlexSize() {
+        ButtonRenderer renderer = new ButtonRenderer();
+        renderer.shaded2px();
+        renderer.pressed();
+        Component text = Component.literal("flex");
+        ButtonRenderer.Scope scope = renderer.open();
+        scope.font(this.font);
+        scope.text(text);
+        FlexibleSprites.SpriteInfo info = FlexibleSprites.pickSprite(
+            renderer.getTheme(), renderer.getStyle(), renderer.getType(), renderer.variantOf(scope)
+        );
+        ButtonRenderer.Scope sized = renderer.open();
+        sized.font(this.font);
+        sized.text(text);
+        sized.flexSize(FLEX_PADDING);
+        Vector2i size = sized.resolveSize();
+        this.check(size != null, "flexSize 必须能解析出尺寸");
+        if (size == null) {
+            return;
+        }
+        int expectedWidth = info.leftPadding() + 1 + FLEX_PADDING * 2 + this.font.width(text) + 1 + info.rightPadding();
+        int expectedHeight = info.topPadding() + 1 + FLEX_PADDING * 2 + this.font.lineHeight + 1 + info.bottomPadding();
+        this.check(
+            size.x == expectedWidth && size.y == expectedHeight,
+            "flexSize 必须按内边距与文本尺寸计算，期望 " + expectedWidth + "x" + expectedHeight + "，实际为 " + size
+        );
+    }
+
+    private void verifyContains() {
+        ButtonRenderer renderer = new ButtonRenderer();
+        ButtonRenderer.Scope scope = renderer.open();
+        scope.pos(10, 20);
+        scope.size(30, 40);
+        this.check(scope.contains(new Vector2f(10, 20)), "contains 必须包含左上角");
+        this.check(scope.contains(new Vector2f(39, 59)), "contains 必须包含右下角内侧");
+        this.check(!scope.contains(new Vector2f(40, 40)), "contains 必须排除右边界之外");
+        this.check(!scope.contains(new Vector2f(20, 60)), "contains 必须排除下边界之外");
+        this.check(!scope.contains(new Vector2f(9, 30)), "contains 必须排除左边界之外");
+        this.check(!scope.contains(null), "contains 必须把空坐标视为不在范围内");
+        this.check(!renderer.open().contains(new Vector2f(0, 0)), "未设置位置的控件必须不包含任何点");
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        graphics.fill(0, 0, this.width, this.height, 0xFF101014);
+        graphics.drawString(this.font, this.title, 8, 8, 0xFFFFFFFF, false);
+        String status = this.failures.isEmpty()
+            ? "PASS " + this.checks + " checks"
+            : "FAIL " + this.failures.size() + " of " + this.checks + " checks";
+        graphics.drawString(
+            this.font,
+            status,
+            8,
+            20,
+            this.failures.isEmpty() ? 0xFF55FF55 : 0xFFFF5555,
+            false
+        );
+        for (int index = 0; index < this.bodies.size(); index++) {
+            int x = 8 + index % COLUMNS * CELL_WIDTH;
+            int y = GRID_TOP + index / COLUMNS * CELL_HEIGHT;
+            ButtonRenderer.Scope scope = this.bodies.get(index).open();
+            scope.graphics(graphics);
+            scope.font(this.font);
+            scope.pos(x, y);
+            scope.size(BODY_WIDTH, BODY_HEIGHT);
+            scope.text(Component.literal(FlexibleTestScreen.shortLabel(this.labels.get(index))));
+            scope.render();
+            scope.close();
+        }
+        int flyoutTop = GRID_TOP + (this.bodies.size() + COLUMNS - 1) / COLUMNS * CELL_HEIGHT + 24;
+        for (PointerDirection direction : PointerDirection.values()) {
+            FlyoutRenderer flyout = new FlyoutRenderer();
+            flyout.shaded1px();
+            FlyoutRenderer.Scope scope = flyout.open();
+            scope.pointer(direction, 0.5F);
+            scope.graphics(graphics);
+            scope.font(this.font);
+            scope.pos(40 + direction.ordinal() * 150, flyoutTop);
+            scope.flexSize(FLEX_PADDING);
+            scope.text(Component.literal("pointer " + direction));
+            scope.render();
+            scope.close();
+        }
+    }
+
+    private static String shortLabel(String label) {
+        return label
+            .replace("HIGHLIGHTED", "HL")
+            .replace("PRESSED", "P")
+            .replace("NON_SHADED", "N")
+            .replace("SHADED_1PX", "S1")
+            .replace("SHADED_2PX", "S2");
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    /**
+     * 取本次核对发现的失败项，用于自动化入口在退出前写结果。
+     */
+    public List<String> failures() {
+        return List.copyOf(this.failures);
+    }
+
+    public int checkCount() {
+        return this.checks;
+    }
+
+    private void check(boolean condition, String message) {
+        this.checks++;
+        if (!condition) {
+            this.failures.add(message);
+        }
+    }
+}
