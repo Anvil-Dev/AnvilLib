@@ -121,17 +121,13 @@ public class FlyoutRenderer extends ButtonRenderer {
 
         @Override
         protected String validate(String missing) {
-            String result = super.validate(missing);
-            String absent = "";
             if (this.pointerDirection == null && this.pointerPercent != null) {
-                absent = "pointerDirection";
-            } else if (this.pointerDirection != null && this.pointerPercent == null) {
-                absent = "pointerPercent";
+                return "pointerDirection";
             }
-            if (absent.isEmpty()) {
-                return result;
+            if (this.pointerDirection != null && this.pointerPercent == null) {
+                return "pointerPercent";
             }
-            return result.isEmpty() ? absent : result + ", " + absent;
+            return "";
         }
     }
 }
