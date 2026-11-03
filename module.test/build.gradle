@@ -16,12 +16,41 @@ dependencies {
     implementation project(":anvillib-rpc-neoforge-26.1")
     implementation project(":anvillib-space-select-neoforge-26.1")
     implementation project(":anvillib-sync-neoforge-26.1")
+    implementation project(":anvillib-ui-neoforge-26.1")
     implementation project(":anvillib-util-neoforge-26.1")
     implementation project(":anvillib-wheel-neoforge-26.1")
 
     if (!providers.gradleProperty('portSmoke').isPresent() && !providers.gradleProperty('recipeTests').isPresent()
-        && !providers.gradleProperty('configUiTest').isPresent() && !providers.gradleProperty('configUiDemo').isPresent()) {
+        && !providers.gradleProperty('configUiTest').isPresent() && !providers.gradleProperty('configUiDemo').isPresent()
+        && !providers.gradleProperty('flexibleUiTest').isPresent() && !providers.gradleProperty('flattenLoopTest').isPresent()) {
         runtimeOnly("dev.dubhe:anvilcraft-neoforge-26.1.2:1.6.0+snapshot.2284"){ transitive = false }
+    }
+}
+
+if (providers.gradleProperty('flattenLoopTest').isPresent()) {
+    neoForge.runs {
+        flattenLoopGameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'anvillib.flattenLoopTests', 'true'
+            gameDirectory = layout.buildDirectory.dir('flatten-loop-test-run')
+        }
+    }
+}
+
+if (providers.gradleProperty('flexibleUiTest').isPresent()) {
+    neoForge.runs.client {
+        systemProperty 'anvillib.flexibleUiTest', 'true'
+        gameDirectory = layout.buildDirectory.dir('flexible-test-run')
+    }
+    def flexibleResult = layout.buildDirectory.file('flexible-test-run/flexible-result.txt')
+    tasks.named('runClient') {
+        doFirst { flexibleResult.get().asFile.delete() }
+        doLast {
+            if (!flexibleResult.get().asFile.isFile() || !flexibleResult.get().asFile.text.startsWith('PASS ')) {
+                throw new GradleException('Flexible control verification failed; inspect flexible-result.txt and the client log')
+            }
+        }
     }
 }
 
