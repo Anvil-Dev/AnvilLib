@@ -2,14 +2,15 @@ name: CI for Mod
 on:
   workflow_dispatch:
   push:
-    branches:
-      - dev/**
+    branches: ['dev/**']
     paths:
       - .github/modules.json
+      - .github/ci/**
       - .github/workflows/build_and_test.yml
       - .github/workflows/ci.yml
-      - .github/workflows/generate-matrix.js
       - gradle/**
+      - gradlew
+      - gradlew.bat
       - module.*/src/**
       - module.sync/processor/src/**
       - module.*/build.gradle
@@ -21,96 +22,19 @@ on:
       - gradle.properties
       - settings.gradle
 
+permissions:
+  contents: read
+
+# Each development line owns its Maven coordinates and their version indexes.
+concurrency:
+  group: anvillib-snapshots-1.21.11
+  queue: max
+
 jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      level_0: ${{ steps.matrix.outputs.level_0 }}
-      level_1: ${{ steps.matrix.outputs.level_1 }}
-      level_2: ${{ steps.matrix.outputs.level_2 }}
-    steps:
-      - uses: actions/checkout@v6
-      - id: matrix
-        run: node .github/workflows/generate-matrix.js
-
-  # ── Build (topological levels) ──────────────────────────────────
-
-  processor-build:
-    needs: [prepare]
+  build:
     uses: ./.github/workflows/build_and_test.yml
     with:
-      module: sync
-      module_id: anvillib-sync-processor
-      mod_id: anvillib_sync_processor
-      ci_build: true
       pr_build: false
-      gradle_project: anvillib-sync-neoforge-1.21.11:anvillib-sync-processor-neoforge-1.21.11
-      module_dir: module.sync/processor
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-
-  build-l0:
-    needs: [prepare]
-    strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_0) }}
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-      mod_id: ${{ matrix.mod_id }}
-      ci_build: true
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-
-  build-l1:
-    needs: [prepare, build-l0]
-    strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_1) }}
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-      mod_id: ${{ matrix.mod_id }}
-      ci_build: true
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-
-  build-l2:
-    needs: [prepare, build-l1, processor-build]
-    strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.level_2) }}
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: ${{ matrix.module }}
-      module_id: ${{ matrix.module_id }}
-      mod_id: ${{ matrix.mod_id }}
-      ci_build: true
-      pr_build: false
-    secrets:
-      maven_url: ${{ secrets.MAVEN_URL }}
-      maven_user: ${{ secrets.MAVEN_USER }}
-      maven_pass: ${{ secrets.MAVEN_PASS }}
-
-  # ── Main (aggregator) ───────────────────────────────────────────
-
-  main:
-    needs: [build-l2]
-    uses: ./.github/workflows/build_and_test.yml
-    with:
-      module: main
-      module_id: anvillib
-      mod_id: anvillib
-      ci_build: true
-      pr_build: false
-      gametest: true
     secrets:
       maven_url: ${{ secrets.MAVEN_URL }}
       maven_user: ${{ secrets.MAVEN_USER }}
