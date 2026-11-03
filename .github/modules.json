@@ -19,5 +19,6 @@
   { "module": "recipe",     "needs": ["codec", "config", "util"] },
   { "module": "registrum",  "needs": ["util"] },
   { "module": "sync",       "needs": ["codec", "network", "util"] },
+  { "module": "ui",         "needs": ["util"] },
   { "module": "wheel",      "needs": ["util"] }
 ]

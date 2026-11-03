@@ -146,6 +146,7 @@ dependencies {
         slimJarJar(api("dev.anvilcraft.lib:anvillib-rpc-neoforge-1.21.4:latest.release"))
         slimJarJar(api("dev.anvilcraft.lib:anvillib-space-select-neoforge-1.21.4:latest.release"))
         slimJarJar(api("dev.anvilcraft.lib:anvillib-sync-neoforge-1.21.4:latest.release"))
+        slimJarJar(api("dev.anvilcraft.lib:anvillib-ui-neoforge-1.21.4:latest.release"))
         slimJarJar(api("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.4:latest.release"))
         slimJarJar(api("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.4:latest.release"))
     } else {
@@ -168,6 +169,7 @@ dependencies {
         slimJarJar(api project(":anvillib-rpc-neoforge-1.21.4"))
         slimJarJar(api project(":anvillib-space-select-neoforge-1.21.4"))
         slimJarJar(api project(":anvillib-sync-neoforge-1.21.4"))
+        slimJarJar(api project(":anvillib-ui-neoforge-1.21.4"))
         slimJarJar(api project(":anvillib-util-neoforge-1.21.4"))
         slimJarJar(api project(":anvillib-wheel-neoforge-1.21.4"))
     }
