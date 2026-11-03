@@ -20,15 +20,6 @@ import java.util.function.Function;
  * 以便清空其中对 {@link GuiGraphicsExtractor} 等对象的引用。
  */
 public abstract class Renderer<T extends Scope> {
-    /**
-     * 鼠标按键编号沿用 GLFW 的取值，与公开方法 {@link #basedOnMouse(IntSet)} 的参数约定保持一致。
-     *
-     * <p>rendering 模块的编译期类路径不包含 LWJGL，这里直接写出取值而不引用 {@code GLFW} 常量。
-     */
-    private static final int MOUSE_BUTTON_LEFT = 0;
-    private static final int MOUSE_BUTTON_RIGHT = 1;
-    private static final int MOUSE_BUTTON_MIDDLE = 2;
-
     protected SpriteTheme theme = SpriteTheme.LIGHT;
     protected SpriteStyle style = SpriteStyle.THREE_D;
     protected SpriteType type = SpriteType.NON_SHADED;
@@ -64,6 +55,15 @@ public abstract class Renderer<T extends Scope> {
         this.variant = ignore -> SpriteVariant.PRESSED;
         return this;
     }
+
+    /**
+     * 鼠标按键编号沿用 GLFW 的取值，与公开方法 {@link #basedOnMouse(IntSet)} 的参数约定保持一致。
+     *
+     * <p>module.ui 的编译期类路径不包含 LWJGL，这里直接写出取值而不引用 {@code GLFW} 常量。
+     */
+    private static final int MOUSE_BUTTON_LEFT = 0;
+    private static final int MOUSE_BUTTON_RIGHT = 1;
+    private static final int MOUSE_BUTTON_MIDDLE = 2;
 
     public Renderer<T> basedOnMouse() {
         return this.basedOnMouse(IntSet.of(Renderer.MOUSE_BUTTON_LEFT, Renderer.MOUSE_BUTTON_RIGHT));
@@ -102,7 +102,7 @@ public abstract class Renderer<T extends Scope> {
     }
 
     public void onPress(Vector2f pos) {
-        this.startPressMousePos = pos;
+        this.startPressMousePos = new Vector2f(pos);
     }
 
     public void onRelease() {
@@ -141,6 +141,7 @@ public abstract class Renderer<T extends Scope> {
         private @Nullable Vector2i pos;
         protected @Nullable Vector2f mousePos;
         private @Nullable Function<T, Vector2i> size;
+        private @Nullable Function<T, Vector2i> hitSize;
         protected @Nullable Font font;
         protected @Nullable Component text;
         protected @Nullable Vector2i textOffset;
@@ -171,7 +172,7 @@ public abstract class Renderer<T extends Scope> {
         }
 
         public Scope pos(Vector2i pos) {
-            this.pos = pos;
+            this.pos = new Vector2i(pos);
             return this;
         }
 
@@ -180,7 +181,7 @@ public abstract class Renderer<T extends Scope> {
         }
 
         public Scope mousePos(Vector2f pos) {
-            this.mousePos = pos;
+            this.mousePos = new Vector2f(pos);
             return this;
         }
 
@@ -189,7 +190,9 @@ public abstract class Renderer<T extends Scope> {
         }
 
         public Scope size(Vector2i size) {
-            this.size = ignore -> size;
+            Vector2i fixed = new Vector2i(size);
+            this.size = ignore -> fixed;
+            this.hitSize = null;
             return this;
         }
 
@@ -202,25 +205,41 @@ public abstract class Renderer<T extends Scope> {
         }
 
         public Scope flexSize(int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
-            this.size = scope -> {
-                String missing = scope.font == null ? "font" : "";
-                missing += scope.text == null ? missing.isEmpty() ? "text" : ", text" : "";
-                if (!missing.isEmpty()) {
-                    throw new IllegalStateException("Some arguments are missing or invalid: %s".formatted(missing));
-                }
-                FlexibleSprites.SpriteInfo info = FlexibleSprites.pickSprite(
-                    Renderer.this.theme,
-                    Renderer.this.style,
-                    Renderer.this.type,
-                    Renderer.this.variant.apply(this.self())
-                );
-                return new Vector2i(
-                    info.leftPadding() + 1 + leftPadding + scope.font.width(scope.text) + rightPadding + 1 + info.rightPadding(),
-                    info.topPadding() + 1 + topPadding + scope.font.lineHeight + bottomPadding + 1 + info.bottomPadding()
-                );
-            };
+            this.size = scope -> this.flexSizeOf(
+                scope, Renderer.this.variant.apply(this.self()), leftPadding, topPadding, rightPadding, bottomPadding
+            );
+            // 命中判定不能反过来依赖 variant：basedOnMouse 的 variant 会调用 contains，
+            // 而 contains 又要取尺寸，若这里复用带 variant 的尺寸函数就会无限递归。
+            this.hitSize = scope -> this.flexSizeOf(
+                scope, SpriteVariant.NORMAL, leftPadding, topPadding, rightPadding, bottomPadding
+            );
             this.textOffset = new Vector2i(leftPadding, topPadding);
             return this;
+        }
+
+        private Vector2i flexSizeOf(
+            Scope scope,
+            SpriteVariant variant,
+            int leftPadding,
+            int topPadding,
+            int rightPadding,
+            int bottomPadding
+        ) {
+            String missing = scope.font == null ? "font" : "";
+            missing += scope.text == null ? missing.isEmpty() ? "text" : ", text" : "";
+            if (!missing.isEmpty()) {
+                throw new IllegalStateException("Some arguments are missing or invalid: %s".formatted(missing));
+            }
+            FlexibleSprites.SpriteInfo info = FlexibleSprites.pickSprite(
+                Renderer.this.theme,
+                Renderer.this.style,
+                Renderer.this.type,
+                variant
+            );
+            return new Vector2i(
+                info.leftPadding() + 1 + leftPadding + scope.font.width(scope.text) + rightPadding + 1 + info.rightPadding(),
+                info.topPadding() + 1 + topPadding + scope.font.lineHeight + bottomPadding + 1 + info.bottomPadding()
+            );
         }
 
         public Scope literal(String value) {
@@ -253,12 +272,15 @@ public abstract class Renderer<T extends Scope> {
         }
 
         public Scope textOffset(Vector2i offset) {
-            this.textOffset = offset;
+            this.textOffset = new Vector2i(offset);
             return this;
         }
 
         /**
          * 判断给定点是否落在当前控件范围内，用于鼠标悬停与按压判定。
+         *
+         * <p>命中判定按常态变体的内边距解析尺寸，不读取当前变体，避免与 {@link #basedOnMouse(IntSet)}
+         * 形成“尺寸取变体、变体又取尺寸”的递归。
          *
          * @param point 待判断的点，为 {@code null} 表示尚未记录位置，直接视为不在范围内
          */
@@ -266,7 +288,8 @@ public abstract class Renderer<T extends Scope> {
             if (point == null || this.pos == null || this.size == null) {
                 return false;
             }
-            Vector2i resolved = this.size.apply(this.self());
+            Function<T, Vector2i> resolver = this.hitSize != null ? this.hitSize : this.size;
+            Vector2i resolved = resolver.apply(this.self());
             return point.x >= this.pos.x && point.x < this.pos.x + resolved.x
                 && point.y >= this.pos.y && point.y < this.pos.y + resolved.y;
         }
@@ -275,7 +298,10 @@ public abstract class Renderer<T extends Scope> {
             String missing = this.graphics == null ? "graphics" : "";
             missing += this.pos == null ? missing.isEmpty() ? "pos" : ", pos" : "";
             missing += this.size == null ? missing.isEmpty() ? "size" : ", size" : "";
-            missing += this.validate(missing);
+            String absent = this.validate(missing);
+            if (!absent.isEmpty()) {
+                missing = missing.isEmpty() ? absent : missing + ", " + absent;
+            }
             if (!missing.isEmpty()) {
                 throw new IllegalStateException("Some arguments are missing or invalid: %s".formatted(missing));
             }
@@ -286,6 +312,9 @@ public abstract class Renderer<T extends Scope> {
 
         protected abstract void render(GuiGraphicsExtractor graphics, int x, int y, int width, int height);
 
+        /**
+         * 返回额外缺失或无效的参数名，由基类统一拼接分隔符。
+         */
         protected abstract String validate(String missing);
 
         @Override
@@ -294,6 +323,10 @@ public abstract class Renderer<T extends Scope> {
             this.pos = null;
             this.mousePos = null;
             this.size = null;
+            this.hitSize = null;
+            this.font = null;
+            this.text = null;
+            this.textOffset = null;
         }
     }
 }

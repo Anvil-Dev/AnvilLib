@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.ui.flexible;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 
 import java.util.Optional;
@@ -9,9 +10,20 @@ import java.util.Optional;
 /**
  * 矩形按钮渲染器：按当前主题、样式、类型与变体取九宫格切图铺满给定区域，并在文本偏移处绘制标签。
  *
- * <p>文本颜色取自文本组件自带的样式颜色，缺省为白色。
+ * <p>文本颜色取自文本组件自带的样式颜色，缺省为白色；两者都补齐不透明 alpha，
+ * 因为 {@link TextColor#getValue()} 只带 RGB，alpha 为 0 时文本不会被绘制。
  */
 public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
+    /**
+     * 按文本组件自带的样式颜色计算不透明 ARGB 颜色，缺省为白色。
+     */
+    public static int textColor(Component text) {
+        return Optional.ofNullable(text.getStyle().getColor())
+            .map(TextColor::getValue)
+            .map(value -> value | 0xFF000000)
+            .orElse(0xFFFFFFFF);
+    }
+
     @Override
     public Scope open() {
         return new Scope();
@@ -51,7 +63,7 @@ public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
                     this.text,
                     textX,
                     textY,
-                    Optional.ofNullable(this.text.getStyle().getColor()).map(TextColor::getValue).orElse(0xFFFFFF)
+                    ButtonRenderer.textColor(this.text)
                 );
             }
         }
