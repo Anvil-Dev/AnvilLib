@@ -13,6 +13,8 @@ version = mod_version
 
 if (providers.gradleProperty('anvillibRelease').isPresent()) {
     apply from: rootProject.file('gradle/scripts/release.gradle')
+} else if (providers.gradleProperty('anvillibCi').isPresent()) {
+    apply from: rootProject.file('gradle/scripts/ci.gradle')
 }
 
 repositories {
