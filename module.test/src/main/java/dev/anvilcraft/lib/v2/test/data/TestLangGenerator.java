@@ -12,6 +12,8 @@ public class TestLangGenerator {
         provider.add("key.anvillib_test.wheel_hold", "Wheel Hold");
         provider.add("key.anvillib_test.wheel_tap_annular", "Wheel Tap (Annular)");
         provider.add("key.anvillib_test.wheel_hold_annular", "Wheel Hold (Annular)");
+        provider.add("key.category.anvillib_test.flexible", "AnvilLib Test-Flexible");
+        provider.add("key.anvillib_test.flexible_screen", "Flexible Control Screen");
         ConfigData.readConfigClass(provider, AnvilLibTestConfig.class);
         ConfigData.readConfigClass(provider, ConfigUiExamples.Client.class);
         ConfigData.readConfigClass(provider, ConfigUiExamples.Legacy.class);
