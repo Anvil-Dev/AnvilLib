@@ -9,8 +9,8 @@ import dev.anvilcraft.lib.v2.ui.flexible.SpriteStyle;
 import dev.anvilcraft.lib.v2.ui.flexible.SpriteTheme;
 import dev.anvilcraft.lib.v2.ui.flexible.SpriteType;
 import dev.anvilcraft.lib.v2.ui.flexible.SpriteVariant;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -99,6 +99,8 @@ public final class FlexibleTestScreen extends Screen {
         this.verifyBodies();
         this.verifyPointers();
         this.verifyFlexSize();
+        this.verifyTextColor();
+        this.verifyMouseVariantWithFlexSize();
         this.verifyContains();
         if (this.failures.isEmpty()) {
             LOGGER.info("FLEXIBLE_TEST ALL PASS: {} checks", this.checks);
@@ -146,7 +148,7 @@ public final class FlexibleTestScreen extends Screen {
                     && border.top() == info.topPadding()
                     && border.right() == info.rightPadding()
                     && border.bottom() == info.bottomPadding(),
-                label + " 的九宫格边框必须与登记内边距一致，贴图为 " + border + "，登记为 " + info.padding()
+                label + " 的九宫格边框必须与登记内边距一致，贴图为 " + border + "，登记为 " + info
             );
         } else {
             this.check(false, label + " 必须声明 nine_slice 缩放，实际为 " + scaling);
@@ -218,6 +220,56 @@ public final class FlexibleTestScreen extends Screen {
             size.x == expectedWidth && size.y == expectedHeight,
             "flexSize 必须按内边距与文本尺寸计算，期望 " + expectedWidth + "x" + expectedHeight + "，实际为 " + size
         );
+    }
+
+    /**
+     * 文本颜色必须自带不透明 alpha，否则 1.21.1 的 {@code drawString} 会把标签画成完全透明。
+     */
+    private void verifyTextColor() {
+        int plain = ButtonRenderer.textColor(Component.literal("text"));
+        this.check(
+            (plain & 0xFF000000) == 0xFF000000,
+            "默认文本颜色必须不透明，实际为 " + Integer.toHexString(plain)
+        );
+        this.check(
+            (plain & 0xFFFFFF) == 0xFFFFFF,
+            "默认文本颜色必须是白色，实际为 " + Integer.toHexString(plain)
+        );
+
+        int styled = ButtonRenderer.textColor(Component.literal("text").withStyle(ChatFormatting.RED));
+        this.check(
+            (styled & 0xFF000000) == 0xFF000000,
+            "样式文本颜色必须不透明，实际为 " + Integer.toHexString(styled)
+        );
+        this.check(
+            (styled & 0xFFFFFF) == 0xFF5555,
+            "样式文本颜色必须保留原始 RGB，实际为 " + Integer.toHexString(styled)
+        );
+    }
+
+    /**
+     * {@code basedOnMouse} 的变体依赖 {@code contains}，而 {@code flexSize} 的尺寸又依赖变体，
+     * 两者组合必须仍能解析尺寸与命中，不能递归溢出。
+     */
+    private void verifyMouseVariantWithFlexSize() {
+        ButtonRenderer renderer = new ButtonRenderer();
+        renderer.basedOnMouse();
+        ButtonRenderer.Scope scope = renderer.open();
+        scope.font(this.font);
+        scope.text(Component.literal("hover"));
+        scope.flexSize(FLEX_PADDING);
+        scope.pos(10, 10);
+        scope.mousePos(15, 15);
+        try {
+            Vector2i size = scope.resolveSize();
+            this.check(size != null && size.x > 0 && size.y > 0, "basedOnMouse 与 flexSize 组合必须解析出正尺寸");
+            this.check(scope.contains(new Vector2f(15, 15)), "basedOnMouse 与 flexSize 组合必须命中控件内部");
+            this.check(!scope.contains(new Vector2f(100, 100)), "basedOnMouse 与 flexSize 组合必须排除控件外部");
+        } catch (StackOverflowError error) {
+            this.check(false, "basedOnMouse 与 flexSize 组合不得递归溢出");
+        } finally {
+            scope.close();
+        }
     }
 
     private void verifyContains() {
