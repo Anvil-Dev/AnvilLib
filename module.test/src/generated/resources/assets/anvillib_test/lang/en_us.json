@@ -112,6 +112,8 @@
   "anvillib_test.configuration.performance.test_short": "Test Short",
   "anvillib_test.configuration.performance.test_string": "Test String",
   "anvillib_test.configuration.performance.tooltip": "Performance",
+  "anvillib_test.configuration.preview_fraction": "Preview Fraction",
+  "anvillib_test.configuration.preview_scale": "Preview Scale",
   "anvillib_test.configuration.section.anvillib.test.client.toml": "Anvillib Test Client Configuration",
   "anvillib_test.configuration.section.anvillib.test.client.toml.title": "Anvillib Test Client Configuration",
   "anvillib_test.configuration.section.anvillib.test.common.toml": "Anvillib Test Common Configuration",
@@ -148,9 +150,9 @@
   "anvillib_test_legacy.configuration.use_default_screen": "Use Default Screen",
   "block.anvillib_test.test_controller": "Test Controller",
   "itemGroup.anvillib_test.tab": "Test Tab",
+  "key.anvillib_test.flexible_screen": "Flexible Control Screen",
   "key.anvillib_test.wheel_hold": "Wheel Hold",
-  "key.anvillib_test.wheel_hold_annular": "Wheel Hold (Annular)",
   "key.anvillib_test.wheel_tap": "Wheel Tap",
-  "key.anvillib_test.wheel_tap_annular": "Wheel Tap (Annular)",
+  "key.categories.anvillib_test.flexible": "AnvilLib Test-Flexible",
   "key.categories.anvillib_test.wheel": "AnvilLib Test-Wheel"
 }
