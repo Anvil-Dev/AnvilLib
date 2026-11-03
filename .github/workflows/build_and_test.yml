@@ -2,136 +2,120 @@ name: Build and Test
 on:
   workflow_call:
     inputs:
-      module:
-        description: 'Module to build'
-        required: true
-        type: string
-      module_id:
-        description: 'Module ID to build'
-        required: true
-        type: string
-      mod_id:
-        description: 'Mod ID'
-        required: true
-        type: string
-      ci_build:
-        description: 'CI Build'
-        required: true
-        type: boolean
       pr_build:
-        description: 'PR Build'
         required: true
         type: boolean
-      gametest:
-        description: 'Gametest'
-        required: false
-        type: boolean
-        default: false
-      gradle_project:
-        description: 'Gradle project path or name without leading colon'
-        required: false
-        type: string
-        default: ''
-      module_dir:
-        description: 'Module directory relative to repository root'
-        required: false
-        type: string
-        default: ''
     secrets:
-      maven_url:
-        description: 'Maven URL'
-        required: false
-      maven_user:
-        description: 'Maven User'
-        required: false
-      maven_pass:
-        description: 'Maven Password'
-        required: false
-      curseforge_token:
-        description: 'Curseforge Token'
-        required: false
-      modrinth_token:
-        description: 'Modrinth Token'
-        required: false
+      maven_url: { required: false }
+      maven_user: { required: false }
+      maven_pass: { required: false }
+      curseforge_token: { required: false }
+      modrinth_token: { required: false }
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      NOT_DEV: ${{ secrets.maven_url != '' && secrets.maven_user != '' && secrets.maven_pass != '' }}
-      CI_BUILD: ${{ inputs.ci_build }}
+      CI_BUILD: 'true'
+      NOT_DEV: 'false'
       PR_BUILD: ${{ inputs.pr_build }}
-      GRADLE_PROJECT: ${{ inputs.gradle_project != '' && inputs.gradle_project || format('{0}-neoforge-1.21.4', inputs.module_id) }}
-      MODULE_DIR: ${{ inputs.module_dir != '' && inputs.module_dir || format('module.{0}', inputs.module) }}
     steps:
-      - name: checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with: { persist-credentials: false }
 
-      - name: validate gradle wrapper
-        uses: gradle/actions/wrapper-validation@v3
+      - uses: gradle/actions/wrapper-validation@v6
 
-      - name: Read Properties
-        id: 'properties'
-        uses: christian-draeger/read-properties@1.1.1
-        with:
-          path: gradle.properties
-          properties: 'java_version'
+      - name: Read project JDK
+        id: properties
+        run: sed -n '/^java_version=/p' gradle.properties >> "$GITHUB_OUTPUT"
 
-      - name: Setup Java ${{ steps.properties.outputs.java_version }}
-        uses: actions/setup-java@v3.6.0
+      - uses: actions/setup-java@v5
         with:
           distribution: zulu
           java-version: ${{ steps.properties.outputs.java_version }}
 
-      - name: make gradle wrapper executable
-        if: ${{ runner.os != 'Windows' }}
-        run: chmod +x ./gradlew
+      - uses: gradle/actions/setup-gradle@v6
 
-      - name: Build with Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: Check Maven publication ordering
+        run: python3 -B -m unittest discover -s .github/ci
 
-      - name: Build
-        run: ./gradlew :${{ env.GRADLE_PROJECT }}:build
-
-      - name: Get Version
-        id: version
-        shell: bash
+      - name: Build all CI publications
+        id: build
         run: |
-          ARTIFACT=$(find "$MODULE_DIR/build/libs" -maxdepth 1 -type f -name '*.jar' \
-            ! -name '*-javadoc.jar' \
-            ! -name '*-sources.jar' \
-            ! -name '*-shadow.jar' \
-            ! -name '*-slim.jar' | head -n 1)
-          FILENAME=$(basename "$ARTIFACT")
-          VERSION=${FILENAME#${{ inputs.mod_id }}-neoforge-}
-          VERSION=${VERSION%.jar}
-          echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          bash gradlew -PanvillibCi ciBuild --no-configuration-cache --max-workers=2 -Porg.gradle.java.installations.fromEnv=JAVA_HOME_25_X64
+          cat build/ci/outputs >> "$GITHUB_OUTPUT"
 
-      - name: capture build artifacts
-        uses: actions/upload-artifact@v4.3.3
+      - name: Verify Maven coordinates and internal dependencies
+        run: python3 .github/ci/publish_maven.py
+
+      - name: Capture module JARs
+        uses: actions/upload-artifact@v7
         with:
-          name: "${{ inputs.module_id }} ${{ steps.version.outputs.version }}"
-          path: ${{ steps.version.outputs.artifact }}
+          name: ${{ steps.build.outputs.main_id }}-${{ steps.build.outputs.version }}
+          path: build/ci/jars/*.jar
+          if-no-files-found: error
 
-      - name: Publish to maven
-        if: ${{ !inputs.pr_build && env.NOT_DEV == 'true' }}
-        run: ./gradlew :${{ env.GRADLE_PROJECT }}:publish
+      - name: Collect Roseau reports
+        if: always() && inputs.pr_build
+        run: |
+          mkdir -p "$RUNNER_TEMP/roseau-reports"
+          cp .github/modules.json "$RUNNER_TEMP/roseau-reports/modules.json"
+          for dir in module.*/build/reports/roseau; do
+            [[ -d "$dir" ]] || continue
+            module=${dir%%/*}
+            cp -R "$dir" "$RUNNER_TEMP/roseau-reports/roseau-${module#module.}"
+          done
+
+      - name: Capture Roseau reports
+        if: always() && inputs.pr_build
+        uses: actions/upload-artifact@v7
+        with:
+          name: roseau-reports
+          path: ${{ runner.temp }}/roseau-reports/
+          retention-days: 7
+
+      - name: Test dedicated server startup and shutdown
+        uses: Anvil-Dev/dedicated-server-launch-test@1.21.4-neoforge
+        with:
+          mods: ${{ steps.build.outputs.main_jar }}
+
+      - name: Publish staged modules to internal Maven (main last)
+        if: ${{ !inputs.pr_build }}
         env:
           MAVEN_URL: ${{ secrets.maven_url }}
           MAVEN_USERNAME: ${{ secrets.maven_user }}
           MAVEN_PASSWORD: ${{ secrets.maven_pass }}
+        run: |
+          if [[ -n "$MAVEN_URL" && -n "$MAVEN_USERNAME" && -n "$MAVEN_PASSWORD" ]]; then
+            python3 .github/ci/publish_maven.py --upload
+          fi
         continue-on-error: true
 
-      - name: gametest
-        if: ${{ inputs.ci_build && inputs.gametest }}
-        uses: Anvil-Dev/dedicated-server-launch-test@1.21.4-neoforge
+      - name: Upload Beta snapshot to Modrinth and CurseForge
+        if: ${{ !inputs.pr_build }}
+        uses: Kira-NT/mc-publish@c23376546a97f5ba7984e94445da359459b14419 # v3.3.2
+        continue-on-error: true
         with:
-          mod: ${{ steps.version.outputs.artifact }}
-
-      - name: Upload MCMOD
-        if: ${{ inputs.module == 'main' && !inputs.pr_build }}
-        run: ./gradlew :${{ env.GRADLE_PROJECT }}:publishMods
-        env:
-          CURSEFORGE_TOKEN: ${{ secrets.curseforge_token }}
-          MODRINTH_TOKEN: ${{ secrets.modrinth_token }}
+          fail-mode: skip
+          modrinth-id: ${{ steps.build.outputs.modrinth_id }}
+          modrinth-token: ${{ secrets.modrinth_token }}
+          modrinth-featured: false
+          modrinth-unfeature-mode: none
+          curseforge-id: ${{ steps.build.outputs.curseforge_id }}
+          curseforge-token: ${{ secrets.curseforge_token }}
+          name: ${{ steps.build.outputs.main_id }} ${{ steps.build.outputs.version }}
+          version: ${{ steps.build.outputs.version }}
+          version-type: beta
+          changelog: Update
+          loaders: neoforge
+          # The AnvilLib modules are already bundled in the main JAR.
+          dependencies: ''
+          environment: both
+          game-versions: ${{ steps.build.outputs.minecraft }}
+          files: |
+            ${{ steps.build.outputs.main_jar }}
+            ${{ steps.build.outputs.sources_jar }}
+            ${{ steps.build.outputs.javadoc_jar }}

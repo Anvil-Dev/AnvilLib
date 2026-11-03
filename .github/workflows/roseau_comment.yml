@@ -17,21 +17,21 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion != 'skipped' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo (needed for gh CLI)
+        uses: actions/checkout@v6
+        with: { persist-credentials: false }
+
       - name: Download Roseau reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: roseau-*
           path: roseau-reports
           run-id: ${{ github.event.workflow_run.id }}
-
-      - name: Checkout repo (needed for gh CLI)
-        uses: actions/checkout@v4
+          github-token: ${{ github.token }}
 
       - name: Find PR number
         id: pr
         run: |
-          HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
-          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
           PR_NUMBER=$(gh pr list \
             --head "$HEAD_BRANCH" \
             --state open \
@@ -48,16 +48,25 @@ jobs:
             echo "::warning::Could not find PR number for branch=$HEAD_BRANCH sha=$HEAD_SHA"
           fi
           echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          author=$(gh api user --jq .login)
+          echo "comment_author=$author" >> "$GITHUB_OUTPUT"
         env:
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
 
       - name: Generate report body
         run: |
-          MODULES=(
-            codec collision config explosion font integration
-            moveable-entity-block multiblock network recipe registrum
-            renderer rpc space-select sync util wheel main
-          )
+          report_root=roseau-reports
+          modules=.github/modules.json
+          if [[ -f "$report_root/roseau-reports/modules.json" ]]; then
+            report_root="$report_root/roseau-reports"
+          fi
+          if [[ -f "$report_root/modules.json" ]]; then
+            modules="$report_root/modules.json"
+          fi
+          mapfile -t MODULES < <(jq -r '.[].module | select(test("^[a-z0-9-]+$"))' "$modules")
+          MODULES+=(main)
 
           row() {
             local name=$1 dir=$2
@@ -87,11 +96,12 @@ jobs:
                 echo "${type}"
                 echo "${symbol}"
                 echo "${kind}"
-                [ "$binaryBreaking" = "true" ] && echo "✗ binary-breaking" || echo "✓ binary-compatible"
-                [ "$sourceBreaking" = "true" ] && echo "✗ source-breaking" || echo "✓ source-compatible"
+                # Roseau 0.4 does not include the two compatibility columns.
+                case "$binaryBreaking" in true) echo "✗ binary-breaking" ;; false) echo "✓ binary-compatible" ;; esac
+                case "$sourceBreaking" in true) echo "✗ source-breaking" ;; false) echo "✓ source-compatible" ;; esac
                 echo '```'
                 echo ""
-              done < <(tail -n +2 "$csv")
+              done < <(tail -n +2 "$csv" | tr -d '\r')
             } >> /tmp/roseau-body.md
           }
 
@@ -101,13 +111,13 @@ jobs:
             echo "| Module | Status | Breaking Changes |"
             echo "|--------|--------|-----------------|"
             for mod in "${MODULES[@]}"; do
-              row "$mod" "roseau-reports/roseau-${mod}"
+              row "$mod" "$report_root/roseau-${mod}"
             done
             echo ""
           } > /tmp/roseau-body.md
 
           for mod in "${MODULES[@]}"; do
-            append_details "$mod" "roseau-reports/roseau-${mod}"
+            append_details "$mod" "$report_root/roseau-${mod}"
           done
 
           echo "> Full CSVs: see the *Artifacts* section of [this workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }})." >> /tmp/roseau-body.md
@@ -119,7 +129,7 @@ jobs:
         with:
           token: ${{ secrets.PAT_TOKEN }}
           issue-number: ${{ steps.pr.outputs.number }}
-          comment-author: anvil-craft
+          comment-author: ${{ steps.pr.outputs.comment_author }}
           body-includes: Roseau API Breaking Change Report
 
       - name: Create or update PR comment

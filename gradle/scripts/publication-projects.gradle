@@ -1,0 +1,20 @@
+import groovy.json.JsonSlurper
+
+if (System.getenv('NOT_DEV') == 'true') {
+    throw new GradleException('CI and release builds require local project dependencies')
+}
+
+def dirs = new JsonSlurper().parse(rootProject.file('.github/modules.json')).collect { "module.$it.module" }
+dirs += ['module.sync/processor', 'module.main']
+ext.anvillibPublicationProjects = dirs.collect { dir ->
+    def target = subprojects.find { it.projectDir == rootProject.file(dir) }
+    if (target == null) throw new GradleException("No Gradle project for $dir")
+    target.pluginManager.withPlugin('java-library') {
+        // Published internal dependencies have API scope, including when resolved locally.
+        def api = target.configurations.named('api')
+        target.configurations.named('implementation').get().dependencies.withType(ProjectDependency).all {
+            api.get().dependencies.add(it.copy())
+        }
+    }
+    target
+}
