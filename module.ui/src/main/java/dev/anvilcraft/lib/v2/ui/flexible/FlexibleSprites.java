@@ -155,7 +155,8 @@ public final class FlexibleSprites {
             InputStream stream = resource.get().open();
             NativeImage image = NativeImage.read(stream)
         ) {
-            Vector2i size = new Vector2i(image.getWidth(), image.getHeight());
+            // 指针贴图四周各有 1px 透明边，按可见内容记录尺寸，绘制时再补回这 1px。
+            Vector2i size = new Vector2i(Math.max(1, image.getWidth() - 2), Math.max(1, image.getHeight() - 2));
             FlexibleSprites.POINTER_SIZES.put(texture, size);
             return size;
         } catch (IOException exception) {
