@@ -352,9 +352,20 @@ try (ButtonRenderer.Scope scope = button.open()) {
         .literal("Confirm").flexSize(3);
     scope.render();
 }
-// Sync the press origin on mouse press/release
-button.onPress(mouseX, mouseY);
-button.onRelease();
+// Record the press origin on press and clear it on release, both before the next render().
+// Calling onPress and onRelease back to back after rendering makes basedOnMouse toggle only
+// between normal and highlighted, so the pressed state is never drawn.
+@Override
+public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    this.button.onPress((int) mouseX, (int) mouseY);
+    return super.mouseClicked(mouseX, mouseY, button);
+}
+
+@Override
+public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    this.button.onRelease();
+    return super.mouseReleased(mouseX, mouseY, button);
+}
 ```
 
 ### Main Module
