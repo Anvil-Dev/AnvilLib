@@ -10,7 +10,7 @@ import net.neoforged.neoforge.client.event.ModelEvent;
 
 import java.util.Map;
 
-@EventBusSubscriber(modid = AnvilLibCube.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = AnvilLibCube.MOD_ID, value = Dist.CLIENT)
 public final class CubeModelEvents {
     private static ModelSelections.Snapshot pending = new ModelSelections.Snapshot(Map.of(), 0, 0);
     private CubeModelEvents() { }

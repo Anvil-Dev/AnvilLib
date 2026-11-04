@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 
-@EventBusSubscriber(modid = AnvilLibRendering.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = AnvilLibRendering.MOD_ID, value = Dist.CLIENT)
 public final class ProjectionShaders {
     private static @Nullable ShaderInstance shader;
     private static int generation;
