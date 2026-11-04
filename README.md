@@ -30,6 +30,7 @@ AnvilLib 采用模块化设计，包含以下功能模块：
 | **Moveable Entity Block** | 可被活塞推动的方块实体支持  |
 | **Multiblock**            | 动态多方块系统        |
 | **Registrum**             | 简化的注册系统        |
+| **UI**                    | 基于九宫格切图的柔性控件渲染        |
 | **Util**                  | 可共享的工具方法       |
 | **Wheel**                 | 轮盘菜单客户端 API    |
 | **Main**                  | 聚合模块（包含全部子模块）  |
@@ -375,6 +376,46 @@ controller.onHoldKeyPressed(model);
 controller.onHoldKeyReleased();
 ```
 
+### UI 模块
+
+提供基于九宫格切图的柔性控件渲染器：主题、风格、阴影与交互变体四维组合，
+控件尺寸可随文本自适应，浮窗还能在任意一边绘制指针。
+
+**主要特性：**
+
+- 主题（浅色/深色）、风格（立体/扁平）、阴影（无/1px/2px）与变体（常态/高亮/按压）自由组合
+- `flexSize` 依据文本尺寸与切图内边距自动计算控件大小
+- `basedOnMouse` 按悬停与按压状态自动切换变体
+- `FlyoutRenderer` 在控件任意一边贴指针，位置按百分比取值
+- 贴图位于 `anvillib_ui` 命名空间的 `textures/gui` 下
+
+**使用示例：**
+
+```java
+ButtonRenderer button = new ButtonRenderer();
+button.shaded1px().basedOnMouse();
+
+try (ButtonRenderer.Scope scope = button.open()) {
+    scope.graphics(graphics).font(font).pos(x, y).mousePos(mouseX, mouseY)
+        .literal("确定").flexSize(3);
+    scope.render();
+}
+// 按压起点要在按下时记录、松开时清空，且这两次调用都要发生在下一次 render() 之前。
+// 若在渲染后紧挨着调用 onPress 与 onRelease，basedOnMouse 只会在常态与高亮态之间切换，
+// 永远画不出按压态。
+@Override
+public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    this.button.onPress((int) mouseX, (int) mouseY);
+    return super.mouseClicked(mouseX, mouseY, button);
+}
+
+@Override
+public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    this.button.onRelease();
+    return super.mouseReleased(mouseX, mouseY, button);
+}
+```
+
 ### Main 模块
 
 `anvillib-neoforge-26.1` 为聚合发行模块，默认打包并重导出以下子模块：
@@ -416,6 +457,7 @@ dependencies {
     implementation "dev.anvilcraft.lib:anvillib-network-neoforge-26.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-26.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-26.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-ui-neoforge-26.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-util-neoforge-26.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-26.1:2.0.0"
 }
@@ -441,6 +483,7 @@ dependencies {
     implementation("dev.anvilcraft.lib:anvillib-network-neoforge-26.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-26.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-26.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-ui-neoforge-26.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-util-neoforge-26.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-26.1:2.0.0")
 }

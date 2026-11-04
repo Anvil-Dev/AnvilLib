@@ -6,5 +6,7 @@
   "key.anvillib_test.wheel_hold_annular": "轮盘（长按，扇形）",
   "key.anvillib_test.wheel_tap": "轮盘（触发）",
   "key.anvillib_test.wheel_tap_annular": "轮盘（触发，扇形）",
-  "key.categories.anvillib_test.wheel": "铁砧库 测试-轮盘"
+  "key.categories.anvillib_test.wheel": "铁砧库 测试-轮盘",
+  "key.category.anvillib_test.flexible": "铁砧库 测试-柔性控件",
+  "key.anvillib_test.flexible_screen": "柔性控件回归屏幕"
 }
