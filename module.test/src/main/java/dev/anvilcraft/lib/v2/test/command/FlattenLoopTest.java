@@ -16,7 +16,7 @@ import java.util.List;
  *
  * <p>逐项验证四个不变量：产出顺序必须是最靠前的维度位于最外层、元素数量必须等于各维尺寸之积、
  * 任一维度为空时不得产出任何元素、数组重载与列表重载必须给出相同结果。
- * 覆盖 2 到 7 维的全部重载；任一项失败即抛出断言错误并把失败项逐条回显到命令输出。
+ * 覆盖 2 到 7 维的全部重载；失败项会被收集并逐条回显到命令输出，由调用方决定如何处理。
  */
 public final class FlattenLoopTest {
     private static final Logger LOGGER = LogUtils.getLogger();
