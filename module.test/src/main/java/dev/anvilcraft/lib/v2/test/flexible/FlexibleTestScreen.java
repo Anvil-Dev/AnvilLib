@@ -45,6 +45,7 @@ public final class FlexibleTestScreen extends Screen {
     private final List<String> failures = new ArrayList<>();
     private int checks;
     private int renderedFrames;
+    private boolean layoutChecked;
 
     public FlexibleTestScreen() {
         super(Component.literal("AnvilLib flexible controls"));
@@ -121,10 +122,12 @@ public final class FlexibleTestScreen extends Screen {
     }
 
     private void verifyBody(TextureAtlas sprites, ButtonRenderer renderer) {
-        ButtonRenderer.Scope scope = renderer.open();
-        FlexibleSprites.SpriteInfo info = FlexibleSprites.pickSprite(
-            renderer.getTheme(), renderer.getStyle(), renderer.getType(), renderer.variantOf(scope)
-        );
+        FlexibleSprites.SpriteInfo info;
+        try (ButtonRenderer.Scope scope = renderer.open()) {
+            info = FlexibleSprites.pickSprite(
+                renderer.getTheme(), renderer.getStyle(), renderer.getType(), renderer.variantOf(scope)
+            );
+        }
         String label = info.sprite().toString();
         this.check(
             info.sprite().getNamespace().equals("anvillib_ui"),
@@ -225,17 +228,21 @@ public final class FlexibleTestScreen extends Screen {
         renderer.shaded2px();
         renderer.pressed();
         Component text = Component.literal("flex");
-        ButtonRenderer.Scope scope = renderer.open();
-        scope.font(this.font);
-        scope.text(text);
-        FlexibleSprites.SpriteInfo info = FlexibleSprites.pickSprite(
-            renderer.getTheme(), renderer.getStyle(), renderer.getType(), renderer.variantOf(scope)
-        );
-        ButtonRenderer.Scope sized = renderer.open();
-        sized.font(this.font);
-        sized.text(text);
-        sized.flexSize(FLEX_PADDING);
-        Vector2i size = sized.resolveSize();
+        FlexibleSprites.SpriteInfo info;
+        try (ButtonRenderer.Scope scope = renderer.open()) {
+            scope.font(this.font);
+            scope.text(text);
+            info = FlexibleSprites.pickSprite(
+                renderer.getTheme(), renderer.getStyle(), renderer.getType(), renderer.variantOf(scope)
+            );
+        }
+        Vector2i size;
+        try (ButtonRenderer.Scope sized = renderer.open()) {
+            sized.font(this.font);
+            sized.text(text);
+            sized.flexSize(FLEX_PADDING);
+            size = sized.resolveSize();
+        }
         this.check(size != null, "flexSize 必须能解析出尺寸");
         if (size == null) {
             return;
@@ -347,16 +354,19 @@ public final class FlexibleTestScreen extends Screen {
     }
     private void verifyContains() {
         ButtonRenderer renderer = new ButtonRenderer();
-        ButtonRenderer.Scope scope = renderer.open();
-        scope.pos(10, 20);
-        scope.size(30, 40);
-        this.check(scope.contains(new Vector2f(10, 20)), "contains 必须包含左上角");
-        this.check(scope.contains(new Vector2f(39, 59)), "contains 必须包含右下角内侧");
-        this.check(!scope.contains(new Vector2f(40, 40)), "contains 必须排除右边界之外");
-        this.check(!scope.contains(new Vector2f(20, 60)), "contains 必须排除下边界之外");
-        this.check(!scope.contains(new Vector2f(9, 30)), "contains 必须排除左边界之外");
-        this.check(!scope.contains(null), "contains 必须把空坐标视为不在范围内");
-        this.check(!renderer.open().contains(new Vector2f(0, 0)), "未设置位置的控件必须不包含任何点");
+        try (ButtonRenderer.Scope scope = renderer.open()) {
+            scope.pos(10, 20);
+            scope.size(30, 40);
+            this.check(scope.contains(new Vector2f(10, 20)), "contains 必须包含左上角");
+            this.check(scope.contains(new Vector2f(39, 59)), "contains 必须包含右下角内侧");
+            this.check(!scope.contains(new Vector2f(40, 40)), "contains 必须排除右边界之外");
+            this.check(!scope.contains(new Vector2f(20, 60)), "contains 必须排除下边界之外");
+            this.check(!scope.contains(new Vector2f(9, 30)), "contains 必须排除左边界之外");
+            this.check(!scope.contains(null), "contains 必须把空坐标视为不在范围内");
+        }
+        try (ButtonRenderer.Scope empty = renderer.open()) {
+            this.check(!empty.contains(new Vector2f(0, 0)), "未设置位置的控件必须不包含任何点");
+        }
     }
 
     @Override
@@ -477,10 +487,13 @@ public final class FlexibleTestScreen extends Screen {
                 }
             }
         }
-        this.check(
-            cursorY + rowHeight <= this.height && cursorX <= this.width,
-            "全部控件必须落在画面内，末行底部为 " + (cursorY + rowHeight) + "，画面高 " + this.height
-        );
+        if (!this.layoutChecked) {
+            this.layoutChecked = true;
+            this.check(
+                cursorY + rowHeight <= this.height && cursorX <= this.width,
+                "全部控件必须落在画面内，末行底部为 " + (cursorY + rowHeight) + "，画面高 " + this.height
+            );
+        }
         this.renderedFrames++;
     }
 
