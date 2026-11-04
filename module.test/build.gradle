@@ -334,13 +334,29 @@ if (providers.gradleProperty('flexibleUiTest').isPresent()) {
     neoForge.runs.client {
         systemProperty 'anvillib.flexibleUiTest', 'true'
         gameDirectory = layout.buildDirectory.dir('flexible-test-run')
+        programArguments.addAll '--width', '1920', '--height', '1080'
     }
+    def flexibleRunDir = layout.buildDirectory.dir('flexible-test-run')
     def flexibleResult = layout.buildDirectory.file('flexible-test-run/flexible-result.txt')
+    def flexibleScreenshot = layout.buildDirectory.file('flexible-test-run/flexible-result.png')
     tasks.named('runClient') {
-        doFirst { flexibleResult.get().asFile.delete() }
+        doFirst {
+            def runDir = flexibleRunDir.get().asFile
+            runDir.mkdirs()
+            def optionsFile = new File(runDir, 'options.txt')
+            def options = optionsFile.isFile() ? optionsFile.readLines('UTF-8') : []
+            def merged = options.findAll { !it.startsWith('guiScale:') }
+            merged.add(0, 'guiScale:1')
+            optionsFile.setText(merged.join('\n') + '\n', 'UTF-8')
+            flexibleResult.get().asFile.delete()
+            flexibleScreenshot.get().asFile.delete()
+        }
         doLast {
             if (!flexibleResult.get().asFile.isFile() || !flexibleResult.get().asFile.getText('UTF-8').startsWith('PASS ')) {
                 throw new GradleException('Flexible control verification failed; inspect flexible-result.txt and the client log')
+            }
+            if (!flexibleScreenshot.get().asFile.isFile() || flexibleScreenshot.get().asFile.length() == 0) {
+                throw new GradleException('Flexible control screenshot was not written; inspect the client log')
             }
         }
     }
