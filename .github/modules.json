@@ -6,7 +6,7 @@
   { "module": "integration",           "needs": [] },
   { "module": "moveable-entity-block", "needs": [] },
   { "module": "network",               "needs": [] },
-  { "module": "renderer",              "needs": [] },
+  { "module": "rendering",              "needs": [] },
   { "module": "font",                  "needs": [] },
 
   { "module": "explosion",    "needs": ["config"] },
@@ -19,5 +19,6 @@
   { "module": "recipe",     "needs": ["codec", "config", "util"] },
   { "module": "registrum",  "needs": ["util"] },
   { "module": "sync",       "needs": ["codec", "network", "util"] },
+  { "module": "ui",         "needs": ["util"] },
   { "module": "wheel",      "needs": ["util"] }
 ]
