@@ -401,9 +401,20 @@ try (ButtonRenderer.Scope scope = button.open()) {
         .literal("确定").flexSize(3);
     scope.render();
 }
-// 鼠标按下/松开时同步按压起点
-button.onPress(mouseX, mouseY);
-button.onRelease();
+// 按压起点要在按下时记录、松开时清空，且这两次调用都要发生在下一次 render() 之前。
+// 若在渲染后紧挨着调用 onPress 与 onRelease，basedOnMouse 只会在常态与高亮态之间切换，
+// 永远画不出按压态。
+@Override
+public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    this.button.onPress((int) mouseX, (int) mouseY);
+    return super.mouseClicked(mouseX, mouseY, button);
+}
+
+@Override
+public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    this.button.onRelease();
+    return super.mouseReleased(mouseX, mouseY, button);
+}
 ```
 
 ### Main 模块
