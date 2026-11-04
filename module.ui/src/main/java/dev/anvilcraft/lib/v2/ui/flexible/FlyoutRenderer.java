@@ -72,11 +72,12 @@ public class FlyoutRenderer extends ButtonRenderer {
             if (this.pointerDirection == null || this.pointerPercent == null) {
                 return;
             }
+            SpriteVariant variant = FlyoutRenderer.this.variant.apply(this.self());
             FlexibleSprites.PointerSprite pointer = FlexibleSprites.pickPointer(
                 FlyoutRenderer.this.theme,
                 FlyoutRenderer.this.style,
                 FlyoutRenderer.this.type,
-                FlyoutRenderer.this.variant.apply(this.self()),
+                variant,
                 this.pointerDirection
             );
             if (pointer == null) {
@@ -91,7 +92,7 @@ public class FlyoutRenderer extends ButtonRenderer {
                 pointerX = x + FlyoutRenderer.POINTER_MARGIN
                     + Math.round(percent * Math.max(0, width - pointerWidth - FlyoutRenderer.POINTER_MARGIN * 2));
                 pointerY = this.pointerDirection == PointerDirection.UP
-                    ? y - pointerHeight + this.pointerUpInset()
+                    ? y - pointerHeight + this.pointerUpInset(variant)
                     : y + height - this.pointerDownInset();
             } else {
                 pointerY = y + FlyoutRenderer.POINTER_MARGIN
@@ -106,11 +107,12 @@ public class FlyoutRenderer extends ButtonRenderer {
         }
 
         /**
-         * 上指针贴顶时的收进量：阴影类型在顶部多出一行阴影，需要整体下移 1px。
+         * 上指针贴顶时的收进量：只有阴影类型的按下态贴图在顶部多出一行阴影，需要整体下移 1px。
          */
-        private int pointerUpInset() {
-            return FlyoutRenderer.POINTER_INSET
-                + (FlyoutRenderer.this.getType() == SpriteType.NON_SHADED ? 0 : 1);
+        private int pointerUpInset(SpriteVariant variant) {
+            boolean extraShadowRow = variant == SpriteVariant.PRESSED
+                && FlyoutRenderer.this.getType() != SpriteType.NON_SHADED;
+            return FlyoutRenderer.POINTER_INSET + (extraShadowRow ? 1 : 0);
         }
 
         /**
