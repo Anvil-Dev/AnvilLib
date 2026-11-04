@@ -38,12 +38,6 @@ import java.util.List;
  */
 public final class FlexibleTestScreen extends Screen {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final int COLUMNS = 6;
-    private static final int CELL_WIDTH = 108;
-    private static final int CELL_HEIGHT = 24;
-    private static final int GRID_TOP = 34;
-    private static final int BODY_WIDTH = 100;
-    private static final int BODY_HEIGHT = 20;
     private static final int FLEX_PADDING = 3;
 
     private final List<ButtonRenderer> bodies = new ArrayList<>();
@@ -100,6 +94,7 @@ public final class FlexibleTestScreen extends Screen {
         this.checks = 0;
         this.verifyBodies();
         this.verifyPointers();
+        this.verifyPointerQuad();
         this.verifyFlexSize();
         this.verifyTextColor();
         this.verifyShowcaseSizes();
@@ -170,6 +165,34 @@ public final class FlexibleTestScreen extends Screen {
                 }
             }
         }
+    }
+
+    /**
+     * 指针绘制矩形必须与非镜像一致：镜像只翻转 U，不能把整张贴图压进可见内容尺寸。
+     */
+    private void verifyPointerQuad() {
+        FlyoutRenderer.PointerQuad straight = FlyoutRenderer.pointerQuad(100, 50, 4, 3, false);
+        FlyoutRenderer.PointerQuad mirrored = FlyoutRenderer.pointerQuad(100, 50, 4, 3, true);
+        this.check(
+            straight.width() == 6 && straight.height() == 5,
+            "指针绘制矩形必须补回四周 1px 透明边，实际为 " + straight.width() + "x" + straight.height()
+        );
+        this.check(
+            mirrored.width() == straight.width() && mirrored.height() == straight.height(),
+            "镜像指针的绘制矩形必须与非镜像一致，实际为 " + mirrored.width() + "x" + mirrored.height()
+        );
+        this.check(
+            mirrored.x() == straight.x() && mirrored.y() == straight.y(),
+            "镜像指针的绘制起点必须与非镜像一致"
+        );
+        this.check(
+            straight.u0() == 0.0F && straight.u1() == 1.0F,
+            "非镜像指针的 U 必须从 0 递增到 1"
+        );
+        this.check(
+            mirrored.u0() == 1.0F && mirrored.u1() == 0.0F,
+            "镜像指针必须把 U 从 1 递减到 0"
+        );
     }
 
     private void verifyPointer(
@@ -322,6 +345,7 @@ public final class FlexibleTestScreen extends Screen {
         darkScope.close();
         this.check(darkSize != null && darkSize.x > 0, "深色浮窗必须能解析出正尺寸");
     }
+
     private void verifyContains() {
         ButtonRenderer renderer = new ButtonRenderer();
         ButtonRenderer.Scope scope = renderer.open();
@@ -455,9 +479,21 @@ public final class FlexibleTestScreen extends Screen {
                 }
             }
         }
+        this.check(
+            cursorY + rowHeight <= this.height && cursorX <= this.width,
+            "全部控件必须落在画面内，末行底部为 " + (cursorY + rowHeight) + "，画面高 " + this.height
+        );
         this.renderedFrames++;
     }
 
+    private static String shortLabel(String label) {
+        return label
+            .replace("HIGHLIGHTED", "HL")
+            .replace("PRESSED", "P")
+            .replace("NON_SHADED", "N")
+            .replace("SHADED_1PX", "S1")
+            .replace("SHADED_2PX", "S2");
+    }
     private static FlyoutRenderer createFlyout(
         SpriteTheme theme,
         SpriteStyle style,
@@ -486,20 +522,6 @@ public final class FlexibleTestScreen extends Screen {
         }
         return renderer;
     }
-    private static FlyoutRenderer createFlyout(PointerDirection direction) {
-        FlyoutRenderer flyout = new FlyoutRenderer();
-        flyout.shaded1px();
-        return flyout;
-    }
-    private static String shortLabel(String label) {
-        return label
-            .replace("HIGHLIGHTED", "HL")
-            .replace("PRESSED", "P")
-            .replace("NON_SHADED", "N")
-            .replace("SHADED_1PX", "S1")
-            .replace("SHADED_2PX", "S2");
-    }
-
     @Override
     public boolean isPauseScreen() {
         return false;
