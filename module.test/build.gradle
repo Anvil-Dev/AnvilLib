@@ -123,7 +123,9 @@ dependencies {
     implementation project(":anvillib-ui-neoforge-1.21.1")
     implementation project(":anvillib-util-neoforge-1.21.1")
     implementation project(":anvillib-wheel-neoforge-1.21.1")
-    if (!providers.gradleProperty('recipeTests').isPresent()) {
+    if (!providers.gradleProperty('recipeTests').isPresent()
+        && !providers.gradleProperty('flexibleUiTest').isPresent()
+        && !providers.gradleProperty('flattenLoopTest').isPresent()) {
         implementation("dev.dubhe:anvilcraft-neoforge-1.21.1:1.6.0+snapshot.2184") { transitive = false }
     }
 }
