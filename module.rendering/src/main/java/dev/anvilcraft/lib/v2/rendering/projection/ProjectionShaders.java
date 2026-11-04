@@ -11,7 +11,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 
-@EventBusSubscriber(modid = AnvilLibRendering.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = AnvilLibRendering.MOD_ID, value = Dist.CLIENT)
 public final class ProjectionShaders {
     private static final ShaderProgram PROGRAM = new ShaderProgram(
         ResourceLocation.fromNamespaceAndPath(AnvilLibRendering.MOD_ID, "core/projection"),
