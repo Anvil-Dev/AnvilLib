@@ -92,7 +92,7 @@ public class FlyoutRenderer extends ButtonRenderer {
                 pointerX = x + FlyoutRenderer.POINTER_MARGIN
                     + Math.round(percent * Math.max(0, width - pointerWidth - FlyoutRenderer.POINTER_MARGIN * 2));
                 pointerY = this.pointerDirection == PointerDirection.UP
-                    ? y - pointerHeight + FlyoutRenderer.POINTER_INSET
+                    ? y - pointerHeight + this.pointerUpInset()
                     : y + height - this.pointerDownInset();
             } else {
                 pointerY = y + FlyoutRenderer.POINTER_MARGIN
@@ -104,6 +104,14 @@ public class FlyoutRenderer extends ButtonRenderer {
             this.blitPointer(
                 graphics, pointer.texture(), pointerX, pointerY, pointerWidth, pointerHeight, pointer.mirrored()
             );
+        }
+
+        /**
+         * 上指针贴顶时的收进量：阴影类型在顶部多出一行阴影，需要整体下移 1px。
+         */
+        private int pointerUpInset() {
+            return FlyoutRenderer.POINTER_INSET
+                + (FlyoutRenderer.this.getType() == SpriteType.NON_SHADED ? 0 : 1);
         }
 
         /**
