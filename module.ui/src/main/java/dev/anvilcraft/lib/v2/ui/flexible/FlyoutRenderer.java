@@ -1,6 +1,5 @@
 package dev.anvilcraft.lib.v2.ui.flexible;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -19,6 +18,11 @@ import org.jspecify.annotations.Nullable;
  * <p>垂直于所贴边的方向上，指针整枚画在本体之外并紧贴该边，因此不会覆盖本体内容与边框。
  */
 public class FlyoutRenderer extends ButtonRenderer {
+    /**
+     * 指针沿垂直于所贴边的方向向内收进的像素数，避免箭头根部与本体边框完全贴边。
+     */
+    private static final int POINTER_INSET = 2;
+
     @Override
     public Scope open() {
         return new Scope();
@@ -80,10 +84,14 @@ public class FlyoutRenderer extends ButtonRenderer {
             int pointerY;
             if (this.pointerDirection == PointerDirection.UP || this.pointerDirection == PointerDirection.DOWN) {
                 pointerX = x + Math.round(percent * Math.max(0, width - pointerWidth));
-                pointerY = this.pointerDirection == PointerDirection.UP ? y - pointerHeight : y + height;
+                pointerY = this.pointerDirection == PointerDirection.UP
+                    ? y - pointerHeight + FlyoutRenderer.POINTER_INSET
+                    : y + height - FlyoutRenderer.POINTER_INSET - 1 - (FlyoutRenderer.this.getType() == SpriteType.SHADED_2PX ? 1 : 0);
             } else {
                 pointerY = y + Math.round(percent * Math.max(0, height - pointerHeight));
-                pointerX = this.pointerDirection == PointerDirection.LEFT ? x - pointerWidth : x + width;
+                pointerX = this.pointerDirection == PointerDirection.LEFT
+                    ? x - pointerWidth + FlyoutRenderer.POINTER_INSET
+                    : x + width - FlyoutRenderer.POINTER_INSET;
             }
             this.blitPointer(
                 graphics, pointer.texture(), pointerX, pointerY, pointerWidth, pointerHeight, pointer.mirrored()
@@ -107,15 +115,23 @@ public class FlyoutRenderer extends ButtonRenderer {
             boolean mirrored
         ) {
             if (!mirrored) {
-                graphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+                graphics.blit(texture, x - 1, y - 1, 0.0F, 0.0F, width + 2, height + 2, width + 2, height + 2);
                 return;
             }
-            PoseStack pose = graphics.pose();
-            pose.pushPose();
-            pose.translate(x + width, y, 0.0F);
-            pose.scale(-1.0F, 1.0F, 1.0F);
-            graphics.blit(texture, 0, 0, 0.0F, 0.0F, width, height, width, height);
-            pose.popPose();
+            // 镜像改用翻转 UV：直接对调左右两侧的纹理坐标，顶点绕序与剔除状态都与普通绘制一致。
+            graphics.blit(
+                texture,
+                x - 1,
+                y - 1,
+                width + 2,
+                height + 2,
+                (float) (width + 2),
+                0.0F,
+                -(width + 2),
+                height + 2,
+                width + 2,
+                height + 2
+            );
         }
 
         @Override
