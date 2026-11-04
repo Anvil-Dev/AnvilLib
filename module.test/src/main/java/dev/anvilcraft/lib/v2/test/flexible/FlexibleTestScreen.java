@@ -148,7 +148,7 @@ public final class FlexibleTestScreen extends Screen {
                     && border.top() == info.topPadding()
                     && border.right() == info.rightPadding()
                     && border.bottom() == info.bottomPadding(),
-                label + " 的九宫格边框必须与登记内边距一致，贴图为 " + border + "，登记为 " + info
+                label + " 的九宫格边框必须与登记内边距一致，贴图为 " + border + "，登记为 " + info.leftPadding() + "/" + info.topPadding() + "/" + info.rightPadding() + "/" + info.bottomPadding()
             );
         } else {
             this.check(false, label + " 必须声明 nine_slice 缩放，实际为 " + scaling);
@@ -223,7 +223,7 @@ public final class FlexibleTestScreen extends Screen {
     }
 
     /**
-     * 文本颜色必须自带不透明 alpha，否则 1.21.1 的 {@code drawString} 会把标签画成完全透明。
+     * 文本颜色必须自带不透明 alpha，否则透明颜色会让标签完全不可见。
      */
     private void verifyTextColor() {
         int plain = ButtonRenderer.textColor(Component.literal("text"));
@@ -265,8 +265,8 @@ public final class FlexibleTestScreen extends Screen {
             this.check(size != null && size.x > 0 && size.y > 0, "basedOnMouse 与 flexSize 组合必须解析出正尺寸");
             this.check(scope.contains(new Vector2f(15, 15)), "basedOnMouse 与 flexSize 组合必须命中控件内部");
             this.check(!scope.contains(new Vector2f(100, 100)), "basedOnMouse 与 flexSize 组合必须排除控件外部");
-        } catch (StackOverflowError error) {
-            this.check(false, "basedOnMouse 与 flexSize 组合不得递归溢出");
+        } catch (StackOverflowError | RuntimeException error) {
+            this.check(false, "basedOnMouse 与 flexSize 组合不得抛出异常或递归溢出");
         } finally {
             scope.close();
         }
