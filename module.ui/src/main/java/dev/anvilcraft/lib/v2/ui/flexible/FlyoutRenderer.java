@@ -4,7 +4,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import org.joml.Matrix3x2fStack;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -20,6 +19,11 @@ import org.jspecify.annotations.Nullable;
  * <p>垂直于所贴边的方向上，指针整枚画在本体之外并紧贴该边，因此不会覆盖本体内容与边框。
  */
 public class FlyoutRenderer extends ButtonRenderer {
+    /**
+     * 指针沿垂直于所贴边的方向向内收进的像素数，避免箭头根部与本体边框完全贴边。
+     */
+    private static final int POINTER_INSET = 2;
+
     @Override
     public Scope open() {
         return new Scope();
@@ -81,10 +85,14 @@ public class FlyoutRenderer extends ButtonRenderer {
             int pointerY;
             if (this.pointerDirection == PointerDirection.UP || this.pointerDirection == PointerDirection.DOWN) {
                 pointerX = x + Math.round(percent * Math.max(0, width - pointerWidth));
-                pointerY = this.pointerDirection == PointerDirection.UP ? y - pointerHeight : y + height;
+                pointerY = this.pointerDirection == PointerDirection.UP
+                    ? y - pointerHeight + FlyoutRenderer.POINTER_INSET
+                    : y + height - FlyoutRenderer.POINTER_INSET - 1 - (FlyoutRenderer.this.getType() == SpriteType.SHADED_2PX ? 1 : 0);
             } else {
                 pointerY = y + Math.round(percent * Math.max(0, height - pointerHeight));
-                pointerX = this.pointerDirection == PointerDirection.LEFT ? x - pointerWidth : x + width;
+                pointerX = this.pointerDirection == PointerDirection.LEFT
+                    ? x - pointerWidth + FlyoutRenderer.POINTER_INSET
+                    : x + width - FlyoutRenderer.POINTER_INSET;
             }
             this.blitPointer(
                 graphics, pointer.texture(), pointerX, pointerY, pointerWidth, pointerHeight, pointer.mirrored()
@@ -108,15 +116,10 @@ public class FlyoutRenderer extends ButtonRenderer {
             boolean mirrored
         ) {
             if (!mirrored) {
-                graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, 0.0F, 0.0F, width, height, width, height);
+                graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x - 1, y - 1, 0.0F, 0.0F, width + 2, height + 2, width + 2, height + 2);
                 return;
             }
-            Matrix3x2fStack pose = graphics.pose();
-            pose.pushMatrix();
-            pose.translate((float) (x + width), (float) y);
-            pose.scale(-1.0F, 1.0F);
-            graphics.blit(RenderPipelines.GUI_TEXTURED, texture, 0, 0, 0.0F, 0.0F, width, height, width, height);
-            pose.popMatrix();
+            graphics.blit(texture, x, y, x + width, y + height, 1.0F, 0.0F, 0.0F, 1.0F);
         }
 
         @Override
