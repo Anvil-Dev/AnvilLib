@@ -48,6 +48,7 @@ public final class FlexibleTestScreen extends Screen {
     private final List<String> labels = new ArrayList<>();
     private final List<String> failures = new ArrayList<>();
     private int checks;
+    private int renderedFrames;
 
     public FlexibleTestScreen() {
         super(Component.literal("AnvilLib flexible controls"));
@@ -99,6 +100,7 @@ public final class FlexibleTestScreen extends Screen {
         this.verifyPointers();
         this.verifyFlexSize();
         this.verifyTextColor();
+        this.verifyShowcaseSizes();
         this.verifyMouseVariantWithFlexSize();
         this.verifyContains();
         if (this.failures.isEmpty()) {
@@ -268,6 +270,53 @@ public final class FlexibleTestScreen extends Screen {
         }
     }
 
+    /**
+     * 展示用例的尺寸约定：自适应随文本增长，固定尺寸原样返回，深色浮窗同样能解析尺寸。
+     */
+    private void verifyShowcaseSizes() {
+        ButtonRenderer shortText = new ButtonRenderer();
+        ButtonRenderer.Scope shortScope = shortText.open();
+        shortScope.font(this.font);
+        shortScope.text(Component.literal("OK"));
+        shortScope.flexSize(FLEX_PADDING);
+        Vector2i shortSize = shortScope.resolveSize();
+        shortScope.close();
+
+        ButtonRenderer longText = new ButtonRenderer();
+        ButtonRenderer.Scope longScope = longText.open();
+        longScope.font(this.font);
+        longScope.text(Component.literal("a considerably longer label"));
+        longScope.flexSize(FLEX_PADDING);
+        Vector2i longSize = longScope.resolveSize();
+        longScope.close();
+
+        this.check(
+            shortSize != null && longSize != null && longSize.x > shortSize.x,
+            "更长的文本必须得到更宽的自适应控件"
+        );
+
+        ButtonRenderer fixed = new ButtonRenderer();
+        ButtonRenderer.Scope fixedScope = fixed.open();
+        fixedScope.font(this.font);
+        fixedScope.size(180, 36);
+        Vector2i fixedSize = fixedScope.resolveSize();
+        fixedScope.close();
+        this.check(
+            fixedSize != null && fixedSize.x == 180 && fixedSize.y == 36,
+            "固定尺寸必须原样返回，实际为 " + fixedSize
+        );
+
+        FlyoutRenderer dark = new FlyoutRenderer();
+        dark.dark();
+        FlyoutRenderer.Scope darkScope = dark.open();
+        darkScope.pointer(PointerDirection.UP, 0.25F);
+        darkScope.font(this.font);
+        darkScope.text(Component.literal("dark"));
+        darkScope.flexSize(FLEX_PADDING);
+        Vector2i darkSize = darkScope.resolveSize();
+        darkScope.close();
+        this.check(darkSize != null && darkSize.x > 0, "深色浮窗必须能解析出正尺寸");
+    }
     private void verifyContains() {
         ButtonRenderer renderer = new ButtonRenderer();
         ButtonRenderer.Scope scope = renderer.open();
@@ -297,32 +346,145 @@ public final class FlexibleTestScreen extends Screen {
             this.failures.isEmpty() ? 0xFF55FF55 : 0xFFFF5555,
             false
         );
-        for (int index = 0; index < this.bodies.size(); index++) {
-            int x = 8 + index % COLUMNS * CELL_WIDTH;
-            int y = GRID_TOP + index / COLUMNS * CELL_HEIGHT;
-            ButtonRenderer.Scope scope = this.bodies.get(index).open();
-            scope.graphics(graphics);
-            scope.font(this.font);
-            scope.pos(x, y);
-            scope.size(BODY_WIDTH, BODY_HEIGHT);
-            scope.text(Component.literal(FlexibleTestScreen.shortLabel(this.labels.get(index))));
-            scope.render();
-            scope.close();
+        int cursorX = 8;
+        int cursorY = 40;
+        int rowHeight = 0;
+        int gap = 10;
+        String[] flexTexts = {"OK", "确定", "flex", "自适应文本"};
+
+        for (int mode = 0; mode < 2; mode++) {
+            for (int index = 0; index < this.bodies.size(); index++) {
+                ButtonRenderer.Scope scope = this.bodies.get(index).open();
+                scope.graphics(graphics);
+                scope.font(this.font);
+                if (mode == 0) {
+                    scope.text(Component.literal(flexTexts[index % flexTexts.length]));
+                    scope.flexSize(FLEX_PADDING);
+                } else {
+                    scope.size(64 + index % 3 * 34, 20 + index % 3 * 5);
+                    scope.text(Component.literal(FlexibleTestScreen.shortLabel(this.labels.get(index))));
+                }
+                Vector2i size = scope.resolveSize();
+                int width = size == null ? 64 : size.x;
+                int height = size == null ? 20 : size.y;
+                if (cursorX + width + gap > this.width) {
+                    cursorX = 8;
+                    cursorY += rowHeight + gap;
+                    rowHeight = 0;
+                }
+                scope.pos(cursorX, cursorY);
+                scope.render();
+                scope.close();
+                cursorX += width + gap;
+                rowHeight = Math.max(rowHeight, height);
+            }
+            cursorX = 8;
+            cursorY += rowHeight + gap;
+            rowHeight = 0;
         }
-        int flyoutTop = GRID_TOP + (this.bodies.size() + COLUMNS - 1) / COLUMNS * CELL_HEIGHT + 24;
-        for (PointerDirection direction : PointerDirection.values()) {
-            FlyoutRenderer flyout = new FlyoutRenderer();
-            flyout.shaded1px();
-            FlyoutRenderer.Scope scope = flyout.open();
-            scope.pointer(direction, 0.5F);
-            scope.graphics(graphics);
-            scope.font(this.font);
-            scope.pos(40 + direction.ordinal() * 150, flyoutTop);
-            scope.flexSize(FLEX_PADDING);
-            scope.text(Component.literal("pointer " + direction));
-            scope.render();
-            scope.close();
+
+        int flyoutMargin = 12;
+        for (SpriteTheme theme : SpriteTheme.values()) {
+            for (SpriteStyle style : SpriteStyle.values()) {
+                for (SpriteType type : SpriteType.values()) {
+                    for (SpriteVariant variant : SpriteVariant.values()) {
+                        for (PointerDirection direction : PointerDirection.values()) {
+                            FlyoutRenderer renderer = FlexibleTestScreen.createFlyout(theme, style, type, variant, direction);
+                            FlyoutRenderer.Scope scope = renderer.open();
+                            scope.pointer(direction, 0.5F);
+                            scope.graphics(graphics);
+                            scope.font(this.font);
+                            scope.flexSize(FLEX_PADDING);
+                            scope.text(Component.literal(direction.name().substring(0, 1)));
+                            Vector2i size = scope.resolveSize();
+                            int outerWidth = (size == null ? 24 : size.x) + flyoutMargin * 2;
+                            int outerHeight = (size == null ? 16 : size.y) + flyoutMargin * 2;
+                            if (cursorX + outerWidth + gap > this.width) {
+                                cursorX = 8;
+                                cursorY += rowHeight + gap;
+                                rowHeight = 0;
+                            }
+                            scope.pos(cursorX + flyoutMargin, cursorY + flyoutMargin);
+                            scope.render();
+                            scope.close();
+                            cursorX += outerWidth + gap;
+                            rowHeight = Math.max(rowHeight, outerHeight);
+                        }
+                    }
+                }
+            }
         }
+
+        cursorX = 8;
+        cursorY += rowHeight + gap * 2;
+        rowHeight = 0;
+        float[] percents = {0.0F, 0.5F, 1.0F};
+        for (SpriteTheme theme : SpriteTheme.values()) {
+            for (PointerDirection direction : PointerDirection.values()) {
+                for (float percent : percents) {
+                    FlyoutRenderer renderer = new FlyoutRenderer();
+                    if (theme == SpriteTheme.DARK) {
+                        renderer.dark();
+                    }
+                    renderer.shaded1px();
+                    FlyoutRenderer.Scope scope = renderer.open();
+                    scope.pointer(direction, percent);
+                    scope.graphics(graphics);
+                    scope.font(this.font);
+                    scope.flexSize(FLEX_PADDING);
+                    scope.text(Component.literal(("" + percent).replace("0.", ".")));
+                    Vector2i size = scope.resolveSize();
+                    int outerWidth = (size == null ? 24 : size.x) + flyoutMargin * 2;
+                    int outerHeight = (size == null ? 16 : size.y) + flyoutMargin * 2;
+                    if (cursorX + outerWidth + gap > this.width) {
+                        cursorX = 8;
+                        cursorY += rowHeight + gap;
+                        rowHeight = 0;
+                    }
+                    scope.pos(cursorX + flyoutMargin, cursorY + flyoutMargin);
+                    scope.render();
+                    scope.close();
+                    cursorX += outerWidth + gap;
+                    rowHeight = Math.max(rowHeight, outerHeight);
+                }
+            }
+        }
+        this.renderedFrames++;
+    }
+
+
+    private static FlyoutRenderer createFlyout(
+        SpriteTheme theme,
+        SpriteStyle style,
+        SpriteType type,
+        SpriteVariant variant,
+        PointerDirection direction
+    ) {
+        FlyoutRenderer renderer = new FlyoutRenderer();
+        if (theme == SpriteTheme.DARK) {
+            renderer.dark();
+        }
+        if (style == SpriteStyle.FLAT) {
+            renderer.flat();
+        }
+        switch (type) {
+            case SHADED_1PX -> renderer.shaded1px();
+            case SHADED_2PX -> renderer.shaded2px();
+            case NON_SHADED -> {
+            }
+        }
+        switch (variant) {
+            case HIGHLIGHTED -> renderer.highlighted();
+            case PRESSED -> renderer.pressed();
+            case NORMAL -> {
+            }
+        }
+        return renderer;
+    }
+    private static FlyoutRenderer createFlyout(PointerDirection direction) {
+        FlyoutRenderer flyout = new FlyoutRenderer();
+        flyout.shaded1px();
+        return flyout;
     }
 
     private static String shortLabel(String label) {
@@ -348,6 +510,13 @@ public final class FlexibleTestScreen extends Screen {
 
     public int checkCount() {
         return this.checks;
+    }
+
+    /**
+     * 取已经完成的绘制帧数，供自动化入口等待画面稳定后再截图。
+     */
+    public int renderedFrames() {
+        return this.renderedFrames;
     }
 
     private void check(boolean condition, String message) {

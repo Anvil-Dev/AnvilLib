@@ -1,10 +1,12 @@
 package dev.anvilcraft.lib.v2.test.flexible;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.logging.LogUtils;
 import dev.anvilcraft.lib.v2.test.AnvilLibTest;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
@@ -18,6 +20,7 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -41,6 +44,8 @@ public final class FlexibleTestClient {
     );
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String RESULT_FILE = "flexible-result.txt";
+    private static final String SCREENSHOT_FILE = "flexible-result.png";
+    private static final int SCREENSHOT_FRAME_DELAY = 5;
     private static final boolean AUTOMATED = Boolean.getBoolean("anvillib.flexibleUiTest");
     private static int autoStage;
 
@@ -98,6 +103,10 @@ public final class FlexibleTestClient {
                 if (!(minecraft.screen instanceof FlexibleTestScreen screen)) {
                     return;
                 }
+                if (screen.renderedFrames() < FlexibleTestClient.SCREENSHOT_FRAME_DELAY) {
+                    return;
+                }
+                FlexibleTestClient.captureScreenshot(minecraft);
                 List<String> failures = screen.failures();
                 String line = failures.isEmpty()
                     ? "PASS " + screen.checkCount()
@@ -108,6 +117,22 @@ public final class FlexibleTestClient {
             }
             default -> {
             }
+        }
+    }
+
+    /**
+     * 把当前画面写入固定文件名的截图，每次运行覆盖上一张。
+     */
+    private static void captureScreenshot(Minecraft minecraft) {
+        NativeImage image = Screenshot.takeScreenshot(minecraft.getMainRenderTarget());
+        Path path = minecraft.gameDirectory.toPath().resolve(FlexibleTestClient.SCREENSHOT_FILE);
+        try {
+            image.writeToFile(path);
+            FlexibleTestClient.LOGGER.info("FLEXIBLE_UI_SCREENSHOT {}", path);
+        } catch (IOException exception) {
+            FlexibleTestClient.LOGGER.error("Unable to write {}", FlexibleTestClient.SCREENSHOT_FILE, exception);
+        } finally {
+            image.close();
         }
     }
 
