@@ -22,7 +22,12 @@ public class FlyoutRenderer extends ButtonRenderer {
     /**
      * 指针沿垂直于所贴边的方向向内收进的像素数，避免箭头根部与本体边框完全贴边。
      */
-    private static final int POINTER_INSET = 2;
+    private static final int POINTER_INSET = 1;
+
+    /**
+     * 指针沿所贴边方向的移位余量，两端各留出这段距离。
+     */
+    private static final int POINTER_MARGIN = 2;
 
     @Override
     public Scope open() {
@@ -84,12 +89,14 @@ public class FlyoutRenderer extends ButtonRenderer {
             int pointerX;
             int pointerY;
             if (this.pointerDirection == PointerDirection.UP || this.pointerDirection == PointerDirection.DOWN) {
-                pointerX = x + Math.round(percent * Math.max(0, width - pointerWidth));
+                pointerX = x + FlyoutRenderer.POINTER_MARGIN
+                    + Math.round(percent * Math.max(0, width - pointerWidth - FlyoutRenderer.POINTER_MARGIN * 2));
                 pointerY = this.pointerDirection == PointerDirection.UP
                     ? y - pointerHeight + FlyoutRenderer.POINTER_INSET
-                    : y + height - FlyoutRenderer.POINTER_INSET - 1 - (FlyoutRenderer.this.getType() == SpriteType.SHADED_2PX ? 1 : 0);
+                    : y + height - this.pointerDownInset();
             } else {
-                pointerY = y + Math.round(percent * Math.max(0, height - pointerHeight));
+                pointerY = y + FlyoutRenderer.POINTER_MARGIN
+                    + Math.round(percent * Math.max(0, height - pointerHeight - FlyoutRenderer.POINTER_MARGIN * 2));
                 pointerX = this.pointerDirection == PointerDirection.LEFT
                     ? x - pointerWidth + FlyoutRenderer.POINTER_INSET
                     : x + width - FlyoutRenderer.POINTER_INSET;
@@ -97,6 +104,17 @@ public class FlyoutRenderer extends ButtonRenderer {
             this.blitPointer(
                 graphics, pointer.texture(), pointerX, pointerY, pointerWidth, pointerHeight, pointer.mirrored()
             );
+        }
+
+        /**
+         * 下指针贴底时的收进量：阴影层数越多，贴图底部多出的行越多，需要多收进对应像素。
+         */
+        private int pointerDownInset() {
+            return switch (FlyoutRenderer.this.getType()) {
+                case NON_SHADED -> 1;
+                case SHADED_1PX -> 2;
+                case SHADED_2PX -> 3;
+            };
         }
 
         /**
