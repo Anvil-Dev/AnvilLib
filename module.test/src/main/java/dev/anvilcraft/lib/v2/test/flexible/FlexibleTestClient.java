@@ -25,9 +25,9 @@ import java.util.List;
  * <p>交互方式有两条：{@code /anvillibtest flexible} 客户端命令与 {@code F7} 快捷键，两者都打开
  * {@link FlexibleTestScreen}，由屏幕在初始化时完成贴图核对。
  *
- * <p>自动化方式复用 {@code anvillib.flexibleUiTest} 系统属性：置位后客户端在进入主菜单时隐藏窗口、
- * 自动打开回归屏幕，把核对结论写入游戏目录下的 {@code flexible-result.txt} 并退出。
- * 隐藏窗口让该流程不会抢占用户正在使用的桌面，核对结论同时写入日志。
+ * <p>自动化方式复用 {@code anvillib.flexibleUiTest} 系统属性：置位后客户端在进入主菜单时自动打开回归屏幕，
+ * 把核对结论写入游戏目录下的 {@code flexible-result.txt} 并退出。
+ * 窗口会短暂出现而不会主动隐藏，核对结论同时写入日志。
  */
 @EventBusSubscriber(modid = AnvilLibTest.MOD_ID, value = Dist.CLIENT)
 public final class FlexibleTestClient {
