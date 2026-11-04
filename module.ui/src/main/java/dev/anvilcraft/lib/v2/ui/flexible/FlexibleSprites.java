@@ -178,9 +178,7 @@ public final class FlexibleSprites {
      * <p>边距以不可变的 {@code int} 保存，避免调用方透过共享的向量对象改坏全局查找表。
      */
     public record SpriteInfo(
-        
-Identifier
- sprite,
+        Identifier sprite,
         int leftPadding,
         int topPadding,
         int rightPadding,
