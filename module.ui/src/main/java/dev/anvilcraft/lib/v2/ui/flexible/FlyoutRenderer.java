@@ -28,6 +28,41 @@ public class FlyoutRenderer extends ButtonRenderer {
      */
     private static final int POINTER_MARGIN = 2;
 
+    /**
+     * 计算指针贴图的绘制矩形与 U 方向。
+     *
+     * <p>{@code width} 与 {@code height} 是可见内容尺寸，贴图四周各有 1px 透明边，因此绘制矩形
+     * 向左上各扩 1px、宽高各加 2px；镜像只翻转 U，矩形与非镜像完全一致。
+     */
+    public static PointerQuad pointerQuad(int x, int y, int width, int height, boolean mirrored) {
+        return new PointerQuad(x - 1, y - 1, width + 2, height + 2, mirrored);
+    }
+
+    /**
+     * 指针贴图的一次绘制参数。
+     *
+     * @param x        绘制矩形左边界
+     * @param y        绘制矩形上边界
+     * @param width    绘制矩形宽度
+     * @param height   绘制矩形高度
+     * @param mirrored 是否水平镜像
+     */
+    public record PointerQuad(int x, int y, int width, int height, boolean mirrored) {
+        /**
+         * U 起点，镜像时从贴图右边缘开始。
+         */
+        public float u0() {
+            return this.mirrored ? 1.0F : 0.0F;
+        }
+
+        /**
+         * U 终点，镜像时结束于贴图左边缘。
+         */
+        public float u1() {
+            return this.mirrored ? 0.0F : 1.0F;
+        }
+    }
+
     @Override
     public Scope open() {
         return new Scope();
@@ -142,23 +177,19 @@ public class FlyoutRenderer extends ButtonRenderer {
             int height,
             boolean mirrored
         ) {
-            if (!mirrored) {
-                graphics.blit(texture, x - 1, y - 1, 0.0F, 0.0F, width + 2, height + 2, width + 2, height + 2);
-                return;
-            }
-            // 镜像改用翻转 UV：直接对调左右两侧的纹理坐标，顶点绕序与剔除状态都与普通绘制一致。
+            FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(x, y, width, height, mirrored);
             graphics.blit(
                 texture,
-                x - 1,
-                y - 1,
-                width + 2,
-                height + 2,
-                (float) (width + 2),
+                quad.x(),
+                quad.y(),
+                quad.width(),
+                quad.height(),
+                quad.u0() * quad.width(),
                 0.0F,
-                -(width + 2),
-                height + 2,
-                width + 2,
-                height + 2
+                (int) ((quad.u1() - quad.u0()) * quad.width()),
+                quad.height(),
+                quad.width(),
+                quad.height()
             );
         }
 
