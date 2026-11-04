@@ -28,6 +28,8 @@ public class TestCommand {
                                 )
                             )
                         )
+                ).then(
+                    Commands.literal("flatten-loop").executes(FlattenLoopTest::run)
                 )
             )
         );

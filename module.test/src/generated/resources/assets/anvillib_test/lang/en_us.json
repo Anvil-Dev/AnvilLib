@@ -153,10 +153,12 @@
   "item.anvillib_test.test_cached_rendering": "Test Cached Rendering",
   "item.anvillib_test.test_item": "Test Item",
   "item.anvillib_test.test_occlusion": "Test Occlusion",
+  "key.anvillib_test.flexible_screen": "Flexible Control Screen",
   "itemGroup.anvillib_test.test_tab": "Test Tab",
   "key.anvillib_test.wheel_hold": "Wheel Hold",
   "key.anvillib_test.wheel_hold_annular": "Wheel Hold (Annular)",
   "key.anvillib_test.wheel_tap": "Wheel Tap",
   "key.anvillib_test.wheel_tap_annular": "Wheel Tap (Annular)",
+  "key.category.anvillib_test.flexible": "AnvilLib Test-Flexible",
   "key.categories.anvillib_test.wheel": "AnvilLib Test-Wheel"
 }
