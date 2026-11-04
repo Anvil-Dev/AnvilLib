@@ -34,7 +34,7 @@ import java.util.List;
  */
 @EventBusSubscriber(modid = AnvilLibTest.MOD_ID, value = Dist.CLIENT)
 public final class FlexibleTestClient {
-    public static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(AnvilLibTest.of("flexible"));
+    public static final KeyMapping.Category KEY_CATEGORY = new KeyMapping.Category(AnvilLibTest.of("flexible"));
     public static final KeyMapping OPEN_SCREEN = new KeyMapping(
         "key.anvillib_test.flexible_screen",
         InputConstants.Type.KEYBOARD,
@@ -53,6 +53,7 @@ public final class FlexibleTestClient {
 
     @SubscribeEvent
     public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
+        event.registerCategory(FlexibleTestClient.KEY_CATEGORY);
         event.register(FlexibleTestClient.OPEN_SCREEN);
     }
 
