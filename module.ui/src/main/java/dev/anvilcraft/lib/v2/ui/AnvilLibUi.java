@@ -1,9 +1,10 @@
 package dev.anvilcraft.lib.v2.ui;
 
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
 
-@Mod(AnvilLibUi.MOD_ID)
+@Mod(value = AnvilLibUi.MOD_ID, dist = Dist.CLIENT)
 public final class AnvilLibUi {
     public static final String MOD_ID = "anvillib_ui";
 
