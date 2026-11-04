@@ -24,6 +24,7 @@ AnvilLib adopts a modular design and includes the following functional modules:
 | **Moveable Entity Block** | Support for block entities movable by pistons     |
 | **Multiblock**            | Dynamic multiblock system                         |
 | **Registrum**             | Simplified registration system                    |
+| **UI**                    | Flexible widgets rendered from nine-slice sprites |
 | **Util**                  | Shareable utilities                               |
 | **Wheel**                 | Radial wheel menu client API                      |
 | **Collision** | AABB and triangle collision queries |
@@ -369,6 +370,47 @@ controller.onHoldKeyPressed(model);
 controller.onHoldKeyReleased();
 ```
 
+### UI Module
+
+Provides flexible widgets rendered from nine-slice sprites: theme, style, shadow and
+interaction variant combine freely, sizes can follow the label, and flyouts can carry a pointer
+on any edge.
+
+**Key Features:**
+
+- Theme (light/dark), style (three-dimensional/flat), shadow (none/1px/2px) and variant (normal/highlighted/pressed) combine freely
+- `flexSize` derives the widget size from the label and the sprite padding
+- `basedOnMouse` picks the variant from hover and press state
+- `FlyoutRenderer` draws a pointer on any edge, positioned by a percentage
+- Sprites live under `textures/gui` in the `anvillib_ui` namespace
+
+**Usage Example:**
+
+```java
+ButtonRenderer button = new ButtonRenderer();
+button.shaded1px().basedOnMouse();
+
+try (ButtonRenderer.Scope scope = button.open()) {
+    scope.graphics(graphics).font(font).pos(x, y).mousePos(mouseX, mouseY)
+        .literal("Confirm").flexSize(3);
+    scope.render();
+}
+// Record the press origin on press and clear it on release, both before the next render().
+// Calling onPress and onRelease back to back after rendering makes basedOnMouse toggle only
+// between normal and highlighted, so the pressed state is never drawn.
+@Override
+public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    this.button.onPress((int) mouseX, (int) mouseY);
+    return super.mouseClicked(mouseX, mouseY, button);
+}
+
+@Override
+public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    this.button.onRelease();
+    return super.mouseReleased(mouseX, mouseY, button);
+}
+```
+
 ### Main Module
 
 `anvillib-neoforge-1.21.8` is the aggregate artifact. It bundles and re-exports:
@@ -408,6 +450,7 @@ dependencies {
     implementation "dev.anvilcraft.lib:anvillib-network-neoforge-1.21.8:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.8:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.8:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-ui-neoforge-1.21.8:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-util-neoforge-1.21.8:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.8:2.0.0"
 }
@@ -433,6 +476,7 @@ dependencies {
     implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.8:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.8:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.8:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-ui-neoforge-1.21.8:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.8:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.8:2.0.0")
 }
