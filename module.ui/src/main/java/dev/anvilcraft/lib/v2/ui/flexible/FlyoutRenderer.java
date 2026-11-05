@@ -167,7 +167,7 @@ public class FlyoutRenderer extends ButtonRenderer {
          *
          * <p>指针贴图是普通纹理而非九宫格切图，无法走 {@code blitSprite}，改用按普通纹理铺一次的
          * {@code blit}。朝右的指针没有独立贴图，由朝左的贴图水平镜像得到：把姿态原点平移到右边界再沿
-         * X 轴取负，等价于对调左右两列的 U 坐标，顶点绕序保持不变，因此不必改动背面剔除状态。
+         * X 轴取负，顶点绕序保持不变，因此不必改动背面剔除状态。
          */
         private void blitPointer(
             GuiGraphicsExtractor graphics,
@@ -179,16 +179,42 @@ public class FlyoutRenderer extends ButtonRenderer {
             boolean mirrored
         ) {
             FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(x, y, width, height, mirrored);
+            int color = ButtonRenderer.color(FlyoutRenderer.this.alpha);
+            if (mirrored) {
+                graphics.pose().pushMatrix();
+                graphics.pose().translate(quad.x() + quad.width(), (float) quad.y());
+                graphics.pose().scale(-1.0F, 1.0F);
+                this.blitPointerQuad(graphics, texture, 0, 0, quad.width(), quad.height(), color);
+                graphics.pose().popMatrix();
+                return;
+            }
+            this.blitPointerQuad(graphics, texture, quad.x(), quad.y(), quad.width(), quad.height(), color);
+        }
+
+        /**
+         * 铺一枚按原始像素尺寸对齐的指针贴图。
+         */
+        private void blitPointerQuad(
+            GuiGraphicsExtractor graphics,
+            Identifier texture,
+            int x,
+            int y,
+            int width,
+            int height,
+            int color
+        ) {
             graphics.blit(
+                RenderPipelines.GUI_TEXTURED,
                 texture,
-                quad.x(),
-                quad.y(),
-                quad.x() + quad.width(),
-                quad.y() + quad.height(),
-                quad.u0(),
-                quad.u1(),
+                x,
+                y,
                 0.0F,
-                1.0F
+                0.0F,
+                width,
+                height,
+                width,
+                height,
+                color
             );
         }
 
