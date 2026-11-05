@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.util.Mth;
 
 import java.util.Optional;
 
@@ -12,6 +13,7 @@ import java.util.Optional;
  *
  * <p>文本颜色取自文本组件自带的样式颜色，缺省为白色；两者都补齐不透明 alpha，
  * 因为 {@link TextColor#getValue()} 只带 RGB，alpha 为 0 时文本不会被绘制。
+ * 渲染器设置了整体透明度时，本体与文本都按该透明度着色。
  */
 public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
     /**
@@ -22,6 +24,20 @@ public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
             .map(TextColor::getValue)
             .map(value -> value | 0xFF000000)
             .orElse(0xFFFFFFFF);
+    }
+
+    /**
+     * 按整体透明度算出白色 ARGB 颜色，供九宫格本体与指针着色。
+     */
+    public static int color(float alpha) {
+        return (int) (Mth.clamp(alpha, 0.0F, 1.0F) * 255.0F) << 24 | 0xFFFFFF;
+    }
+
+    /**
+     * 按文本组件自带颜色与整体透明度算出 ARGB 颜色。
+     */
+    public static int textColor(Component text, float alpha) {
+        return ButtonRenderer.textColor(text) & 0xFFFFFF | ButtonRenderer.color(alpha) & 0xFF000000;
     }
 
     @Override
@@ -49,7 +65,8 @@ public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
                 x,
                 y,
                 width,
-                height
+                height,
+                ButtonRenderer.color(ButtonRenderer.this.alpha)
             );
             if (this.font != null && this.text != null) {
                 int textX = x + info.leftPadding() + 1;
@@ -63,7 +80,7 @@ public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
                     this.text,
                     textX,
                     textY,
-                    ButtonRenderer.textColor(this.text)
+                    ButtonRenderer.textColor(this.text, ButtonRenderer.this.alpha)
                 );
             }
         }
