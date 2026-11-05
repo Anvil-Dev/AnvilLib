@@ -1,8 +1,16 @@
 package dev.anvilcraft.lib.v2.ui.flexible;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import org.joml.Matrix4f;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -80,6 +88,52 @@ public class FlyoutRenderer extends ButtonRenderer {
             quad.u0() * quad.width(),
             Math.round((quad.u1() - quad.u0()) * quad.width())
         );
+    }
+
+    /**
+     * 按顶点色绘制一枚贴图。
+     *
+     * <p>1.21.1 的 {@code GuiGraphics.blit} 没有颜色参数，只能靠全局着色器颜色染色；指针贴图是普通纹理，
+     * 走那条路径时透明度不会生效，因此这里直接按 {@code POSITION_TEX_COLOR} 顶点格式铺一个四边形，
+     * 把颜色写在顶点上。
+     */
+    private static void blitTinted(
+        GuiGraphics graphics,
+        ResourceLocation texture,
+        int x,
+        int y,
+        int width,
+        int height,
+        float u0,
+        float u1,
+        float v0,
+        float v1,
+        int argb
+    ) {
+        float alpha = (argb >>> 24 & 0xFF) / 255.0F;
+        float red = (argb >>> 16 & 0xFF) / 255.0F;
+        float green = (argb >>> 8 & 0xFF) / 255.0F;
+        float blue = (argb & 0xFF) / 255.0F;
+        graphics.flush();
+        RenderSystem.setShaderTexture(0, texture);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+        RenderSystem.enableBlend();
+        Matrix4f pose = graphics.pose().last().pose();
+        BufferBuilder buffer = Tesselator.getInstance()
+            .begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        buffer.addVertex(pose, (float) x, (float) y, 0.0F)
+            .setUv(u0, v0)
+            .setColor(red, green, blue, alpha);
+        buffer.addVertex(pose, (float) x, (float) (y + height), 0.0F)
+            .setUv(u0, v1)
+            .setColor(red, green, blue, alpha);
+        buffer.addVertex(pose, (float) (x + width), (float) (y + height), 0.0F)
+            .setUv(u1, v1)
+            .setColor(red, green, blue, alpha);
+        buffer.addVertex(pose, (float) (x + width), (float) y, 0.0F)
+            .setUv(u1, v0)
+            .setColor(red, green, blue, alpha);
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
     }
 
     @Override
@@ -198,24 +252,21 @@ public class FlyoutRenderer extends ButtonRenderer {
         ) {
             FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(x, y, width, height, mirrored);
             FlyoutRenderer.PointerSample sample = FlyoutRenderer.pointerSample(quad);
-            float @Nullable [] previous = ButtonRenderer.applyAlpha(graphics, FlyoutRenderer.this.alpha);
-            try {
-                graphics.blit(
-                    texture,
-                    quad.x(),
-                    quad.y(),
-                    quad.width(),
-                    quad.height(),
-                    sample.u(),
-                    0.0F,
-                    sample.srcWidth(),
-                    quad.height(),
-                    quad.width(),
-                    quad.height()
-                );
-            } finally {
-                ButtonRenderer.resetAlpha(graphics, previous);
-            }
+            float textureWidth = quad.width();
+            float textureHeight = quad.height();
+            FlyoutRenderer.blitTinted(
+                graphics,
+                texture,
+                quad.x(),
+                quad.y(),
+                quad.width(),
+                quad.height(),
+                sample.u() / textureWidth,
+                (sample.u() + sample.srcWidth()) / textureWidth,
+                0.0F,
+                1.0F,
+                ButtonRenderer.color(FlyoutRenderer.this.alpha)
+            );
         }
 
         @Override
