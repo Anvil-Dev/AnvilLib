@@ -65,9 +65,16 @@ public abstract class Renderer<T extends Scope> {
      * <p>透明度只在绘制时读取，因此同一个渲染器可以逐帧改变透明度实现淡入淡出，
      * 不必为每一帧新建渲染器。
      *
+     * <p>NaN 会被忽略，透明度保持上一次的取值，避免淡入淡出算出 NaN 时控件整块消失。
+     *
+     * <p>原版文本着色器在 alpha 低于 0.1 时整体丢弃，淡出末段文本会比本体更早消失。
+     *
      * @param alpha 0 到 1 之间的透明度，超出范围时按最近的边界取值
      */
     public Renderer<T> alpha(float alpha) {
+        if (Float.isNaN(alpha)) {
+            return this;
+        }
         this.alpha = Mth.clamp(alpha, 0.0F, 1.0F);
         return this;
     }
