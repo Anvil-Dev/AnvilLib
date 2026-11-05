@@ -199,25 +199,22 @@ public class FlyoutRenderer extends ButtonRenderer {
         ) {
             FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(x, y, width, height, mirrored);
             FlyoutRenderer.PointerSample sample = FlyoutRenderer.pointerSample(quad);
-            float @Nullable [] previous = ButtonRenderer.applyAlpha(graphics, FlyoutRenderer.this.alpha);
-            try {
-                graphics.blit(
-                    RenderType::guiTextured,
-                    texture,
-                    quad.x(),
-                    quad.y(),
-                    sample.u(),
-                    0.0F,
-                    quad.width(),
-                    quad.height(),
-                    sample.srcWidth(),
-                    quad.height(),
-                    quad.width(),
-                    quad.height()
-                );
-            } finally {
-                ButtonRenderer.resetAlpha(graphics, previous);
-            }
+            // 颜色直接传给 blit：透明度若靠全局着色器颜色，会被同一帧里其它绘制的 flush 冲掉
+            graphics.blit(
+                RenderType::guiTextured,
+                texture,
+                quad.x(),
+                quad.y(),
+                sample.u(),
+                0.0F,
+                quad.width(),
+                quad.height(),
+                sample.srcWidth(),
+                quad.height(),
+                quad.width(),
+                quad.height(),
+                ButtonRenderer.color(FlyoutRenderer.this.alpha)
+            );
         }
 
         @Override
