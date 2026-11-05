@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * 带指针的浮窗渲染器。
@@ -184,8 +185,8 @@ public class FlyoutRenderer extends ButtonRenderer {
          * 按原始像素尺寸绘制指针贴图。
          *
          * <p>指针贴图是普通纹理而非九宫格切图，无法走 {@code blitSprite}，改用按普通纹理铺一次的
-         * {@code blit}。朝右的指针没有独立贴图，由朝左的贴图水平镜像得到：把姿态原点平移到右边界再沿
-         * X 轴取负，等价于对调左右两列的 U 坐标，顶点绕序保持不变，因此不必改动背面剔除状态。
+         * {@code blit}。朝右的指针没有独立贴图，由朝左的贴图水平镜像得到：绘制矩形不变，只把贴图采样宽度取负，
+         * 让 U 坐标从右向左递减。变换只发生在贴图坐标上，顶点绕序保持不变。
          */
         private void blitPointer(
             GuiGraphics graphics,
@@ -198,8 +199,9 @@ public class FlyoutRenderer extends ButtonRenderer {
         ) {
             FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(x, y, width, height, mirrored);
             FlyoutRenderer.PointerSample sample = FlyoutRenderer.pointerSample(quad);
-            ButtonRenderer.applyAlpha(graphics, FlyoutRenderer.this.alpha);
-            graphics.blit(
+            float @Nullable [] previous = ButtonRenderer.applyAlpha(graphics, FlyoutRenderer.this.alpha);
+            try {
+                graphics.blit(
                 texture,
                 quad.x(),
                 quad.y(),
@@ -212,7 +214,9 @@ public class FlyoutRenderer extends ButtonRenderer {
                 quad.width(),
                 quad.height()
             );
-            ButtonRenderer.resetAlpha(graphics, FlyoutRenderer.this.alpha);
+            } finally {
+                ButtonRenderer.resetAlpha(graphics, previous);
+            }
         }
 
         @Override
