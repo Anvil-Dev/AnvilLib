@@ -32,7 +32,8 @@ import java.util.List;
  *
  * <p>打开时按主题、样式、类型、变体四维组合逐项核对本体贴图：切图必须落在 {@code anvillib_ui} 命名空间下、
  * 能从 {@code minecraft:gui} 图集取到，且九宫格边框必须与 {@link FlexibleSprites} 登记的内边距逐边相等；
- * 随后核对四个方向的指针贴图尺寸、镜像标记与命名空间，并验证 {@code flexSize} 的尺寸算式与 {@code contains} 的边界判定。
+ * 随后核对四个方向的指针贴图尺寸、镜像标记、命名空间与 U 采样参数，验证 {@code flexSize} 的尺寸算式、{@code contains} 的边界判定，
+ * 以及整体透明度对本体与文本颜色的作用。
  *
  * <p>核对完成后屏幕把全部组合绘制成按钮网格，并用四个方向的浮窗展示指针贴图，便于肉眼确认外观。
  */
@@ -98,6 +99,7 @@ public final class FlexibleTestScreen extends Screen {
         this.verifyPointerQuad();
         this.verifyFlexSize();
         this.verifyTextColor();
+        this.verifyAlpha();
         this.verifyShowcaseSizes();
         this.verifyMouseVariantWithFlexSize();
         this.verifyContains();
@@ -195,6 +197,16 @@ public final class FlexibleTestScreen extends Screen {
         this.check(
             mirrored.u0() == 1.0F && mirrored.u1() == 0.0F,
             "镜像指针必须把 U 从 1 递减到 0"
+        );
+        FlyoutRenderer.PointerSample straightSample = FlyoutRenderer.pointerSample(straight);
+        FlyoutRenderer.PointerSample mirroredSample = FlyoutRenderer.pointerSample(mirrored);
+        this.check(
+            straightSample.u() == 0.0F && straightSample.srcWidth() == straight.width(),
+            "非镜像指针必须从贴图左端正向采样，实际为 " + straightSample
+        );
+        this.check(
+            mirroredSample.u() == mirrored.width() && mirroredSample.srcWidth() == -mirrored.width(),
+            "镜像指针必须从贴图右端反向采样，实际为 " + mirroredSample
         );
     }
 
@@ -303,6 +315,46 @@ public final class FlexibleTestScreen extends Screen {
         } finally {
             scope.close();
         }
+    }
+
+    /**
+     * 透明度必须按 0 到 1 钳制，并按 alpha 分量作用到本体与文本的颜色上。
+     *
+     * <p>透明度只体现在 ARGB 的 alpha 分量上，文本同时保留自带颜色。
+     */
+    private void verifyAlpha() {
+        ButtonRenderer renderer = new ButtonRenderer();
+        this.check(renderer.alpha(0.5F) == renderer, "alpha 必须返回渲染器自身以便链式调用");
+        renderer.alpha(-1.0F);
+        this.check(renderer.getAlpha() == 0.0F, "alpha 必须把负值钳制到 0，实际为 " + renderer.getAlpha());
+        renderer.alpha(2.0F);
+        this.check(renderer.getAlpha() == 1.0F, "alpha 必须把大于 1 的取值钳制到 1，实际为 " + renderer.getAlpha());
+        renderer.alpha(0.5F);
+        this.check(renderer.getAlpha() == 0.5F, "alpha 必须原样保留 0 到 1 之间的取值，实际为 " + renderer.getAlpha());
+        renderer.alpha(Float.NaN);
+        this.check(renderer.getAlpha() == 0.5F, "NaN 必须被忽略并保持上一次透明度，实际为 " + renderer.getAlpha());
+        this.check(
+            ButtonRenderer.color(1.0F) == 0xFFFFFFFF,
+            "不透明本体颜色必须是白色 0xFFFFFFFF，实际为 " + Integer.toHexString(ButtonRenderer.color(1.0F))
+        );
+        this.check(
+            ButtonRenderer.color(0.0F) == 0x00FFFFFF,
+            "全透明本体颜色必须保留白色 RGB 且 alpha 为 0，实际为 " + Integer.toHexString(ButtonRenderer.color(0.0F))
+        );
+        this.check(
+            (ButtonRenderer.color(0.5F) >>> 24) == 127,
+            "半透明本体颜色的 alpha 必须为 127，实际为 " + (ButtonRenderer.color(0.5F) >>> 24)
+        );
+        Component text = Component.literal("alpha");
+        this.check(
+            ButtonRenderer.textColor(text, 1.0F) == ButtonRenderer.textColor(text),
+            "不透明文本颜色必须与未指定透明度时一致"
+        );
+        int transparentText = ButtonRenderer.textColor(text, 0.0F);
+        this.check(
+            (transparentText >>> 24) == 0 && (transparentText & 0xFFFFFF) == 0xFFFFFF,
+            "全透明文本必须保留白色 RGB 且 alpha 为 0，实际为 " + Integer.toHexString(transparentText)
+        );
     }
 
     /**

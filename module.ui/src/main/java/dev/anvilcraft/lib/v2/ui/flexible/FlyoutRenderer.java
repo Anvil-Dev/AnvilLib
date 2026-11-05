@@ -64,6 +64,25 @@ public class FlyoutRenderer extends ButtonRenderer {
         }
     }
 
+    /**
+     * 指针贴图的采样参数。
+     *
+     * @param u 采样起点，单位为贴图像素
+     * @param srcWidth 采样宽度，镜像时取负值让 U 坐标从右向左
+     */
+    public record PointerSample(float u, int srcWidth) {
+    }
+
+    /**
+     * 按绘制矩形算出指针贴图的采样参数。镜像只反转 U，不翻转几何，顶点绕序保持不变。
+     */
+    public static PointerSample pointerSample(PointerQuad quad) {
+        return new PointerSample(
+            quad.u0() * quad.width(),
+            Math.round((quad.u1() - quad.u0()) * quad.width())
+        );
+    }
+
     @Override
     public Scope open() {
         return new Scope();
@@ -166,8 +185,8 @@ public class FlyoutRenderer extends ButtonRenderer {
          * 按原始像素尺寸绘制指针贴图。
          *
          * <p>指针贴图是普通纹理而非九宫格切图，无法走 {@code blitSprite}，改用按普通纹理铺一次的
-         * {@code blit}。朝右的指针没有独立贴图，由朝左的贴图水平镜像得到：把姿态原点平移到右边界再沿
-         * X 轴取负，等价于对调左右两列的 U 坐标，顶点绕序保持不变，因此不必改动背面剔除状态。
+         * {@code blit}。朝右的指针没有独立贴图，由朝左的贴图水平镜像得到：绘制矩形不变，只把贴图采样宽度取负，
+         * 让 U 坐标从右向左递减。变换只发生在贴图坐标上，顶点绕序保持不变。
          */
         private void blitPointer(
             GuiGraphics graphics,
@@ -179,16 +198,21 @@ public class FlyoutRenderer extends ButtonRenderer {
             boolean mirrored
         ) {
             FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(x, y, width, height, mirrored);
+            FlyoutRenderer.PointerSample sample = FlyoutRenderer.pointerSample(quad);
             graphics.blit(
+                RenderPipelines.GUI_TEXTURED,
                 texture,
                 quad.x(),
                 quad.y(),
-                quad.x() + quad.width(),
-                quad.y() + quad.height(),
-                quad.u0(),
-                quad.u1(),
+                sample.u(),
                 0.0F,
-                1.0F
+                quad.width(),
+                quad.height(),
+                sample.srcWidth(),
+                quad.height(),
+                quad.width(),
+                quad.height(),
+                ButtonRenderer.color(FlyoutRenderer.this.alpha)
             );
         }
 
