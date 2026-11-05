@@ -178,6 +178,7 @@ public class FlyoutRenderer extends ButtonRenderer {
             boolean mirrored
         ) {
             FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(x, y, width, height, mirrored);
+            ButtonRenderer.applyAlpha(graphics, FlyoutRenderer.this.alpha);
             graphics.blit(
                 texture,
                 quad.x(),
@@ -191,6 +192,7 @@ public class FlyoutRenderer extends ButtonRenderer {
                 quad.width(),
                 quad.height()
             );
+            ButtonRenderer.resetAlpha(graphics, FlyoutRenderer.this.alpha);
         }
 
         @Override
