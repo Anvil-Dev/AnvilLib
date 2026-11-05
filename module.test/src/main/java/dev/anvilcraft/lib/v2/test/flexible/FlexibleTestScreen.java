@@ -318,12 +318,9 @@ public final class FlexibleTestScreen extends Screen {
     }
 
     /**
-     * 展示用例的尺寸约定：自适应随文本增长，固定尺寸原样返回，深色浮窗同样能解析尺寸。
-     */
-    /**
-     * 透明度必须按 0 到 1 钳制，并逐位作用到本体与文本的颜色上。
+     * 透明度必须按 0 到 1 钳制，并按 alpha 分量作用到本体与文本的颜色上。
      *
-     * <p>本体与文本都走颜色参数着色，因此透明度只需体现在 ARGB 的 alpha 分量上；文本还要保留自带颜色。
+     * <p>透明度只体现在 ARGB 的 alpha 分量上，文本同时保留自带颜色。
      */
     private void verifyAlpha() {
         ButtonRenderer renderer = new ButtonRenderer();
@@ -334,6 +331,8 @@ public final class FlexibleTestScreen extends Screen {
         this.check(renderer.getAlpha() == 1.0F, "alpha 必须把大于 1 的取值钳制到 1，实际为 " + renderer.getAlpha());
         renderer.alpha(0.5F);
         this.check(renderer.getAlpha() == 0.5F, "alpha 必须原样保留 0 到 1 之间的取值，实际为 " + renderer.getAlpha());
+        renderer.alpha(Float.NaN);
+        this.check(renderer.getAlpha() == 0.5F, "NaN 必须被忽略并保持上一次透明度，实际为 " + renderer.getAlpha());
         this.check(
             ButtonRenderer.color(1.0F) == 0xFFFFFFFF,
             "不透明本体颜色必须是白色 0xFFFFFFFF，实际为 " + Integer.toHexString(ButtonRenderer.color(1.0F))
@@ -357,6 +356,10 @@ public final class FlexibleTestScreen extends Screen {
             "全透明文本必须保留白色 RGB 且 alpha 为 0，实际为 " + Integer.toHexString(transparentText)
         );
     }
+
+    /**
+     * 展示用例的尺寸约定：自适应随文本增长，固定尺寸原样返回，深色浮窗同样能解析尺寸。
+     */
     private void verifyShowcaseSizes() {
         ButtonRenderer shortText = new ButtonRenderer();
         ButtonRenderer.Scope shortScope = shortText.open();
