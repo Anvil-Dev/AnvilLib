@@ -192,6 +192,16 @@ public final class FlexibleTestScreen extends Screen {
             mirrored.u0() == 1.0F && mirrored.u1() == 0.0F,
             "镜像指针必须把 U 从 1 递减到 0"
         );
+        FlyoutRenderer.PointerSample straightSample = FlyoutRenderer.pointerSample(straight);
+        FlyoutRenderer.PointerSample mirroredSample = FlyoutRenderer.pointerSample(mirrored);
+        this.check(
+            straightSample.u() == 0.0F && straightSample.srcWidth() == straight.width(),
+            "非镜像指针必须从贴图左端正向采样，实际为 " + straightSample
+        );
+        this.check(
+            mirroredSample.u() == mirrored.width() && mirroredSample.srcWidth() == -mirrored.width(),
+            "镜像指针必须从贴图右端反向采样，实际为 " + mirroredSample
+        );
     }
 
     private void verifyPointer(
