@@ -4,7 +4,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.jspecify.annotations.Nullable;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 带指针的浮窗渲染器。
@@ -202,18 +201,18 @@ public class FlyoutRenderer extends ButtonRenderer {
             float @Nullable [] previous = ButtonRenderer.applyAlpha(graphics, FlyoutRenderer.this.alpha);
             try {
                 graphics.blit(
-                texture,
-                quad.x(),
-                quad.y(),
-                quad.width(),
-                quad.height(),
-                sample.u(),
-                0.0F,
-                sample.srcWidth(),
-                quad.height(),
-                quad.width(),
-                quad.height()
-            );
+                    texture,
+                    quad.x(),
+                    quad.y(),
+                    quad.width(),
+                    quad.height(),
+                    sample.u(),
+                    0.0F,
+                    sample.srcWidth(),
+                    quad.height(),
+                    quad.width(),
+                    quad.height()
+                );
             } finally {
                 ButtonRenderer.resetAlpha(graphics, previous);
             }
