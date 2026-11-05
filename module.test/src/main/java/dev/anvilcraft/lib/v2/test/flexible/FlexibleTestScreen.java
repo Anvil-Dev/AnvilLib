@@ -30,7 +30,8 @@ import java.util.List;
  *
  * <p>打开时按主题、样式、类型、变体四维组合逐项核对本体贴图：切图必须落在 {@code anvillib_ui} 命名空间下、
  * 能从 {@code minecraft:gui} 图集取到，且九宫格边框必须与 {@link FlexibleSprites} 登记的内边距逐边相等；
- * 随后核对四个方向的指针贴图尺寸、镜像标记与命名空间，并验证 {@code flexSize} 的尺寸算式与 {@code contains} 的边界判定。
+ * 随后核对四个方向的指针贴图尺寸、镜像标记、命名空间与 U 采样参数，验证 {@code flexSize} 的尺寸算式、{@code contains} 的边界判定，
+ * 以及整体透明度对本体与文本颜色的作用。
  *
  * <p>核对完成后屏幕把全部组合绘制成按钮网格，并用四个方向的浮窗展示指针贴图，便于肉眼确认外观。
  */
