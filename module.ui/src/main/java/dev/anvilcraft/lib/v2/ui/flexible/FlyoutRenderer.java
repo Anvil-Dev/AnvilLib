@@ -63,6 +63,25 @@ public class FlyoutRenderer extends ButtonRenderer {
         }
     }
 
+    /**
+     * 指针贴图的采样参数。
+     *
+     * @param u 采样起点，单位为贴图像素
+     * @param srcWidth 采样宽度，镜像时取负值让 U 坐标从右向左
+     */
+    public record PointerSample(float u, int srcWidth) {
+    }
+
+    /**
+     * 按绘制矩形算出指针贴图的采样参数。镜像只反转 U，不翻转几何，顶点绕序保持不变。
+     */
+    public static PointerSample pointerSample(PointerQuad quad) {
+        return new PointerSample(
+            quad.u0() * quad.width(),
+            Math.round((quad.u1() - quad.u0()) * quad.width())
+        );
+    }
+
     @Override
     public Scope open() {
         return new Scope();
@@ -178,6 +197,7 @@ public class FlyoutRenderer extends ButtonRenderer {
             boolean mirrored
         ) {
             FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(x, y, width, height, mirrored);
+            FlyoutRenderer.PointerSample sample = FlyoutRenderer.pointerSample(quad);
             ButtonRenderer.applyAlpha(graphics, FlyoutRenderer.this.alpha);
             graphics.blit(
                 texture,
@@ -185,9 +205,9 @@ public class FlyoutRenderer extends ButtonRenderer {
                 quad.y(),
                 quad.width(),
                 quad.height(),
-                quad.u0() * quad.width(),
+                sample.u(),
                 0.0F,
-                (int) ((quad.u1() - quad.u0()) * quad.width()),
+                sample.srcWidth(),
                 quad.height(),
                 quad.width(),
                 quad.height()
