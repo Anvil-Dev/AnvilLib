@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.jspecify.annotations.Nullable;
@@ -25,6 +26,7 @@ public abstract class Renderer<T extends Scope> {
     protected SpriteStyle style = SpriteStyle.THREE_D;
     protected SpriteType type = SpriteType.NON_SHADED;
     protected Function<T, SpriteVariant> variant = ignore -> SpriteVariant.NORMAL;
+    protected float alpha = 1.0F;
     protected @Nullable Vector2f startPressMousePos;
 
     public Renderer<T> dark() {
@@ -55,6 +57,33 @@ public abstract class Renderer<T extends Scope> {
     public Renderer<T> pressed() {
         this.variant = ignore -> SpriteVariant.PRESSED;
         return this;
+    }
+
+    /**
+     * 设置整体透明度，作用于本渲染器后续绘制的本体、指针与文本。
+     *
+     * <p>透明度只在绘制时读取，因此同一个渲染器可以逐帧改变透明度实现淡入淡出，
+     * 不必为每一帧新建渲染器。
+     *
+     * <p>NaN 会被忽略，透明度保持上一次的取值，避免淡入淡出算出 NaN 时控件整块消失。
+     *
+     * <p>原版文本着色器在 alpha 低于 0.1 时整体丢弃，淡出末段文本会比本体更早消失。
+     *
+     * @param alpha 0 到 1 之间的透明度，超出范围时按最近的边界取值
+     */
+    public Renderer<T> alpha(float alpha) {
+        if (Float.isNaN(alpha)) {
+            return this;
+        }
+        this.alpha = Mth.clamp(alpha, 0.0F, 1.0F);
+        return this;
+    }
+
+    /**
+     * 当前透明度，取值 0 到 1。
+     */
+    public float getAlpha() {
+        return this.alpha;
     }
 
     public Renderer<T> basedOnMouse() {
