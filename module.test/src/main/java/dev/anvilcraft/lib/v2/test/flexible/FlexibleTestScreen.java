@@ -98,6 +98,7 @@ public final class FlexibleTestScreen extends Screen {
         this.verifyPointerQuad();
         this.verifyFlexSize();
         this.verifyTextColor();
+        this.verifyAlpha();
         this.verifyShowcaseSizes();
         this.verifyMouseVariantWithFlexSize();
         this.verifyContains();
@@ -308,6 +309,43 @@ public final class FlexibleTestScreen extends Screen {
     /**
      * 展示用例的尺寸约定：自适应随文本增长，固定尺寸原样返回，深色浮窗同样能解析尺寸。
      */
+    /**
+     * 透明度必须按 0 到 1 钳制，并逐位作用到本体与文本的颜色上。
+     *
+     * <p>本体与文本都走颜色参数着色，因此透明度只需体现在 ARGB 的 alpha 分量上；文本还要保留自带颜色。
+     */
+    private void verifyAlpha() {
+        ButtonRenderer renderer = new ButtonRenderer();
+        this.check(renderer.alpha(0.5F) == renderer, "alpha 必须返回渲染器自身以便链式调用");
+        renderer.alpha(-1.0F);
+        this.check(renderer.getAlpha() == 0.0F, "alpha 必须把负值钳制到 0，实际为 " + renderer.getAlpha());
+        renderer.alpha(2.0F);
+        this.check(renderer.getAlpha() == 1.0F, "alpha 必须把大于 1 的取值钳制到 1，实际为 " + renderer.getAlpha());
+        renderer.alpha(0.5F);
+        this.check(renderer.getAlpha() == 0.5F, "alpha 必须原样保留 0 到 1 之间的取值，实际为 " + renderer.getAlpha());
+        this.check(
+            ButtonRenderer.color(1.0F) == 0xFFFFFFFF,
+            "不透明本体颜色必须是白色 0xFFFFFFFF，实际为 " + Integer.toHexString(ButtonRenderer.color(1.0F))
+        );
+        this.check(
+            ButtonRenderer.color(0.0F) == 0x00FFFFFF,
+            "全透明本体颜色必须保留白色 RGB 且 alpha 为 0，实际为 " + Integer.toHexString(ButtonRenderer.color(0.0F))
+        );
+        this.check(
+            (ButtonRenderer.color(0.5F) >>> 24) == 127,
+            "半透明本体颜色的 alpha 必须为 127，实际为 " + (ButtonRenderer.color(0.5F) >>> 24)
+        );
+        Component text = Component.literal("alpha");
+        this.check(
+            ButtonRenderer.textColor(text, 1.0F) == ButtonRenderer.textColor(text),
+            "不透明文本颜色必须与未指定透明度时一致"
+        );
+        int transparentText = ButtonRenderer.textColor(text, 0.0F);
+        this.check(
+            (transparentText >>> 24) == 0 && (transparentText & 0xFFFFFF) == 0xFFFFFF,
+            "全透明文本必须保留白色 RGB 且 alpha 为 0，实际为 " + Integer.toHexString(transparentText)
+        );
+    }
     private void verifyShowcaseSizes() {
         ButtonRenderer shortText = new ButtonRenderer();
         ButtonRenderer.Scope shortScope = shortText.open();
