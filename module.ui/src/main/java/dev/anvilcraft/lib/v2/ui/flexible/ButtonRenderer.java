@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.Mth;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -14,7 +15,7 @@ import java.util.Optional;
  *
  * <p>文本颜色取自文本组件自带的样式颜色，缺省为白色；两者都补齐不透明 alpha，
  * 因为 {@link TextColor#getValue()} 只带 RGB，alpha 为 0 时文本不会被绘制。
- * 渲染器设置了整体透明度时，本体与文本都按该透明度着色。
+ * 渲染器设置了整体透明度时，文本按该透明度着色；九宫格本体没有逐次绘制的颜色参数，`n * 改由着色器颜色乘算透明度。
  */
 public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
     /**
@@ -35,34 +36,45 @@ public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
     }
 
     /**
-     * 按整体透明度算出白色 ARGB 颜色，供九宫格本体与指针着色。
+     * 按整体透明度算出白色 ARGB 颜色，供文本颜色组合与测试使用。
      */
     public static int color(float alpha) {
         return (int) (Mth.clamp(alpha, 0.0F, 1.0F) * 255.0F) << 24 | 0xFFFFFF;
     }
 
     /**
-     * 整体透明度不为 1 时下调着色器颜色，九宫格切图没有逐次绘制的颜色参数，只能靠着色器颜色乘算。
+     * 把当前着色器颜色的 alpha 分量乘算整体透明度。
      *
-     * <p>着色器颜色在批次提交时读取，因此先冲刷已排队的绘制，再修改颜色。
+     * <p>九宫格切图没有逐次绘制的颜色参数，只能靠着色器颜色乘算；着色器颜色在批次提交时读取，
+     * 因此先冲刷已排队的绘制再修改颜色。返回进入前的颜色，必须交给
+     * {@link #resetAlpha(GuiGraphics, float[])} 原样恢复，否则后续界面绘制会被残留颜色染色。
+     *
+     * @return 进入前的着色器颜色，透明度为 1 时返回 {@code null} 表示无需恢复
      */
-    public static void applyAlpha(GuiGraphics graphics, float alpha) {
+    public static float @Nullable [] applyAlpha(GuiGraphics graphics, float alpha) {
         if (alpha >= 1.0F) {
-            return;
+            return null;
         }
+        float[] previous = RenderSystem.getShaderColor().clone();
         graphics.flush();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, Mth.clamp(alpha, 0.0F, 1.0F));
+        RenderSystem.setShaderColor(
+            previous[0],
+            previous[1],
+            previous[2],
+            previous[3] * Mth.clamp(alpha, 0.0F, 1.0F)
+        );
+        return previous;
     }
 
     /**
-     * 恢复着色器颜色，必须与 {@link #applyAlpha(GuiGraphics, float)} 成对调用。
+     * 恢复 {@link #applyAlpha(GuiGraphics, float)} 保存的着色器颜色。
      */
-    public static void resetAlpha(GuiGraphics graphics, float alpha) {
-        if (alpha >= 1.0F) {
+    public static void resetAlpha(GuiGraphics graphics, float @Nullable [] previous) {
+        if (previous == null) {
             return;
         }
         graphics.flush();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.setShaderColor(previous[0], previous[1], previous[2], previous[3]);
     }
 
     @Override
@@ -84,8 +96,9 @@ public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
                 ButtonRenderer.this.type,
                 ButtonRenderer.this.variant.apply(this.self())
             );
-            ButtonRenderer.applyAlpha(graphics, ButtonRenderer.this.alpha);
-            graphics.blitSprite(
+            float @Nullable [] previous = ButtonRenderer.applyAlpha(graphics, ButtonRenderer.this.alpha);
+            try {
+                graphics.blitSprite(
                 RenderType::guiTextured,
                 info.sprite(),
                 x,
@@ -93,7 +106,9 @@ public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
                 width,
                 height
             );
-            ButtonRenderer.resetAlpha(graphics, ButtonRenderer.this.alpha);
+            } finally {
+                ButtonRenderer.resetAlpha(graphics, previous);
+            }
             if (this.font != null && this.text != null) {
                 int textX = x + info.leftPadding() + 1;
                 int textY = y + info.topPadding() + 1;
