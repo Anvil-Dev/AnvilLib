@@ -30,7 +30,7 @@ import java.util.List;
  *
  * <p>打开时按主题、样式、类型、变体四维组合逐项核对本体贴图：切图必须落在 {@code anvillib_ui} 命名空间下、
  * 能从 {@code minecraft:gui} 图集取到，且九宫格边框必须与 {@link FlexibleSprites} 登记的内边距逐边相等；
- * 随后核对四个方向的指针贴图尺寸、镜像标记、命名空间与 U 采样参数，验证 {@code flexSize} 的尺寸算式、{@code contains} 的边界判定，
+ * 随后核对四个方向的指针贴图尺寸、命名空间与绘制矩形，验证 {@code flexSize} 的尺寸算式、{@code contains} 的边界判定，
  * 以及整体透明度对本体与文本颜色的作用。
  *
  * <p>核对完成后屏幕把全部组合绘制成按钮网格，并用四个方向的浮窗展示指针贴图，便于肉眼确认外观。
@@ -81,6 +81,8 @@ public final class FlexibleTestScreen extends Screen {
         }
         switch (variant) {
             case HIGHLIGHTED -> renderer.highlighted();
+            case HIGHLIGHTED_PRESSED -> renderer.highlightedPressed();
+            case HIGHLIGHTED_PRESSING -> renderer.highlightedPressing();
             case PRESSED -> renderer.pressed();
             case NORMAL -> {
             }
@@ -168,40 +170,17 @@ public final class FlexibleTestScreen extends Screen {
     }
 
     /**
-     * 指针绘制矩形必须与非镜像一致：镜像只翻转 U，不能把整张贴图压进可见内容尺寸。
+     * 指针绘制矩形必须补回四周 1px 透明边。
      */
     private void verifyPointerQuad() {
-        FlyoutRenderer.PointerQuad straight = FlyoutRenderer.pointerQuad(100, 50, 4, 3, false);
-        FlyoutRenderer.PointerQuad mirrored = FlyoutRenderer.pointerQuad(100, 50, 4, 3, true);
+        FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(100, 50, 4, 3);
         this.check(
-            straight.width() == 6 && straight.height() == 5,
-            "指针绘制矩形必须补回四周 1px 透明边，实际为 " + straight.width() + "x" + straight.height()
+            quad.width() == 6 && quad.height() == 5,
+            "指针绘制矩形必须补回四周 1px 透明边，实际为 " + quad.width() + "x" + quad.height()
         );
         this.check(
-            mirrored.width() == straight.width() && mirrored.height() == straight.height(),
-            "镜像指针的绘制矩形必须与非镜像一致，实际为 " + mirrored.width() + "x" + mirrored.height()
-        );
-        this.check(
-            mirrored.x() == straight.x() && mirrored.y() == straight.y(),
-            "镜像指针的绘制起点必须与非镜像一致"
-        );
-        this.check(
-            straight.u0() == 0.0F && straight.u1() == 1.0F,
-            "非镜像指针的 U 必须从 0 递增到 1"
-        );
-        this.check(
-            mirrored.u0() == 1.0F && mirrored.u1() == 0.0F,
-            "镜像指针必须把 U 从 1 递减到 0"
-        );
-        FlyoutRenderer.PointerSample straightSample = FlyoutRenderer.pointerSample(straight);
-        FlyoutRenderer.PointerSample mirroredSample = FlyoutRenderer.pointerSample(mirrored);
-        this.check(
-            straightSample.u() == 0.0F && straightSample.srcWidth() == straight.width(),
-            "非镜像指针必须从贴图左端正向采样，实际为 " + straightSample
-        );
-        this.check(
-            mirroredSample.u() == mirrored.width() && mirroredSample.srcWidth() == -mirrored.width(),
-            "镜像指针必须从贴图右端反向采样，实际为 " + mirroredSample
+            quad.x() == 99 && quad.y() == 49,
+            "指针绘制起点必须向左上各扩 1px，实际为 " + quad.x() + "," + quad.y()
         );
     }
 
@@ -219,10 +198,6 @@ public final class FlexibleTestScreen extends Screen {
             return;
         }
         this.check(pointer.width() > 0 && pointer.height() > 0, label + "必须具有正的像素尺寸");
-        this.check(
-            pointer.mirrored() == (direction == PointerDirection.RIGHT),
-            label + "的镜像标记必须与朝向一致"
-        );
         ResourceLocation texture = pointer.texture();
         this.check(
             texture.getNamespace().equals("anvillib_ui"),
@@ -568,6 +543,8 @@ public final class FlexibleTestScreen extends Screen {
         }
         switch (variant) {
             case HIGHLIGHTED -> renderer.highlighted();
+            case HIGHLIGHTED_PRESSED -> renderer.highlightedPressed();
+            case HIGHLIGHTED_PRESSING -> renderer.highlightedPressing();
             case PRESSED -> renderer.pressed();
             case NORMAL -> {
             }
@@ -576,6 +553,8 @@ public final class FlexibleTestScreen extends Screen {
     }
     private static String shortLabel(String label) {
         return label
+            .replace("HIGHLIGHTED_PRESSING", "HL_PRESSING")
+            .replace("HIGHLIGHTED_PRESSED", "HL_PRESS")
             .replace("HIGHLIGHTED", "HL")
             .replace("PRESSED", "P")
             .replace("NON_SHADED", "N")
