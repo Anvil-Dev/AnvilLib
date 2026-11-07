@@ -9,13 +9,15 @@ import java.util.Locale;
  *
  * <p>{@link #PRESSED} 表示选中但未悬停，{@link #HIGHLIGHTED_PRESSED} 表示选中且悬停，
  * {@link #HIGHLIGHTED_PRESSING} 表示悬停且鼠标按钮正被按住。
+ *
+ * <p>新增变体追加在 {@link #PRESSED} 之后，既有常量的 ordinal 保持不变。
  */
 public enum SpriteVariant {
     NORMAL(""),
     HIGHLIGHTED,
+    PRESSED,
     HIGHLIGHTED_PRESSED,
-    HIGHLIGHTED_PRESSING,
-    PRESSED;
+    HIGHLIGHTED_PRESSING;
 
     private final String path;
 
