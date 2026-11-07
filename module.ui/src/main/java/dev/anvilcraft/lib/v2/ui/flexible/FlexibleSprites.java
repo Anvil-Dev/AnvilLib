@@ -42,7 +42,7 @@ public final class FlexibleSprites {
         int[] shaded2px = {2, 2, 2, 4};
         int[] pressed1px = {2, 3, 2, 2};
         int[] pressed2px = {2, 3, 2, 3};
-        int[] pressing2px = {2, 3, 2, 2};
+        int[] pressing2px = {2, 4, 2, 2};
 
         for (var objs : FlattenLoop.loop(
             SpriteTheme.values(), SpriteStyle.values(), SpriteType.values(), SpriteVariant.values()
