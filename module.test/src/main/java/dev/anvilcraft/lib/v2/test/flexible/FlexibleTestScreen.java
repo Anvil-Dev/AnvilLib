@@ -733,6 +733,7 @@ public final class FlexibleTestScreen extends Screen {
     public int renderedFrames() {
         return this.renderedFrames;
     }
+
     /**
      * 可在不影响真实鼠标状态的前提下伪造“允许键被按住”的按钮渲染器，供链路测试使用。
      *
