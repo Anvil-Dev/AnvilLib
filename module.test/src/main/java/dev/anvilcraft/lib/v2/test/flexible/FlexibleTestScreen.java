@@ -433,6 +433,7 @@ public final class FlexibleTestScreen extends Screen {
         darkScope.close();
         this.check(darkSize != null && darkSize.x > 0, "深色浮窗必须能解析出正尺寸");
     }
+
     private void verifyButtonTypes() {
         this.check(
             ButtonType.DISPLAY.variant(new ButtonInput(false, true, true, true)) == SpriteVariant.NORMAL,
@@ -731,6 +732,7 @@ public final class FlexibleTestScreen extends Screen {
     public int renderedFrames() {
         return this.renderedFrames;
     }
+
     /**
      * 可在不影响真实鼠标状态的前提下伪造“允许键被按住”的按钮渲染器，供链路测试使用。
      *
