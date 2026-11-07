@@ -93,7 +93,8 @@ public abstract class Renderer<T extends Scope> {
     /**
      * 设置按钮行为，默认 {@link ButtonType#DISPLAY}。
      *
-     * <p>按钮行为只在调用过 {@link #basedOnMouse(IntSet)} 后生效。
+     * <p>按钮行为在每次解析变体时读取，因此本方法与 {@link #basedOnMouse(IntSet)} 的调用顺序无关，
+     * 先设置行为再绑定鼠标、或先绑定鼠标再设置行为都成立。
      */
     public Renderer<T> buttonType(ButtonType buttonType) {
         this.buttonType = buttonType;
