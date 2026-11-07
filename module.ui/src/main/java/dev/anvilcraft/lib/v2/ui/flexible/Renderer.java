@@ -157,7 +157,9 @@ public abstract class Renderer<T extends Scope> {
     }
 
     /**
-     * 判断允许的按键中是否有任意一个正被按住，供子类在测试中替换按下状态。
+     * 判断允许的按键中是否有任意一个正被按住。
+     *
+     * <p>该方法只建议在测试中覆写，用于伪造按下状态；生产子类覆写会改变真实的悬停与按压反馈。
      */
     protected boolean isMousePressed(IntSet allowedKeys) {
         Minecraft minecraft = Minecraft.getInstance();
