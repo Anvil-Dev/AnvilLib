@@ -444,6 +444,7 @@ public final class FlexibleTestScreen extends Screen {
             "TOGGLE 在控件外开始按压时必须回落到 PRESSED"
         );
     }
+
     private void verifyContains() {
         ButtonRenderer renderer = new ButtonRenderer();
         try (ButtonRenderer.Scope scope = renderer.open()) {
