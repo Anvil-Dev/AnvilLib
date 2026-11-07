@@ -161,6 +161,18 @@ public final class FlexibleSprites {
         int bottomPadding,
         int pointerUpInset
     ) {
+        /**
+         * 兼容不含 {@code pointerUpInset} 的调用方，默认按 0 处理。
+         */
+        public SpriteInfo(
+            ResourceLocation sprite,
+            int leftPadding,
+            int topPadding,
+            int rightPadding,
+            int bottomPadding
+        ) {
+            this(sprite, leftPadding, topPadding, rightPadding, bottomPadding, 0);
+        }
     }
 
     /**
