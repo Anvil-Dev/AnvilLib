@@ -130,12 +130,19 @@ public abstract class Renderer<T extends Scope> {
     /**
      * 变体由按钮行为与鼠标位置推导，具体状态取决于 {@link #buttonType}。
      *
+     * <p>默认按钮行为是 {@link ButtonType#DISPLAY}，不读取鼠标状态；需要悬停或按压反馈时，
+     * 必须先显式设置 {@link ButtonType#MOMENTARY}、{@link ButtonType#TOGGLE} 或
+     * {@link ButtonType#CLICK}。
+     *
      * <p>按下状态以按下瞬间的鼠标位置是否仍在作用域内判定，这样鼠标按下后再移出控件时不会误判为按压。
      * 按压起点落在同一个 Renderer 渲染的按钮上时，其他控件会锁定悬停高亮；按压起点不在同一个
      * Renderer 的按钮上时，控件按未按下处理。
      */
     public Renderer<T> basedOnMouse(IntSet allowedKeys) {
         this.variant = scope -> {
+            if (this.buttonType == ButtonType.DISPLAY) {
+                return SpriteVariant.NORMAL;
+            }
             if (scope.mousePos == null) {
                 throw new IllegalStateException("Some arguments are missing or invalid: mousePos");
             }
@@ -143,7 +150,6 @@ public abstract class Renderer<T extends Scope> {
                 this.toggleState.getAsBoolean(),
                 scope.contains(scope.mousePos),
                 Renderer.isMousePressed(allowedKeys),
-                this.startPressMousePos != null,
                 scope.contains(this.startPressMousePos)
             ));
         };
