@@ -105,6 +105,7 @@ public final class FlexibleTestScreen extends Screen {
         this.verifyAlpha();
         this.verifyShowcaseSizes();
         this.verifyMouseVariantWithFlexSize();
+        this.verifyMouseVariantChain();
         this.verifyButtonTypes();
         this.verifyContains();
         if (this.failures.isEmpty()) {
@@ -284,6 +285,23 @@ public final class FlexibleTestScreen extends Screen {
             this.check(size != null && size.x > 0 && size.y > 0, "basedOnMouse 与 flexSize 组合必须解析出正尺寸");
             this.check(scope.contains(new Vector2f(15, 15)), "basedOnMouse 与 flexSize 组合必须命中控件内部");
             this.check(!scope.contains(new Vector2f(100, 100)), "basedOnMouse 与 flexSize 组合必须排除控件外部");
+        } catch (StackOverflowError | RuntimeException error) {
+            this.check(false, "basedOnMouse 与 flexSize 组合不得抛出异常或递归溢出");
+        } finally {
+            scope.close();
+        }
+    }
+
+    /**
+     * 走真实 {@code basedOnMouse} 链路核对按钮行为，覆盖默认 {@code DISPLAY}、悬停与按压三类分支。
+     */
+    private void verifyMouseVariantChain() {
+        ButtonRenderer renderer = new ButtonRenderer();
+        renderer.basedOnMouse();
+        ButtonRenderer.Scope scope = renderer.open();
+        scope.font(this.font).text(Component.literal("chain")).flexSize(FLEX_PADDING)
+            .pos(10, 10).mousePos(15, 15);
+        try {
             this.check(renderer.variantOf(scope) == SpriteVariant.NORMAL, "默认 DISPLAY 必须始终解析为 NORMAL");
             renderer.buttonType(ButtonType.MOMENTARY);
             this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "MOMENTARY 悬停时必须解析为 HIGHLIGHTED");
@@ -294,29 +312,31 @@ public final class FlexibleTestScreen extends Screen {
             this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "起点在控件内且按键未被按住时必须为 HIGHLIGHTED");
             renderer.onRelease();
             this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "松开后必须回到 HIGHLIGHTED");
-            PressedButtonRenderer pressed = new PressedButtonRenderer();
-            pressed.basedOnMouse().buttonType(ButtonType.MOMENTARY);
-            ButtonRenderer.Scope pressedScope = pressed.open();
-            pressedScope.font(this.font).text(Component.literal("press")).flexSize(FLEX_PADDING)
-                .pos(10, 10).mousePos(15, 15);
-            try {
-                pressed.onPress(new Vector2f(15, 15));
-                this.check(
-                    pressed.variantOf(pressedScope) == SpriteVariant.HIGHLIGHTED_PRESSING,
-                    "起点在控件内且允许键被按住时必须解析为 HIGHLIGHTED_PRESSING"
-                );
-                pressed.onRelease();
-                this.check(
-                    pressed.variantOf(pressedScope) == SpriteVariant.HIGHLIGHTED,
-                    "松开后必须从 HIGHLIGHTED_PRESSING 回到 HIGHLIGHTED"
-                );
-            } finally {
-                pressedScope.close();
-            }
         } catch (StackOverflowError | RuntimeException error) {
-            this.check(false, "basedOnMouse 与 flexSize 组合不得抛出异常或递归溢出");
+            this.check(false, "basedOnMouse 链路不得抛出异常");
         } finally {
             scope.close();
+        }
+        PressedButtonRenderer pressed = new PressedButtonRenderer();
+        pressed.basedOnMouse().buttonType(ButtonType.MOMENTARY);
+        ButtonRenderer.Scope pressedScope = pressed.open();
+        pressedScope.font(this.font).text(Component.literal("press")).flexSize(FLEX_PADDING)
+            .pos(10, 10).mousePos(15, 15);
+        try {
+            pressed.onPress(new Vector2f(15, 15));
+            this.check(
+                pressed.variantOf(pressedScope) == SpriteVariant.HIGHLIGHTED_PRESSING,
+                "起点在控件内且允许键被按住时必须解析为 HIGHLIGHTED_PRESSING"
+            );
+            pressed.onRelease();
+            this.check(
+                pressed.variantOf(pressedScope) == SpriteVariant.HIGHLIGHTED,
+                "松开后必须从 HIGHLIGHTED_PRESSING 回到 HIGHLIGHTED"
+            );
+        } catch (StackOverflowError | RuntimeException error) {
+            this.check(false, "按压链路不得抛出异常");
+        } finally {
+            pressedScope.close();
         }
     }
 
