@@ -6,11 +6,19 @@ import java.util.Locale;
  * 控件贴图的交互状态。
  *
  * <p>变体只决定切图名的后缀，{@link #NORMAL} 的切图不带后缀，因此其路径为空串。
+ *
+ * <p>{@link #PRESSED} 表示选中但未显示悬停（未悬停，或悬停被其它按键抑制），
+ * {@link #HIGHLIGHTED_PRESSED} 表示选中且悬停且没有其它按键抑制，
+ * {@link #HIGHLIGHTED_PRESSING} 表示悬停且允许的鼠标键正被按住。
+ *
+ * <p>新增变体追加在 {@link #PRESSED} 之后，既有常量的 ordinal 保持不变。
  */
 public enum SpriteVariant {
     NORMAL(""),
     HIGHLIGHTED,
-    PRESSED;
+    PRESSED,
+    HIGHLIGHTED_PRESSED,
+    HIGHLIGHTED_PRESSING;
 
     private final String path;
 
