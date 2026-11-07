@@ -600,6 +600,7 @@ public final class FlexibleTestScreen extends Screen {
             .replace("SHADED_1PX", "S1")
             .replace("SHADED_2PX", "S2");
     }
+
     private static FlyoutRenderer createFlyout(
         SpriteTheme theme,
         SpriteStyle style,
@@ -630,6 +631,7 @@ public final class FlexibleTestScreen extends Screen {
         }
         return renderer;
     }
+
     @Override
     public boolean isPauseScreen() {
         return false;
