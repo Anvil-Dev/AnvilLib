@@ -11,6 +11,7 @@ import dev.anvilcraft.lib.v2.ui.flexible.SpriteStyle;
 import dev.anvilcraft.lib.v2.ui.flexible.SpriteTheme;
 import dev.anvilcraft.lib.v2.ui.flexible.SpriteType;
 import dev.anvilcraft.lib.v2.ui.flexible.SpriteVariant;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -288,6 +289,30 @@ public final class FlexibleTestScreen extends Screen {
             this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "MOMENTARY 悬停时必须解析为 HIGHLIGHTED");
             renderer.buttonType(ButtonType.CLICK);
             this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "CLICK 悬停时必须解析为 HIGHLIGHTED");
+            renderer.buttonType(ButtonType.MOMENTARY);
+            renderer.onPress(new Vector2f(15, 15));
+            this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "起点在控件内且按键未被按住时必须为 HIGHLIGHTED");
+            renderer.onRelease();
+            this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "松开后必须回到 HIGHLIGHTED");
+            PressedButtonRenderer pressed = new PressedButtonRenderer();
+            pressed.basedOnMouse().buttonType(ButtonType.MOMENTARY);
+            ButtonRenderer.Scope pressedScope = pressed.open();
+            pressedScope.font(this.font).text(Component.literal("press")).flexSize(FLEX_PADDING)
+                .pos(10, 10).mousePos(15, 15);
+            try {
+                pressed.onPress(new Vector2f(15, 15));
+                this.check(
+                    pressed.variantOf(pressedScope) == SpriteVariant.HIGHLIGHTED_PRESSING,
+                    "起点在控件内且允许键被按住时必须解析为 HIGHLIGHTED_PRESSING"
+                );
+                pressed.onRelease();
+                this.check(
+                    pressed.variantOf(pressedScope) == SpriteVariant.HIGHLIGHTED,
+                    "松开后必须从 HIGHLIGHTED_PRESSING 回到 HIGHLIGHTED"
+                );
+            } finally {
+                pressedScope.close();
+            }
         } catch (StackOverflowError | RuntimeException error) {
             this.check(false, "basedOnMouse 与 flexSize 组合不得抛出异常或递归溢出");
         } finally {
@@ -457,6 +482,7 @@ public final class FlexibleTestScreen extends Screen {
             "TOGGLE 未选中悬停且按键不被允许时必须为 HIGHLIGHTED"
         );
     }
+
     private void verifyContains() {
         ButtonRenderer renderer = new ButtonRenderer();
         try (ButtonRenderer.Scope scope = renderer.open()) {
@@ -668,6 +694,15 @@ public final class FlexibleTestScreen extends Screen {
         return this.renderedFrames;
     }
 
+    /**
+     * 可在不影响真实鼠标状态的前提下伪造“允许键被按住”的按钮渲染器，供链路测试使用。
+     */
+    private static final class PressedButtonRenderer extends ButtonRenderer {
+        @Override
+        protected boolean isMousePressed(IntSet allowedKeys) {
+            return true;
+        }
+    }
     private void check(boolean condition, String message) {
         this.checks++;
         if (!condition) {
