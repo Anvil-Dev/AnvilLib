@@ -430,6 +430,13 @@ public final class FlexibleTestScreen extends Screen {
         this.check(darkSize != null && darkSize.x > 0, "深色浮窗必须能解析出正尺寸");
     }
 
+    /**
+     * 核对四种按钮行为在各输入组合下解析出的变体。
+     *
+     * <p>断言以位置参数构造 {@link ButtonInput}，参数顺序为
+     * {@code selected, hovering, allowedPressed, pressStartedInside}；
+     * 调整组件顺序或含义时，这里的断言必须同步复核，否则会编译通过但语义全变。
+     */
     private void verifyButtonTypes() {
         this.check(
             ButtonType.DISPLAY.variant(new ButtonInput(false, true, true, true)) == SpriteVariant.NORMAL,
