@@ -9,8 +9,9 @@ package dev.anvilcraft.lib.v2.ui.flexible;
  * 选中但未悬停时显示 {@link SpriteVariant#PRESSED}，选中且悬停时显示
  * {@link SpriteVariant#HIGHLIGHTED_PRESSED}。
  *
- * <p>按压起点落在同一个 Renderer 渲染的按钮上时，未承载按压起点的控件会锁定悬停高亮，
- * 避免拖动到其他按钮时高亮消失。按压起点不落在同一个 Renderer 的按钮上时，控件按未按下处理。
+ * <p>悬停高亮不受鼠标按键影响：无论鼠标是在本控件上按下、在同一个 Renderer 的其它按钮上按下，
+ * 还是根本没有按下，悬停都保持高亮，拖动到其它按钮时不会闪烁。只有按压起点落在本控件范围内时
+ * 才可能进入按压态。
  */
 public enum ButtonType {
     CLICK,
