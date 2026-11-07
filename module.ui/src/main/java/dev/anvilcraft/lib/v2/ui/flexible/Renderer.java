@@ -25,7 +25,6 @@ import java.util.function.Function;
  */
 @SuppressWarnings("UnusedReturnValue")
 public abstract class Renderer<T extends Scope> {
-
     @Getter
     protected SpriteTheme theme = SpriteTheme.LIGHT;
     @Getter
@@ -134,9 +133,10 @@ public abstract class Renderer<T extends Scope> {
      * 必须先显式设置 {@link ButtonType#MOMENTARY}、{@link ButtonType#TOGGLE} 或
      * {@link ButtonType#CLICK}。
      *
+     * <p>{@link ButtonType#DISPLAY} 不读取鼠标状态，因此无需设置鼠标位置；其余按钮行为必须设置。
+     *
      * <p>按下状态以按下瞬间的鼠标位置是否仍在作用域内判定，这样鼠标按下后再移出控件时不会误判为按压。
-     * 按压起点落在同一个 Renderer 渲染的按钮上时，其他控件会锁定悬停高亮；按压起点不在同一个
-     * Renderer 的按钮上时，控件按未按下处理。
+     * 悬停高亮不受鼠标按键影响，只有按压起点落在本控件范围内且允许的按键仍被按住时才进入按压态。
      */
     public Renderer<T> basedOnMouse(IntSet allowedKeys) {
         this.variant = scope -> {
@@ -149,14 +149,17 @@ public abstract class Renderer<T extends Scope> {
             return this.buttonType.variant(new ButtonInput(
                 this.toggleState.getAsBoolean(),
                 scope.contains(scope.mousePos),
-                Renderer.isMousePressed(allowedKeys),
+                this.isMousePressed(allowedKeys),
                 scope.contains(this.startPressMousePos)
             ));
         };
         return this;
     }
 
-    private static boolean isMousePressed(IntSet allowedKeys) {
+    /**
+     * 判断允许的按键中是否有任意一个正被按住，供子类在测试中替换按下状态。
+     */
+    protected boolean isMousePressed(IntSet allowedKeys) {
         Minecraft minecraft = Minecraft.getInstance();
         return allowedKeys.contains(GLFW.GLFW_MOUSE_BUTTON_LEFT) && minecraft.mouseHandler.isLeftPressed()
             || allowedKeys.contains(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && minecraft.mouseHandler.isMiddlePressed()
