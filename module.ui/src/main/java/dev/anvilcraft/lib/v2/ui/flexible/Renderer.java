@@ -32,11 +32,6 @@ public abstract class Renderer<T extends Scope> {
     private static final int MOUSE_BUTTON_LEFT = 0;
     private static final int MOUSE_BUTTON_RIGHT = 1;
     private static final int MOUSE_BUTTON_MIDDLE = 2;
-    private static final IntSet ALL_MOUSE_BUTTONS = IntSet.of(
-        Renderer.MOUSE_BUTTON_LEFT,
-        Renderer.MOUSE_BUTTON_MIDDLE,
-        Renderer.MOUSE_BUTTON_RIGHT
-    );
 
     @Getter
     protected SpriteTheme theme = SpriteTheme.LIGHT;
@@ -45,7 +40,7 @@ public abstract class Renderer<T extends Scope> {
     @Getter
     protected SpriteType type = SpriteType.NON_SHADED;
     protected Function<T, SpriteVariant> variant = ignore -> SpriteVariant.NORMAL;
-    protected ButtonType buttonType = ButtonType.MOMENTARY;
+    protected ButtonType buttonType = ButtonType.DISPLAY;
     protected BooleanSupplier toggleState = () -> false;
     /**
      *  当前透明度，取值 0 到 1。
@@ -96,7 +91,7 @@ public abstract class Renderer<T extends Scope> {
     }
 
     /**
-     * 设置按钮行为，默认 {@link ButtonType#MOMENTARY}。
+     * 设置按钮行为，默认 {@link ButtonType#DISPLAY}。
      *
      * <p>按钮行为只在调用过 {@link #basedOnMouse(IntSet)} 后生效。
      */
@@ -143,7 +138,8 @@ public abstract class Renderer<T extends Scope> {
      * 变体由按钮行为与鼠标位置推导，具体状态取决于 {@link #buttonType}。
      *
      * <p>按下状态以按下瞬间的鼠标位置是否仍在作用域内判定，这样鼠标按下后再移出控件时不会误判为按压。
-     * 只要有任意鼠标按钮被按住，未按在该控件上的悬停高亮就会被抑制，避免在控件外按住鼠标时控件仍显示高亮。
+     * 按压起点落在同一个 Renderer 渲染的按钮上时，其他控件会锁定悬停高亮；按压起点不在同一个
+     * Renderer 的按钮上时，控件按未按下处理。
      */
     public Renderer<T> basedOnMouse(IntSet allowedKeys) {
         this.variant = scope -> {
@@ -154,7 +150,7 @@ public abstract class Renderer<T extends Scope> {
                 this.toggleState.getAsBoolean(),
                 scope.contains(scope.mousePos),
                 Renderer.isMousePressed(allowedKeys),
-                Renderer.isMousePressed(Renderer.ALL_MOUSE_BUTTONS),
+                this.startPressMousePos != null,
                 scope.contains(this.startPressMousePos)
             ));
         };
