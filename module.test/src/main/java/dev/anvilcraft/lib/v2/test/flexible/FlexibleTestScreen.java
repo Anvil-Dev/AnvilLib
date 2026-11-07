@@ -617,6 +617,7 @@ public final class FlexibleTestScreen extends Screen {
         }
         return renderer;
     }
+
     private static String shortLabel(String label) {
         return label
             .replace("HIGHLIGHTED_PRESSING", "HL_PRESSING")
