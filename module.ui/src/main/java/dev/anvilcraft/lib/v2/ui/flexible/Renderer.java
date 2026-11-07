@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.ui.flexible;
 
 import dev.anvilcraft.lib.v2.ui.flexible.Renderer.Scope;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,6 +13,7 @@ import org.joml.Vector2i;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
 /**
@@ -21,12 +23,29 @@ import java.util.function.Function;
  * 由 {@link Scope} 携带。一个渲染器可以反复 {@link #open()} 出多个作用域，作用域用完后必须关闭，
  * 以便清空其中对 {@link GuiGraphics} 等对象的引用。
  */
+@SuppressWarnings("UnusedReturnValue")
 public abstract class Renderer<T extends Scope> {
+    private static final IntSet ALL_MOUSE_BUTTONS = IntSet.of(
+        GLFW.GLFW_MOUSE_BUTTON_LEFT,
+        GLFW.GLFW_MOUSE_BUTTON_MIDDLE,
+        GLFW.GLFW_MOUSE_BUTTON_RIGHT
+    );
+
+    @Getter
     protected SpriteTheme theme = SpriteTheme.LIGHT;
+    @Getter
     protected SpriteStyle style = SpriteStyle.THREE_D;
+    @Getter
     protected SpriteType type = SpriteType.NON_SHADED;
     protected Function<T, SpriteVariant> variant = ignore -> SpriteVariant.NORMAL;
+    protected ButtonType buttonType = ButtonType.MOMENTARY;
+    protected BooleanSupplier toggleState = () -> false;
+    /**
+     *  当前透明度，取值 0 到 1。
+     */
+    @Getter
     protected float alpha = 1.0F;
+
     protected @Nullable Vector2f startPressMousePos;
 
     public Renderer<T> dark() {
@@ -54,8 +73,38 @@ public abstract class Renderer<T extends Scope> {
         return this;
     }
 
+    public Renderer<T> highlightedPressed() {
+        this.variant = ignore -> SpriteVariant.HIGHLIGHTED_PRESSED;
+        return this;
+    }
+
+    public Renderer<T> highlightedPressing() {
+        this.variant = ignore -> SpriteVariant.HIGHLIGHTED_PRESSING;
+        return this;
+    }
+
     public Renderer<T> pressed() {
         this.variant = ignore -> SpriteVariant.PRESSED;
+        return this;
+    }
+
+    /**
+     * 设置按钮行为，默认 {@link ButtonType#MOMENTARY}。
+     *
+     * <p>按钮行为只在调用过 {@link #basedOnMouse(IntSet)} 后生效。
+     */
+    public Renderer<T> buttonType(ButtonType buttonType) {
+        this.buttonType = buttonType;
+        return this;
+    }
+
+    /**
+     * 设置 {@link ButtonType#TOGGLE} 读取的选中状态，默认始终未选中。
+     *
+     * <p>该状态在每次解析变体时读取，因此同一个渲染器可以跟随外部状态逐帧变化。
+     */
+    public Renderer<T> toggleState(BooleanSupplier toggleState) {
+        this.toggleState = toggleState;
         return this;
     }
 
@@ -79,43 +128,37 @@ public abstract class Renderer<T extends Scope> {
         return this;
     }
 
-    /**
-     * 当前透明度，取值 0 到 1。
-     */
-    public float getAlpha() {
-        return this.alpha;
-    }
-
     public Renderer<T> basedOnMouse() {
         return this.basedOnMouse(IntSet.of(GLFW.GLFW_MOUSE_BUTTON_LEFT, GLFW.GLFW_MOUSE_BUTTON_RIGHT));
     }
 
     /**
-     * 变体由鼠标位置推导：未悬停为常态，悬停未按下为高亮，悬停且按下为按压。
+     * 变体由按钮行为与鼠标位置推导，具体状态取决于 {@link #buttonType}。
      *
      * <p>按下状态以按下瞬间的鼠标位置是否仍在作用域内判定，这样鼠标按下后再移出控件时不会误判为按压。
+     * 只要有任意鼠标按钮被按住，未按在该控件上的悬停高亮就会被抑制，避免在控件外按住鼠标时控件仍显示高亮。
      */
     public Renderer<T> basedOnMouse(IntSet allowedKeys) {
         this.variant = scope -> {
             if (scope.mousePos == null) {
                 throw new IllegalStateException("Some arguments are missing or invalid: mousePos");
             }
-            if (!scope.contains(scope.mousePos)) {
-                return SpriteVariant.NORMAL;
-            }
-            if (!scope.contains(this.startPressMousePos)) {
-                return SpriteVariant.HIGHLIGHTED;
-            }
-            if (
-                allowedKeys.contains(GLFW.GLFW_MOUSE_BUTTON_LEFT) && Minecraft.getInstance().mouseHandler.isLeftPressed()
-                || allowedKeys.contains(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && Minecraft.getInstance().mouseHandler.isMiddlePressed()
-                || allowedKeys.contains(GLFW.GLFW_MOUSE_BUTTON_RIGHT) && Minecraft.getInstance().mouseHandler.isRightPressed()
-            ) {
-                return SpriteVariant.PRESSED;
-            }
-            return SpriteVariant.HIGHLIGHTED;
+            return this.buttonType.variant(new ButtonInput(
+                this.toggleState.getAsBoolean(),
+                scope.contains(scope.mousePos),
+                Renderer.isMousePressed(allowedKeys),
+                Renderer.isMousePressed(Renderer.ALL_MOUSE_BUTTONS),
+                scope.contains(this.startPressMousePos)
+            ));
         };
         return this;
+    }
+
+    private static boolean isMousePressed(IntSet allowedKeys) {
+        Minecraft minecraft = Minecraft.getInstance();
+        return allowedKeys.contains(GLFW.GLFW_MOUSE_BUTTON_LEFT) && minecraft.mouseHandler.isLeftPressed()
+            || allowedKeys.contains(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && minecraft.mouseHandler.isMiddlePressed()
+            || allowedKeys.contains(GLFW.GLFW_MOUSE_BUTTON_RIGHT) && minecraft.mouseHandler.isRightPressed();
     }
 
     public void onPress(int x, int y) {
@@ -128,18 +171,6 @@ public abstract class Renderer<T extends Scope> {
 
     public void onRelease() {
         this.startPressMousePos = null;
-    }
-
-    public SpriteTheme getTheme() {
-        return this.theme;
-    }
-
-    public SpriteStyle getStyle() {
-        return this.style;
-    }
-
-    public SpriteType getType() {
-        return this.type;
     }
 
     /**
@@ -239,7 +270,7 @@ public abstract class Renderer<T extends Scope> {
         }
 
         private Vector2i flexSizeOf(
-            Scope scope,
+            T scope,
             SpriteVariant variant,
             int leftPadding,
             int topPadding,

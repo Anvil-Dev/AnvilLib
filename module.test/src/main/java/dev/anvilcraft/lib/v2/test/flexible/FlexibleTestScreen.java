@@ -1,7 +1,9 @@
 package dev.anvilcraft.lib.v2.test.flexible;
 
 import com.mojang.logging.LogUtils;
+import dev.anvilcraft.lib.v2.ui.flexible.ButtonInput;
 import dev.anvilcraft.lib.v2.ui.flexible.ButtonRenderer;
+import dev.anvilcraft.lib.v2.ui.flexible.ButtonType;
 import dev.anvilcraft.lib.v2.ui.flexible.FlexibleSprites;
 import dev.anvilcraft.lib.v2.ui.flexible.FlyoutRenderer;
 import dev.anvilcraft.lib.v2.ui.flexible.PointerDirection;
@@ -30,7 +32,7 @@ import java.util.List;
  *
  * <p>打开时按主题、样式、类型、变体四维组合逐项核对本体贴图：切图必须落在 {@code anvillib_ui} 命名空间下、
  * 能从 {@code minecraft:gui} 图集取到，且九宫格边框必须与 {@link FlexibleSprites} 登记的内边距逐边相等；
- * 随后核对四个方向的指针贴图尺寸、镜像标记、命名空间与 U 采样参数，验证 {@code flexSize} 的尺寸算式、{@code contains} 的边界判定，
+ * 随后核对四个方向的指针贴图尺寸、命名空间与绘制矩形，验证 {@code flexSize} 的尺寸算式、{@code contains} 的边界判定，
  * 以及整体透明度对本体与文本颜色的作用。
  *
  * <p>核对完成后屏幕把全部组合绘制成按钮网格，并用四个方向的浮窗展示指针贴图，便于肉眼确认外观。
@@ -81,6 +83,8 @@ public final class FlexibleTestScreen extends Screen {
         }
         switch (variant) {
             case HIGHLIGHTED -> renderer.highlighted();
+            case HIGHLIGHTED_PRESSED -> renderer.highlightedPressed();
+            case HIGHLIGHTED_PRESSING -> renderer.highlightedPressing();
             case PRESSED -> renderer.pressed();
             case NORMAL -> {
             }
@@ -100,6 +104,7 @@ public final class FlexibleTestScreen extends Screen {
         this.verifyAlpha();
         this.verifyShowcaseSizes();
         this.verifyMouseVariantWithFlexSize();
+        this.verifyButtonTypes();
         this.verifyContains();
         if (this.failures.isEmpty()) {
             LOGGER.info("FLEXIBLE_TEST ALL PASS: {} checks", this.checks);
@@ -168,40 +173,17 @@ public final class FlexibleTestScreen extends Screen {
     }
 
     /**
-     * 指针绘制矩形必须与非镜像一致：镜像只翻转 U，不能把整张贴图压进可见内容尺寸。
+     * 指针绘制矩形必须补回四周 1px 透明边。
      */
     private void verifyPointerQuad() {
-        FlyoutRenderer.PointerQuad straight = FlyoutRenderer.pointerQuad(100, 50, 4, 3, false);
-        FlyoutRenderer.PointerQuad mirrored = FlyoutRenderer.pointerQuad(100, 50, 4, 3, true);
+        FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(100, 50, 4, 3);
         this.check(
-            straight.width() == 6 && straight.height() == 5,
-            "指针绘制矩形必须补回四周 1px 透明边，实际为 " + straight.width() + "x" + straight.height()
+            quad.width() == 6 && quad.height() == 5,
+            "指针绘制矩形必须补回四周 1px 透明边，实际为 " + quad.width() + "x" + quad.height()
         );
         this.check(
-            mirrored.width() == straight.width() && mirrored.height() == straight.height(),
-            "镜像指针的绘制矩形必须与非镜像一致，实际为 " + mirrored.width() + "x" + mirrored.height()
-        );
-        this.check(
-            mirrored.x() == straight.x() && mirrored.y() == straight.y(),
-            "镜像指针的绘制起点必须与非镜像一致"
-        );
-        this.check(
-            straight.u0() == 0.0F && straight.u1() == 1.0F,
-            "非镜像指针的 U 必须从 0 递增到 1"
-        );
-        this.check(
-            mirrored.u0() == 1.0F && mirrored.u1() == 0.0F,
-            "镜像指针必须把 U 从 1 递减到 0"
-        );
-        FlyoutRenderer.PointerSample straightSample = FlyoutRenderer.pointerSample(straight);
-        FlyoutRenderer.PointerSample mirroredSample = FlyoutRenderer.pointerSample(mirrored);
-        this.check(
-            straightSample.u() == 0.0F && straightSample.srcWidth() == straight.width(),
-            "非镜像指针必须从贴图左端正向采样，实际为 " + straightSample
-        );
-        this.check(
-            mirroredSample.u() == mirrored.width() && mirroredSample.srcWidth() == -mirrored.width(),
-            "镜像指针必须从贴图右端反向采样，实际为 " + mirroredSample
+            quad.x() == 99 && quad.y() == 49,
+            "指针绘制起点必须向左上各扩 1px，实际为 " + quad.x() + "," + quad.y()
         );
     }
 
@@ -219,10 +201,6 @@ public final class FlexibleTestScreen extends Screen {
             return;
         }
         this.check(pointer.width() > 0 && pointer.height() > 0, label + "必须具有正的像素尺寸");
-        this.check(
-            pointer.mirrored() == (direction == PointerDirection.RIGHT),
-            label + "的镜像标记必须与朝向一致"
-        );
         ResourceLocation texture = pointer.texture();
         this.check(
             texture.getNamespace().equals("anvillib_ui"),
@@ -400,6 +378,69 @@ public final class FlexibleTestScreen extends Screen {
         this.check(darkSize != null && darkSize.x > 0, "深色浮窗必须能解析出正尺寸");
     }
 
+    private void verifyButtonTypes() {
+        this.check(
+            ButtonType.CLICK.variant(new ButtonInput(false, true, false, true, false)) == SpriteVariant.HIGHLIGHTED,
+            "CLICK 在悬停并按住任意键时必须保持 HIGHLIGHTED"
+        );
+        this.check(
+            ButtonType.CLICK.variant(new ButtonInput(false, false, false, true, false)) == SpriteVariant.NORMAL,
+            "CLICK 在未悬停时必须保持 NORMAL"
+        );
+        this.check(
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, false, false, false, false)) == SpriteVariant.NORMAL,
+            "MOMENTARY 未悬停且未按住时必须为 NORMAL"
+        );
+        this.check(
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, false, false, false)) == SpriteVariant.HIGHLIGHTED,
+            "MOMENTARY 悬停且未按住时必须为 HIGHLIGHTED"
+        );
+        this.check(
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, true, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSING,
+            "MOMENTARY 在控件内按住允许键时必须为 HIGHLIGHTED_PRESSING"
+        );
+        this.check(
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, false, true, false)) == SpriteVariant.NORMAL,
+            "MOMENTARY 按住不允许的键时必须抑制悬停高亮"
+        );
+        this.check(
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, true, true, false)) == SpriteVariant.NORMAL,
+            "MOMENTARY 在控件外开始按压时必须保持 NORMAL"
+        );
+        this.check(
+            ButtonType.TOGGLE.variant(new ButtonInput(true, false, false, false, false)) == SpriteVariant.PRESSED,
+            "TOGGLE 选中且未悬停时必须为 PRESSED"
+        );
+        this.check(
+            ButtonType.TOGGLE.variant(new ButtonInput(false, false, false, false, false)) == SpriteVariant.NORMAL,
+            "TOGGLE 未选中且未悬停时必须为 NORMAL"
+        );
+        this.check(
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, false, false)) == SpriteVariant.HIGHLIGHTED_PRESSED,
+            "TOGGLE 选中且悬停时必须为 HIGHLIGHTED_PRESSED"
+        );
+        this.check(
+            ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, false, false)) == SpriteVariant.HIGHLIGHTED,
+            "TOGGLE 未选中且悬停时必须为 HIGHLIGHTED"
+        );
+        this.check(
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, true, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSING,
+            "TOGGLE 在控件内按住允许键时必须为 HIGHLIGHTED_PRESSING"
+        );
+        this.check(
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, true, false)) == SpriteVariant.PRESSED,
+            "TOGGLE 选中时按住其他键必须回落到 PRESSED"
+        );
+        this.check(
+            ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, true, false)) == SpriteVariant.NORMAL,
+            "TOGGLE 未选中时按住其他键必须回落到 NORMAL"
+        );
+        this.check(
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, true, true, false)) == SpriteVariant.PRESSED,
+            "TOGGLE 在控件外开始按压时必须回落到 PRESSED"
+        );
+    }
+
     private void verifyContains() {
         ButtonRenderer renderer = new ButtonRenderer();
         try (ButtonRenderer.Scope scope = renderer.open()) {
@@ -545,14 +586,7 @@ public final class FlexibleTestScreen extends Screen {
         this.renderedFrames++;
     }
 
-    private static String shortLabel(String label) {
-        return label
-            .replace("HIGHLIGHTED", "HL")
-            .replace("PRESSED", "P")
-            .replace("NON_SHADED", "N")
-            .replace("SHADED_1PX", "S1")
-            .replace("SHADED_2PX", "S2");
-    }
+
     private static FlyoutRenderer createFlyout(
         SpriteTheme theme,
         SpriteStyle style,
@@ -575,12 +609,26 @@ public final class FlexibleTestScreen extends Screen {
         }
         switch (variant) {
             case HIGHLIGHTED -> renderer.highlighted();
+            case HIGHLIGHTED_PRESSED -> renderer.highlightedPressed();
+            case HIGHLIGHTED_PRESSING -> renderer.highlightedPressing();
             case PRESSED -> renderer.pressed();
             case NORMAL -> {
             }
         }
         return renderer;
     }
+
+    private static String shortLabel(String label) {
+        return label
+            .replace("HIGHLIGHTED_PRESSING", "HL_PRESSING")
+            .replace("HIGHLIGHTED_PRESSED", "HL_PRESS")
+            .replace("HIGHLIGHTED", "HL")
+            .replace("PRESSED", "P")
+            .replace("NON_SHADED", "N")
+            .replace("SHADED_1PX", "S1")
+            .replace("SHADED_2PX", "S2");
+    }
+
     @Override
     public boolean isPauseScreen() {
         return false;
@@ -603,6 +651,7 @@ public final class FlexibleTestScreen extends Screen {
     public int renderedFrames() {
         return this.renderedFrames;
     }
+
     private void check(boolean condition, String message) {
         this.checks++;
         if (!condition) {
