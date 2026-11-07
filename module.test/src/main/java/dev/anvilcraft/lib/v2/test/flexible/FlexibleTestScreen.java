@@ -103,6 +103,7 @@ public final class FlexibleTestScreen extends Screen {
         this.verifyPointers();
         this.verifyPointerQuad();
         this.verifyFlexSize();
+        this.verifyVariantPaddingConsistency();
         this.verifyTextColor();
         this.verifyAlpha();
         this.verifyShowcaseSizes();
@@ -521,6 +522,53 @@ public final class FlexibleTestScreen extends Screen {
         @SuppressWarnings("deprecation")
         ButtonInput fiveFalse = new ButtonInput(true, true, true, false, true);
         this.check(fiveFalse.equals(four), "五参数构造器的 anyPressed 取 false 时也必须等价");
+    }
+
+    /**
+     * 同一主题、样式、类型下，各变体的四向内边距之和必须一致。
+     *
+     * <p>变体只改变边框与阴影在上下之间的分配，总厚度不变；一旦某个变体的竖向或横向总和不同，
+     * {@code flexSize} 就会随变体切换而跳动。2px 阴影的按压态把 2px 阴影与 2px 边框都留在顶部，
+     * 因此顶部为 4px、底部回到 2px。
+     */
+    private void verifyVariantPaddingConsistency() {
+        for (SpriteTheme theme : SpriteTheme.values()) {
+            for (SpriteStyle style : SpriteStyle.values()) {
+                for (SpriteType type : SpriteType.values()) {
+                    FlexibleSprites.SpriteInfo base = FlexibleSprites.pickSprite(
+                        theme, style, type, SpriteVariant.NORMAL
+                    );
+                    int vertical = base.topPadding() + base.bottomPadding();
+                    int horizontal = base.leftPadding() + base.rightPadding();
+                    for (SpriteVariant variant : SpriteVariant.values()) {
+                        FlexibleSprites.SpriteInfo info = FlexibleSprites.pickSprite(theme, style, type, variant);
+                        String label = "%s %s %s %s".formatted(theme, style, type, variant);
+                        this.check(
+                            info.topPadding() + info.bottomPadding() == vertical,
+                            label + " 的竖向内边距总和必须与常态一致，期望 " + vertical
+                                + "，实际为 " + info.topPadding() + "+" + info.bottomPadding()
+                        );
+                        this.check(
+                            info.leftPadding() + info.rightPadding() == horizontal,
+                            label + " 的横向内边距总和必须与常态一致，期望 " + horizontal
+                                + "，实际为 " + info.leftPadding() + "+" + info.rightPadding()
+                        );
+                    }
+                }
+            }
+        }
+        FlexibleSprites.SpriteInfo pressing = FlexibleSprites.pickSprite(
+            SpriteTheme.LIGHT, SpriteStyle.THREE_D, SpriteType.SHADED_2PX, SpriteVariant.HIGHLIGHTED_PRESSING
+        );
+        this.check(
+            pressing.topPadding() == 4 && pressing.bottomPadding() == 2,
+            "2px 阴影的按压态必须保留 2px 阴影与 2px 边框，实际为 " + pressing.topPadding()
+                + "/" + pressing.bottomPadding()
+        );
+        this.check(
+            pressing.pointerUpInset() == 2,
+            "2px 阴影的按压态朝上指针必须下移 2px，实际为 " + pressing.pointerUpInset()
+        );
     }
 
     private void verifyContains() {
