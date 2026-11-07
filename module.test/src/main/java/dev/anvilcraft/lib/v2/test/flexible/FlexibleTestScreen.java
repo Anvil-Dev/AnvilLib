@@ -508,6 +508,9 @@ public final class FlexibleTestScreen extends Screen {
         );
     }
 
+    /**
+     * 核对按钮输入的四参数构造器与旧五参数构造器是否等价。
+     */
     private void verifyButtonInputCompatibility() {
         ButtonInput four = new ButtonInput(true, true, true, true);
         this.check(four.selected() && four.hovering() && four.allowedPressed() && four.pressStartedInside(), "四参数构造器必须完整保留四个组件");
