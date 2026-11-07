@@ -36,7 +36,7 @@ public class ButtonRenderer extends Renderer<ButtonRenderer.Scope> {
     }
 
     /**
-     * 按整体透明度算出白色 ARGB 颜色，供文本颜色组合与测试使用。
+     * 按整体透明度算出白色 ARGB 颜色，供九宫格本体与指针着色。
      */
     public static int color(float alpha) {
         return (int) (Mth.clamp(alpha, 0.0F, 1.0F) * 255.0F) << 24 | 0xFFFFFF;
