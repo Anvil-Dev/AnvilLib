@@ -109,6 +109,7 @@ public final class FlexibleTestScreen extends Screen {
         this.verifyMouseVariantWithFlexSize();
         this.verifyMouseVariantChain();
         this.verifyButtonTypes();
+        this.verifyButtonInputCompatibility();
         this.verifyContains();
         if (this.failures.isEmpty()) {
             LOGGER.info("FLEXIBLE_TEST ALL PASS: {} checks", this.checks);
@@ -505,6 +506,17 @@ public final class FlexibleTestScreen extends Screen {
             ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, true)) == SpriteVariant.HIGHLIGHTED,
             "TOGGLE 未选中悬停且按键不被允许时必须为 HIGHLIGHTED"
         );
+    }
+
+    private void verifyButtonInputCompatibility() {
+        ButtonInput four = new ButtonInput(true, true, true, true);
+        this.check(four.selected() && four.hovering() && four.allowedPressed() && four.pressStartedInside(), "四参数构造器必须完整保留四个组件");
+        @SuppressWarnings("deprecation")
+        ButtonInput five = new ButtonInput(true, true, true, true, true);
+        this.check(five.equals(four), "五参数构造器必须忽略 anyPressed 并等价于四参数构造器");
+        @SuppressWarnings("deprecation")
+        ButtonInput fiveFalse = new ButtonInput(true, true, true, false, true);
+        this.check(fiveFalse.equals(four), "五参数构造器的 anyPressed 取 false 时也必须等价");
     }
 
     private void verifyContains() {
