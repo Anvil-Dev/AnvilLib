@@ -30,57 +30,24 @@ public class FlyoutRenderer extends ButtonRenderer {
     private static final int POINTER_MARGIN = 2;
 
     /**
-     * 计算指针贴图的绘制矩形与 U 方向。
+     * 计算指针贴图的绘制矩形。
      *
      * <p>{@code width} 与 {@code height} 是可见内容尺寸，贴图四周各有 1px 透明边，因此绘制矩形
-     * 向左上各扩 1px、宽高各加 2px；镜像只翻转 U，矩形与非镜像完全一致。
+     * 向左上各扩 1px、宽高各加 2px。
      */
-    public static PointerQuad pointerQuad(int x, int y, int width, int height, boolean mirrored) {
-        return new PointerQuad(x - 1, y - 1, width + 2, height + 2, mirrored);
+    public static PointerQuad pointerQuad(int x, int y, int width, int height) {
+        return new PointerQuad(x - 1, y - 1, width + 2, height + 2);
     }
 
     /**
      * 指针贴图的一次绘制参数。
      *
-     * @param x        绘制矩形左边界
-     * @param y        绘制矩形上边界
-     * @param width    绘制矩形宽度
-     * @param height   绘制矩形高度
-     * @param mirrored 是否水平镜像
+     * @param x      绘制矩形左边界
+     * @param y      绘制矩形上边界
+     * @param width  绘制矩形宽度
+     * @param height 绘制矩形高度
      */
-    public record PointerQuad(int x, int y, int width, int height, boolean mirrored) {
-        /**
-         * U 起点，镜像时从贴图右边缘开始。
-         */
-        public float u0() {
-            return this.mirrored ? 1.0F : 0.0F;
-        }
-
-        /**
-         * U 终点，镜像时结束于贴图左边缘。
-         */
-        public float u1() {
-            return this.mirrored ? 0.0F : 1.0F;
-        }
-    }
-
-    /**
-     * 指针贴图的采样参数。
-     *
-     * @param u 采样起点，单位为贴图像素
-     * @param srcWidth 采样宽度，镜像时取负值让 U 坐标从右向左
-     */
-    public record PointerSample(float u, int srcWidth) {
-    }
-
-    /**
-     * 按绘制矩形算出指针贴图的采样参数。镜像只反转 U，不翻转几何，顶点绕序保持不变。
-     */
-    public static PointerSample pointerSample(PointerQuad quad) {
-        return new PointerSample(
-            quad.u0() * quad.width(),
-            Math.round((quad.u1() - quad.u0()) * quad.width())
-        );
+    public record PointerQuad(int x, int y, int width, int height) {
     }
 
     @Override
@@ -147,7 +114,7 @@ public class FlyoutRenderer extends ButtonRenderer {
                 pointerX = x + FlyoutRenderer.POINTER_MARGIN
                     + Math.round(percent * Math.max(0, width - pointerWidth - FlyoutRenderer.POINTER_MARGIN * 2));
                 pointerY = this.pointerDirection == PointerDirection.UP
-                    ? y - pointerHeight + this.pointerUpInset(variant)
+                    ? y - pointerHeight + FlyoutRenderer.POINTER_INSET + pointer.pointerUpInset()
                     : y + height - this.pointerDownInset();
             } else {
                 pointerY = y + FlyoutRenderer.POINTER_MARGIN
@@ -156,18 +123,7 @@ public class FlyoutRenderer extends ButtonRenderer {
                     ? x - pointerWidth + FlyoutRenderer.POINTER_INSET
                     : x + width - FlyoutRenderer.POINTER_INSET;
             }
-            this.blitPointer(
-                graphics, pointer.texture(), pointerX, pointerY, pointerWidth, pointerHeight, pointer.mirrored()
-            );
-        }
-
-        /**
-         * 上指针贴顶时的收进量：只有阴影类型的按下态贴图在顶部多出一行阴影，需要整体下移 1px。
-         */
-        private int pointerUpInset(SpriteVariant variant) {
-            boolean extraShadowRow = variant == SpriteVariant.PRESSED
-                && FlyoutRenderer.this.getType() != SpriteType.NON_SHADED;
-            return FlyoutRenderer.POINTER_INSET + (extraShadowRow ? 1 : 0);
+            this.blitPointer(graphics, pointer.texture(), pointerX, pointerY, pointerWidth, pointerHeight);
         }
 
         /**
@@ -185,8 +141,7 @@ public class FlyoutRenderer extends ButtonRenderer {
          * 按原始像素尺寸绘制指针贴图。
          *
          * <p>指针贴图是普通纹理而非九宫格切图，无法走 {@code blitSprite}，改用按普通纹理铺一次的
-         * {@code blit}。朝右的指针没有独立贴图，由朝左的贴图水平镜像得到：绘制矩形不变，只把贴图采样宽度取负，
-         * 让 U 坐标从右向左递减。变换只发生在贴图坐标上，顶点绕序保持不变。
+         * {@code blit}。
          */
         private void blitPointer(
             GuiGraphicsExtractor graphics,
@@ -194,21 +149,19 @@ public class FlyoutRenderer extends ButtonRenderer {
             int x,
             int y,
             int width,
-            int height,
-            boolean mirrored
+            int height
         ) {
-            FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(x, y, width, height, mirrored);
-            FlyoutRenderer.PointerSample sample = FlyoutRenderer.pointerSample(quad);
+            FlyoutRenderer.PointerQuad quad = FlyoutRenderer.pointerQuad(x, y, width, height);
             graphics.blit(
                 RenderPipelines.GUI_TEXTURED,
                 texture,
                 quad.x(),
                 quad.y(),
-                sample.u(),
+                0.0F,
                 0.0F,
                 quad.width(),
                 quad.height(),
-                sample.srcWidth(),
+                quad.width(),
                 quad.height(),
                 quad.width(),
                 quad.height(),
