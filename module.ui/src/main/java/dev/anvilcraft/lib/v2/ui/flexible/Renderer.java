@@ -38,7 +38,7 @@ public abstract class Renderer<T extends Scope> {
     @Getter
     protected SpriteType type = SpriteType.NON_SHADED;
     protected Function<T, SpriteVariant> variant = ignore -> SpriteVariant.NORMAL;
-    protected ButtonType buttonType = ButtonType.CLICK;
+    protected ButtonType buttonType = ButtonType.MOMENTARY;
     protected BooleanSupplier toggleState = () -> false;
     /**
      *  当前透明度，取值 0 到 1。
@@ -89,7 +89,7 @@ public abstract class Renderer<T extends Scope> {
     }
 
     /**
-     * 设置按钮行为，默认 {@link ButtonType#CLICK}。
+     * 设置按钮行为，默认 {@link ButtonType#MOMENTARY}。
      *
      * <p>按钮行为只在调用过 {@link #basedOnMouse(IntSet)} 后生效。
      */
@@ -143,34 +143,13 @@ public abstract class Renderer<T extends Scope> {
             if (scope.mousePos == null) {
                 throw new IllegalStateException("Some arguments are missing or invalid: mousePos");
             }
-            boolean hovering = scope.contains(scope.mousePos);
-            boolean allowedPressed = Renderer.isMousePressed(allowedKeys);
-            boolean anyPressed = Renderer.isMousePressed(Renderer.ALL_MOUSE_BUTTONS);
-            boolean pressStartedInside = scope.contains(this.startPressMousePos);
-            return switch (this.buttonType) {
-                case CLICK -> hovering ? SpriteVariant.HIGHLIGHTED : SpriteVariant.NORMAL;
-                case MOMENTARY -> {
-                    if (!anyPressed) {
-                        yield hovering ? SpriteVariant.HIGHLIGHTED : SpriteVariant.NORMAL;
-                    }
-                    yield hovering && allowedPressed && pressStartedInside
-                        ? SpriteVariant.HIGHLIGHTED_PRESSING
-                        : SpriteVariant.NORMAL;
-                }
-                case TOGGLE -> {
-                    boolean selected = this.toggleState.getAsBoolean();
-                    if (!anyPressed) {
-                        if (!hovering) {
-                            yield selected ? SpriteVariant.PRESSED : SpriteVariant.NORMAL;
-                        }
-                        yield selected ? SpriteVariant.HIGHLIGHTED_PRESSED : SpriteVariant.HIGHLIGHTED;
-                    }
-                    if (hovering && allowedPressed && pressStartedInside) {
-                        yield SpriteVariant.HIGHLIGHTED_PRESSING;
-                    }
-                    yield selected ? SpriteVariant.PRESSED : SpriteVariant.NORMAL;
-                }
-            };
+            return this.buttonType.variant(new ButtonInput(
+                this.toggleState.getAsBoolean(),
+                scope.contains(scope.mousePos),
+                Renderer.isMousePressed(allowedKeys),
+                Renderer.isMousePressed(Renderer.ALL_MOUSE_BUTTONS),
+                scope.contains(this.startPressMousePos)
+            ));
         };
         return this;
     }

@@ -63,6 +63,9 @@ public class FlyoutRenderer extends ButtonRenderer {
      * <p>1.21.1 的 {@code GuiGraphics.blit} 没有颜色参数，只能靠全局着色器颜色染色；指针贴图是普通纹理，
      * 走那条路径时透明度不会生效，因此这里直接按 {@code POSITION_TEX_COLOR} 顶点格式铺一个四边形，
      * 把颜色写在顶点上。
+     *
+     * <p>顶点色会与当前全局 {@code ColorModulator} 相乘，指针因此继承父级界面的整体染色；
+     * 如果需要完全独立的指针颜色，调用前应先把着色器颜色重置为白色并在结束后恢复。
      */
     private static void blitTinted(
         GuiGraphics graphics,
