@@ -283,6 +283,11 @@ public final class FlexibleTestScreen extends Screen {
             this.check(size != null && size.x > 0 && size.y > 0, "basedOnMouse 与 flexSize 组合必须解析出正尺寸");
             this.check(scope.contains(new Vector2f(15, 15)), "basedOnMouse 与 flexSize 组合必须命中控件内部");
             this.check(!scope.contains(new Vector2f(100, 100)), "basedOnMouse 与 flexSize 组合必须排除控件外部");
+            this.check(renderer.variantOf(scope) == SpriteVariant.NORMAL, "默认 DISPLAY 必须始终解析为 NORMAL");
+            renderer.buttonType(ButtonType.MOMENTARY);
+            this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "MOMENTARY 悬停时必须解析为 HIGHLIGHTED");
+            renderer.buttonType(ButtonType.CLICK);
+            this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "CLICK 悬停时必须解析为 HIGHLIGHTED");
         } catch (StackOverflowError | RuntimeException error) {
             this.check(false, "basedOnMouse 与 flexSize 组合不得抛出异常或递归溢出");
         } finally {
@@ -380,76 +385,76 @@ public final class FlexibleTestScreen extends Screen {
 
     private void verifyButtonTypes() {
         this.check(
-            ButtonType.DISPLAY.variant(new ButtonInput(false, true, true, true, true)) == SpriteVariant.NORMAL,
+            ButtonType.DISPLAY.variant(new ButtonInput(false, true, true, true)) == SpriteVariant.NORMAL,
             "DISPLAY 在悬停并按住时也必须保持 NORMAL"
         );
         this.check(
-            ButtonType.DISPLAY.variant(new ButtonInput(true, false, false, false, false)) == SpriteVariant.NORMAL,
+            ButtonType.DISPLAY.variant(new ButtonInput(true, false, false, false)) == SpriteVariant.NORMAL,
             "DISPLAY 在选中且未悬停时也必须保持 NORMAL"
         );
         this.check(
-            ButtonType.CLICK.variant(new ButtonInput(false, true, false, false, false)) == SpriteVariant.HIGHLIGHTED,
+            ButtonType.CLICK.variant(new ButtonInput(false, true, false, false)) == SpriteVariant.HIGHLIGHTED,
             "CLICK 悬停时必须为 HIGHLIGHTED"
         );
         this.check(
-            ButtonType.CLICK.variant(new ButtonInput(false, false, true, true, false)) == SpriteVariant.NORMAL,
+            ButtonType.CLICK.variant(new ButtonInput(false, false, true, true)) == SpriteVariant.NORMAL,
             "CLICK 未悬停时必须保持 NORMAL"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, false, false, false, false)) == SpriteVariant.NORMAL,
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, false, false, false)) == SpriteVariant.NORMAL,
             "MOMENTARY 未悬停且未按住时必须为 NORMAL"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, false, false, false)) == SpriteVariant.HIGHLIGHTED,
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, false, false)) == SpriteVariant.HIGHLIGHTED,
             "MOMENTARY 悬停且未按住时必须为 HIGHLIGHTED"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, true, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSING,
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSING,
             "MOMENTARY 在控件内按住允许键时必须为 HIGHLIGHTED_PRESSING"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, true, true, false)) == SpriteVariant.HIGHLIGHTED,
-            "MOMENTARY 按压起点在同一 Renderer 的其他按钮上时必须锁定 HIGHLIGHTED"
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, true, false)) == SpriteVariant.HIGHLIGHTED,
+            "MOMENTARY 按压起点在控件外时必须为 HIGHLIGHTED"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, false, true, true)) == SpriteVariant.HIGHLIGHTED,
-            "MOMENTARY 按压起点在控件内但按键不被允许时必须为 HIGHLIGHTED"
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, false, true)) == SpriteVariant.HIGHLIGHTED,
+            "MOMENTARY 按键不被允许时必须为 HIGHLIGHTED"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, false, true, true, true)) == SpriteVariant.NORMAL,
-            "MOMENTARY 按压起点在控件内但鼠标移出时必须为 NORMAL"
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, false, true, true)) == SpriteVariant.NORMAL,
+            "MOMENTARY 按压后鼠标移出时必须为 NORMAL"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(true, false, false, false, false)) == SpriteVariant.PRESSED,
+            ButtonType.TOGGLE.variant(new ButtonInput(true, false, false, false)) == SpriteVariant.PRESSED,
             "TOGGLE 选中且未悬停时必须为 PRESSED"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(false, false, false, false, false)) == SpriteVariant.NORMAL,
+            ButtonType.TOGGLE.variant(new ButtonInput(false, false, false, false)) == SpriteVariant.NORMAL,
             "TOGGLE 未选中且未悬停时必须为 NORMAL"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, false, false)) == SpriteVariant.HIGHLIGHTED_PRESSED,
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, false)) == SpriteVariant.HIGHLIGHTED_PRESSED,
             "TOGGLE 选中且悬停时必须为 HIGHLIGHTED_PRESSED"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, false, false)) == SpriteVariant.HIGHLIGHTED,
+            ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, false)) == SpriteVariant.HIGHLIGHTED,
             "TOGGLE 未选中且悬停时必须为 HIGHLIGHTED"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, true, false)) == SpriteVariant.HIGHLIGHTED_PRESSED,
-            "TOGGLE 选中悬停且按压起点在同一 Renderer 的其他按钮上时必须为 HIGHLIGHTED_PRESSED"
-        );
-        this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSED,
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, true)) == SpriteVariant.HIGHLIGHTED_PRESSED,
             "TOGGLE 选中悬停且按键不被允许时必须为 HIGHLIGHTED_PRESSED"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(true, true, true, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSING,
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSING,
             "TOGGLE 选中悬停且在控件内按住允许键时必须为 HIGHLIGHTED_PRESSING"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, true, false)) == SpriteVariant.HIGHLIGHTED,
-            "TOGGLE 未选中悬停且按压起点在同一 Renderer 的其他按钮上时必须锁定 HIGHLIGHTED"
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, true, false)) == SpriteVariant.HIGHLIGHTED_PRESSED,
+            "TOGGLE 选中悬停且按压起点在控件外时必须为 HIGHLIGHTED_PRESSED"
+        );
+        this.check(
+            ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, true)) == SpriteVariant.HIGHLIGHTED,
+            "TOGGLE 未选中悬停且按键不被允许时必须为 HIGHLIGHTED"
         );
     }
     private void verifyContains() {
