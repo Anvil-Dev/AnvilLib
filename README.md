@@ -366,7 +366,7 @@ controller.onHoldKeyReleased();
 
 - 主题（浅色/深色）、风格（立体/扁平）、阴影（无/1px/2px）与变体（常态/高亮/按压）自由组合
 - `flexSize` 依据文本尺寸与切图内边距自动计算控件大小
-- `basedOnMouse` 按悬停与按压状态自动切换变体，需显式设置 `ButtonType.MOMENTARY` 或 `ButtonType.TOGGLE`
+- `basedOnMouse` 按悬停与按压状态自动切换变体，需显式设置 `ButtonType.CLICK`、`ButtonType.MOMENTARY` 或 `ButtonType.TOGGLE`
 - `FlyoutRenderer` 在控件任意一边贴指针，位置按百分比取值
 - 贴图位于 `anvillib_ui` 命名空间的 `textures/gui` 下
 
