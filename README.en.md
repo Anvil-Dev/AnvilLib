@@ -311,7 +311,7 @@ on any edge.
 
 - Theme (light/dark), style (three-dimensional/flat), shadow (none/1px/2px) and variant (normal/highlighted/pressed) combine freely
 - `flexSize` derives the widget size from the label and the sprite padding
-- `basedOnMouse` picks the variant from hover and press state; set `ButtonType.MOMENTARY` or `ButtonType.TOGGLE` explicitly
+- `basedOnMouse` picks the variant from hover and press state; set `ButtonType.CLICK`, `ButtonType.MOMENTARY` or `ButtonType.TOGGLE` explicitly
 - `FlyoutRenderer` draws a pointer on any edge, positioned by a percentage
 - Sprites live under `textures/gui` in the `anvillib_ui` namespace
 

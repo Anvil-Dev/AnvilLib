@@ -720,6 +720,9 @@ public final class FlexibleTestScreen extends Screen {
     }
     /**
      * 可在不影响真实鼠标状态的前提下伪造“允许键被按住”的按钮渲染器，供链路测试使用。
+     *
+     * <p>覆写后的实现忽略 {@code allowedKeys} 恒返回 {@code true}，只用于验证按压分支可达，
+     * 不覆盖“按键不被允许”的语义，该语义由 {@code verifyButtonTypes} 的纯函数断言覆盖。
      */
     private static final class PressedButtonRenderer extends ButtonRenderer {
         @Override
