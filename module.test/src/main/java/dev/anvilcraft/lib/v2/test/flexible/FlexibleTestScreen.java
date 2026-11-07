@@ -440,6 +440,7 @@ public final class FlexibleTestScreen extends Screen {
             "TOGGLE 在控件外开始按压时必须回落到 PRESSED"
         );
     }
+
     private void verifyContains() {
         ButtonRenderer renderer = new ButtonRenderer();
         try (ButtonRenderer.Scope scope = renderer.open()) {
@@ -616,6 +617,7 @@ public final class FlexibleTestScreen extends Screen {
         }
         return renderer;
     }
+
     private static String shortLabel(String label) {
         return label
             .replace("HIGHLIGHTED_PRESSING", "HL_PRESSING")
