@@ -32,11 +32,6 @@ public abstract class Renderer<T extends Scope> {
     private static final int MOUSE_BUTTON_LEFT = 0;
     private static final int MOUSE_BUTTON_RIGHT = 1;
     private static final int MOUSE_BUTTON_MIDDLE = 2;
-    private static final IntSet ALL_MOUSE_BUTTONS = IntSet.of(
-        Renderer.MOUSE_BUTTON_LEFT,
-        Renderer.MOUSE_BUTTON_MIDDLE,
-        Renderer.MOUSE_BUTTON_RIGHT
-    );
 
     @Getter
     protected SpriteTheme theme = SpriteTheme.LIGHT;
@@ -45,7 +40,7 @@ public abstract class Renderer<T extends Scope> {
     @Getter
     protected SpriteType type = SpriteType.NON_SHADED;
     protected Function<T, SpriteVariant> variant = ignore -> SpriteVariant.NORMAL;
-    protected ButtonType buttonType = ButtonType.MOMENTARY;
+    protected ButtonType buttonType = ButtonType.DISPLAY;
     protected BooleanSupplier toggleState = () -> false;
     /**
      *  当前透明度，取值 0 到 1。
@@ -96,9 +91,13 @@ public abstract class Renderer<T extends Scope> {
     }
 
     /**
-     * 设置按钮行为，默认 {@link ButtonType#MOMENTARY}。
+     * 设置按钮行为，默认 {@link ButtonType#DISPLAY}。
      *
-     * <p>按钮行为只在调用过 {@link #basedOnMouse(IntSet)} 后生效。
+     * <p>按钮行为在每次解析变体时读取，因此本方法与 {@link #basedOnMouse(IntSet)} 的调用顺序无关，
+     * 先设置行为再绑定鼠标、或先绑定鼠标再设置行为都成立。
+     *
+     * <p>没有调用 {@link #basedOnMouse(IntSet)}，或变体已被 {@link #highlighted()} 一类方法固定时，
+     * 本设置不产生可见效果。
      */
     public Renderer<T> buttonType(ButtonType buttonType) {
         this.buttonType = buttonType;
@@ -142,26 +141,39 @@ public abstract class Renderer<T extends Scope> {
     /**
      * 变体由按钮行为与鼠标位置推导，具体状态取决于 {@link #buttonType}。
      *
+     * <p>默认按钮行为是 {@link ButtonType#DISPLAY}，不读取鼠标状态；需要悬停或按压反馈时，
+     * 必须先显式设置 {@link ButtonType#MOMENTARY}、{@link ButtonType#TOGGLE} 或
+     * {@link ButtonType#CLICK}。
+     *
+     * <p>{@link ButtonType#DISPLAY} 不读取鼠标状态，因此无需设置鼠标位置；其余按钮行为必须设置。
+     *
      * <p>按下状态以按下瞬间的鼠标位置是否仍在作用域内判定，这样鼠标按下后再移出控件时不会误判为按压。
-     * 只要有任意鼠标按钮被按住，未按在该控件上的悬停高亮就会被抑制，避免在控件外按住鼠标时控件仍显示高亮。
+     * 悬停高亮不受鼠标按键影响，只有按压起点落在本控件范围内且允许的按键仍被按住时才进入按压态。
      */
     public Renderer<T> basedOnMouse(IntSet allowedKeys) {
         this.variant = scope -> {
+            if (this.buttonType == ButtonType.DISPLAY) {
+                return SpriteVariant.NORMAL;
+            }
             if (scope.mousePos == null) {
                 throw new IllegalStateException("Some arguments are missing or invalid: mousePos");
             }
             return this.buttonType.variant(new ButtonInput(
                 this.toggleState.getAsBoolean(),
                 scope.contains(scope.mousePos),
-                Renderer.isMousePressed(allowedKeys),
-                Renderer.isMousePressed(Renderer.ALL_MOUSE_BUTTONS),
+                this.isMousePressed(allowedKeys),
                 scope.contains(this.startPressMousePos)
             ));
         };
         return this;
     }
 
-    private static boolean isMousePressed(IntSet allowedKeys) {
+    /**
+     * 判断允许的按键中是否有任意一个正被按住。
+     *
+     * <p>该方法只建议在测试中覆写，用于伪造按下状态；生产子类覆写会改变真实的悬停与按压反馈。
+     */
+    protected boolean isMousePressed(IntSet allowedKeys) {
         Minecraft minecraft = Minecraft.getInstance();
         return allowedKeys.contains(Renderer.MOUSE_BUTTON_LEFT) && minecraft.mouseHandler.isLeftPressed()
             || allowedKeys.contains(Renderer.MOUSE_BUTTON_MIDDLE) && minecraft.mouseHandler.isMiddlePressed()
