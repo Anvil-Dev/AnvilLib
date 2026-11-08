@@ -5,8 +5,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.v2.codec.CodecUtil;
 import dev.anvilcraft.lib.v2.codec.StreamCodecUtil;
 import dev.anvilcraft.lib.v2.recipe.cache.BlockCache;
-import dev.anvilcraft.lib.v2.recipe.cache.ItemCache;
-import dev.anvilcraft.lib.v2.recipe.cache.item.ICacheOutput;
 import dev.anvilcraft.lib.v2.recipe.init.recipe.LibRecipeOutcomeTypes;
 import dev.anvilcraft.lib.v2.recipe.outcome.function.ApplyTagToComponent;
 import dev.anvilcraft.lib.v2.recipe.outcome.function.IOutcomeFunction;
@@ -46,7 +44,7 @@ import javax.annotation.Nullable;
  * @param functions 函数列表
  */
 public record SpawnItem(ItemStackTemplate item, Vec3 offset, ContextIntProvider count, List<IOutcomeFunction<?>> functions)
-    implements IRecipeOutcome<SpawnItem> {
+    implements IPlannedItemOutcome<SpawnItem> {
     /**
      * 构造一个新的生成物品配方结果
      *
@@ -65,7 +63,13 @@ public record SpawnItem(ItemStackTemplate item, Vec3 offset, ContextIntProvider 
      * @param offset 偏移量
      * @param count  数量
      */
-    public SpawnItem(Holder<Item> item, DataComponentPatch patch, Vec3 offset, ContextIntProvider count, List<IOutcomeFunction<?>> functions) {
+    public SpawnItem(
+        Holder<Item> item,
+        DataComponentPatch patch,
+        Vec3 offset,
+        ContextIntProvider count,
+        List<IOutcomeFunction<?>> functions
+    ) {
         this(new ItemStackTemplate(item, 1, patch), offset, count, functions);
     }
 
@@ -99,16 +103,17 @@ public record SpawnItem(ItemStackTemplate item, Vec3 offset, ContextIntProvider 
     }
 
     /**
-     * 接受配方上下文并处理生成物品的结果
+     * 计算最终产物，保留随机数量、结果函数和方块偏移计算后的值
      *
      * @param context 配方上下文
      */
     @Override
     @SuppressWarnings("unchecked")
-    public void accept(InWorldRecipeContext context) {
-        ItemCache cache = context.computeIfAbsent(ItemCache.ITEM_CACHE);
+    public List<PlannedItem> plan(InWorldRecipeContext context) {
         int count = context.getInt(this.count, 0, 99);
-        if (count == 0) return;
+        if (count == 0) {
+            return List.of();
+        }
         ItemStack stack = this.item.withCount(1).create().copyWithCount(count);
         BlockCache blockCache = context.computeIfAbsent(BlockCache.BLOCK_CACHE);
         Vec3 offset = context.getPos().add(this.offset);
@@ -122,9 +127,7 @@ public record SpawnItem(ItemStackTemplate item, Vec3 offset, ContextIntProvider 
             IOutcomeFunction<ItemStack> function1 = (IOutcomeFunction<ItemStack>) function;
             stack = function1.apply(context, stack);
         }
-        ICacheOutput output = cache.getOutput(stack, offset);
-        output.grow(stack, true);
-        context.putAcceptor(ItemCache.ITEM_CACHE.location(), ItemCache.DEFAULT_ACCEPTOR);
+        return stack.isEmpty() ? List.of() : List.of(new PlannedItem(stack, offset));
     }
 
     /**
