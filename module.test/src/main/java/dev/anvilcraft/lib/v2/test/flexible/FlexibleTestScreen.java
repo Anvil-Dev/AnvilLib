@@ -11,6 +11,7 @@ import dev.anvilcraft.lib.v2.ui.flexible.SpriteStyle;
 import dev.anvilcraft.lib.v2.ui.flexible.SpriteTheme;
 import dev.anvilcraft.lib.v2.ui.flexible.SpriteType;
 import dev.anvilcraft.lib.v2.ui.flexible.SpriteVariant;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -102,11 +103,14 @@ public final class FlexibleTestScreen extends Screen {
         this.verifyPointers();
         this.verifyPointerQuad();
         this.verifyFlexSize();
+        this.verifyVariantPaddingConsistency();
         this.verifyTextColor();
         this.verifyAlpha();
         this.verifyShowcaseSizes();
         this.verifyMouseVariantWithFlexSize();
+        this.verifyMouseVariantChain();
         this.verifyButtonTypes();
+        this.verifyButtonInputCompatibility();
         this.verifyContains();
         if (this.failures.isEmpty()) {
             LOGGER.info("FLEXIBLE_TEST ALL PASS: {} checks", this.checks);
@@ -296,6 +300,54 @@ public final class FlexibleTestScreen extends Screen {
     }
 
     /**
+     * 走真实 {@code basedOnMouse} 链路核对按钮行为，覆盖默认 {@code DISPLAY}、悬停与按压三类分支。
+     */
+    private void verifyMouseVariantChain() {
+        ButtonRenderer renderer = new ButtonRenderer();
+        renderer.basedOnMouse();
+        ButtonRenderer.Scope scope = renderer.open();
+        scope.font(this.font).text(Component.literal("chain")).flexSize(FLEX_PADDING)
+            .pos(10, 10).mousePos(15, 15);
+        try {
+            this.check(renderer.variantOf(scope) == SpriteVariant.NORMAL, "默认 DISPLAY 必须始终解析为 NORMAL");
+            renderer.buttonType(ButtonType.MOMENTARY);
+            this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "MOMENTARY 悬停时必须解析为 HIGHLIGHTED");
+            renderer.buttonType(ButtonType.CLICK);
+            this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "CLICK 悬停时必须解析为 HIGHLIGHTED");
+            renderer.buttonType(ButtonType.MOMENTARY);
+            renderer.onPress(new Vector2f(15, 15));
+            this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "起点在控件内且按键未被按住时必须为 HIGHLIGHTED");
+            renderer.onRelease();
+            this.check(renderer.variantOf(scope) == SpriteVariant.HIGHLIGHTED, "松开后必须回到 HIGHLIGHTED");
+        } catch (StackOverflowError | RuntimeException error) {
+            this.check(false, "basedOnMouse 链路不得抛出异常");
+        } finally {
+            scope.close();
+        }
+        PressedButtonRenderer pressed = new PressedButtonRenderer();
+        pressed.basedOnMouse().buttonType(ButtonType.MOMENTARY);
+        ButtonRenderer.Scope pressedScope = pressed.open();
+        pressedScope.font(this.font).text(Component.literal("press")).flexSize(FLEX_PADDING)
+            .pos(10, 10).mousePos(15, 15);
+        try {
+            pressed.onPress(new Vector2f(15, 15));
+            this.check(
+                pressed.variantOf(pressedScope) == SpriteVariant.HIGHLIGHTED_PRESSING,
+                "起点在控件内且允许键被按住时必须解析为 HIGHLIGHTED_PRESSING"
+            );
+            pressed.onRelease();
+            this.check(
+                pressed.variantOf(pressedScope) == SpriteVariant.HIGHLIGHTED,
+                "松开后必须从 HIGHLIGHTED_PRESSING 回到 HIGHLIGHTED"
+            );
+        } catch (StackOverflowError | RuntimeException error) {
+            this.check(false, "按压链路不得抛出异常");
+        } finally {
+            pressedScope.close();
+        }
+    }
+
+    /**
      * 透明度必须按 0 到 1 钳制，并按 alpha 分量作用到本体与文本的颜色上。
      *
      * <p>透明度只体现在 ARGB 的 alpha 分量上，文本同时保留自带颜色。
@@ -383,66 +435,146 @@ public final class FlexibleTestScreen extends Screen {
         this.check(darkSize != null && darkSize.x > 0, "深色浮窗必须能解析出正尺寸");
     }
 
+    /**
+     * 核对四种按钮行为在各输入组合下解析出的变体。
+     *
+     * <p>断言以位置参数构造 {@link ButtonInput}，参数顺序为
+     * {@code selected, hovering, allowedPressed, pressStartedInside}；
+     * 调整组件顺序或含义时，这里的断言必须同步复核，否则会编译通过但语义全变。
+     */
     private void verifyButtonTypes() {
         this.check(
-            ButtonType.CLICK.variant(new ButtonInput(false, true, false, true, false)) == SpriteVariant.HIGHLIGHTED,
-            "CLICK 在悬停并按住任意键时必须保持 HIGHLIGHTED"
+            ButtonType.DISPLAY.variant(new ButtonInput(false, true, true, true)) == SpriteVariant.NORMAL,
+            "DISPLAY 在悬停并按住时也必须保持 NORMAL"
         );
         this.check(
-            ButtonType.CLICK.variant(new ButtonInput(false, false, false, true, false)) == SpriteVariant.NORMAL,
-            "CLICK 在未悬停时必须保持 NORMAL"
+            ButtonType.DISPLAY.variant(new ButtonInput(true, false, false, false)) == SpriteVariant.NORMAL,
+            "DISPLAY 在选中且未悬停时也必须保持 NORMAL"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, false, false, false, false)) == SpriteVariant.NORMAL,
+            ButtonType.CLICK.variant(new ButtonInput(false, true, false, false)) == SpriteVariant.HIGHLIGHTED,
+            "CLICK 悬停时必须为 HIGHLIGHTED"
+        );
+        this.check(
+            ButtonType.CLICK.variant(new ButtonInput(false, false, true, true)) == SpriteVariant.NORMAL,
+            "CLICK 未悬停时必须保持 NORMAL"
+        );
+        this.check(
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, false, false, false)) == SpriteVariant.NORMAL,
             "MOMENTARY 未悬停且未按住时必须为 NORMAL"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, false, false, false)) == SpriteVariant.HIGHLIGHTED,
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, false, false)) == SpriteVariant.HIGHLIGHTED,
             "MOMENTARY 悬停且未按住时必须为 HIGHLIGHTED"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, true, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSING,
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSING,
             "MOMENTARY 在控件内按住允许键时必须为 HIGHLIGHTED_PRESSING"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, false, true, false)) == SpriteVariant.NORMAL,
-            "MOMENTARY 按住不允许的键时必须抑制悬停高亮"
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, true, false)) == SpriteVariant.HIGHLIGHTED,
+            "MOMENTARY 按压起点在控件外时必须为 HIGHLIGHTED"
         );
         this.check(
-            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, true, true, false)) == SpriteVariant.NORMAL,
-            "MOMENTARY 在控件外开始按压时必须保持 NORMAL"
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, true, false, true)) == SpriteVariant.HIGHLIGHTED,
+            "MOMENTARY 按键不被允许时必须为 HIGHLIGHTED"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(true, false, false, false, false)) == SpriteVariant.PRESSED,
+            ButtonType.MOMENTARY.variant(new ButtonInput(false, false, true, true)) == SpriteVariant.NORMAL,
+            "MOMENTARY 按压后鼠标移出时必须为 NORMAL"
+        );
+        this.check(
+            ButtonType.TOGGLE.variant(new ButtonInput(true, false, false, false)) == SpriteVariant.PRESSED,
             "TOGGLE 选中且未悬停时必须为 PRESSED"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(false, false, false, false, false)) == SpriteVariant.NORMAL,
+            ButtonType.TOGGLE.variant(new ButtonInput(false, false, false, false)) == SpriteVariant.NORMAL,
             "TOGGLE 未选中且未悬停时必须为 NORMAL"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, false, false)) == SpriteVariant.HIGHLIGHTED_PRESSED,
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, false)) == SpriteVariant.HIGHLIGHTED_PRESSED,
             "TOGGLE 选中且悬停时必须为 HIGHLIGHTED_PRESSED"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, false, false)) == SpriteVariant.HIGHLIGHTED,
+            ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, false)) == SpriteVariant.HIGHLIGHTED,
             "TOGGLE 未选中且悬停时必须为 HIGHLIGHTED"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(true, true, true, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSING,
-            "TOGGLE 在控件内按住允许键时必须为 HIGHLIGHTED_PRESSING"
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, true)) == SpriteVariant.HIGHLIGHTED_PRESSED,
+            "TOGGLE 选中悬停且按键不被允许时必须为 HIGHLIGHTED_PRESSED"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(true, true, false, true, false)) == SpriteVariant.PRESSED,
-            "TOGGLE 选中时按住其他键必须回落到 PRESSED"
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, true, true)) == SpriteVariant.HIGHLIGHTED_PRESSING,
+            "TOGGLE 选中悬停且在控件内按住允许键时必须为 HIGHLIGHTED_PRESSING"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, true, false)) == SpriteVariant.NORMAL,
-            "TOGGLE 未选中时按住其他键必须回落到 NORMAL"
+            ButtonType.TOGGLE.variant(new ButtonInput(true, true, true, false)) == SpriteVariant.HIGHLIGHTED_PRESSED,
+            "TOGGLE 选中悬停且按压起点在控件外时必须为 HIGHLIGHTED_PRESSED"
         );
         this.check(
-            ButtonType.TOGGLE.variant(new ButtonInput(true, true, true, true, false)) == SpriteVariant.PRESSED,
-            "TOGGLE 在控件外开始按压时必须回落到 PRESSED"
+            ButtonType.TOGGLE.variant(new ButtonInput(false, true, false, true)) == SpriteVariant.HIGHLIGHTED,
+            "TOGGLE 未选中悬停且按键不被允许时必须为 HIGHLIGHTED"
+        );
+    }
+
+    /**
+     * 核对按钮输入的四参数构造器与旧五参数构造器是否等价。
+     */
+    private void verifyButtonInputCompatibility() {
+        ButtonInput four = new ButtonInput(true, true, true, true);
+        this.check(four.selected() && four.hovering() && four.allowedPressed() && four.pressStartedInside(), "四参数构造器必须完整保留四个组件");
+        @SuppressWarnings("deprecation")
+        ButtonInput five = new ButtonInput(true, true, true, true, true);
+        this.check(five.equals(four), "五参数构造器必须忽略 anyPressed 并等价于四参数构造器");
+        @SuppressWarnings("deprecation")
+        ButtonInput fiveFalse = new ButtonInput(true, true, true, false, true);
+        this.check(fiveFalse.equals(four), "五参数构造器的 anyPressed 取 false 时也必须等价");
+    }
+
+    /**
+     * 同一主题、样式、类型下，各变体的四向内边距之和必须一致。
+     *
+     * <p>变体只改变边框与阴影在上下之间的分配，总厚度不变；一旦某个变体的竖向或横向总和不同，
+     * {@code flexSize} 就会随变体切换而跳动。2px 阴影的按压态把 2px 阴影与 2px 边框都留在顶部，
+     * 因此顶部为 4px、底部回到 2px。
+     */
+    private void verifyVariantPaddingConsistency() {
+        for (SpriteTheme theme : SpriteTheme.values()) {
+            for (SpriteStyle style : SpriteStyle.values()) {
+                for (SpriteType type : SpriteType.values()) {
+                    FlexibleSprites.SpriteInfo base = FlexibleSprites.pickSprite(
+                        theme, style, type, SpriteVariant.NORMAL
+                    );
+                    int vertical = base.topPadding() + base.bottomPadding();
+                    int horizontal = base.leftPadding() + base.rightPadding();
+                    for (SpriteVariant variant : SpriteVariant.values()) {
+                        FlexibleSprites.SpriteInfo info = FlexibleSprites.pickSprite(theme, style, type, variant);
+                        String label = "%s %s %s %s".formatted(theme, style, type, variant);
+                        this.check(
+                            info.topPadding() + info.bottomPadding() == vertical,
+                            label + " 的竖向内边距总和必须与常态一致，期望 " + vertical
+                                + "，实际为 " + info.topPadding() + "+" + info.bottomPadding()
+                        );
+                        this.check(
+                            info.leftPadding() + info.rightPadding() == horizontal,
+                            label + " 的横向内边距总和必须与常态一致，期望 " + horizontal
+                                + "，实际为 " + info.leftPadding() + "+" + info.rightPadding()
+                        );
+                    }
+                }
+            }
+        }
+        FlexibleSprites.SpriteInfo pressing = FlexibleSprites.pickSprite(
+            SpriteTheme.LIGHT, SpriteStyle.THREE_D, SpriteType.SHADED_2PX, SpriteVariant.HIGHLIGHTED_PRESSING
+        );
+        this.check(
+            pressing.topPadding() == 4 && pressing.bottomPadding() == 2,
+            "2px 阴影的按压态必须保留 2px 阴影与 2px 边框，实际为 " + pressing.topPadding()
+                + "/" + pressing.bottomPadding()
+        );
+        this.check(
+            pressing.pointerUpInset() == 2,
+            "2px 阴影的按压态朝上指针必须下移 2px，实际为 " + pressing.pointerUpInset()
         );
     }
 
@@ -656,6 +788,20 @@ public final class FlexibleTestScreen extends Screen {
     public int renderedFrames() {
         return this.renderedFrames;
     }
+
+    /**
+     * 可在不影响真实鼠标状态的前提下伪造“允许键被按住”的按钮渲染器，供链路测试使用。
+     *
+     * <p>覆写后的实现忽略 {@code allowedKeys} 恒返回 {@code true}，只用于验证按压分支可达，
+     * 不覆盖“按键不被允许”的语义，该语义由 {@code verifyButtonTypes} 的纯函数断言覆盖。
+     */
+    private static final class PressedButtonRenderer extends ButtonRenderer {
+        @Override
+        protected boolean isMousePressed(IntSet allowedKeys) {
+            return true;
+        }
+    }
+
     private void check(boolean condition, String message) {
         this.checks++;
         if (!condition) {
