@@ -70,7 +70,9 @@ class ReleaseTests(unittest.TestCase):
                     github.assert_not_called()
                 else:
                     release.publish(TAG)
-                    github.assert_called_once_with("releases/42", {"draft": False}, method="PATCH")
+                    github.assert_called_once_with("releases/42", {
+                        "draft": False, "prerelease": False, "make_latest": "true",
+                    }, method="PATCH")
 
     def test_missing_or_changed_asset_blocks_publication(self):
         for assets in [DRAFT["assets"][:-1], [dict(DRAFT["assets"][0], digest="changed"), *DRAFT["assets"][1:]]]:
@@ -129,7 +131,7 @@ class ReleaseTests(unittest.TestCase):
             self.assertEqual(sum(call.args[0] == "deployment/" + receipt for call in remote.call_args_list), 1)
             record.assert_called_once_with("sha-26.1", f"release/{TAG}/26.1/central", "success", "deployment " + receipt)
 
-    def test_partial_curseforge_upload_resumes_each_file(self):
+    def test_partial_curseforge_failure_is_not_retried(self):
         ledger, uploads = {}, []
         def record(_, context, state, description):
             ledger[context] = {"state": state, "description": description}
@@ -147,14 +149,15 @@ class ReleaseTests(unittest.TestCase):
             with self.assertRaises(mod_sites.Rejected):
                 mod_sites.publish_curseforge(*args)
             for _ in range(2):
-                self.assertEqual(mod_sites.publish_curseforge(*args), "1, 3, 4")
-            self.assertEqual(uploads, ["x.jar", "x-sources.jar", "x-sources.jar", "x-javadoc.jar"])
+                with self.assertRaisesRegex(ValueError, "no retry"):
+                    mod_sites.publish_curseforge(*args)
+            self.assertEqual(uploads, ["x.jar", "x-sources.jar"])
 
     def test_uncertain_upload_requires_reconciliation(self):
         with patch.object(mod_sites, "commit_status", return_value={"state": "pending"}), \
                 patch.object(mod_sites, "record"):
             upload = Mock()
-            with self.assertRaisesRegex(ValueError, "remote file"):
+            with self.assertRaisesRegex(ValueError, "no retry"):
                 mod_sites.send("sha", "context", upload)
             self.assertEqual(mod_sites.send("sha", "context", upload, lambda: "verified-id"), "verified-id")
             upload.assert_not_called()
