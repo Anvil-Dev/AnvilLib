@@ -1,12 +1,28 @@
-# AnvilLib 正式发布
+# AnvilLib 发布
 
-在默认分支 `dev/26.1` 打开 **Actions → Release AnvilLib → Run workflow**。勾选 `dry_run` 可先构建七个版本并查看文件校验表。正式发布时取消勾选即可。同一时间只运行一次正式发布或演练。
+在默认分支 `dev/26.1` 打开 **Actions → Release AnvilLib → Run workflow**。勾选 `dry_run` 可先构建七个版本并查看文件校验表，取消勾选后执行发布。同一时间只运行一次发布或演练。
+
+可选的 `generate_release_notes` 默认关闭。开启后直接调用 GitHub 的 Generate release notes API，以本次锁定的 `dev/26.1` SHA 为目标，按 GitHub 自动选择的上一 tag 生成合并 PR、贡献者及完整变更链接。正文采用 GitHub 的返回内容，并附上七份构件的源码和校验表。仓库的 `.github/release.yml` 或 `.github/release.yaml` 配置同样生效。结果保存在原运行的 `source-plan` 和 tag 注释中，重跑复用该内容，`dry_run` 摘要也会展示它。
 
 ## 版本与构件
 
-七条开发线为 `1.21.1`、`1.21.4`、`1.21.8`、`1.21.11`、`26.1`、`26.2`、`26.3`。预检读取所有分支头，要求根 `mod_version` 同为 `X.Y.Z`。每条分支用自己的 Gradle Wrapper 和 JDK 从锁定的 SHA 构建。`stageRelease` 收集该分支模块清单中的全部发布单元、sync 注解处理器和主模块。校验覆盖 POM 的内部依赖、主 JAR 的模组版本、每个内嵌 slim JAR 的字节及 Maven 附件。
+七条开发线为 `1.21.1`、`1.21.4`、`1.21.8`、`1.21.11`、`26.1`、`26.2`、`26.3`。预检读取所有分支头，要求根 `mod_version` 完全相同。版本类型按以下项目约定自动识别，后缀使用 `+`，`N` 为无前导零的非负整数。
 
-带注解 tag `vX.Y.Z` 指向锁定的默认分支提交。运行编号、七个源码 SHA、平台项目 ID 和供下载文件的 SHA-256 都在 tag 注释中。GitHub Release 展示七个主 JAR 及对应的源码链接。Minecraft 文件名取自实际游戏版本，例如 `dev/26.1` 构建的文件名中使用 `26.1.2`。
+| mod_version | GitHub 类型 | Modrinth / CurseForge 类型 | 发布成功后升 patch |
+| --- | --- | --- | --- |
+| `X.Y.Z+alpha.N` | Pre-release | Alpha | 否 |
+| `X.Y.Z+beta.N` | Pre-release | Beta | 否 |
+| `X.Y.Z+pre-release.N` | Pre-release | Beta | 否 |
+| `X.Y.Z+rc.N` | Pre-release | Beta | 否 |
+| `X.Y.Z+build.N` | Release | Release | 否 |
+| `X.Y.Z+hotfix.N` | Release | Release | 否 |
+| `X.Y.Z` | Release | Release | 是 |
+
+例如发布 `2.0.0+beta.1` 前先将七条分支的版本同步到该值，生成的 tag 为 `v2.0.0+beta.1`，Maven 坐标和 JAR 内版本保留完整后缀。后续发 `2.0.0+rc.1` 或 `2.0.0` 时，再将七条分支同步到对应版本。所有类型都等待七个 Maven Central 部署达到 `PUBLISHED` 后公开 GitHub Release。Pre-release 使用独立 tag，GitHub 的 Latest 标记由正式版维护。
+
+每条分支用自己的 Gradle Wrapper 和 JDK 从锁定的 SHA 构建。`stageRelease` 收集该分支模块清单中的全部发布单元、sync 注解处理器和主模块。校验覆盖 POM 的内部依赖、主 JAR 的模组版本、每个内嵌 slim JAR 的字节及 Maven 附件。
+
+带注解 tag `v<mod_version>` 指向锁定的默认分支提交。运行编号、七个源码 SHA、平台项目 ID 和供下载文件的 SHA-256 都在 tag 注释中。GitHub Release 展示七个主 JAR 及对应的源码链接。Minecraft 文件名取自实际游戏版本，例如 `dev/26.1` 构建的文件名中使用 `26.1.2`。
 
 | 渠道 | 完成条件 | 失败处理 |
 | --- | --- | --- |
@@ -14,7 +30,7 @@
 | GitHub | 七个附件的摘要与 tag 清单一致，七个 Central 成功回执已记录 | 在原运行续传缺失附件或重试公开草稿 |
 | Modrinth、CurseForge | 各自接收各游戏版本的主包和 sources、javadoc 附件 | 对应任务给出警告，GitHub 公开和升版 PR 独立执行 |
 
-Release 公开后，工作流对七条开发分支分别创建一个升至下一 patch 的 PR。标题和单一提交消息都包含 `[skip ci]`。按仓库现有规则审核并保留默认 squash 标题后合并。重跑会复用升版分支与 PR。待七条分支版本一致后再发下一版。普通开发推送继续发布内部 Maven 快照以及两站的 Beta 构建。
+纯 `X.Y.Z` 的 Release 公开后，工作流对七条开发分支分别创建一个升至下一 patch 的 PR。标题和单一提交消息都包含 `[skip ci]`。按仓库现有规则审核并保留默认 squash 标题后合并。重跑会复用升版分支与 PR。待七条分支版本一致后再发下一版。普通开发推送继续发布内部 Maven 快照以及两站的 Beta 构建。
 
 ## 开发 CI
 

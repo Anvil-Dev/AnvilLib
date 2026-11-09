@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from common import (ANCHOR, LINES, VERSION_LINE, artifact, commit_status, contents, digest, gh, github,
-                    mod_version, output, repo, require, summary, tag_manifest)
+                    mod_version, output, release_type, repo, require, summary, tag_manifest)
 
 
 def prepare():
@@ -37,6 +37,10 @@ def prepare():
         version = versions[ANCHOR]
         plan = {"repo": repo(), "tag": "v" + version, "version": version,
                 "run": os.environ["GITHUB_RUN_ID"], "targets": targets}
+        if os.environ.get("GENERATE_RELEASE_NOTES") == "true":
+            plan["release_notes"] = github("releases/generate-notes", {
+                "tag_name": plan["tag"], "target_commitish": targets[ANCHOR]["sha"],
+            })["body"]
         plan_file.write_text(json.dumps(plan, indent=2) + "\n")
     if os.environ.get("DRY_RUN") != "true":
         existing = tag_manifest(plan["tag"])
@@ -47,6 +51,7 @@ def prepare():
     output("matrix", json.dumps(rows))
     output("version", plan["version"])
     output("tag", plan["tag"])
+    output("bump_patch", str("+" not in plan["version"]).lower())
     output("new", str(not saved).lower())
     summary(f"**{plan['tag']}**\n\n" + "\n".join(f"- dev/{r['line']} @ {r['sha']}" for r in rows))
 
@@ -77,8 +82,11 @@ def verify_assets(release, targets):
 def seal():
     plan = json.loads(Path("release-plan.json").read_text())
     tag = plan["tag"]
-    notes = [f"AnvilLib {plan['version']} · NeoForge", "",
-             "| Minecraft | Source | JAR | SHA-256 |", "|---|---|---|---|"]
+    prerelease = release_type(plan["version"]) != "release"
+    notes = [f"AnvilLib {plan['version']} · NeoForge", ""]
+    if plan.get("release_notes"):
+        notes.extend([plan["release_notes"], ""])
+    notes.extend(["| Minecraft | Source | JAR | SHA-256 |", "|---|---|---|---|"])
     paths = {}
     for line, target in plan["targets"].items():
         folder = Path("bundles") / f"build-{line}" / "dist"
@@ -106,7 +114,9 @@ def seal():
     release = release_by_tag(tag)
     if not release:
         release = github("releases", {"tag_name": tag, "name": f"AnvilLib {plan['version']}",
-                                      "body": "\n".join(notes), "draft": True})
+                                      "target_commitish": plan["targets"][ANCHOR]["sha"],
+                                      "body": "\n".join(notes), "draft": True, "prerelease": prerelease})
+    require(release.get("prerelease", False) == prerelease, f"Conflicting release type for {tag}")
     assets = {a["name"]: a for a in release["assets"]}
     for name, path in paths.items():
         old = assets.get(name)
@@ -124,12 +134,16 @@ def seal():
 def publish(tag):
     plan = tag_manifest(tag)
     release = release_by_tag(tag)
+    prerelease = release_type(plan["version"]) != "release"
+    require(release.get("prerelease", False) == prerelease, f"Conflicting release type for {tag}")
     verify_assets(release, plan["targets"])
     for line, target in plan["targets"].items():
         status = commit_status(target["sha"], f"release/{tag}/{line}/central")
         require(status and status["state"] == "success", f"Central has not published {line}")
     if release["draft"]:
-        release = github(f"releases/{release['id']}", {"draft": False}, method="PATCH")
+        release = github(f"releases/{release['id']}", {
+            "draft": False, "prerelease": prerelease, "make_latest": "false" if prerelease else "true",
+        }, method="PATCH")
     summary(f"Published [{tag}]({release['html_url']}).")
 
 
@@ -137,6 +151,9 @@ def bump(tag, line):
     plan = tag_manifest(tag)
     require(line in LINES and not release_by_tag(tag)["draft"], "Bump requires a public release")
     version = plan["version"]
+    if "+" in version:
+        summary(f"{tag} has a version qualifier; skipping the patch bump for dev/{line}.")
+        return
     major, minor, patch = version.split(".")
     next_version = f"{major}.{minor}.{int(patch) + 1}"
     base = "dev/" + line

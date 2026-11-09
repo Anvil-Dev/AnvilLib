@@ -2,6 +2,10 @@ name: Release AnvilLib
 on:
   workflow_dispatch:
     inputs:
+      generate_release_notes:
+        description: Include GitHub-generated release notes from dev/26.1
+        type: boolean
+        default: false
       dry_run:
         description: Build and verify all seven releases without publishing
         type: boolean
@@ -18,16 +22,19 @@ env:
   PR_BUILD: 'false'
   NOT_DEV: 'false'
   DRY_RUN: ${{ inputs.dry_run }}
+  GENERATE_RELEASE_NOTES: ${{ inputs.generate_release_notes }}
 
 jobs:
   prepare:
     if: github.ref == 'refs/heads/dev/26.1'
     runs-on: ubuntu-latest
-    permissions: { contents: read, actions: read }
+    # GitHub requires contents: write even for the generate-notes preview API.
+    permissions: { contents: write, actions: read }
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       version: ${{ steps.plan.outputs.version }}
       tag: ${{ steps.plan.outputs.tag }}
+      bump_patch: ${{ steps.plan.outputs.bump_patch }}
     steps:
       - uses: actions/checkout@v6
         with: { persist-credentials: false }
@@ -168,6 +175,7 @@ jobs:
 
   bump:
     needs: [prepare, publish]
+    if: needs.prepare.outputs.bump_patch == 'true'
     runs-on: ubuntu-latest
     permissions: { contents: write, pull-requests: write }
     strategy:

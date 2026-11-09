@@ -42,6 +42,9 @@ jobs:
       - name: Check Maven publication ordering
         run: python3 -B -m unittest discover -s .github/ci
 
+      - name: Check coordinated release and retry behavior
+        run: python3 -B -m unittest discover -s .github/release
+
       - name: Build all CI publications
         id: build
         run: |

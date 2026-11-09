@@ -5,6 +5,9 @@ on:
     paths:
       - .github/modules.json
       - .github/ci/**
+      - .github/release/**
+      - .github/workflows/release.yml
+      - .github/workflows/mod_site.yml
       - .github/workflows/build_and_test.yml
       - .github/workflows/pull_request.yml
       - roseau.yaml

@@ -70,7 +70,9 @@ class ReleaseTests(unittest.TestCase):
                     github.assert_not_called()
                 else:
                     release.publish(TAG)
-                    github.assert_called_once_with("releases/42", {"draft": False}, method="PATCH")
+                    github.assert_called_once_with("releases/42", {
+                        "draft": False, "prerelease": False, "make_latest": "true",
+                    }, method="PATCH")
 
     def test_missing_or_changed_asset_blocks_publication(self):
         for assets in [DRAFT["assets"][:-1], [dict(DRAFT["assets"][0], digest="changed"), *DRAFT["assets"][1:]]]:
