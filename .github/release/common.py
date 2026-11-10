@@ -13,7 +13,8 @@ from urllib.request import Request, urlopen
 
 LINES = ("1.21.1", "1.21.4", "1.21.8", "1.21.11", "26.1", "26.2", "26.3")
 ANCHOR = "26.1"
-VERSION = r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
+VERSION_CORE = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+VERSION = rf"{VERSION_CORE}(?:\+(?:alpha|beta|pre-release|rc|build|hotfix)\.(?:0|[1-9][0-9]*))?"
 VERSION_LINE = re.compile(rb"(?m)^(mod_version[ \t]*=[ \t]*)([^\s#]+)([ \t]*)(?=\r?$)")
 
 
@@ -52,11 +53,19 @@ def contents(path, ref):
     return base64.b64decode(data["content"])
 
 
+def release_type(version):
+    require(re.fullmatch(VERSION, version), f"Invalid release version: {version}")
+    qualifier = version.partition("+")[2].partition(".")[0]
+    if qualifier == "alpha":
+        return "alpha"
+    return "beta" if qualifier in {"beta", "pre-release", "rc"} else "release"
+
+
 def mod_version(properties):
     matches = VERSION_LINE.findall(properties)
     require(len(matches) == 1, "Expected one mod_version property")
     version = matches[0][1].decode()
-    require(re.fullmatch(VERSION, version), f"Invalid release version: {version}")
+    release_type(version)
     return version
 
 

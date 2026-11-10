@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from common import (commit_status, digest, gh, github, record, repo, require, summary,
+from common import (commit_status, digest, gh, github, record, release_type, repo, require, summary,
                     tag_manifest)
 
 MODRINTH = "https://api.modrinth.com/v2"
@@ -67,8 +67,7 @@ def send(sha, context, upload, reconcile=None):
         return prior["description"]
     receipt = reconcile() if reconcile else None
     if not receipt:
-        require(not prior or prior["state"] != "pending",
-                f"Check the remote file before retrying {context}; see RELEASING.md")
+        require(not prior, f"Upload already attempted; no retry for {context}: {prior}")
         record(sha, context, "pending", "upload in progress")
         try:
             receipt = str(upload())
@@ -81,6 +80,7 @@ def send(sha, context, upload, reconcile=None):
 
 def publish_modrinth(plan, line, folder, context):
     t = plan["targets"][line]
+    kind = release_type(plan["version"])
     token = os.environ["MODRINTH_TOKEN"]
     require(token, "Missing MODRINTH_TOKEN")
     files = {name: folder / name for name in t["files"]}
@@ -97,14 +97,14 @@ def publish_modrinth(plan, line, folder, context):
                 return None
             raise
         require(remote["project_id"] == t["modrinth"] and remote["version_number"] == plan["version"]
-                and remote["version_type"] == "release" and t["game"] in remote["game_versions"]
+                and remote["version_type"] == kind and t["game"] in remote["game_versions"]
                 and "neoforge" in remote["loaders"]
                 and {f["filename"]: f["hashes"]["sha512"] for f in remote["files"]} == hashes,
                 "Modrinth has the JAR with different release metadata")
         return remote["id"]
 
     metadata = {"project_id": t["modrinth"], "version_number": plan["version"],
-                "name": f"AnvilLib {plan['version']} · NeoForge {t['game']}", "version_type": "release",
+                "name": f"AnvilLib {plan['version']} · NeoForge {t['game']}", "version_type": kind,
                 "changelog": release_url(plan), "dependencies": [], "game_versions": [t["game"]],
                 "loaders": ["neoforge"], "featured": False, "primary_file": t["jar"], "file_parts": list(files),
                 "file_types": {n: "sources-jar" if n.endswith("-sources.jar") else "javadoc-jar"
@@ -122,7 +122,7 @@ def publish_curseforge(plan, line, folder, context):
     token = os.environ["CURSEFORGE_TOKEN"]
     require(token, "Missing CURSEFORGE_TOKEN")
     url = f"{CURSEFORGE}/projects/{t['curseforge']}/upload-file"
-    base = {"changelog": release_url(plan), "changelogType": "markdown", "releaseType": "release"}
+    base = {"changelog": release_url(plan), "changelogType": "markdown", "releaseType": release_type(plan["version"])}
     primary = dict(base, displayName=f"AnvilLib {plan['version']} · NeoForge {t['game']}",
                    gameVersionNames=[t["game"], "NeoForge", "Client", "Server"])
 
@@ -153,6 +153,6 @@ if __name__ == "__main__":
     try:
         run(*sys.argv[1:])
     except Exception as error:
-        summary(f"**Pending distribution** — {' / '.join(sys.argv[1:])}\n\n{error}")
-        print("::warning::Mod-site upload incomplete. See the job summary for the receipt or retry target.")
+        summary(f"**Distribution incomplete (not retried)** — {' / '.join(sys.argv[1:])}\n\n{error}")
+        print("::warning::Mod-site upload incomplete. See the job summary for the receipt and failure reason. No automatic retry.")
         raise

@@ -1,7 +1,11 @@
-name: Release AnvilLib
+name: Create Multi-Version Releases
 on:
   workflow_dispatch:
     inputs:
+      generate_release_notes:
+        description: Include GitHub-generated release notes from dev/26.1
+        type: boolean
+        default: false
       dry_run:
         description: Build and verify all seven releases without publishing
         type: boolean
@@ -18,16 +22,19 @@ env:
   PR_BUILD: 'false'
   NOT_DEV: 'false'
   DRY_RUN: ${{ inputs.dry_run }}
+  GENERATE_RELEASE_NOTES: ${{ inputs.generate_release_notes }}
 
 jobs:
   prepare:
     if: github.ref == 'refs/heads/dev/26.1'
     runs-on: ubuntu-latest
-    permissions: { contents: read, actions: read }
+    # GitHub requires contents: write even for the generate-notes preview API.
+    permissions: { contents: write, actions: read }
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       version: ${{ steps.plan.outputs.version }}
       tag: ${{ steps.plan.outputs.tag }}
+      bump_patch: ${{ steps.plan.outputs.bump_patch }}
     steps:
       - uses: actions/checkout@v6
         with: { persist-credentials: false }
@@ -86,6 +93,7 @@ jobs:
           if-no-files-found: error
 
   seal:
+    name: Upload ReleaseFile
     needs: [prepare, build]
     runs-on: ubuntu-latest
     permissions: { contents: write, actions: read }
@@ -146,19 +154,26 @@ jobs:
       matrix:
         target: ${{ fromJSON(needs.prepare.outputs.matrix) }}
         platform: [modrinth, curseforge]
-    uses: ./.github/workflows/mod_site.yml
-    with:
-      tag: ${{ needs.prepare.outputs.tag }}
-      line: ${{ matrix.target.line }}
-      platform: ${{ matrix.platform }}
-    secrets:
-      MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-      CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+    name: ${{ matrix.platform }} / ${{ matrix.target.line }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+        with: { persist-credentials: false }
+      - name: Upload verified files once
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+          LINE: ${{ matrix.target.line }}
+          PLATFORM: ${{ matrix.platform }}
+          MODRINTH_TOKEN: ${{ matrix.platform == 'modrinth' && secrets.MODRINTH_TOKEN || '' }}
+          CURSEFORGE_TOKEN: ${{ matrix.platform == 'curseforge' && secrets.CURSEFORGE_TOKEN || '' }}
+        run: python3 .github/release/mod_sites.py "$TAG" "$LINE" "$PLATFORM"
 
   publish:
     needs: [prepare, seal, central]
     runs-on: ubuntu-latest
-    permissions: { contents: write }
+    permissions: { contents: write, statuses: read }
     env:
       TAG: ${{ needs.prepare.outputs.tag }}
     steps:
@@ -168,6 +183,7 @@ jobs:
 
   bump:
     needs: [prepare, publish]
+    if: needs.prepare.outputs.bump_patch == 'true'
     runs-on: ubuntu-latest
     permissions: { contents: write, pull-requests: write }
     strategy:
