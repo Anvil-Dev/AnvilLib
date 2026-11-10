@@ -1,6 +1,6 @@
 # AnvilLib 发布
 
-在默认分支 `dev/26.1` 打开 **Actions → Create Multi-Version Releases → Run workflow**。勾选 `dry_run` 可先构建七个版本并查看文件校验表，取消勾选后执行发布。同一时间只运行一次发布或演练。
+在默认分支 `dev/26.1` 打开 **Actions → Create Multi-Version Releases → Run workflow**，在必填的 `tag` 中输入本次版本，例如 `2.0.0+pre-release.13`，不加 `v` 前缀。勾选 `dry_run` 可先构建七个版本并查看文件校验表，取消勾选后执行发布。同一时间只运行一次发布或演练。
 
 可选的 `generate_release_notes` 默认关闭。开启后直接调用 GitHub 的 Generate release notes API，以本次锁定的 `dev/26.1` SHA 为目标，显式指定上一 tag 生成合并 PR、贡献者及完整变更链接。正文采用 GitHub 的返回内容，并附上七份构件的源码和校验表。仓库的 `.github/release.yml` 或 `.github/release.yaml` 配置同样生效。结果保存在原运行的 `source-plan` 和 tag 注释中，重跑复用该内容，`dry_run` 摘要也会展示它。
 
@@ -8,9 +8,9 @@
 
 ## 版本与构件
 
-七条开发线为 `1.21.1`、`1.21.4`、`1.21.8`、`1.21.11`、`26.1`、`26.2`、`26.3`。预检读取所有分支头，要求根 `mod_version` 完全相同。版本类型按以下项目约定自动识别，后缀使用 `+`，`N` 为无前导零的非负整数。
+七条开发线为 `1.21.1`、`1.21.4`、`1.21.8`、`1.21.11`、`26.1`、`26.2`、`26.3`。预检锁定所有分支头，发布版本只取手动输入的 `tag`。构建和 Central 部署通过 `-Pmod_version=<tag>` 覆盖 Gradle 属性，不修改源码中的 `gradle.properties`，也不要求各分支的开发版本一致。版本类型按以下项目约定自动识别，后缀使用 `+`，`N` 为无前导零的非负整数。
 
-| mod_version | GitHub 类型 | Modrinth / CurseForge 类型 | 发布成功后升 patch |
+| 输入 tag | GitHub 类型 | Modrinth / CurseForge 类型 | 发布成功后升 patch |
 | --- | --- | --- | --- |
 | `X.Y.Z+alpha.N` | Pre-release | Alpha | 否 |
 | `X.Y.Z+beta.N` | Pre-release | Beta | 否 |
@@ -20,11 +20,11 @@
 | `X.Y.Z+hotfix.N` | Release | Release | 否 |
 | `X.Y.Z` | Release | Release | 是 |
 
-例如发布 `2.0.0+beta.1` 前先将七条分支的版本同步到该值，生成的 tag 为 `v2.0.0+beta.1`，Maven 坐标和 JAR 内版本保留完整后缀。后续发 `2.0.0+rc.1` 或 `2.0.0` 时，再将七条分支同步到对应版本。所有类型都等待七个 Maven Central 部署达到 `PUBLISHED` 后公开 GitHub Release。Pre-release 使用独立 tag，GitHub 的 Latest 标记由正式版维护。
+例如输入 `2.0.0+beta.1`，生成的 tag 就是 `2.0.0+beta.1`，Maven 坐标和 JAR 内版本使用该完整值。后续发布 `2.0.0+rc.1` 或 `2.0.0` 时，在输入框填写对应 tag 即可。所有类型都等待七个 Maven Central 部署达到 `PUBLISHED` 后公开 GitHub Release。Pre-release 使用独立 tag，GitHub 的 Latest 标记由正式版维护。
 
 每条分支用自己的 Gradle Wrapper 和 JDK 从锁定的 SHA 构建。`stageRelease` 收集该分支模块清单中的全部发布单元、sync 注解处理器和主模块。校验覆盖 POM 的内部依赖、主 JAR 的模组版本、每个内嵌 slim JAR 的字节及 Maven 附件。
 
-带注解 tag `v<mod_version>` 指向锁定的默认分支提交。运行编号、七个源码 SHA、平台项目 ID 和供下载文件的 SHA-256 都在 tag 注释中。GitHub Release 展示七个主 JAR 及对应的源码链接。Minecraft 文件名取自实际游戏版本，例如 `dev/26.1` 构建的文件名中使用 `26.1.2`。
+带注解 tag `<tag>` 指向锁定的默认分支提交。运行编号、七个源码 SHA、平台项目 ID 和供下载文件的 SHA-256 都在 tag 注释中。GitHub Release 展示七个主 JAR 及对应的源码链接。Minecraft 文件名取自实际游戏版本，例如 `dev/26.1` 构建的文件名中使用 `26.1.2`。
 
 总控自动运行 Modrinth、CurseForge、Maven 和 ReleaseFile 上传，不提供平台选择。Maven 或 ReleaseFile 失败会使整体运行失败并保留草稿；两站独立运行，失败只记录警告和回执，公开 Release 与升版任务不等待两站。
 
@@ -34,7 +34,7 @@
 | GitHub | 七个附件的摘要与 tag 清单一致，七个 Central 成功回执已记录 | 在原运行续传缺失附件或重试公开草稿 |
 | Modrinth、CurseForge | 各自接收各游戏版本的主包和 sources、javadoc 附件 | 对应任务给出警告，不重试；GitHub 公开和升版 PR 独立执行 |
 
-纯 `X.Y.Z` 的 Release 公开后，工作流对七条开发分支分别创建一个升至下一 patch 的 PR。标题和单一提交消息都包含 `[skip ci]`。按仓库现有规则审核并保留默认 squash 标题后合并。重跑会复用升版分支与 PR。待七条分支版本一致后再发下一版。普通开发推送继续发布内部 Maven 快照以及两站的 Beta 构建。
+纯 `X.Y.Z` 的 Release 公开后，工作流对七条开发分支分别创建一个升至下一 patch 的 PR。标题和单一提交消息都包含 `[skip ci]`。按仓库现有规则审核并保留默认 squash 标题后合并。下一 patch 按输入 tag 计算，并从分支最新提交创建 PR；仅当根版本仍等于锁定源码中的开发版本时才修改，若已是目标版本则记为完成，其他版本报告冲突。重跑会复用升版分支与 PR。普通开发推送继续发布内部 Maven 快照以及两站的 Beta 构建。
 
 ## 开发 CI
 
@@ -46,7 +46,7 @@ PR 使用 `+pr.N` 版本，运行服务端启动与关闭测试，并为子模�
 
 - 正式流程中断时优先重跑原运行。已完成的构建通过原运行的 Actions artifact 复用。已存在的 tag、草稿附件和远端回执须与本次版本吻合。可在 tag 的注释中找到原运行编号。
 - 两站上传各执行一次。原运行重跑时复用成功回执，已有失败或未决记录不会再次上传。Modrinth 可核对远端文件后补全成功回执。
-- 发布进度记录在每条开发线的源码提交状态中。状态名形如 `release/v2.0.0/26.1/central` 或 `release/v2.0.0/26.1/curseforge/sources`。每条记录链接到产生它的 Actions 运行。CurseForge 为主文件和两个子文件分别记录回执，Modrinth 可从主文件的 SHA-512 找回已接收的版本。
+- 发布进度记录在每条开发线的源码提交状态中。状态名形如 `release/2.0.0/26.1/central` 或 `release/2.0.0/26.1/curseforge/sources`。每条记录链接到产生它的 Actions 运行。CurseForge 为主文件和两个子文件分别记录回执，Modrinth 可从主文件的 SHA-512 找回已接收的版本。
 - Central 日志输出 deployment ID 时会立即记录，重跑继续查询同一 ID。Central 明确拒绝部署时，摘要或错误日志会给出原因。若上传请求已发出却没有回执，先在 Central Portal 或 CurseForge 作者后台核对项目、版本、文件名和文件哈希。确认后可用下方命令补录状态，再重跑原任务。
 
 ```sh
