@@ -16,8 +16,24 @@ public final class SelectionGeometry {
     private final Node root;
     private final PackedOutline fallback;
     private final long estimatedBytes;
+    private final double unitsPerBlock;
 
     public SelectionGeometry(List<ConvexShape> shapes) {
+        this(shapes, 1);
+    }
+
+    /**
+     * 指定几何坐标中一格对应的单位数，使放大后的薄层仍按实际尺寸判断微小接缝。
+     * 此参数只影响轮廓接缝容差，调用方仍须通过 SelectionPart 的变换还原坐标。
+     *
+     * @param shapes 局部坐标中的闭凸体
+     * @param unitsPerBlock 有限正数；普通方块坐标传 1，放大 128 倍的坐标传 128
+     */
+    public SelectionGeometry(List<ConvexShape> shapes, double unitsPerBlock) {
+        if (!Double.isFinite(unitsPerBlock) || unitsPerBlock <= 0) {
+            throw new IllegalArgumentException("unitsPerBlock must be finite and positive");
+        }
+        this.unitsPerBlock = unitsPerBlock;
         if (shapes.isEmpty() || shapes.size() > MAX_SHAPES) throw new IllegalArgumentException("Invalid shape count");
         this.shapes = List.copyOf(shapes);
         this.root = build(new ArrayList<>(shapes));
@@ -28,8 +44,12 @@ public final class SelectionGeometry {
             for (ConvexShape.Edge edge : shape.edges()) edges.add(new OutlineBuilder.Segment(edge.start(), edge.end()));
         }
         this.fallback = PackedOutline.of(edges);
-        this.estimatedBytes = 160L + shapes.size() * 256L + this.fallback.estimatedBytes()
+        this.estimatedBytes = 168L + shapes.size() * 256L + this.fallback.estimatedBytes()
             + shapes.stream().mapToLong(ConvexShape::estimatedBytes).sum();
+    }
+
+    double unitsPerBlock() {
+        return this.unitsPerBlock;
     }
 
     public List<ConvexShape> shapes() { return this.shapes; }
