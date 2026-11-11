@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OutlineVisibilityTest {
     private static final double SMALL = 0.05D / 16;
@@ -135,6 +136,48 @@ class OutlineVisibilityTest {
         Vec3 local = part.localPosition(transform(new Matrix4d(matrix), camera));
         assertEquals(0, camera.distanceTo(local), 1.0E-5);
         assertFalse(covers(build(step(SMALL)).forView(local), new Vec3(0.5, 1 + SMALL, 0.5)));
+    }
+
+    @Test
+    void scaledCoordinatesPreserveSeamThresholdAndCameraTransform() {
+        for (double scale : new double[] {0.5d, 1, 128}) {
+            for (double offset : new double[] {SMALL, 0.09999d / 16, 0.1d / 16, 0.10001d / 16, (float) 16.1 / 16d - 1, 0.2d / 16}) {
+                List<ConvexShape> shapes = step(offset).stream()
+                    .map(shape -> shape.transform(new Matrix4d().scaling(scale))).toList();
+                SelectionGeometry geometry = new SelectionGeometry(shapes, scale);
+                Matrix4f transform = new Matrix4f().translation(4, -2, 1).rotateY(0.7f).scale((float) (1 / scale));
+                SelectionPart part = new SelectionPart(geometry, transform);
+                Vec3 camera = new Vec3(0.75, 8, 0.5).scale(scale);
+                Vec3 localCamera = part.localPosition(transform(new Matrix4d(transform), camera));
+                PackedOutline outline = OutlineBuilder.build(geometry, TimeUnit.SECONDS.toNanos(10), 10_000_000);
+                Vec3 seam = new Vec3(0.5, 1 + offset, 0.5).scale(scale);
+                assertTrue(covers(outline, seam));
+                assertEquals(offset >= 0.1d / 16, covers(outline.forView(localCamera), seam));
+                assertTrue(covers(outline.forView(localCamera), new Vec3(0, 1, 0.5).scale(scale)));
+            }
+        }
+    }
+
+    @Test
+    void scaledCoordinatesPreservePartiallyVisibleSeams() {
+        double scale = 128;
+        List<ConvexShape> shapes = List.of(box(0, 0, 0, 1, 1, 1),
+            box(0.5, 0, 0.1, 1, 1 + SMALL, 0.9), box(1.1, 0, 0.4, 2, 1.2, 0.6)).stream()
+            .map(shape -> shape.transform(new Matrix4d().scaling(scale))).toList();
+        PackedOutline outline = OutlineBuilder.build(new SelectionGeometry(shapes, scale),
+            TimeUnit.SECONDS.toNanos(10), 10_000_000);
+        PackedOutline visible = outline.forView(new Vec3(-3, 3, 0.5).scale(scale));
+        assertTrue(covers(visible, new Vec3(1, 1 + SMALL, 0.2).scale(scale)));
+        assertFalse(covers(visible, new Vec3(1, 1 + SMALL, 0.5).scale(scale)));
+        assertTrue(covers(visible, new Vec3(1, 1 + SMALL, 0.8).scale(scale)));
+    }
+
+    @Test
+    void rejectsInvalidCoordinateScales() {
+        List<ConvexShape> shapes = step(SMALL);
+        for (double scale : new double[] {0, -1, Double.NaN, Double.POSITIVE_INFINITY}) {
+            assertThrows(IllegalArgumentException.class, () -> new SelectionGeometry(shapes, scale));
+        }
     }
 
     private static List<ConvexShape> step(double offset) {
