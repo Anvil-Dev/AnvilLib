@@ -13,20 +13,24 @@ final class OutlineVisibility {
     private static final double EPSILON = 2.0E-7D;
     private static final int MAX_VIEW_OPERATIONS = 200_000;
     private final List<ConvexShape> shapes;
+    private final double distanceEpsilon;
     private final List<List<Interval>> seams;
 
-    private OutlineVisibility(List<ConvexShape> shapes, List<List<Interval>> seams) {
+    private OutlineVisibility(List<ConvexShape> shapes, List<List<Interval>> seams, double distanceEpsilon) {
         this.shapes = shapes;
+        this.distanceEpsilon = distanceEpsilon;
         this.seams = seams;
     }
 
     static OutlineVisibility build(SelectionGeometry geometry, List<OutlineBuilder.Segment> segments, Runnable step) {
         List<List<Interval>> seams = new ArrayList<>(segments.size());
         boolean any = false;
+        double offset = OFFSET * geometry.unitsPerBlock();
+        double epsilon = EPSILON * geometry.unitsPerBlock();
         for (OutlineBuilder.Segment segment : segments) {
             step.run();
             List<Interval> intervals = new ArrayList<>();
-            List<ConvexShape> nearby = geometry.intersecting(new AABB(segment.start(), segment.end()).inflate(OFFSET));
+            List<ConvexShape> nearby = geometry.intersecting(new AABB(segment.start(), segment.end()).inflate(offset));
             for (int i = 0; i < nearby.size(); i++) {
                 for (int j = i + 1; j < nearby.size(); j++) {
                     ConvexShape first = nearby.get(i), second = nearby.get(j);
@@ -38,16 +42,18 @@ final class OutlineVisibility {
                             double otherOffset = Math.copySign(1.0D, alignment) * b.planeOffset();
                             double distance = Math.abs(a.planeOffset() - otherOffset);
                             // 模型坐标来自 float；边界误差不得把恰好 0.1 的偏移算作小于 0.1。
-                            if (distance <= EPSILON || distance >= OFFSET - EPSILON) continue;
-                            double low = Math.min(a.planeOffset(), otherOffset) - EPSILON;
-                            double high = Math.max(a.planeOffset(), otherOffset) + EPSILON;
+                            if (distance <= epsilon || distance >= offset - epsilon) {
+                                continue;
+                            }
+                            double low = Math.min(a.planeOffset(), otherOffset) - epsilon;
+                            double high = Math.max(a.planeOffset(), otherOffset) + epsilon;
                             Interval interval = new Interval(0, 1);
                             interval = clip(interval, a.normal().dot(segment.start()) - high,
                                 a.normal().dot(segment.end()) - high);
                             interval = clip(interval, low - a.normal().dot(segment.start()),
                                 low - a.normal().dot(segment.end()));
-                            interval = clipShape(interval, segment, first, a.normal(), distance, step);
-                            interval = clipShape(interval, segment, second, a.normal(), distance, step);
+                            interval = clipShape(interval, segment, first, a.normal(), distance, epsilon, step);
+                            interval = clipShape(interval, segment, second, a.normal(), distance, epsilon, step);
                             if (interval.valid()) intervals.add(interval);
                         }
                     }
@@ -57,16 +63,16 @@ final class OutlineVisibility {
             seams.add(merged);
             any |= !merged.isEmpty();
         }
-        return new OutlineVisibility(any ? geometry.shapes() : List.of(), List.copyOf(seams));
+        return new OutlineVisibility(any ? geometry.shapes() : List.of(), List.copyOf(seams), epsilon);
     }
 
     private static Interval clipShape(Interval interval, OutlineBuilder.Segment segment, ConvexShape shape,
-                                      Vec3 normal, double distance, Runnable step) {
+                                      Vec3 normal, double distance, double epsilon, Runnable step) {
         for (ConvexShape.Face face : shape.faces()) {
             step.run();
             if (!interval.valid()) break;
             // 只沿错位面的法向扩展，不把相邻的真实细节一起膨胀掉。
-            double allowance = Math.abs(face.normal().dot(normal)) * distance + EPSILON;
+            double allowance = Math.abs(face.normal().dot(normal)) * distance + epsilon;
             interval = clip(interval, face.signedDistance(segment.start()) - allowance,
                 face.signedDistance(segment.end()) - allowance);
         }
@@ -74,7 +80,7 @@ final class OutlineVisibility {
     }
 
     long estimatedBytes() {
-        return 64L + this.seams.size() * 32L + this.seams.stream().mapToLong(list -> list.size() * 40L).sum();
+        return 72L + this.seams.size() * 32L + this.seams.stream().mapToLong(list -> list.size() * 40L).sum();
     }
 
     PackedOutline forView(PackedOutline outline, Vec3 camera) {
@@ -82,7 +88,9 @@ final class OutlineVisibility {
         Work work = new Work();
         try {
             List<List<Vec3>> cones = new ArrayList<>(this.shapes.size());
-            for (ConvexShape shape : this.shapes) cones.add(project(shape, camera, work));
+            for (ConvexShape shape : this.shapes) {
+                cones.add(project(shape, camera, work, this.distanceEpsilon));
+            }
             List<OutlineBuilder.Segment> visible = new ArrayList<>();
             for (int index = 0; index < outline.segmentCount(); index++) {
                 work.step();
@@ -98,7 +106,7 @@ final class OutlineVisibility {
                             for (Vec3 plane : cone) {
                                 work.step();
                                 double a = plane.dot(start.subtract(camera)), b = plane.dot(end.subtract(camera));
-                                if (Math.abs(a) <= EPSILON && Math.abs(b) <= EPSILON) {
+                                if (Math.abs(a) <= this.distanceEpsilon && Math.abs(b) <= this.distanceEpsilon) {
                                     double direction = plane.dot(side);
                                     if (direction > EPSILON) coversLeft = false;
                                     if (direction < -EPSILON) coversRight = false;
@@ -139,7 +147,7 @@ final class OutlineVisibility {
         output.add(new OutlineBuilder.Segment(start.lerp(end, low), start.lerp(end, high)));
     }
 
-    private static List<Vec3> project(ConvexShape shape, Vec3 camera, Work work) {
+    private static List<Vec3> project(ConvexShape shape, Vec3 camera, Work work, double epsilon) {
         List<Vec3> planes = new ArrayList<>();
         for (ConvexShape.Edge edge : shape.edges()) {
             work.step();
@@ -153,8 +161,11 @@ final class OutlineVisibility {
                 min = Math.min(min, distance);
                 max = Math.max(max, distance);
             }
-            if (max <= EPSILON && min < -EPSILON) planes.add(normal);
-            else if (min >= -EPSILON && max > EPSILON) planes.add(normal.scale(-1));
+            if (max <= epsilon && min < -epsilon) {
+                planes.add(normal);
+            } else if (min >= -epsilon && max > epsilon) {
+                planes.add(normal.scale(-1));
+            }
         }
         return planes;
     }
