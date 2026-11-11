@@ -25,7 +25,8 @@ def portal(path):
 
 
 def deploy(tag, line, source, staging):
-    target = tag_manifest(tag)["targets"][line]
+    plan = tag_manifest(tag)
+    target = plan["targets"][line]
     sha = target["sha"]
     context = f"release/{tag}/{line}/central"
     previous = commit_status(sha, context)
@@ -49,6 +50,7 @@ def deploy(tag, line, source, staging):
         # JReleaser 1.23 logs the receipt immediately, before waiting for validation.
         # Save it here so a cancelled Gradle process can be resumed by deployment ID.
         with subprocess.Popen(["bash", "gradlew", f":anvillib-neoforge-{line}:jreleaserDeploy",
+                               f"-Pmod_version={plan['version']}",
                                f"-PanvillibCentralStaging={Path(staging).resolve()}",
                                "--git-root-search", "--no-configuration-cache", "--console=plain"], cwd=source,
                               env=dict(os.environ, JRELEASER_MAVENCENTRAL_STAGE="UPLOAD"),
