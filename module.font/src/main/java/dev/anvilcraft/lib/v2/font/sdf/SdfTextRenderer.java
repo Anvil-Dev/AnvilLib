@@ -35,9 +35,8 @@ public final class SdfTextRenderer {
     }
 
     /**
-     * Get the SDF atlas for a font, blocking until it is ready on first access.
-     * The atlas is cached forever, so only the very first call for a particular
-     * font blocks (typically ~200-400 ms while the glyph atlas is built).
+     * Wait only for font metrics, never for glyph rasterization or texture uploads.
+     * The configured font and its style variants are prepared during client initialization.
      */
     private static SdfGlyphAtlas getAtlas(@Nullable Font font) {
         return SdfGlyphAtlas.getOrCreate(font).join();

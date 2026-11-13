@@ -6,11 +6,9 @@ import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -90,19 +88,18 @@ public final class SdfTextLayout {
         Map<Integer, List<GlyphQuad>> buckets = new LinkedHashMap<>();
         boolean allAvailable = true;
 
-        Set<SdfGlyphPage> glyphPages = new HashSet<>();
         for (int ci = 0; ci < text.length(); ) {
             int cp = text.codePointAt(ci);
             ci += Character.charCount(cp);
 
-            SdfGlyphAtlas.GlyphEntry glyph = atlas.glyph(cp, glyphPages::add);
+            SdfGlyphAtlas.GlyphEntry glyph = atlas.glyph(cp, ignored -> {});
             if (glyph == null) {
                 allAvailable = false;
                 penX += atlas.scaledAdvance(cp, scale);
                 continue;
             }
             if (glyph.width() <= 0) {
-                penX += atlas.scaledAdvance(cp, scale);
+                penX += Math.max(1, Math.round(glyph.advance() * scale));
                 continue;
             }
 
@@ -118,16 +115,18 @@ public final class SdfTextLayout {
             GlyphQuad quad = new GlyphQuad(penX, 0, penX + w, h, u0, v0, u1, v1, (char) cp);
 
             buckets.computeIfAbsent(glyph.pageIndex(), ignored -> new ArrayList<>()).add(quad);
-            penX += atlas.scaledAdvance(cp, scale);
+            penX += Math.max(1, Math.round(glyph.advance() * scale));
             maxHeight = Math.max(maxHeight, h);
         }
-        glyphPages.forEach(SdfGlyphPage::updateHash);
 
         List<PageQuads> pages = new ArrayList<>();
         for (var entry : buckets.entrySet()) {
             int pi = entry.getKey();
             SdfGlyphPage page = atlas.page(pi);
             ResourceLocation tex = page.textureId;
+            // A worker can publish a new page between ensureUploaded and layout.
+            // Do not permanently cache a page that has no texture yet.
+            if (tex == null) allAvailable = false;
             pages.add(new PageQuads(pi, tex, page.image.getWidth(), page.image.getHeight(), entry.getValue()));
         }
 

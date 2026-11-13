@@ -26,9 +26,9 @@ public class AnvilLibFont {
         // variants on background threads at mod init time.  This avoids render-
         // thread blocking (visible lag) when bold/italic text is first drawn.
         Font base = getSelectFont();
-        SdfGlyphAtlas.getOrCreate(base);
+        SdfGlyphAtlas.getOrCreate(base).thenAccept(SdfGlyphAtlas::preWarmAscii);
         for (int style : List.of(Font.BOLD, Font.ITALIC, Font.BOLD | Font.ITALIC)) {
-            SdfGlyphAtlas.getOrCreate(base.deriveFont(style));
+            SdfGlyphAtlas.getOrCreate(base.deriveFont(style)).thenAccept(SdfGlyphAtlas::preWarmAscii);
         }
     }
 
