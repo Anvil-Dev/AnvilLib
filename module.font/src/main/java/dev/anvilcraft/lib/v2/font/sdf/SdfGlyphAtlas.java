@@ -10,14 +10,15 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -25,8 +26,8 @@ import java.util.function.Consumer;
 /**
  * Multi-page on-demand SDF glyph atlas.
  * <p>
- * Glyphs are packed into fixed-size 1024×1024 pages. ASCII 32-126 is
- * pre-warmed; all other codepoints are rendered lazily on first use.
+ * Metrics become available independently of rasterization. Glyphs are generated
+ * on demand and packed into fixed-size 1024×1024 pages on background workers.
  */
 @ApiStatus.Internal
 @Slf4j
@@ -41,14 +42,13 @@ public final class SdfGlyphAtlas {
 
     private static final Map<String, CompletableFuture<SdfGlyphAtlas>> CACHE = new ConcurrentHashMap<>();
 
-    /**
-     * Per-task virtual-thread executor for background glyph creation.
-     * Each glyph (or batch) gets its own virtual thread; the existing
-     * {@code synchronized} blocks on the atlas and page objects already
-     * provide the necessary mutual exclusion.
-     */
-    private static final ExecutorService GLYPH_EXECUTOR = Executors.newThreadPerTaskExecutor(
-        Thread.ofVirtual().name("AnvilLib-SDF-Glyph-", 0).factory()
+    // Metrics must never queue behind CPU-heavy glyph jobs: callers may join their future.
+    private static final ExecutorService METRICS_EXECUTOR = Executors.newThreadPerTaskExecutor(
+        Thread.ofVirtual().name("AnvilLib-SDF-Metrics-", 0).factory()
+    );
+    private static final ExecutorService GLYPH_EXECUTOR = Executors.newFixedThreadPool(
+        Math.max(1, Math.min(2, Runtime.getRuntime().availableProcessors() / 2)),
+        Thread.ofPlatform().daemon().name("AnvilLib-SDF-Glyph-", 0).factory()
     );
 
     private final String key;
@@ -61,9 +61,12 @@ public final class SdfGlyphAtlas {
     private final int awtHeight;
     private final FontMetrics fontMetrics;
 
-    private final List<SdfGlyphPage> pages = new ArrayList<>();
+    private final List<SdfGlyphPage> pages = new CopyOnWriteArrayList<>();
     private final Map<Integer, GlyphEntry> glyphMap = new ConcurrentHashMap<>();
     private final Set<Integer> pendingGlyphs = ConcurrentHashMap.newKeySet();
+    private final Map<Integer, Integer> advances = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedQueue<Integer> glyphQueue = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean workerScheduled = new AtomicBoolean();
 
     private SdfGlyphAtlas(String key, Font font) {
         this.key = key;
@@ -92,26 +95,26 @@ public final class SdfGlyphAtlas {
         this.paddedCellSize = this.cellSize + 2 * this.padding;
         log.info("SdfGlyphAtlas cellSize={} ascent={} descent={} key={}", this.cellSize, this.awtAscent, awtDescent, key);
 
-        preWarmAscii();
-        log.info("SdfGlyphAtlas ready for key={}, pages={}", key, this.pages.size());
+        log.info("SdfGlyphAtlas metrics ready for key={}, pages={}", key, this.pages.size());
     }
 
     // ── Public API ──────────────────────────────────────────────
 
     /**
-     * Start building the atlas on a background thread; returns the future.
+     * Prepare font metrics on a background thread. Completion does not wait for
+     * any glyph rasterization or GPU upload.
      */
     public static CompletableFuture<SdfGlyphAtlas> getOrCreate(@Nullable Font font) {
         Font resolved = resolveFont(font);
         String key = resolved.getFontName(Locale.ENGLISH) + "." + resolved.getStyle() + "." + resolved.getSize();
         return CACHE.computeIfAbsent(key, ignored -> {
             log.debug("Starting SDF atlas build for key={}", key);
-            return CompletableFuture.supplyAsync(() -> new SdfGlyphAtlas(key, resolved), GLYPH_EXECUTOR);
+            return CompletableFuture.supplyAsync(() -> new SdfGlyphAtlas(key, resolved), METRICS_EXECUTOR);
         });
     }
 
     /**
-     * Return the atlas if fully built, or {@code null} if still constructing.
+     * Return the atlas once its metrics are ready, or {@code null} while preparing.
      * <p>
      * If the previous build failed (future completed exceptionally), the
      * failed future is removed and a fresh build is started so that a
@@ -179,29 +182,33 @@ public final class SdfGlyphAtlas {
         if (entry != null) return entry;
         // Trigger async creation on background thread
         if (this.pendingGlyphs.add(codepoint)) {
-            GLYPH_EXECUTOR.submit(() -> createGlyphAsync(codepoint));
+            this.glyphQueue.add(codepoint);
+            scheduleWorker();
         }
         return null;
     }
 
-    /**
-     * Background-thread entry point for glyph creation.
-     * Synchronized to ensure only one glyph is created at a time per atlas,
-     * avoiding races on page state (nextCol, nextRow, image pixels).
-     */
-    private void createGlyphAsync(int codepoint) {
+    private void scheduleWorker() {
+        if (this.workerScheduled.compareAndSet(false, true)) GLYPH_EXECUTOR.execute(this::drainGlyphs);
+    }
+
+    // One queued job per atlas, not one thread per character. No render-thread lock
+    // is held during rasterization; only the completed pixels are published to a page.
+    private void drainGlyphs() {
         try {
-            synchronized (this) {
-                // Double-check: may have been created since we were enqueued
-                if (this.glyphMap.containsKey(codepoint)) return;
-                createGlyph(codepoint, SdfGlyphPage::updateHash);
+            Integer codepoint;
+            while ((codepoint = this.glyphQueue.poll()) != null) {
+                try {
+                    if (!this.glyphMap.containsKey(codepoint)) createGlyph(codepoint);
+                } catch (Exception e) {
+                    log.error("Failed to create SDF glyph for codepoint {}", codepoint, e);
+                } finally {
+                    this.pendingGlyphs.remove(codepoint);
+                }
             }
-            // Invalidate cached layouts so they pick up the new glyph
-            SdfTextLayout.invalidateAtlas(this.key);
-        } catch (Exception e) {
-            log.error("Failed to create SDF glyph for codepoint {} (U+{})", codepoint, Integer.toHexString(codepoint).toUpperCase(), e);
         } finally {
-            this.pendingGlyphs.remove(codepoint);
+            this.workerScheduled.set(false);
+            if (!this.glyphQueue.isEmpty()) scheduleWorker();
         }
     }
 
@@ -214,14 +221,11 @@ public final class SdfGlyphAtlas {
      */
     public int measureText(String text, int start, int end) {
         int width = 0;
-        Set<SdfGlyphPage> glyphPages = new HashSet<>();
         for (int i = start; i < end; ) {
             int cp = text.codePointAt(i);
-            GlyphEntry g = glyph(cp, glyphPages::add);
-            width += g == null ? this.cellSize / 2 : g.advance;
+            width += measureCodepoint(cp);
             i += Character.charCount(cp);
         }
-        glyphPages.forEach(SdfGlyphPage::updateHash);
         return width;
     }
 
@@ -229,39 +233,33 @@ public final class SdfGlyphAtlas {
      * Measure a single codepoint's advance in atlas pixels.
      */
     public int measureCodepoint(int codepoint) {
-        GlyphEntry g = glyph(codepoint, SdfGlyphPage::updateHash);
-        return g == null ? this.cellSize / 2 : g.advance;
+        return this.advances.computeIfAbsent(codepoint, this.fontMetrics::charWidth);
+    }
+
+    /** Stable GUI advance, including while the glyph is being rasterized. */
+    public int scaledAdvance(int codepoint, float scale) {
+        return Math.max(1, Math.round(measureCodepoint(codepoint) * scale));
     }
 
     // ── Glyph creation ──────────────────────────────────────────
 
-    private GlyphEntry createGlyph(int codepoint, Consumer<SdfGlyphPage> pageConsumer) {
+    private void createGlyph(int codepoint) {
         BufferedImage mask = renderMask(codepoint);
+        BufferedImage cell = new BufferedImage(this.paddedCellSize, this.paddedCellSize, BufferedImage.TYPE_BYTE_GRAY);
+        blitSdfGlyph(mask, cell, this.padding, this.padding, this.cellSize, this.sdfRadius);
+        fillPadding(cell, 0, 0, this.paddedCellSize, this.cellSize, this.padding);
 
         int pageIdx = findOrCreatePageIndex();
-        SdfGlyphPage page = this.pages.get(pageIdx);
-        GlyphEntry entry = page.placeGlyph(this, mask);
-        entry = new GlyphEntry(
-            pageIdx,
-            entry.atlasX(),
-            entry.atlasY(),
-            entry.width(),
-            entry.height(),
-            this.fontMetrics.charWidth(codepoint)
-        );
-        this.glyphMap.put(codepoint, entry);
-        page.fillPaddingForCell(this, entry);
-        page.dirty = true;
-        pageConsumer.accept(page);
-        return entry;
+        GlyphEntry placed = this.pages.get(pageIdx).placeGlyph(this, cell);
+        // Publish only after the complete cell (including padding and upload revision) is visible.
+        this.glyphMap.put(codepoint, new GlyphEntry(pageIdx, placed.atlasX(), placed.atlasY(),
+            placed.width(), placed.height(), measureCodepoint(codepoint)));
+        // Complete layouts contain only immutable glyph positions, so new glyphs do not invalidate them.
     }
 
-    private void preWarmAscii() {
-        Set<SdfGlyphPage> glyphPages = new HashSet<>();
-        for (int code = FIRST_CHAR; code <= LAST_CHAR; code++) {
-            createGlyph(code, glyphPages::add);
-        }
-        glyphPages.forEach(SdfGlyphPage::updateHash);
+    /** Queue common UI glyphs without delaying callers that only need metrics. */
+    public void preWarmAscii() {
+        for (int code = FIRST_CHAR; code <= LAST_CHAR; code++) glyph(code, ignored -> {});
     }
 
     private int findOrCreatePageIndex() {
