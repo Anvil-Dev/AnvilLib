@@ -10,7 +10,6 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.awt.image.BufferedImage;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,28 +30,24 @@ public final class SdfAtlasTexture {
         SdfGlyphPage page = atlas.page(pageIndex);
         String key = atlas.key() + ".p" + pageIndex;
         Identifier id = Identifier.fromNamespaceAndPath("anvillib_font", "dynamic/sdf_atlas/" + sanitize(key));
-        // Synchronize on page to read the version and image data atomically
-        // with respect to the glyph creation thread, which also synchronizes
-        // on page for placeGlyph / fillPaddingForCell.
-        NativeImage nativeImage;
         PageEntry entry = CACHE.get(key);
-        int version;
-        synchronized (page) {
-            version = page.version.get();
-            if (entry != null && entry.version == version) return entry.id;
-            nativeImage = toNativeImage(page.image);
-            page.dirty = false;
+        boolean create = entry == null || entry.texture.closed;
+        if (!create && entry.version == page.version.get() && !page.dirty) return entry.id;
+        SdfGlyphPage.Upload upload = page.snapshot(create);
+        if (upload == null) return id;
+        try (NativeImage image = toNativeImage(upload)) {
+            if (create) {
+                SdfTexture texture = new SdfTexture(image);
+                Minecraft.getInstance().getTextureManager().register(id, texture);
+                entry = new PageEntry(id, texture, upload.version());
+                CACHE.put(key, entry);
+            } else {
+                entry.texture.upload(image, upload.x(), upload.y());
+                entry.version = upload.version();
+            }
         }
-
-        SdfTexture texture;
-        try (nativeImage) {
-            texture = new SdfTexture(nativeImage);
-        }
-        Minecraft.getInstance().getTextureManager().register(id, texture);
-
-        if (entry != null) entry.texture.close();
-        CACHE.put(key, new PageEntry(id, texture, version));
         page.textureId = id;
+        page.uploaded(upload);
         return id;
     }
 
@@ -66,6 +61,7 @@ public final class SdfAtlasTexture {
             PageEntry entry = CACHE.get(key);
             if (page.textureId == null
                 || entry == null
+                || entry.texture.closed
                 || entry.version != page.version.get()
                 || page.dirty) {
                 uploadPage(atlas, i);
@@ -77,6 +73,7 @@ public final class SdfAtlasTexture {
      * A minimal single-channel texture with LINEAR+CLAMP filtering for SDF sampling.
      */
     static final class SdfTexture extends AbstractTexture {
+        private boolean closed;
         SdfTexture(NativeImage image) {
             GpuDevice device = RenderSystem.getDevice();
             this.texture = device.createTexture(
@@ -87,18 +84,24 @@ public final class SdfAtlasTexture {
             this.textureView = device.createTextureView(this.texture);
             this.sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
         }
+
+        void upload(NativeImage image, int x, int y) {
+            RenderSystem.getDevice().createCommandEncoder().writeToTexture(
+                this.texture, image, 0, 0, x, y
+            );
+        }
+
+        @Override
+        public void close() {
+            this.closed = true;
+            super.close();
+        }
     }
 
-    static NativeImage toNativeImage(BufferedImage image) {
-        NativeImage ni = new NativeImage(NativeImage.Format.LUMINANCE, image.getWidth(), image.getHeight(), false);
-        var pixels = ni.getPixelBytes();
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                int gray = image.getRGB(x, y) & 0xFF;
-                pixels.put(x + y * image.getWidth(), (byte) gray);
-            }
-        }
-        return ni;
+    static NativeImage toNativeImage(SdfGlyphPage.Upload upload) {
+        NativeImage image = new NativeImage(NativeImage.Format.LUMINANCE, upload.width(), upload.height(), false);
+        image.getPixelBytes().put(upload.pixels());
+        return image;
     }
 
     private static String sanitize(String key) {
@@ -121,7 +124,7 @@ public final class SdfAtlasTexture {
     private static final class PageEntry {
         final Identifier id;
         final SdfTexture texture;
-        final int version;
+        int version;
 
         PageEntry(Identifier id, SdfTexture texture, int version) {
             this.id = id;
