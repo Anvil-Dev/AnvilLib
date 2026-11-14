@@ -79,7 +79,7 @@ public final class ProjectionScene implements BlockAndTintGetter {
     }
 
     /** 把查询原点挪到 {@code origin},供 {@code renderLiquid} 在 (0,0,0) 写 0-1 顶点。 */
-    BlockAndTintGetter shifted(BlockPos origin) {
+    public BlockAndTintGetter shifted(BlockPos origin) {
         return new Shifted(this, origin.immutable());
     }
 
