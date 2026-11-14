@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
-/** 仅在客户端初始化时注册命名空间；注册后的模型默认同时启用精确拾取和棱线高亮。 */
+/** 资源包控制选取与描边模式；客户端注册接口提供默认启用范围及动态几何。 */
 public final class CubeSelection {
     public static final int MAX_PARTS = 32;
     private static final Set<String> NAMESPACES = ConcurrentHashMap.newKeySet();
@@ -35,10 +35,12 @@ public final class CubeSelection {
     private static final Map<Block, Dynamic> DYNAMIC = new ConcurrentHashMap<>();
     private static final OutlineCache OUTLINES = new OutlineCache();
     private static final Long2ObjectOpenHashMap<Target> FRAME = new Long2ObjectOpenHashMap<>();
+    private static CubeSelectionRules rules = CubeSelectionRules.EMPTY;
     private static Map<BlockState, ModelSelection> models = Map.of();
     private static Map<BlockState, Integer> extended = Map.of();
     private static @Nullable ClientLevel frameLevel;
     private static int radius;
+    private static boolean pickingActive;
     private static float partialTick;
     private static long geometryBytes;
     private static int unsupportedStates;
@@ -91,11 +93,29 @@ public final class CubeSelection {
             throw new IllegalArgumentException("Dynamic bounds including model offset must lie in [-2, 3]");
         }
         DYNAMIC.put(block, new Dynamic(maximumBounds, includeStaticModel, provider));
-        radius = Math.max(radius, reach(maximumBounds));
+        if (mode(block, rules) == CubeSelectionRules.Mode.MODEL) {
+            pickingActive = true;
+            radius = Math.max(radius, reach(maximumBounds));
+        }
     }
 
+    /** 是否启用模型几何；outline 模式仍需烘焙并可由自定义描边器读取。 */
     public static boolean isEnabled(Block block) {
-        return !EXCLUDED.contains(block) && (NAMESPACES.contains(BuiltInRegistries.BLOCK.getKey(block).getNamespace()) || DYNAMIC.containsKey(block));
+        return isEnabled(block, rules);
+    }
+
+    static boolean isEnabled(Block block, CubeSelectionRules selectionRules) {
+        return mode(block, selectionRules) != CubeSelectionRules.Mode.VANILLA;
+    }
+
+    private static CubeSelectionRules.Mode mode(Block block, CubeSelectionRules selectionRules) {
+        if (EXCLUDED.contains(block)) {
+            return CubeSelectionRules.Mode.VANILLA;
+        }
+        var id = BuiltInRegistries.BLOCK.getKey(block);
+        CubeSelectionRules.Mode fallback = NAMESPACES.contains(id.getNamespace()) || DYNAMIC.containsKey(block)
+            ? CubeSelectionRules.Mode.MODEL : CubeSelectionRules.Mode.VANILLA;
+        return selectionRules.mode(id, fallback);
     }
 
     public static boolean supportedBounds(AABB bounds) {
@@ -103,6 +123,11 @@ public final class CubeSelection {
             && Double.isFinite(bounds.maxX) && Double.isFinite(bounds.maxY) && Double.isFinite(bounds.maxZ)
             && bounds.minX >= -2 && bounds.minY >= -2 && bounds.minZ >= -2
             && bounds.maxX <= 3 && bounds.maxY <= 3 && bounds.maxZ <= 3;
+    }
+
+    static void install(ModelSelections.Snapshot snapshot, CubeSelectionRules selectionRules) {
+        rules = selectionRules;
+        install(snapshot);
     }
 
     public static void install(ModelSelections.Snapshot snapshot) {
@@ -114,7 +139,12 @@ public final class CubeSelection {
         unsupportedStates = snapshot.unsupportedStates();
         Map<BlockState, Integer> overhang = new IdentityHashMap<>();
         radius = 0;
+        pickingActive = false;
         models.forEach((state, selection) -> {
+            if (mode(state.getBlock(), rules) != CubeSelectionRules.Mode.MODEL) {
+                return;
+            }
+            pickingActive = true;
             int reach = reach(selection.bounds());
             // 原版模型偏移由位置决定，不可烘入共享几何。
             if (state.hasOffsetFunction()) reach = Math.min(2, reach + 1);
@@ -122,7 +152,12 @@ public final class CubeSelection {
         });
         extended = overhang;
         for (int value : extended.values()) radius = Math.max(radius, value);
-        for (Dynamic dynamic : DYNAMIC.values()) radius = Math.max(radius, reach(dynamic.bounds));
+        DYNAMIC.forEach((block, dynamic) -> {
+            if (mode(block, rules) == CubeSelectionRules.Mode.MODEL) {
+                pickingActive = true;
+                radius = Math.max(radius, reach(dynamic.bounds));
+            }
+        });
     }
 
     public static void beginFrame(ClientLevel level, float fraction) {
@@ -139,7 +174,8 @@ public final class CubeSelection {
 
     public static OutlineCache outlines() { return OUTLINES; }
     public static int searchRadius() { return radius; }
-    public static boolean active() { return !models.isEmpty() || !DYNAMIC.isEmpty(); }
+    /** 当前快照是否需要执行模型精确拾取；仅描边的几何不会启动邻格补扫。 */
+    public static boolean active() { return pickingActive; }
 
     static @Nullable ModelSelection modelForState(BlockState state) { return models.get(state); }
 
@@ -155,12 +191,24 @@ public final class CubeSelection {
     static float frameFraction(ClientLevel level, float fallback) { return frameLevel == level ? partialTick : fallback; }
 
     public static boolean extendsBlock(BlockState state) {
+        if (mode(state.getBlock(), rules) != CubeSelectionRules.Mode.MODEL) {
+            return false;
+        }
         Dynamic dynamic = DYNAMIC.get(state.getBlock());
         return extended.containsKey(state) || dynamic != null && reach(dynamic.bounds) > 0;
     }
 
+    /** 精确拾取入口；仅描边模式保留方块原有射线选取。 */
     public static @Nullable Target target(ClientLevel level, BlockPos pos, BlockState state, float fraction) {
-        if (isTargetExcluded(state)) return null;
+        if (mode(state.getBlock(), rules) != CubeSelectionRules.Mode.MODEL) {
+            return null;
+        }
+        return outlineTarget(level, pos, state, fraction);
+    }
+
+    /** 描边与预览共用的几何入口；运行时排除规则仍同时约束选取和默认描边。 */
+    public static @Nullable Target outlineTarget(ClientLevel level, BlockPos pos, BlockState state, float fraction) {
+        if (!isEnabled(state.getBlock()) || isTargetExcluded(state)) return null;
         if (frameLevel != level || fraction != partialTick) beginFrame(level, fraction);
         Target cached = FRAME.get(pos.asLong());
         if (cached != null && cached.state == state) return cached;
