@@ -18,12 +18,16 @@ public final class CubePicking {
 
     /** 只包围准星射线调用，普通碰撞、服务端和投射物射线不读取客户端模型。 */
     public static HitResult pick(Entity entity, double range, float partialTick, boolean fluids) {
-        if (!(entity.level() instanceof ClientLevel level) || !CubeSelection.active() || range > MAX_RANGE) {
+        if (!(entity.level() instanceof ClientLevel level)) {
             return entity.pick(range, partialTick, fluids);
         }
         Context context = CONTEXT.get();
         if (context.level != null) return entity.pick(range, partialTick, fluids);
+        // 仅描边模式也需要逐帧更新动态几何，不能在清理帧缓存之前跳过精确选取。
         CubeSelection.beginFrame(level, partialTick);
+        if (!CubeSelection.active() || range > MAX_RANGE) {
+            return entity.pick(range, partialTick, fluids);
+        }
         context.level = level;
         context.partialTick = partialTick;
         try {
