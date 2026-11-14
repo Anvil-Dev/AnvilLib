@@ -37,6 +37,30 @@ AnvilLib 采用模块化设计，包含以下功能模块：
 可选提供器支持 BER 活动部件。几何共享、BVH 拾取和后台轮廓任务均有数量及内存预算。
 支持按 ID 注册、替换和注销运行时目标排除规则，方便接入可重载黑名单，且不丢弃模型缓存。
 
+Cube 资源配置位于 `assets/<namespace>/anvillib/cube_selection.json`。KubeJS 整合包可使用
+`kubejs/assets/example/anvillib/cube_selection.json`，通过 `F3+T` 与模型一起重载：
+
+```json
+{
+  "namespaces": { "kubejs": "model" },
+  "blocks": {
+    "kubejs:example": "outline",
+    "kubejs:interaction_proxy": "vanilla"
+  }
+}
+```
+
+- `model`：精确模型选取与模型描边；`outline`：原有选取与模型描边；`vanilla`：原有选取与描边。
+- 方块规则优先于命名空间规则，未配置项使用 Java API 注册的默认值，默认不启用其他方块。
+- 按资源包从低到高逐项合并，同一资源包内按配置资源 ID 的字典序合并，后者覆盖同一键；缺省项保留。
+- 配置文件移除后，下次重载恢复下层配置或 Java 默认值。非法字段、模式或资源 ID 会记录配置路径和资源包，整份文件不生效。
+- 可以预先配置未安装模组的方块 ID；配置不会注册方块。配置内容仅控制客户端模型选取，不改变服务端碰撞与玩法逻辑。
+- `exclude` 的程序排除优先于配置；`registerTargetExclusion` 仍同时排除精确选取与默认描边，不删除模型缓存。
+- `registerDynamic` 继续提供动态部件，资源规则不会覆盖 provider；其 `includeStaticModel` 参数仍决定是否合并静态模型。
+- `target` 仅返回精确选取目标；`outlineTarget` 同时支持 `model` 与 `outline`，供描边和预览使用；`isEnabled` 表示是否启用模型几何。
+- 配置与模型在同一次资源重载完成后发布；不支持的模型或超出既有限额的几何保留原版行为。此配置不增加自定义模型加载器或 BER 的自动解析能力。
+
+
 ### Config 模块
 
 提供基于注解的配置管理系统，简化模组配置的定义和管理。
