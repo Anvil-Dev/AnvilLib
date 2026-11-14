@@ -286,3 +286,32 @@ if (providers.gradleProperty('cubeLocalTests').isPresent() || providers.gradlePr
     }
     apply from: localTests
 }
+
+repositories {
+    exclusiveContent {
+        forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
+dependencies {
+    compileOnly 'maven.modrinth:sodium:mc1.21.1-0.6.13-neoforge'
+}
+
+sourceSets {
+    previewTest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+
+tasks.register('previewTest', JavaExec) {
+    group = 'verification'
+    description = '验证共享结构预览的注册与只读绘制状态'
+    dependsOn tasks.named('previewTestClasses')
+    classpath = sourceSets.previewTest.runtimeClasspath
+    mainClass = 'dev.anvilcraft.lib.v2.rendering.preview.gui.PreviewRegressionTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = java.toolchain.languageVersion }
+}
+
+tasks.named('check') { dependsOn tasks.named('previewTest') }
