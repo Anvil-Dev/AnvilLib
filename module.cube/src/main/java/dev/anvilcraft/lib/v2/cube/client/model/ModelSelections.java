@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 public final class ModelSelections {
     public static final long MAX_GEOMETRY_BYTES = 16L * 1024 * 1024;
@@ -36,10 +37,15 @@ public final class ModelSelections {
     private ModelSelections(Map<BlockModelPart, ModelCapture.Source> sources) { this.sources = sources; }
 
     public static Snapshot bake(Map<BlockState, BlockStateModel> models) {
+        return bake(models, CubeSelection::isEnabled);
+    }
+
+    /** 使用本轮资源规则筛选模型，不提前修改正在使用的选择快照。 */
+    public static Snapshot bake(Map<BlockState, BlockStateModel> models, Predicate<Block> enabled) {
         ModelSelections builder = new ModelSelections(ModelCapture.take());
         Map<BlockState, ModelSelection> states = new IdentityHashMap<>();
         for (Block block : BuiltInRegistries.BLOCK) {
-            if (!CubeSelection.isEnabled(block)) continue;
+            if (!enabled.test(block)) continue;
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
                 if (states.size() >= MAX_STATES) { builder.unsupported++; continue; }
                 BlockStateModel baked = models.get(state);

@@ -35,7 +35,7 @@ public final class CubeHighlightEvents {
         float partial = event.getDeltaTracker().getGameTimeDeltaPartialTick(
             !level.tickRateManager().isEntityFrozen(event.getCamera().getEntity()));
         partial = CubeSelection.frameFraction(level, partial);
-        CubeSelection.Target target = CubeSelection.target(level, pos, level.getBlockState(pos), partial);
+        CubeSelection.Target target = CubeSelection.outlineTarget(level, pos, level.getBlockState(pos), partial);
         if (target == null) return;
         PoseStack stack = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
