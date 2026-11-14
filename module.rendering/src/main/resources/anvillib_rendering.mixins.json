@@ -6,6 +6,13 @@
   "refmap": "anvillib.refmap.json",
   "mixins": [],
   "client": [
+    "preview.StructureGuiGraphicsMixin",
+    "preview.StructureGuiItemRendererMixin",
+    "preview.StructureGuiItemStateMixin",
+    "preview.StructureGuiOversizedItemMixin",
+    "preview.StructureGuiRecipeBookMixin",
+    "preview.StructureGuiScreenMixin",
+
     "GuiRendererMixin"
   ],
   "injectors": {
