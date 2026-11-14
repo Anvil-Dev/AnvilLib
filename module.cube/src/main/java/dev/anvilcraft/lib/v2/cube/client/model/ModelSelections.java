@@ -39,10 +39,15 @@ public final class ModelSelections {
     private ModelSelections(Map<BakedModel, ModelCapture.Source> sources) { this.sources = sources; }
 
     public static Snapshot bake(Map<ModelResourceLocation, BakedModel> models) {
+        return bake(models, CubeSelection::isEnabled);
+    }
+
+    /** 使用本轮资源规则筛选模型，不提前修改正在使用的选择快照。 */
+    public static Snapshot bake(Map<ModelResourceLocation, BakedModel> models, Predicate<Block> enabled) {
         ModelSelections builder = new ModelSelections(ModelCapture.take());
         Map<BlockState, ModelSelection> states = new IdentityHashMap<>();
         for (Block block : BuiltInRegistries.BLOCK) {
-            if (!CubeSelection.isEnabled(block)) continue;
+            if (!enabled.test(block)) continue;
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
                 if (states.size() >= MAX_STATES) { builder.unsupported++; continue; }
                 BakedModel baked = models.get(BlockModelShaper.stateToModelLocation(state));
