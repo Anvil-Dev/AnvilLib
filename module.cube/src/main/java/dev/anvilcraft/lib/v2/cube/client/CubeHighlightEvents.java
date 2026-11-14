@@ -27,7 +27,7 @@ public final class CubeHighlightEvents {
         if (minecraft.options.hideGui) return;
         BlockPos pos = event.getBlockPos();
         float partial = CubeSelection.frameFraction(event.getLevel(), minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true));
-        CubeSelection.Target target = CubeSelection.target(event.getLevel(), pos, event.getBlockState(), partial);
+        CubeSelection.Target target = CubeSelection.outlineTarget(event.getLevel(), pos, event.getBlockState(), partial);
         if (target == null) return;
         List<SelectionPart> parts = target.parts();
         PackedOutline[] outlines = new PackedOutline[parts.size()];
