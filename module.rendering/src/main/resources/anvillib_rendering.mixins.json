@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.anvilcraft.lib.v2.rendering.mixins",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "preview.StructureGuiGraphicsMixin",
+    "preview.StructureGuiRecipeBookMixin",
+    "preview.StructureGuiRenderStateMixin",
+    "preview.StructureGuiScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
