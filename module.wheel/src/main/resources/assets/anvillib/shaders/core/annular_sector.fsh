@@ -4,7 +4,7 @@ in vec4 vertexColor;
 
 uniform vec4 ColorModulator;
 uniform vec2 Center;
-// 注意：以下为半径而非直径（与 dev/26.1 语义对齐）
+// 注意：以下为半径而非直径（与 releases/26.1 语义对齐）
 uniform float InnerRadius;
 uniform float OuterRadius;
 uniform float AntiAliasingRadius;
