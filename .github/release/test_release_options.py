@@ -28,7 +28,7 @@ CASES = [
 
 @patch.dict(os.environ, {
     "GITHUB_REPOSITORY": "example/AnvilLib", "GITHUB_RUN_ID": "123",
-    "GITHUB_REF": "refs/heads/dev/26.1", "GITHUB_SHA": "sha-26.1",
+    "GITHUB_REF": "refs/heads/releases/26.1", "GITHUB_SHA": "sha-26.1",
     "DRY_RUN": "false", "GENERATE_RELEASE_NOTES": "false",
     "MODRINTH_TOKEN": "test", "CURSEFORGE_TOKEN": "test",
 })
@@ -48,14 +48,14 @@ class ReleaseOptionsTests(unittest.TestCase):
                 common.release_type(version)
 
     def test_prepare_freezes_native_notes_and_bump_policy(self):
-        refs = [{"ref": f"refs/heads/dev/{line}", "object": {"sha": f"sha-{line}"}} for line in common.LINES]
+        refs = [{"ref": f"refs/heads/releases/{line}", "object": {"sha": f"sha-{line}"}} for line in common.LINES]
         notes = "## What's Changed\n* Main branch PR #42\n\n## New Contributors\n* @contributor\n"
         for version, _, bump in CASES:
             for enabled in (False, True):
                 def content(path, _sha):
                     return b"mod_version=1.6.0\njava_version=25\n" if path == "gradle.properties" else b""
                 def api(path, data=None):
-                    if path == "git/matching-refs/heads/dev/":
+                    if path == "git/matching-refs/heads/releases/":
                         return refs
                     self.fail(path)
                 with self.subTest(version=version, notes=enabled), tempfile.TemporaryDirectory() as tmp, chdir(tmp), \

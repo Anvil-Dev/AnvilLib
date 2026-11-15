@@ -14,7 +14,7 @@ from release_notes import generate as generate_notes
 
 
 def prepare():
-    require(os.environ["GITHUB_REF"] == f"refs/heads/dev/{ANCHOR}", "Run Create Multi-Version Releases from dev/26.1")
+    require(os.environ["GITHUB_REF"] == f"refs/heads/releases/{ANCHOR}", "Run Create Multi-Version Releases from releases/26.1")
     tag = os.environ.get("RELEASE_TAG", "")
     release_type(tag)
     plan_file = Path("release-plan.json")
@@ -24,11 +24,11 @@ def prepare():
         plan = json.loads(plan_file.read_text())
         require(plan["tag"] == tag, "Input tag differs from the original release plan")
     else:
-        refs = github("git/matching-refs/heads/dev/")
+        refs = github("git/matching-refs/heads/releases/")
         heads = {ref["ref"]: ref["object"]["sha"] for ref in refs}
         targets = {}
         for line in LINES:
-            sha = heads[f"refs/heads/dev/{line}"]
+            sha = heads[f"refs/heads/releases/{line}"]
             if line == ANCHOR:
                 require(sha == os.environ["GITHUB_SHA"], "Default branch advanced before preflight; dispatch again")
             props = contents("gradle.properties", sha)
@@ -52,7 +52,7 @@ def prepare():
     output("tag", plan["tag"])
     output("bump_patch", str("+" not in plan["version"]).lower())
     output("new", str(not saved).lower())
-    summary(f"**{plan['tag']}**\n\n" + "\n".join(f"- dev/{r['line']} @ {r['sha']}" for r in rows))
+    summary(f"**{plan['tag']}**\n\n" + "\n".join(f"- releases/{r['line']} @ {r['sha']}" for r in rows))
 
 
 def release_by_tag(tag):
@@ -98,7 +98,7 @@ def seal():
         require(name not in paths, f"Duplicate asset: {name}")
         paths[name] = folder / name
         sha = target["sha"]
-        notes.append(f"| {entry['game']} | [dev/{line} @ {sha[:8]}](https://github.com/{repo()}/commit/{sha})"
+        notes.append(f"| {entry['game']} | [releases/{line} @ {sha[:8]}](https://github.com/{repo()}/commit/{sha})"
                      f" | {name} | {entry['files'][name]} |")
     if os.environ.get("DRY_RUN") == "true":
         summary("\n".join(notes))
@@ -151,11 +151,11 @@ def bump(tag, line):
     require(line in LINES and not release_by_tag(tag)["draft"], "Bump requires a public release")
     version = plan["version"]
     if "+" in version:
-        summary(f"{tag} has a version qualifier; skipping the patch bump for dev/{line}.")
+        summary(f"{tag} has a version qualifier; skipping the patch bump for releases/{line}.")
         return
     major, minor, patch = version.split(".")
     next_version = f"{major}.{minor}.{int(patch) + 1}"
-    base = "dev/" + line
+    base = "releases/" + line
     head = f"release-bump/{tag}/{line}"
     sha = github("git/ref/heads/" + base)["object"]["sha"]
     props = contents("gradle.properties", sha)

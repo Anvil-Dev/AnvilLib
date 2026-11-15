@@ -29,14 +29,14 @@ class ReleaseTests(unittest.TestCase):
             self.enterContext(patch.object(module, "summary"))
 
     def test_preflight_uses_input_tag_despite_different_development_versions(self):
-        refs = [{"ref": f"refs/heads/dev/{line}", "object": {"sha": line}} for line in LINES]
+        refs = [{"ref": f"refs/heads/releases/{line}", "object": {"sha": line}} for line in LINES]
         def content(path, sha):
             if path != "gradle.properties":
                 return b""
             return f"java_version=25\nmod_version=development-{sha}\n".encode()
         tag = "3.2.0+pre-release.13"
         with tempfile.TemporaryDirectory() as tmp, chdir(tmp), \
-                patch.dict(os.environ, {"GITHUB_REF": "refs/heads/dev/26.1", "GITHUB_SHA": "26.1",
+                patch.dict(os.environ, {"GITHUB_REF": "refs/heads/releases/26.1", "GITHUB_SHA": "26.1",
                                         "RELEASE_TAG": tag, "DRY_RUN": "true", "GENERATE_RELEASE_NOTES": "false"}), \
                 patch.object(release, "artifact", return_value=None), patch.object(release, "github", return_value=refs), \
                 patch.object(release, "contents", side_effect=content), patch.object(release, "output") as output:
@@ -163,7 +163,7 @@ class ReleaseTests(unittest.TestCase):
             name = fields["file"].name
             uploads.append(name)
             if name == "x-sources.jar" and len(uploads) == 2:
-                raise mod_sites.Rejected("HTTP 429")
+                raise mod_sites.Rejected(429, "rate limited")
             return {"id": len(uploads)}
         target = {"sha": "sha", "game": "26.1.2", "curseforge": "123", "jar": "x.jar"}
         with patch.dict(os.environ, {"CURSEFORGE_TOKEN": "test"}), \
@@ -206,7 +206,7 @@ class ReleaseTests(unittest.TestCase):
                     return prs[0]
             if path.startswith("git/ref/heads/release-bump"):
                 return head[0] if head else None
-            if path.startswith("git/ref/heads/dev/"):
+            if path.startswith("git/ref/heads/releases/"):
                 return {"object": {"sha": "base"}}
             if path == "git/commits/base":
                 return {"tree": {"sha": "base-tree"}}

@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -44,6 +45,14 @@ def files_for(plan, line, directory):
 class Rejected(RuntimeError):
     """The server explicitly rejected this upload before accepting a file."""
 
+    def __init__(self, status, body):
+        super().__init__(f"HTTP {status}: {body[:500]}")
+        self.status = status
+        try:
+            self.code = json.loads(body).get("errorCode")
+        except (ValueError, AttributeError):
+            self.code = None
+
 
 def multipart(url, auth, fields):
     args = ["curl", "--silent", "--show-error", "--max-time", "240", "--user-agent", AGENT,
@@ -56,7 +65,7 @@ def multipart(url, auth, fields):
     result = subprocess.run([*args, url], input=auth + "\n", text=True, capture_output=True, check=True)
     body, code = result.stdout.rsplit("\n", 1)
     if int(code) in {400, 401, 403, 404, 413, 415, 422, 429}:
-        raise Rejected(f"HTTP {code}: {body[:500]}")
+        raise Rejected(int(code), body)
     require(200 <= int(code) < 300, f"Upload result uncertain (HTTP {code}): {body[:500]}")
     return json.loads(body)
 
@@ -127,7 +136,18 @@ def publish_curseforge(plan, line, folder, context):
                    gameVersionNames=[t["game"], "NeoForge", "Client", "Server"])
 
     def upload(name, metadata):
-        return multipart(url, "X-Api-Token: " + token, {"metadata": metadata, "file": folder / name})["id"]
+        for attempt in range(12):
+            try:
+                return multipart(url, "X-Api-Token: " + token, {"metadata": metadata, "file": folder / name})["id"]
+            except Rejected as error:
+                # A recently uploaded parent can temporarily be uneditable. Only
+                # this explicit rejection is safe to retry; HTTP 5xx is ambiguous.
+                if ("parentFileID" not in metadata or error.status != 400
+                        or error.code != 1012 or attempt == 11):
+                    raise
+                print(f"CurseForge parent {metadata['parentFileID']} is not ready for {name}; "
+                      f"retrying in 10 seconds ({attempt + 1}/11).", flush=True)
+                time.sleep(10)
 
     parent = send(t["sha"], context + "/jar", lambda: upload(t["jar"], primary))
     receipts = [parent]

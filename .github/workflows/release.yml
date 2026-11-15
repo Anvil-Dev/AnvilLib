@@ -7,7 +7,7 @@ on:
         type: string
         required: true
       generate_release_notes:
-        description: Include GitHub-generated release notes from dev/26.1
+        description: Include GitHub-generated release notes from releases/26.1
         type: boolean
         default: false
       dry_run:
@@ -31,7 +31,7 @@ env:
 
 jobs:
   prepare:
-    if: github.ref == 'refs/heads/dev/26.1'
+    if: github.ref == 'refs/heads/releases/26.1'
     runs-on: ubuntu-latest
     # GitHub requires contents: write even for the generate-notes preview API.
     permissions: { contents: write, actions: read }
@@ -156,6 +156,8 @@ jobs:
     permissions: { actions: read, contents: read, statuses: write }
     strategy:
       fail-fast: false
+      # All versions share one CurseForge project; avoid concurrent file processing.
+      max-parallel: 1
       matrix:
         target: ${{ fromJSON(needs.prepare.outputs.matrix) }}
         platform: [modrinth, curseforge]
