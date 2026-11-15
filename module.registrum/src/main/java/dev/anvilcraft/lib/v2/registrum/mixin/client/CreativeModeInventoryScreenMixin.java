@@ -165,6 +165,11 @@ abstract class CreativeModeInventoryScreenMixin
         CreativeVariantPickerOverlay overlay = this.anvillib$validVariantOverlay();
         if (overlay != null && overlay.contains(this.leftPos, this.topPos, mouseX, mouseY)) {
             this.anvillib$consumeMouseButton(button);
+            if (button == 0 && overlay.beginSliderDrag(this.leftPos, this.topPos, mouseX, mouseY)) {
+                this.anvillib$hoveredPickerVariant = null;
+                cir.setReturnValue(true);
+                return;
+            }
             overlay.variantAt(this.leftPos, this.topPos, mouseX, mouseY).ifPresent(variant -> {
                 if (button == 0 || button == 1) {
                     this.anvillib$selectPickerVariant(overlay, variant, button, Screen.hasShiftDown());
@@ -202,7 +207,13 @@ abstract class CreativeModeInventoryScreenMixin
         double mouseX, double mouseY, int button,
         CallbackInfoReturnable<Boolean> cir
     ) {
-        if (!this.anvillib$isMouseButtonConsumed(button)) return;
+        if (!this.anvillib$isMouseButtonConsumed(button)) {
+            return;
+        }
+        CreativeVariantPickerOverlay overlay = this.anvillib$validVariantOverlay();
+        if (button == 0 && overlay != null) {
+            overlay.endSliderDrag();
+        }
         this.anvillib$releaseMouseButton(button);
         cir.setReturnValue(true);
     }
@@ -214,17 +225,31 @@ abstract class CreativeModeInventoryScreenMixin
         double dragY,
         CallbackInfoReturnable<Boolean> cir
     ) {
-        if (this.anvillib$isMouseButtonConsumed(button)) cir.setReturnValue(true);
+        if (this.anvillib$isMouseButtonConsumed(button)) {
+            CreativeVariantPickerOverlay overlay = this.anvillib$validVariantOverlay();
+            if (button == 0 && overlay != null) {
+                overlay.dragSlider(this.topPos, mouseY);
+                this.anvillib$hoveredPickerVariant = overlay.variantAt(this.leftPos, this.topPos, mouseX, mouseY).orElse(null);
+            }
+            cir.setReturnValue(true);
+        }
     }
 
-    @Inject(method = "mouseScrolled", at = @At("HEAD"))
-    private void anvillib$closeVariantOverlayOnScroll(
+    @Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true)
+    private void anvillib$scrollVariantOverlay(
         double mouseX,
         double mouseY,
         double scrollX,
         double scrollY,
         CallbackInfoReturnable<Boolean> cir
     ) {
+        CreativeVariantPickerOverlay overlay = this.anvillib$validVariantOverlay();
+        if (overlay != null && overlay.contains(this.leftPos, this.topPos, mouseX, mouseY)) {
+            overlay.scroll(scrollY);
+            this.anvillib$hoveredPickerVariant = overlay.variantAt(this.leftPos, this.topPos, mouseX, mouseY).orElse(null);
+            cir.setReturnValue(true);
+            return;
+        }
         this.anvillib$closeVariantOverlay();
     }
 
