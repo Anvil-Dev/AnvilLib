@@ -20,7 +20,19 @@ public final class CreativeVariantPickerOverlay {
         "anvillib",
         "textures/gui/background/16_color_overlay.png"
     );
-    private static final int COLUMNS = 4;
+    private static final ResourceLocation SCROLL_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+        "anvillib", "textures/gui/background/groups.png"
+    );
+    private static final ResourceLocation SLIDER_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+        "anvillib", "textures/gui/background/overlay_slider.png"
+    );
+    private static final int COLUMNS = VariantPickerGrid.COLUMNS;
+    private static final int SCROLL_TEXTURE_WIDTH = 85;
+    private static final int TRACK_X = 77;
+    private static final int TRACK_Y = 4;
+    private static final int TRACK_HEIGHT = 70;
+    private static final int SLIDER_WIDTH = 4;
+    private static final int SLIDER_HEIGHT = 12;
     private static final int TEXTURE_WIDTH = 78;
     private static final int TEXTURE_HEIGHT = 80;
     private static final int CELL_OFFSET = 3;
@@ -36,17 +48,23 @@ public final class CreativeVariantPickerOverlay {
     private final Slot sourceSlot;
     private final ItemStack sourceStack;
     private final List<ItemStack> variants;
+    private final VariantPickerGrid grid;
+    private boolean draggingSlider;
+    private double sliderGrabOffset;
 
     private CreativeVariantPickerOverlay(Slot sourceSlot, ItemStack sourceStack, List<ItemStack> variants) {
         this.sourceSlot = sourceSlot;
         this.sourceStack = sourceStack;
         this.variants = variants;
+        this.grid = new VariantPickerGrid(variants.size());
     }
 
     public static Optional<CreativeVariantPickerOverlay> create(Slot sourceSlot) {
         ItemStack sourceStack = sourceSlot.getItem();
         List<ItemStack> variants = CreativeVariantPickerRegistry.createVariants(sourceStack).orElse(List.of());
-        if (variants.isEmpty()) return Optional.empty();
+        if (variants.isEmpty()) {
+            return Optional.empty();
+        }
         return Optional.of(new CreativeVariantPickerOverlay(sourceSlot, sourceStack.copyWithCount(1), variants));
     }
 
@@ -63,7 +81,7 @@ public final class CreativeVariantPickerOverlay {
     public boolean contains(int guiLeft, int guiTop, double mouseX, double mouseY) {
         int left = this.left(guiLeft);
         int top = this.top(guiTop);
-        return mouseX >= left && mouseX < left + TEXTURE_WIDTH
+        return mouseX >= left && mouseX < left + this.width()
             && mouseY >= top && mouseY < top + TEXTURE_HEIGHT;
     }
 
@@ -86,27 +104,30 @@ public final class CreativeVariantPickerOverlay {
         try {
             graphics.pose().translate(0.0F, 0.0F, BACKGROUND_Z);
             graphics.blit(
-                TEXTURE,
+                this.grid.isScrollable() ? SCROLL_TEXTURE : TEXTURE,
                 left,
                 top,
                 0,
                 0,
-                TEXTURE_WIDTH,
+                this.width(),
                 TEXTURE_HEIGHT,
-                TEXTURE_WIDTH,
+                this.width(),
                 TEXTURE_HEIGHT
             );
-            for (int index = 0; index < this.variants.size(); index++) {
-                int itemX = left + ITEM_OFFSET + index % COLUMNS * CELL_SIZE;
-                int itemY = top + ITEM_OFFSET + index / COLUMNS * CELL_SIZE;
+            this.renderSlider(graphics, left, top, mouseX, mouseY);
+            for (int cell = 0; cell < this.grid.visibleCount(); cell++) {
+                int index = this.grid.indexAt(cell);
+                int itemX = left + ITEM_OFFSET + cell % COLUMNS * CELL_SIZE;
+                int itemY = top + ITEM_OFFSET + cell / COLUMNS * CELL_SIZE;
                 ItemStack variant = this.variants.get(index);
                 graphics.renderItem(variant, itemX, itemY, index);
                 graphics.renderItemDecorations(Minecraft.getInstance().font, variant, itemX, itemY);
             }
             int hoveredIndex = this.variantIndexAt(guiLeft, guiTop, mouseX, mouseY);
             if (hoveredIndex >= 0) {
-                int itemX = left + ITEM_OFFSET + hoveredIndex % COLUMNS * CELL_SIZE;
-                int itemY = top + ITEM_OFFSET + hoveredIndex / COLUMNS * CELL_SIZE;
+                int cell = hoveredIndex - this.grid.firstIndex();
+                int itemX = left + ITEM_OFFSET + cell % COLUMNS * CELL_SIZE;
+                int itemY = top + ITEM_OFFSET + cell / COLUMNS * CELL_SIZE;
                 AbstractContainerScreen.renderSlotHighlight(graphics, itemX, itemY, HIGHLIGHT_Z);
             }
         } finally {
@@ -142,8 +163,7 @@ public final class CreativeVariantPickerOverlay {
         }
         int column = (localX - CELL_OFFSET) / CELL_SIZE;
         int row = (localY - CELL_OFFSET) / CELL_SIZE;
-        int index = row * COLUMNS + column;
-        return index >= this.variants.size() ? -1 : index;
+        return this.grid.indexAt(row * COLUMNS + column);
     }
 
     private void renderCarriedItem(GuiGraphics graphics, ItemStack stack, int mouseX, int mouseY) {
@@ -169,8 +189,73 @@ public final class CreativeVariantPickerOverlay {
         }
     }
 
+    /** 按行滚动变体，保留触控板产生的不足一行的滚动量。 */
+    public void scroll(double amount) {
+        this.grid.scroll(amount);
+    }
+
+    /** 点击轨道时移动滑条，点击滑条时保留鼠标的抓取位置。 */
+    public boolean beginSliderDrag(int guiLeft, int guiTop, double mouseX, double mouseY) {
+        int trackLeft = this.left(guiLeft) + TRACK_X;
+        int trackTop = this.top(guiTop) + TRACK_Y;
+        if (!this.grid.isScrollable() || mouseX < trackLeft || mouseX >= trackLeft + SLIDER_WIDTH
+            || mouseY < trackTop || mouseY >= trackTop + TRACK_HEIGHT) {
+            return false;
+        }
+        int sliderTop = this.sliderTop(this.top(guiTop));
+        this.sliderGrabOffset = mouseY >= sliderTop && mouseY < sliderTop + SLIDER_HEIGHT
+            ? mouseY - sliderTop : SLIDER_HEIGHT / 2d;
+        this.draggingSlider = true;
+        this.dragSlider(guiTop, mouseY);
+        return true;
+    }
+
+    /** 拖动期间允许指针离开轨道，并将位置限制在首尾行。 */
+    public void dragSlider(int guiTop, double mouseY) {
+        if (this.draggingSlider) {
+            this.grid.scrollTo((mouseY - this.top(guiTop) - TRACK_Y - this.sliderGrabOffset)
+                / (TRACK_HEIGHT - SLIDER_HEIGHT));
+        }
+    }
+
+    /** 松开鼠标后结束滑条拖动。 */
+    public void endSliderDrag() {
+        this.draggingSlider = false;
+    }
+
+    private void renderSlider(GuiGraphics graphics, int left, int top, int mouseX, int mouseY) {
+        if (!this.grid.isScrollable()) {
+            return;
+        }
+        int sliderLeft = left + TRACK_X;
+        int sliderTop = this.sliderTop(top);
+        boolean hovered = mouseX >= sliderLeft && mouseX < sliderLeft + SLIDER_WIDTH
+            && mouseY >= sliderTop && mouseY < sliderTop + SLIDER_HEIGHT;
+        graphics.blit(
+            SLIDER_TEXTURE,
+            sliderLeft,
+            sliderTop,
+            hovered || this.draggingSlider ? SLIDER_WIDTH : 0,
+            0,
+            SLIDER_WIDTH,
+            SLIDER_HEIGHT,
+            SLIDER_WIDTH * 2,
+            SLIDER_HEIGHT
+        );
+    }
+
+    private int sliderTop(int top) {
+        return top + TRACK_Y + (int) Math.round(this.grid.scrollFraction() * (TRACK_HEIGHT - SLIDER_HEIGHT));
+    }
+
+    private int width() {
+        return this.grid.isScrollable() ? SCROLL_TEXTURE_WIDTH : TEXTURE_WIDTH;
+    }
+
     private int left(int guiLeft) {
-        return guiLeft + this.sourceSlot.x + SOURCE_ITEM_CENTER - TEXTURE_WIDTH / 2;
+        int preferred = guiLeft + this.sourceSlot.x + SOURCE_ITEM_CENTER - this.width() / 2;
+        int maximum = Minecraft.getInstance().getWindow().getGuiScaledWidth() - this.width();
+        return Math.max(0, Math.min(preferred, maximum));
     }
 
     private int top(int guiTop) {

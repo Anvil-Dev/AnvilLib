@@ -7,7 +7,7 @@ import java.util.List;
 /** 为创造物品栏变体叠加层提供物品栈。 */
 public interface CreativeVariantPickerItem {
     /**
-     * 返回叠加层中的变体，按网格从左到右、从上到下排列，最多显示 16 项
+     * 返回叠加层中的变体，按网格从左到右、从上到下排列，超过 16 项时按行滚动
      *
      * @param source 创造物品栏中的代表物品栈
      */

@@ -102,14 +102,16 @@ public final class CreativeVariantPickerRegistry {
             .filter(stack -> stack != null && !stack.isEmpty())
             .map(stack -> stack.copyWithCount(1))
             .toList();
-        if (copies.size() < 2 || copies.size() > 16) {
-            throw new IllegalArgumentException("Creative variant groups must contain between 2 and 16 items");
+        if (copies.size() < 2) {
+            throw new IllegalArgumentException("Creative variant groups must contain at least 2 items");
         }
         VariantGroup group = new VariantGroup(copies, enabled);
         for (ItemStack stack : copies) {
             GROUPS.compute(stack.getItem(), (item, existing) -> {
                 List<VariantGroup> groups = existing == null ? new ArrayList<>() : new ArrayList<>(existing);
-                if (groups.stream().noneMatch(group::sameItems)) groups.add(group);
+                if (groups.stream().noneMatch(group::sameItems)) {
+                    groups.add(group);
+                }
                 return List.copyOf(groups);
             });
         }
@@ -143,13 +145,17 @@ public final class CreativeVariantPickerRegistry {
     public static Collection<ItemStack> fold(Collection<ItemStack> items) {
         discoverVanillaColorFamilies();
         List<ItemStack> original = List.copyOf(items);
+        Set<VariantGroup> candidates = new HashSet<>();
+        GROUPS.values().forEach(candidates::addAll);
         Set<VariantGroup> eligible = new HashSet<>();
-        for (List<VariantGroup> groups : GROUPS.values()) {
-            for (VariantGroup group : groups) {
-                if (group.isEnabled() && group.presentIn(original)) eligible.add(group);
+        for (VariantGroup group : candidates) {
+            if (group.isEnabled() && group.presentIn(original)) {
+                eligible.add(group);
             }
         }
-        if (eligible.isEmpty()) return new ArrayList<>(original);
+        if (eligible.isEmpty()) {
+            return new ArrayList<>(original);
+        }
 
         Set<VariantGroup> emitted = new HashSet<>();
         List<ItemStack> folded = new ArrayList<>(original.size());
@@ -165,10 +171,11 @@ public final class CreativeVariantPickerRegistry {
     }
 
     private static Optional<List<ItemStack>> normalize(List<ItemStack> variants) {
-        if (variants == null) return Optional.empty();
+        if (variants == null) {
+            return Optional.empty();
+        }
         List<ItemStack> normalized = variants.stream()
             .filter(stack -> stack != null && !stack.isEmpty())
-            .limit(16)
             .map(stack -> stack.copyWithCount(1))
             .toList();
         return normalized.size() < 2 ? Optional.empty() : Optional.of(normalized);
