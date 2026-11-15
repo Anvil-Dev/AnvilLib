@@ -2,7 +2,7 @@ name: CI for Mod
 on:
   workflow_dispatch:
   push:
-    branches: ['dev/**']
+    branches: ['releases/**']
     paths:
       - .github/modules.json
       - .github/ci/**
