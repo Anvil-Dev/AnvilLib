@@ -20,7 +20,7 @@ import java.util.Objects;
 
 /**
  * 轮盘毛玻璃盘面背景：每帧对主渲染目标做一次可分离高斯模糊，供盘面着色器采样。
- * 两个纹理目标乒乓交替，水平/垂直各模糊两轮共四 pass，与 dev/26.1 的 GaussianBlur(2.0f, 1.0f) 行为一致。
+ * 两个纹理目标乒乓交替，水平/垂直各模糊两轮共四 pass，与 releases/26.1 的 GaussianBlur(2.0f, 1.0f) 行为一致。
  */
 @ApiStatus.Internal
 @Slf4j

@@ -45,7 +45,7 @@ public class WheelWidget extends AbstractWidget {
     private static final float ANGLE_AA_RAD = 0.06f;
     private static final Vector2f ROTATION_START = new Vector2f(0, 1);
     // 中心区域与扇区之间的白色不透明分隔圆环：半径在中心区基础上外扩的距离与线宽
-    // （dev/26.1 的 SdfGraphics.stroke 实际厚度为入参一半）
+    // （releases/26.1 的 SdfGraphics.stroke 实际厚度为入参一半）
     private static final float SEPARATOR_RING_GAP = 4f;
     private static final float SEPARATOR_RING_THICKNESS = 2f;
     // 高亮扇区内缘相对中心区的内缩量（贴合分隔圆环外侧）
